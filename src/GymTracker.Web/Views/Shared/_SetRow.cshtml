@@ -9,9 +9,9 @@
         <input type="number" name="weightKg" value="@set.WeightKg.Kg()" inputmode="decimal" step="any" min="0" aria-label="Weight in kg" required />
         <input type="number" name="reps" value="@set.Reps" inputmode="numeric" step="1" min="0" aria-label="Reps" required />
         <span class="row-buttons">
-            <button type="submit" class="check done" aria-label="Save changes">✓</button>
+            <button type="submit" class="check done" aria-label="Save changes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></button>
             <button type="button" class="delete" aria-label="Delete set"
-                    hx-post="/train/sets/@set.Id/delete" hx-target="closest form" hx-swap="outerHTML" hx-confirm="Delete this set?">✕</button>
+                    hx-post="/train/sets/@set.Id/delete" hx-target="closest form" hx-swap="outerHTML" hx-confirm="Delete this set?"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </span>
     </form>
 }
@@ -25,7 +25,7 @@ else
         <input type="number" name="weightKg" inputmode="decimal" step="any" min="0" aria-label="Weight in kg" required />
         <input type="number" name="reps" inputmode="numeric" step="1" min="0" aria-label="Reps" required />
         <span class="row-buttons">
-            <button type="submit" class="check" aria-label="Log set">✓</button>
+            <button type="submit" class="check" aria-label="Log set"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></button>
         </span>
     </form>
 }

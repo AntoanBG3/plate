@@ -6,12 +6,18 @@
 }
 <header class="row-between">
     <div>
-        <h1>@(Model.Template?.Name ?? "Freestyle")</h1>
-        <p class="muted">
+        <p class="muted" style="margin: 0 0 4px;">
             @started.ToString("ddd d MMM, HH:mm", System.Globalization.CultureInfo.InvariantCulture)
             @(Model.IsActive ? "· in progress" : "· finished")
         </p>
+        <h1>@(Model.Template?.Name ?? "Freestyle")</h1>
     </div>
+    @if (Model.IsActive)
+    {
+        <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Id/finish" onsubmit="return confirm('Finish this workout?')">
+            <button type="submit" class="primary">Finish</button>
+        </form>
+    }
 </header>
 
 @foreach (var exercise in Model.Exercises)
@@ -28,13 +34,7 @@
     <button type="submit">Save notes</button>
 </form>
 
-@if (Model.IsActive)
-{
-    <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Id/finish" onsubmit="return confirm('Finish this workout?')">
-        <button type="submit" class="primary wide">Finish workout</button>
-    </form>
-}
-else
+@if (!Model.IsActive)
 {
     <p><a href="/train/sessions/@Model.Id/summary">Summary</a> · <a href="/train/history">History</a></p>
     <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Id/delete" onsubmit="return confirm('Delete this session and all its sets? This cannot be undone.')">
