@@ -1,5 +1,6 @@
 using GymTracker.Web.Data;
 using GymTracker.Web.Features;
+using GymTracker.Web.Features.Export;
 using GymTracker.Web.Features.Profile;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymTracker.Web.Controllers;
 
 [Route("settings")]
-public class SettingsController(ProfileService profiles, UserManager<AppUser> users, SignInManager<AppUser> signIn) : Controller
+public class SettingsController(ProfileService profiles, DataExport export, UserManager<AppUser> users, SignInManager<AppUser> signIn) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -47,6 +48,13 @@ public class SettingsController(ProfileService profiles, UserManager<AppUser> us
         decimal? TargetRatePercentPerWeek,
         decimal? ProteinGramsPerKg,
         decimal? DefaultWeightIncrementKg);
+
+    [HttpGet("export")]
+    public async Task<IActionResult> Export(CancellationToken ct)
+    {
+        var today = await profiles.TodayAsync(ct);
+        return File(await export.ZipAsync(ct), "application/zip", $"gymtracker-{today:yyyy-MM-dd}.zip");
+    }
 
     [HttpPost("password")]
     public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)

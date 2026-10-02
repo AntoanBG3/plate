@@ -39,6 +39,12 @@
     <button type="submit" class="primary">Save profile</button>
 </form>
 
+<section class="card stack">
+    <h2>Your data</h2>
+    <p class="muted">Workouts, sets, templates, weigh-ins, food log and targets as CSV files in a zip.</p>
+    <a class="button wide" href="/settings/export" download>Export all data</a>
+</section>
+
 <form method="post" asp-antiforgery="true" action="/settings/password" class="stack card">
     <h2>Change password</h2>
     <label>Current password <input type="password" name="currentPassword" autocomplete="current-password" required /></label>

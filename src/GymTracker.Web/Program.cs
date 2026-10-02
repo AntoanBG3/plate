@@ -46,6 +46,7 @@ builder.Services.AddScoped<FoodItemService>();
 builder.Services.AddScoped<FoodMatcher>();
 builder.Services.AddScoped<FoodLogService>();
 builder.Services.AddScoped<NutritionTargets>();
+builder.Services.AddScoped<GymTracker.Web.Features.Export.DataExport>();
 
 builder.Services.Configure<GeminiOptions>(config.GetSection("Gemini"));
 if (string.IsNullOrWhiteSpace(config["Gemini:ApiKey"]))

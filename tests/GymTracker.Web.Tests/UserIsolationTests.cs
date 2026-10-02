@@ -46,6 +46,18 @@ public class UserIsolationTests(PostgresFixture fixture) : IAsyncLifetime
     private UserScope AsA() => new(fixture, userA);
 
     [Fact]
+    public async Task Export_contains_none_of_the_other_users_data()
+    {
+        await using var a = AsA();
+
+        var files = ExportTests.Unzip(await new GymTracker.Web.Features.Export.DataExport(a.Db).ZipAsync(default));
+
+        var all = string.Concat(files.Values);
+        all.Should().NotContain("B's secret move").And.NotContain("B upper").And.NotContain("Bench press").And.NotContain("2026-10-01");
+        files["profile.csv"].Split("\r\n", StringSplitOptions.RemoveEmptyEntries).Should().HaveCount(2, "a header and A's own profile");
+    }
+
+    [Fact]
     public async Task Cannot_read_sessions_sets_templates_or_weigh_ins()
     {
         await using var a = AsA();
