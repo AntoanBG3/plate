@@ -233,6 +233,57 @@ namespace GymTracker.Web.Data.Migrations
                     b.ToTable("FoodLog");
                 });
 
+            modelBuilder.Entity("GymTracker.Core.Domain.MaintenanceEstimate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("CalculatedOn")
+                        .HasColumnType("date");
+
+                    b.Property<int>("DaysOfData")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstimatedTdeeKcal")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("LoggingCompleteness")
+                        .HasPrecision(4, 3)
+                        .HasColumnType("numeric(4,3)");
+
+                    b.Property<bool>("LowConfidence")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("TargetKcal")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TargetProteinG")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("TrendWeightKg")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CalculatedOn")
+                        .IsUnique();
+
+                    b.ToTable("MaintenanceEstimates");
+                });
+
             modelBuilder.Entity("GymTracker.Core.Domain.SessionExercise", b =>
                 {
                     b.Property<int>("Id")
@@ -715,6 +766,15 @@ namespace GymTracker.Web.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("FoodItem");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.MaintenanceEstimate", b =>
+                {
+                    b.HasOne("GymTracker.Web.Data.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.SessionExercise", b =>

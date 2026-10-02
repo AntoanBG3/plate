@@ -91,7 +91,10 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable
         var response = await AppFactory.PostAsync(client, "/today/weight", token, new() { ["weightKg"] = "82.4" });
 
         AppFactory.IsRedirectTo(response, "/today").Should().BeTrue();
-        (await client.GetStringAsync("/today")).Should().Contain("Logged today: 82.4 kg");
+        (await client.GetStringAsync("/today")).Should().Contain("Logged today: 82.4 kg, trend 82.4 kg");
+
+        var progress = await client.GetStringAsync("/progress?range=4w");
+        progress.Should().Contain("id=\"weight-data\"").And.Contain("Trend now: <strong>82.4 kg</strong>");
     }
 
     [Fact]

@@ -37,6 +37,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<ProfileLookup>();
 builder.Services.AddScoped<BodyweightService>();
+builder.Services.AddScoped<BodyAnalytics>();
 builder.Services.AddScoped<TemplateService>();
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<ExerciseService>();

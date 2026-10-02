@@ -46,6 +46,65 @@
         });
     }
 
+    const amber = "#ffcf8a";
+
+    const weight = data("weight-data");
+    if (weight) {
+        new Chart(document.getElementById("weight-chart"), {
+            type: "line",
+            data: {
+                labels: weight.labels,
+                datasets: [
+                    {
+                        label: "Weigh-in",
+                        data: weight.raw,
+                        showLine: false,
+                        pointRadius: 3,
+                        backgroundColor: sky,
+                        borderColor: sky,
+                    },
+                    {
+                        label: "Trend",
+                        data: weight.trend,
+                        borderColor: lime,
+                        borderWidth: 2.5,
+                        pointRadius: 0,
+                        tension: 0.2,
+                    },
+                ],
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: grid }, ticks: { maxTicksLimit: 6, maxRotation: 0 } },
+                    y: { grid: { color: grid }, ticks: { callback: (v) => `${v} kg` } },
+                },
+            },
+        });
+    }
+
+    const calories = data("calories-data");
+    if (calories) {
+        new Chart(document.getElementById("calories-chart"), {
+            type: "bar",
+            data: {
+                labels: calories.labels,
+                datasets: [
+                    { type: "bar", label: "Eaten", data: calories.kcal, backgroundColor: "rgba(155, 224, 255, 0.55)", borderRadius: 4, order: 3 },
+                    { type: "line", label: "Target", data: calories.target, borderColor: lime, borderWidth: 2.5, pointRadius: 0, stepped: true, order: 1 },
+                    { type: "line", label: "Maintenance", data: calories.maintenance, borderColor: amber, borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, stepped: true, order: 2 },
+                ],
+            },
+            options: {
+                plugins: { legend: { position: "top", align: "start" } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { maxTicksLimit: 6, maxRotation: 0 } },
+                    y: { grid: { color: grid }, beginAtZero: true },
+                },
+            },
+        });
+    }
+
     const volume = data("volume-data");
     if (volume) {
         new Chart(document.getElementById("volume-chart"), {

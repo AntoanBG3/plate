@@ -44,7 +44,9 @@ public record ProgressViewModel(
     IReadOnlyList<ExerciseOption> Exercises,
     ExerciseOption? Selected,
     IReadOnlyList<E1rmPoint> E1rm,
-    VolumeComparison Volume);
+    VolumeComparison Volume,
+    GymTracker.Web.Features.Body.WeightChart Weight,
+    IReadOnlyList<GymTracker.Web.Features.Body.CalorieDay> Calories);
 
 public record ExercisePickerViewModel(string Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises);
 

@@ -20,6 +20,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<BodyweightEntry> Bodyweights => Set<BodyweightEntry>();
     public DbSet<FoodItem> FoodItems => Set<FoodItem>();
     public DbSet<FoodLogEntry> FoodLog => Set<FoodLogEntry>();
+    public DbSet<MaintenanceEstimate> MaintenanceEstimates => Set<MaintenanceEstimate>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -138,6 +139,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.FoodItem).WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => new { x.UserId, x.Date });
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
+        builder.Entity<MaintenanceEstimate>(e =>
+        {
+            e.Property(x => x.Method).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.TrendWeightKg).HasPrecision(6, 2);
+            e.Property(x => x.LoggingCompleteness).HasPrecision(4, 3);
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.UserId, x.CalculatedOn }).IsUnique();
             e.HasQueryFilter(x => x.UserId == CurrentUserId);
         });
     }

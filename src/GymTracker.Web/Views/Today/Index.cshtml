@@ -31,7 +31,30 @@
     {
         <p class="muted">@t.Missing</p>
     }
-    <p class="muted">Target is your starting maintenance estimate. It adapts once you have a few weeks of logs.</p>
+    @if (t.FloorApplied)
+    {
+        <p class="muted warn">Raised to the @t.FloorKcal kcal minimum. Consider a slower rate in Settings.</p>
+    }
+    @if (t.Estimate is { } estimate)
+    {
+        if (estimate.Method == GymTracker.Core.Domain.MaintenanceMethod.Adaptive)
+        {
+            <p class="muted">
+                Maintenance @estimate.EstimatedTdeeKcal kcal, adaptive from @estimate.DaysOfData days of data.
+                @if (estimate.LowConfidence)
+                {
+                    <span class="warn">Low confidence: weigh-ins had a gap of 3 or more days.</span>
+                }
+            </p>
+        }
+        else
+        {
+            <p class="muted">
+                Maintenance @estimate.EstimatedTdeeKcal kcal, initial estimate@(estimate.DaysOfData > 0 ? $" ({estimate.DaysOfData} days of data, food logged on {(int)Math.Round(estimate.LoggingCompleteness * 100)}%)" : "").
+                It adapts weekly once you have 2 weeks of weigh-ins on most days and food logged on 80% of days.
+            </p>
+        }
+    }
 </a>
 
 <section class="card">
@@ -44,11 +67,11 @@
     </form>
     @if (Model.TodayWeight is not null)
     {
-        <p class="muted">Logged today: @Model.TodayWeight.WeightKg.Kg() kg</p>
+        <p class="muted">Logged today: @Model.TodayWeight.WeightKg.Kg() kg@(t.TrendWeightKg is { } trendToday ? $", trend {trendToday.Kg(1)} kg" : "")</p>
     }
     else if (Model.LatestWeight is not null)
     {
-        <p class="muted">Last: @Model.LatestWeight.WeightKg.Kg() kg on @Model.LatestWeight.Date.ToString("d MMM", System.Globalization.CultureInfo.InvariantCulture)</p>
+        <p class="muted">Last: @Model.LatestWeight.WeightKg.Kg() kg on @Model.LatestWeight.Date.ToString("d MMM", System.Globalization.CultureInfo.InvariantCulture)@(t.TrendWeightKg is { } trendLast ? $", trend {trendLast.Kg(1)} kg" : "")</p>
     }
 </section>
 

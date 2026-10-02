@@ -382,6 +382,8 @@ select {
 }
 .seg { min-height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 999px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
 .seg.active { background: var(--lime); color: var(--on-lime); }
+.segments.three { grid-template-columns: repeat(3, 1fr); }
+.warn { color: #ffcf8a; }
 .portion { display: flex; flex-direction: column; gap: 8px; }
 .portion .inline input[type=number] { max-width: 120px; }
 .badge { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: var(--muted); }
