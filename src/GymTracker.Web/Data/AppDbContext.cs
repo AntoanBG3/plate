@@ -18,10 +18,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<SessionExercise> SessionExercises => Set<SessionExercise>();
     public DbSet<SetEntry> Sets => Set<SetEntry>();
     public DbSet<BodyweightEntry> Bodyweights => Set<BodyweightEntry>();
+    public DbSet<FoodItem> FoodItems => Set<FoodItem>();
+    public DbSet<FoodLogEntry> FoodLog => Set<FoodLogEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        // Fuzzy name matching for food search and for resolving parsed text to database foods.
+        builder.HasPostgresExtension("pg_trgm");
 
         builder.Entity<UserProfile>(e =>
         {
@@ -98,6 +103,42 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(b => b.WeightKg).HasPrecision(6, 2);
             e.HasIndex(b => new { b.UserId, b.Date }).IsUnique();
             e.HasQueryFilter(b => b.UserId == CurrentUserId);
+        });
+
+        builder.Entity<FoodItem>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(200);
+            e.Property(x => x.NameBg).HasMaxLength(200);
+            e.Property(x => x.Brand).HasMaxLength(200);
+            e.Property(x => x.Barcode).HasMaxLength(32);
+            e.Property(x => x.Source).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.KcalPer100g).HasPrecision(7, 2);
+            e.Property(x => x.ProteinPer100g).HasPrecision(6, 2);
+            e.Property(x => x.CarbsPer100g).HasPrecision(6, 2);
+            e.Property(x => x.FatPer100g).HasPrecision(6, 2);
+            e.Property(x => x.DefaultServingGrams).HasPrecision(7, 1);
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Barcode).IsUnique().HasFilter("\"Barcode\" IS NOT NULL");
+            e.HasIndex(x => x.Name).HasMethod("gin").HasOperators("gin_trgm_ops");
+            e.HasIndex(x => x.NameBg).HasMethod("gin").HasOperators("gin_trgm_ops");
+            e.HasQueryFilter(x => x.OwnerUserId == null || x.OwnerUserId == CurrentUserId);
+        });
+
+        builder.Entity<FoodLogEntry>(e =>
+        {
+            e.Property(x => x.Description).HasMaxLength(200);
+            e.Property(x => x.Meal).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Source).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.AiModel).HasMaxLength(100);
+            e.Property(x => x.Grams).HasPrecision(7, 1);
+            e.Property(x => x.Kcal).HasPrecision(7, 1);
+            e.Property(x => x.ProteinG).HasPrecision(6, 1);
+            e.Property(x => x.CarbsG).HasPrecision(6, 1);
+            e.Property(x => x.FatG).HasPrecision(6, 1);
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.FoodItem).WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => new { x.UserId, x.Date });
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
         });
     }
 }
