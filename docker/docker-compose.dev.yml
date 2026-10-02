@@ -1,0 +1,23 @@
+# Local development only: Postgres on 127.0.0.1:5432 for `dotnet run` and `dotnet ef`.
+# The password is a throwaway that matches appsettings.Development.json.
+name: gymtracker-dev
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: gym
+      POSTGRES_USER: gym
+      POSTGRES_PASSWORD: gym-dev-only
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - gym-dev-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gym -d gym"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  gym-dev-db:

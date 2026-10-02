@@ -1,0 +1,52 @@
+# Production stack on wizard. The repository is checked out at ~/docker/gymtracker and this file is
+# run from there: docker compose -f docker/docker-compose.yml up -d --build
+# State lives next to the checkout (../db, ../keys) so the nightly ~/docker snapshot covers it.
+name: gymtracker
+
+services:
+  db:
+    image: postgres:18
+    container_name: gymtracker-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=25"]
+    volumes:
+      # The postgres 18 image keeps data under /var/lib/postgresql/18/docker; mount the parent.
+      - ../db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 256m
+    restart: unless-stopped
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: gymtracker-app:latest
+    container_name: gymtracker-app
+    # antoan, so the bind-mounted keys directory is writable without sudo.
+    user: "1000:1000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: "Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      DataProtection__KeysPath: /keys
+      ReverseProxy__KnownProxies: 172.30.0.10
+    volumes:
+      - ../keys:/keys
+    # No published ports: cloudflared reaches http://gymtracker-app:8080 over the tunnel network.
+    networks:
+      - default
+      - tunnel
+    mem_limit: 256m
+    restart: unless-stopped
+
+networks:
+  tunnel:
+    external: true
