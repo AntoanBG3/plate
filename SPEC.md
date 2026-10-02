@@ -1,6 +1,6 @@
 # GymTracker: Product and Technical Specification
 
-Self-hosted training and nutrition tracker for two users (me and my father). Runs in Docker on a headless Ubuntu home server, used from iPhones as an installed PWA, reached remotely over Tailscale. Replaces ad hoc calorie tracking with a system that logs workouts, suggests progression, parses food entries with an LLM, and estimates real maintenance calories from logged data.
+Self-hosted training and nutrition tracker for two users (me and my father). Runs in Docker on the headless Ubuntu home server "wizard", used from iPhones as an installed PWA, reached remotely at `https://gym.peychev.uk` through the server's existing Cloudflare Tunnel. Replaces ad hoc calorie tracking with a system that logs workouts, suggests progression, parses food entries with an LLM, and estimates real maintenance calories from logged data.
 
 Build in the phases at the end of this document. Each phase must be usable on its own before the next starts.
 
@@ -18,7 +18,8 @@ Build in the phases at the end of this document. Each phase must be usable on it
 **Non-goals**
 - Public sign-up, social features, sharing.
 - Native iOS app.
-- Exposing the app to the open internet.
+- Anonymous access. The app is reachable from the internet only through its Cloudflare Tunnel hostname, and every page except login requires an account (see section 9).
+- Rest-timer alerts while the phone is locked (would need Web Push; revisit after Phase 5 if wanted).
 
 ---
 
@@ -27,18 +28,22 @@ Build in the phases at the end of this document. Each phase must be usable on it
 | Concern | Choice |
 |---|---|
 | Runtime | .NET 10 (LTS), ASP.NET Core |
-| UI | MVC with Razor views, htmx for partial updates, Alpine.js only where client state is needed (rest timer, active set form) |
+| UI | MVC with Razor views, htmx 2.0.x (pinned; not 4.x) for partial updates, Alpine.js only where client state is needed (rest timer, active set form). The offline set queue is a small plain-`fetch` module, not htmx (section 8) |
 | Charts | Chart.js |
 | CSS | Tailwind via the standalone CLI (no Node build pipeline) or plain CSS; mobile-first, large touch targets |
-| Database | PostgreSQL 17, EF Core with Npgsql provider |
-| Auth | ASP.NET Core Identity, cookie auth, long-lived persistent login (30 days) |
-| LLM | Google Gemini API via typed HttpClient, behind an interface |
-| Food database | Open Food Facts API v2 |
-| Barcode scanning | `@zxing/browser` loaded from a CDN (Safari on iOS lacks the native `BarcodeDetector` API) |
-| Tests | xUnit, FluentAssertions; Testcontainers for PostgreSQL integration tests |
-| Deployment | docker-compose; HTTPS via `tailscale serve` |
+| Front-end delivery | No CDNs. Pinned copies of every library (htmx, Alpine, Chart.js, the barcode scanner and its `.wasm`) are vendored into `wwwroot/lib` and precached by the service worker |
+| Database | PostgreSQL 18, EF Core with Npgsql provider |
+| Auth | ASP.NET Core Identity, cookie auth, sliding 30-day persistent login, lockout and login rate limiting on (section 9). No Cloudflare Access in front of the app |
+| LLM | Google Gemini API (`gemini-3.5-flash-lite` by default, configurable) via typed HttpClient, behind an interface. It extracts foods and grams; nutrition values come from the food database (section 6.1) |
+| Food database | Users' own and shared `FoodItem`s, a locally imported subset of USDA FoodData Central for generic foods, and Open Food Facts API v3 for barcodes |
+| Barcode scanning | `barcode-detector` ponyfill (ZXing-C++ compiled to WASM), self-hosted. Safari on iOS ships the native `BarcodeDetector` API disabled, and `@zxing/browser` sits on a library in maintenance mode |
+| Tests | xUnit, FluentAssertions; Testcontainers (`postgres:18`) for PostgreSQL integration tests |
+| Deployment | docker-compose on wizard; HTTPS via the existing Cloudflare Tunnel (`gym.peychev.uk`) |
+| Runtime image | `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra` (includes ICU and time zone data for `Europe/Sofia` and Bulgarian text). No Native AOT (unsupported for MVC and cookie auth) |
 
 Server-rendered MVC with htmx is chosen over Blazor Server deliberately: gym signal drops would kill Blazor Server circuits mid-workout, while plain HTTP requests can simply be retried.
+
+.NET 10 is LTS, supported until 2028-11-14. PostgreSQL 18 is supported until 2030-11-14.
 
 ---
 
@@ -48,18 +53,22 @@ Server-rendered MVC with htmx is chosen over Blazor Server deliberately: gym sig
 GymTracker.sln
 src/
   GymTracker.Core/            Domain entities, enums, pure calculation services. No EF, no HTTP, no ASP.NET references.
-  GymTracker.Infrastructure/  EF DbContext, migrations, repositories, Gemini client, Open Food Facts client.
   GymTracker.Web/             Controllers, views, view models, htmx partials, static assets, PWA manifest and service worker.
+    Data/                     EF DbContext, migrations, seed data (exercises, USDA subset).
+    Integrations/             Gemini client, Open Food Facts client.
+    Features/                 Thin feature services that use the DbContext directly and call Core for the math.
 tests/
-  GymTracker.Core.Tests/            Unit tests for all calculation logic.
-  GymTracker.Infrastructure.Tests/  Integration tests against real PostgreSQL via Testcontainers.
+  GymTracker.Core.Tests/      Unit tests for all calculation logic.
+  GymTracker.Web.Tests/       Integration tests against real PostgreSQL via Testcontainers, including user-isolation tests.
 docker/
   Dockerfile
   docker-compose.yml
-  backup.sh
+  docker-compose.dev.yml
 ```
 
 All business math (progression, e1RM, volume, trend weight, maintenance estimate, targets) lives in `GymTracker.Core` as pure, deterministic functions that take data in and return results. Controllers never contain calculations.
+
+There is no separate Infrastructure project and no generic repository layer: the DbContext, with its global query filters, is injected into feature services. The `Core` boundary is what keeps the math testable; a third project adds wiring without adding safety at this size.
 
 ---
 
@@ -118,7 +127,7 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Id`, `SessionExerciseId`, `SetNumber`
 - `WeightKg`, `Reps`, `Rpe` (nullable, 5 to 10 in 0.5 steps)
 - `IsWarmup` (warmups are excluded from progression, volume and e1RM)
-- `CompletedAt`
+- `CompletedAt` (sent by the client, so a set retried later keeps the time it was actually done)
 - `ClientId` (Guid generated in the browser, unique index) so retried requests are idempotent.
 
 ### Body
@@ -129,11 +138,12 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 ### Nutrition
 
 **FoodItem** (reusable food definitions and cache)
-- `Id`, `OwnerUserId` (nullable for shared items such as Open Food Facts cache)
-- `Name`, `Brand` (nullable), `Barcode` (nullable, unique where not null)
+- `Id`, `OwnerUserId` (nullable for shared items: the Open Food Facts cache, the USDA subset, and manual items created for a barcode)
+- `Name`, `NameBg` (nullable, Bulgarian name), `Brand` (nullable), `Barcode` (nullable, unique where not null)
 - `KcalPer100g`, `ProteinPer100g`, `CarbsPer100g`, `FatPer100g`
 - `DefaultServingGrams` (nullable)
-- `Source` (OpenFoodFacts, Manual, Ai)
+- `Source` (OpenFoodFacts, Usda, Manual, Ai)
+- Manual items created from a barcode scan are shared (`OwnerUserId` null) so the other user doesn't re-enter the same product; Open Food Facts coverage of Bulgarian products is thin, so this path will be common. Manual items without a barcode stay private.
 
 **FoodLogEntry**
 - `Id`, `UserId`, `Date`, `Meal` (Breakfast, Lunch, Dinner, Snack)
@@ -141,6 +151,7 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Grams`
 - `Kcal`, `ProteinG`, `CarbsG`, `FatG` (stored totals, so the entry is stable even if the FoodItem changes)
 - `FoodItemId` (nullable), `Source` (Barcode, Search, Ai, Manual, Recent)
+- `AiModel` (nullable; the Gemini model name for AI-parsed entries, so a shift in estimates after a model change can be traced)
 - `CreatedAt`
 
 **MaintenanceEstimate**
@@ -183,18 +194,19 @@ Exponential moving average with smoothing factor 0.1, seeded with the first weig
 
 ### 5.5 Adaptive maintenance estimate
 
-Recalculated on demand when the Today page loads, cached once per user per day in `MaintenanceEstimate`.
+Checked when the Today page loads. The estimate is updated **once per week**: if the latest stored `MaintenanceEstimate` for the user is less than 7 days old, it is reused as is; otherwise a new one is calculated and stored. (A daily update with the weekly clamp and 0.7/0.3 smoothing below would compound seven times a week, so the cadence is fixed at weekly.)
 
 1. **Prior:** `InitialMaintenanceKcal` if set, else Mifflin-St Jeor BMR times 1.55 using the latest trend weight.
 2. **Window:** the most recent 21 days ending yesterday (today's log is incomplete).
-3. **Data requirements:** at least 14 days in the window, food logged on at least 80% of days, and weigh-ins on at least 50% of days. If not met, use the previous estimate (or the prior) and mark `Method = Initial`.
+3. **Data requirements:** at least 14 days in the window, food logged on at least 80% of days, and weigh-ins on at least 50% of days. A day with under 200 kcal logged counts as not logged. If not met, carry forward the last `Adaptive` estimate (or the prior if there is none) and mark `Method = Initial`.
 4. **Calculation:**
    - `avgIntake` = mean daily kcal over days that have food logged. Unlogged days are assumed to equal this average.
    - `deltaTrend` = trend weight at window end minus trend weight at window start.
    - `rawTdee = avgIntake - (deltaTrend * 7700 / windowDays)`.
-5. **Smoothing:** `newTdee = 0.7 * previousEstimate + 0.3 * rawTdee`, and clamp the change so it moves at most 100 kcal from the previous estimate in one week. Store `Method = Adaptive`.
+5. **Smoothing:** `newTdee = 0.7 * previousEstimate + 0.3 * rawTdee`, then clamp so it moves at most 100 kcal from the previous estimate (one weekly update). Store `Method = Adaptive`.
+6. **Confidence note:** if the window contains a gap of 3 or more consecutive days without a weigh-in, show "low confidence" next to the estimate on the Today page. The calculation is unchanged.
 
-Test with synthetic data: stable weight at known intake returns that intake; steady loss of 0.5 kg per week at 2,000 kcal converges near 2,550; missing logging days below the threshold falls back to the prior; noisy daily weights do not cause jumps beyond the clamp.
+Test with synthetic data: stable weight at known intake returns that intake; steady loss of 0.5 kg per week at 2,000 kcal converges near 2,550 over successive weekly updates; missing logging days below the threshold carries the last estimate forward; days under 200 kcal count as unlogged; noisy daily weights do not cause jumps beyond the clamp; a second call within 7 days returns the stored estimate.
 
 ### 5.6 Daily targets
 
@@ -206,7 +218,7 @@ Test with synthetic data: stable weight at known intake returns that intake; ste
 
 ---
 
-## 6. External integrations (GymTracker.Infrastructure)
+## 6. External integrations (GymTracker.Web/Integrations)
 
 ### 6.1 Food parsing via Gemini
 
@@ -219,28 +231,47 @@ public interface IFoodParser
 }
 ```
 
-`FoodParseResult` contains a list of `ParsedFoodItem` (Name, Grams, Kcal, ProteinG, CarbsG, FatG, Confidence Low/Medium/High, Assumption string such as "assumed cooked weight") plus an overall error message if parsing failed.
+LLM nutrition estimates are unreliable on their own (published studies show energy errors around 35% and larger protein errors), while the per-100 g values in a nutrition database are not. So the model reads the text and the database supplies the numbers.
+
+`FoodParseResult` contains a list of `ParsedFoodItem` plus an overall error message if parsing failed. `ParsedFoodItem`:
+- `NameEn` (canonical English name, for matching), `NameOriginal` (as the user wrote it)
+- `Grams`, `State` (Raw, Cooked, NotApplicable), `Preparation` (nullable, e.g. "grilled")
+- `Assumption` (string such as "assumed one medium banana, 120 g")
+- `EstimatedKcalPer100g`, `EstimatedProteinPer100g`, `EstimatedCarbsPer100g`, `EstimatedFatPer100g`: the model's own values, used only as a fallback
 
 Implementation `GeminiFoodParser`:
 - Typed `HttpClient` calling the Gemini `generateContent` REST endpoint.
-- Model name from configuration `Gemini:Model`; do not hardcode. Use the current cheapest Flash-class model.
+- Model name from configuration `Gemini:Model`; do not hardcode. Default `gemini-3.5-flash-lite` (no shutdown announced; 3.1 Flash-Lite shuts down 2027-05-07, 2.5 Flash-Lite is closed to new users). Use the lowest thinking budget.
 - API key from configuration `Gemini:ApiKey` (environment variable `Gemini__ApiKey` in Docker). Never commit it.
-- Request structured output: `responseMimeType: "application/json"` with a `responseSchema` matching `ParsedFoodItem[]`.
-- System prompt: the user writes foods in English or Bulgarian; return one item per food; estimate grams for vague quantities ("a banana", "a plate of rice") and state the assumption; assume raw weight for meat and cooked weight for rice and pasta unless stated; use standard nutrition database values.
-- Validation after parsing: if `|Kcal - (4*Protein + 4*Carbs + 9*Fat)|` exceeds 15% of `Kcal`, mark the item Low confidence. Reject negative values or grams above 3,000.
+- Request structured output: `responseMimeType: "application/json"` with `responseJsonSchema` (standard JSON Schema, generated from the C# type) matching `ParsedFoodItem[]`. Check the current field names in the Gemini docs before coding.
+- System prompt: the user writes foods in English or Bulgarian; return one item per food; estimate grams for vague quantities ("a banana", "a plate of rice") and state the assumption; assume raw weight for meat and cooked weight for rice and pasta unless stated; always fill `NameEn`.
 - Timeout 15 seconds, one retry on 5xx or timeout. On failure, the UI falls back to manual entry with the text preserved.
-- Results are never saved directly. The user always sees an editable confirmation list first.
+
+Resolving nutrition values (a Web feature service, not the parser):
+1. Match `NameEn`/`NameOriginal` and `State` against the user's own `FoodItem`s and recent entries, then shared items including the USDA subset (PostgreSQL `pg_trgm` similarity on names).
+2. If a match is found, compute totals from its per-100 g values and show the matched item's name, with a control to pick a different match.
+3. If not, use the model's estimated values and mark the item Low confidence. If `|Kcal - (4*Protein + 4*Carbs + 9*Fat)|` exceeds 15% of `Kcal` for those values, also say so.
+4. Reject negative values or grams above 3,000.
+
+Results are never saved directly. The user always sees an editable confirmation list first. Saved entries record `AiModel`.
 
 Also provide `FakeFoodParser` for tests and local development without a key (selected when `Gemini:ApiKey` is empty).
 
 ### 6.2 Open Food Facts
 
 `IFoodDatabase` with `GetByBarcodeAsync(string barcode)` and `SearchAsync(string query)`.
-- Barcode: `GET https://world.openfoodfacts.org/api/v2/product/{barcode}.json?fields=product_name,brands,nutriments,serving_quantity`.
+- Use API v3 (v2 is deprecated): `GET https://world.openfoodfacts.org/api/v3/product/{barcode}` with a `fields` parameter limited to name, brands, nutriments and serving quantity. Confirm the v3 field names against the current OFF docs before coding.
 - Read `energy-kcal_100g`, `proteins_100g`, `carbohydrates_100g`, `fat_100g`. If kcal is missing but kJ is present, convert by dividing by 4.184.
-- Set a descriptive `User-Agent` header as Open Food Facts requires.
+- Set the `User-Agent` OFF requires: `GymTracker/<version> (<contact email from config>)`.
+- Rate limits are 15 product reads and 10 searches per minute per IP, shared by both users because all calls leave from wizard. Call OFF search only on explicit submit (never as-you-type), and treat HTTP 429 as "try again shortly" without breaking the page.
 - Cache every successful lookup as a shared `FoodItem` so repeat scans are instant and work offline from the API.
-- If the product is missing or has no nutrition data, offer to create a manual `FoodItem` with that barcode.
+- If the product is missing or has no nutrition data, offer to create a manual `FoodItem` with that barcode (shared, see section 4).
+
+### 6.3 USDA FoodData Central subset
+
+Generic foods (chicken breast, cooked rice, banana) come from USDA FoodData Central, which is public domain (CC0).
+- A one-off script, committed to the repository, converts the Foundation and SR Legacy downloads into a trimmed CSV (name, kcal, protein, carbs, fat per 100 g, raw/cooked where the name states it) under `src/GymTracker.Web/Data/Seed/`.
+- On startup, if no `Usda` items exist, the app imports the CSV as shared `FoodItem`s with `Source = Usda`. No runtime calls to the USDA API.
 
 ---
 
@@ -260,7 +291,10 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
   - One card per exercise in order. Each card shows the progression suggestion and its reason, then a row per working set with weight and reps inputs pre-filled from the suggestion, and a check button.
   - Tapping the check button saves the set immediately via htmx and starts the rest timer.
   - Add warmup set, add extra set, add exercise, reorder, and remove exercise.
-  - Rest timer pinned to the bottom of the screen: counts down from the exercise's rest time, vibrates (`navigator.vibrate` where supported) and plays a short sound at zero, with +30 s and skip buttons.
+  - Rest timer pinned to the bottom of the screen: counts down from the exercise's rest time and plays a short sound at zero, with +30 s and skip buttons. iOS has no `navigator.vibrate`, so there is no vibration. To make the sound reliable on iPhone:
+    - Hold a Screen Wake Lock while a session is active (works in installed web apps since iOS 18.4), so the phone does not lock between sets. Re-acquire it when the page becomes visible again.
+    - Create and resume one `AudioContext` on the check-button tap, so it is unlocked by a user gesture before the timer ends.
+    - Always compute the remaining time from the stored end timestamp, never by counting ticks, because iOS suspends timers in the background.
   - Finish button ends the session and shows a summary: duration, total working sets, new e1RM records.
 - **History:** sessions list, newest first; tap to view or edit a past session.
 - **Templates:** create, edit, reorder exercises, set rep ranges, sets, increment and rest per exercise.
@@ -269,8 +303,8 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Date selector (defaults to today), entries grouped by meal, daily totals at the top.
 - Add entry with four methods:
   1. **Text:** a textarea; submit sends to the parser and shows the editable confirmation list; confirm saves all items.
-  2. **Barcode:** opens the camera scanner; on detection, looks up the product and asks for grams (pre-filled with the serving size).
-  3. **Search:** searches the user's own FoodItems and recent entries first, then Open Food Facts.
+  2. **Barcode:** opens the camera scanner (EAN-13, EAN-8, UPC-A, UPC-E only); on detection, looks up the product and asks for grams (pre-filled with the serving size). Installed iOS web apps do not keep camera permission, so expect a prompt on each launch, and open the scanner without changing the URL (no `hx-push-url`), since route changes can re-prompt or stop the stream. Fallbacks on the same screen: a field to type the digits, and a "take photo" button (`<input type="file" accept="image/*" capture="environment">`) decoded with the same detector.
+  3. **Search:** searches the user's own FoodItems and recent entries first, then shared items (including the USDA subset), then Open Food Facts on explicit submit.
   4. **Recent / favourites:** one-tap re-log of the 20 most frequent entries from the last 30 days, with editable grams.
 - Edit or delete any entry. Copy yesterday's meal into today.
 
@@ -291,12 +325,17 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 ## 8. PWA and resilience
 
 - Web app manifest with name, icons (192 and 512), `display: standalone`, dark theme colour, start URL `/today`.
-- Service worker that caches static assets (CSS, JS, icons) only. Pages and data are always fetched from the server.
-- **Set logging must survive bad gym signal:**
-  - Each set form submission carries a `ClientId` Guid.
-  - If the request fails, the set is stored in `localStorage` in a pending queue and shown with a "pending" marker.
-  - The queue retries on the `online` event, on every subsequent successful request, and every 15 seconds while non-empty.
-  - The server treats a repeated `ClientId` as success without creating a duplicate.
+- Service worker that precaches static assets (CSS, JS including the vendored libraries and the scanner `.wasm`, icons) and one offline fallback page ("No connection. Sets you log are saved on the phone and will send when you're back online."). Pages and data are otherwise always fetched from the server.
+- **Set logging must survive bad gym signal.** iOS has no Background Sync, so the page drives all retries. The queue is write-ahead:
+  - When the check button is tapped, generate the `ClientId` Guid, write the set (including `CompletedAt`) to the pending queue in `localStorage`, render it as "pending", and only then send it. A set is never only in flight; this way it survives the app being closed or suspended mid-request.
+  - Sending uses plain `fetch` in a small module, not htmx. Read the anti-forgery token at send time rather than storing it with the set.
+  - On success (including a duplicate `ClientId`), remove the set from the queue and replace the pending row with the server's rendering.
+  - Retry while the queue is non-empty: on the `online` event, on `visibilitychange` to visible, on `pageshow`, at app start, after every successful request, and every 15 seconds. Only one send in flight at a time.
+  - On a validation error (4xx other than 401), stop retrying that set and show the error on its row.
+  - On 401, keep the queue and send the user to the login page; the queue resumes after login.
+  - When the active session page loads, merge any pending sets for that session back into the view.
+  - Call `navigator.storage.persist()` once in standalone mode to reduce the chance of eviction.
+  - The server treats a repeated `ClientId` as success without creating a duplicate, after checking the existing set belongs to the current user, and returns the same response as for a new insert.
 - The active session must be fully restorable after the app is closed or the phone locks: all state lives on the server, except the pending queue and the rest timer end time (both in `localStorage`).
 
 ---
@@ -306,24 +345,44 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Public registration is disabled. Accounts are created with a CLI command: `dotnet GymTracker.Web.dll create-user --email ... --name ...`, which prompts for the password.
 - Every controller action requires authentication except login.
 - Global EF query filters plus explicit ownership checks on every write; integration tests must verify that user A cannot read or modify user B's sessions, sets, food entries or weigh-ins by ID.
-- Anti-forgery tokens on all POSTs, including htmx requests (send the token via `hx-headers`).
+- Anti-forgery tokens on all POSTs, including htmx requests (send the token via `hx-headers`) and the set queue's `fetch` calls.
 - Secrets only from environment variables. Provide `.env.example`; `.env` is in `.gitignore`.
-- The app is only reachable through Tailscale; the container does not publish ports beyond the host's loopback.
+
+**Exposure.** The app is reachable at `https://gym.peychev.uk` through wizard's Cloudflare Tunnel, with no Cloudflare Access in front of it (decided 2026-10-02). Access would add a second login with an emailed code about monthly, and an expired Access session turns htmx and queue requests into failed cross-origin redirects. The app's own login is therefore the only gate and must be hardened:
+- Lockout on: `PasswordSignInAsync(..., lockoutOnFailure: true)` (the template default is `false`), 5 failed attempts, 15-minute lockout.
+- ASP.NET Core rate limiting middleware on the login POST, partitioned by client IP.
+- Forwarded headers: behind cloudflared every request comes from 172.30.0.10, so configure `ForwardedHeadersOptions` with that address as the only known proxy, read the client IP from `CF-Connecting-IP` and the scheme from `X-Forwarded-Proto`. Without this, rate limiting puts every client in one bucket.
+- Passwords: minimum 12 characters, no composition rules.
+- Cookie: `Secure`, `HttpOnly`, `SameSite=Lax`, sliding 30-day expiration. "Log out everywhere" in Settings updates the security stamp.
+- Data Protection keys persisted to a bind-mounted directory, so rebuilding the container does not log both users out.
+- The container publishes no host port. cloudflared reaches it by container name on the external `tunnel` Docker network. An optional LAN-only port may be added for testing (pick one that is free on wizard; 8080 is AdGuard's).
+
+If Cloudflare Access is ever added in front of the app, the spec must also require: a one-month Access session, `X-Requested-With: XMLHttpRequest` on every htmx and queue request (so Access returns 401 instead of redirecting), 401 handled as in section 8, and a Bypass policy for the manifest, icons and static assets.
 
 ---
 
 ## 10. Deployment
 
+The stack lives at `~/docker/gymtracker` on wizard, like the other stacks. wizard's boot SSD is failing and Docker named volumes live on it outside the nightly backup, so all state uses bind mounts under the stack folder.
+
 **docker-compose.yml** with:
-- `db`: `postgres:17`, named volume for data, healthcheck with `pg_isready`.
-- `app`: built from `docker/Dockerfile` (multi-stage build on the .NET 10 SDK image, runtime on the ASP.NET 10 image), depends on a healthy `db`, port bound to `127.0.0.1:8080`, environment from `.env`, `restart: unless-stopped`.
-- `backup`: lightweight container running `pg_dump` nightly at 03:00 into a mounted `./backups` directory, keeping the last 14 dumps.
+- `db`: `postgres:18`, container name `gymtracker-db`, bind mount `./db:/var/lib/postgresql` (the 18 image moved its data directory to `/var/lib/postgresql/18/docker`; mounting the old `/var/lib/postgresql/data` path can silently put the data in an anonymous volume). Small-footprint settings: `shared_buffers=32MB`, `max_connections=25`. `mem_limit` (start at 256m, adjust from Beszel readings). Healthcheck with `pg_isready`. Default network only.
+- `app`: built from `docker/Dockerfile` (multi-stage build on the .NET 10 SDK image, runtime on `aspnet:10.0-noble-chiseled-extra`), container name `gymtracker-app`, depends on a healthy `db`, no published ports, joined to the default network and the external `tunnel` network, bind mount `./keys` for Data Protection keys, environment from `.env`, `mem_limit: 256m` (adjust from Beszel readings), `restart: unless-stopped`.
+- No backup container (see below).
 
-The app applies EF migrations automatically on startup and seeds the exercise library if empty.
+**docker-compose.dev.yml** for local development on a Mac: only `db` (`postgres:18`), published on `127.0.0.1:5432`, no `tunnel` network (it exists only on wizard).
 
-HTTPS (required for the camera and PWA install): on the host, run `tailscale serve --bg 8080` so the app is available at `https://<machine-name>.<tailnet>.ts.net` with a valid certificate. Document this in the README.
+The app applies EF migrations automatically on startup (including `CREATE EXTENSION pg_trgm`), seeds the exercise library if empty and imports the USDA subset if absent.
 
-**README** must cover: prerequisites, `.env` setup, `docker compose up -d`, creating users, the `tailscale serve` command, restoring from a backup, and installing the PWA on iPhone (Safari, Share, Add to Home Screen).
+**Backups** go through wizard's existing nightly host script `/usr/local/bin/homeserver-backup` (03:30), which already writes dated snapshots to the HDD with 14-day retention, Telegram alerts on failure and the PC pull. Two changes to it, which need sudo and are run by Antoan:
+- Add a dump step, e.g. `docker exec gymtracker-db pg_dump -Fc -U gym gym > "$DEST/gymtracker-db.dump"`.
+- Exclude `gymtracker/db` from the `~/docker` rsync, the same way `nextcloud/db_data` is excluded (a file copy of a running database is not a consistent backup).
+
+Building the image on wizard pulls the .NET SDK image onto the failing SSD; prune the build cache after builds (`docker builder prune`), or build elsewhere for `linux/amd64`.
+
+HTTPS (required for the camera and PWA install): add the public hostname `gym.peychev.uk` → `http://gymtracker-app:8080` to the "wizard" tunnel in the Cloudflare Zero Trust dashboard. No Access application on it (section 9).
+
+**README** must cover: prerequisites, `.env` setup, `docker compose up -d`, creating users, the Cloudflare public hostname, the two backup-script changes, restoring from a dump (`pg_restore` into a fresh database), and installing the PWA on iPhone (Safari, Share, Add to Home Screen).
 
 ---
 
@@ -333,16 +392,17 @@ HTTPS (required for the camera and PWA install): on the host, run `tailscale ser
 - Solution structure, Docker setup, PostgreSQL, migrations, Identity with the create-user CLI.
 - Exercise seed, templates CRUD, start and log sessions, history.
 - Bodyweight entry on the Today page.
-- **Done when:** both accounts can log a full workout from an iPhone over Tailscale, data persists across container restarts, and user isolation tests pass.
+- Login hardening from section 9, the Cloudflare hostname, and the backup-script changes from section 10.
+- **Done when:** both accounts can log a full workout from an iPhone at `gym.peychev.uk` over mobile data; the data lives in `~/docker/gymtracker/db` and persists across `docker compose down` and `up`; the host script's dump restores into a fresh database; lockout and login rate limiting are tested; and user isolation tests pass.
 
 ### Phase 2: Progression and training analytics
 - Progression service with suggestions in the active session view.
 - e1RM, weekly volume, and their Progress charts. Session summary with PRs.
 - Rest timer. Offline pending-set queue.
-- **Done when:** all Core tests for 5.1 to 5.3 pass, and logging sets with airplane mode toggled on and off results in no lost or duplicated sets.
+- **Done when:** all Core tests for 5.1 to 5.3 pass; logging sets with airplane mode toggled on and off, and with the app closed or the phone locked mid-request, results in no lost or duplicated sets; and the rest timer sound works on both users' iPhones.
 
 ### Phase 3: Nutrition
-- FoodItem and FoodLogEntry, text parsing via Gemini with confirmation, barcode scanning, Open Food Facts lookup and caching, search, recents, copy meal.
+- FoodItem and FoodLogEntry, USDA subset import, text parsing via Gemini with database matching and confirmation, barcode scanning with its fallbacks, Open Food Facts lookup and caching, search, recents, copy meal.
 - Daily totals on the Food and Today pages, using the prior maintenance estimate.
 - **Done when:** a typical day can be logged in under two minutes total, and the app works with `FakeFoodParser` when no API key is set.
 
@@ -351,4 +411,4 @@ HTTPS (required for the camera and PWA install): on the host, run `tailscale ser
 - **Done when:** all Core tests for 5.4 to 5.6 pass, including the synthetic convergence scenarios.
 
 ### Phase 5: Polish
-- CSV export, PWA icons and manifest polish, README completion, backup restore tested once for real.
+- CSV export, PWA icons and manifest polish, README completion, backup restore repeated from a real nightly dump, `mem_limit` values set from Beszel readings.
