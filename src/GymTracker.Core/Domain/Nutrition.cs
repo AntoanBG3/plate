@@ -61,3 +61,30 @@ public class FoodLogEntry
     public string? AiModel { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
+
+public enum MaintenanceMethod
+{
+    /// <summary>Not enough logged data yet: the prior, or the last adaptive estimate carried forward.</summary>
+    Initial,
+
+    /// <summary>Calculated from logged intake and trend weight.</summary>
+    Adaptive,
+}
+
+/// <summary>A weekly maintenance estimate and the targets it produced (SPEC 5.5).</summary>
+public class MaintenanceEstimate
+{
+    public int Id { get; set; }
+    public string UserId { get; set; } = "";
+    public DateOnly CalculatedOn { get; set; }
+    public int EstimatedTdeeKcal { get; set; }
+    public int? TargetKcal { get; set; }
+    public int? TargetProteinG { get; set; }
+    public decimal? TrendWeightKg { get; set; }
+    public int DaysOfData { get; set; }
+    public decimal LoggingCompleteness { get; set; }
+    public MaintenanceMethod Method { get; set; }
+
+    /// <summary>The window had a gap of 3 or more days without a weigh-in.</summary>
+    public bool LowConfidence { get; set; }
+}

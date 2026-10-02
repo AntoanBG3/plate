@@ -198,11 +198,11 @@ Checked when the Today page loads. The estimate is updated **once per week**: if
 
 1. **Prior:** `InitialMaintenanceKcal` if set, else Mifflin-St Jeor BMR times 1.55 using the latest trend weight.
 2. **Window:** the most recent 21 days ending yesterday (today's log is incomplete).
-3. **Data requirements:** at least 14 days in the window, food logged on at least 80% of days, and weigh-ins on at least 50% of days. A day with under 200 kcal logged counts as not logged. If not met, carry forward the last `Adaptive` estimate (or the prior if there is none) and mark `Method = Initial`.
+3. **Data requirements:** at least 14 days in the window (the window starts no earlier than the first weigh-in, since the trend begins there), food logged on at least 80% of days, and weigh-ins on at least 50% of days. A day with under 200 kcal logged counts as not logged. If not met, carry forward the last `Adaptive` estimate (or the prior if there is none) and mark `Method = Initial`.
 4. **Calculation:**
    - `avgIntake` = mean daily kcal over days that have food logged. Unlogged days are assumed to equal this average.
    - `deltaTrend` = trend weight at window end minus trend weight at window start.
-   - `rawTdee = avgIntake - (deltaTrend * 7700 / windowDays)`.
+   - `rawTdee = avgIntake - (deltaTrend * 7700 / (windowDays - 1))`. The trend moves over `windowDays - 1` days between the first and last day of the window; dividing by `windowDays` would settle about 5% short (2,524 instead of 2,550 in the loss test below).
 5. **Smoothing:** `newTdee = 0.7 * previousEstimate + 0.3 * rawTdee`, then clamp so it moves at most 100 kcal from the previous estimate (one weekly update). Store `Method = Adaptive`.
 6. **Confidence note:** if the window contains a gap of 3 or more consecutive days without a weigh-in, show "low confidence" next to the estimate on the Today page. The calculation is unchanged.
 
