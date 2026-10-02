@@ -30,9 +30,25 @@ The repository is checked out at `~/docker/gymtracker`. The database lives in `~
 
 ### First time
 
+The repository is private (`github.com/AntoanBG3/gymtracker`). wizard reads it with a read-only deploy key:
+
+```sh
+ssh-keygen -t ed25519 -f ~/.ssh/gymtracker_deploy -N "" -C "wizard gymtracker deploy"
+cat >> ~/.ssh/config <<'CFG'
+Host github-gymtracker
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/gymtracker_deploy
+    IdentitiesOnly yes
+CFG
+cat ~/.ssh/gymtracker_deploy.pub   # add under the repo's Settings > Deploy keys, read-only
+```
+
+Then:
+
 ```sh
 cd ~/docker
-git clone <repo-url> gymtracker
+git clone github-gymtracker:AntoanBG3/gymtracker.git gymtracker
 cd gymtracker
 mkdir keys                                   # must exist before the first start so it is owned by antoan
 cp docker/.env.example docker/.env
