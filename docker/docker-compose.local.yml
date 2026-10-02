@@ -1,0 +1,15 @@
+# Run the production stack on a Mac for a look at the real build:
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.local.yml up -d --build
+# Then open http://localhost:8088. Differences from wizard: the app is published on localhost
+# instead of joining the tunnel network, and runs in Development so the login cookie works without HTTPS.
+services:
+  app:
+    ports:
+      - "127.0.0.1:8088:8080"
+    networks: !override
+      - default
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+
+networks:
+  tunnel: !reset null

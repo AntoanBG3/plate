@@ -11,3 +11,6 @@ obj/
 docker/.env
 db/
 keys/
+
+# Local Docker test login
+docker/.local-login.txt
