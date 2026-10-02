@@ -1,0 +1,30 @@
+using GymTracker.Web.Data;
+using GymTracker.Web.Features.Body;
+using GymTracker.Web.Features.Profile;
+using GymTracker.Web.Features.Training;
+
+namespace GymTracker.Web.Tests;
+
+/// <summary>The services as one user sees them, sharing one DbContext like a request scope.</summary>
+public sealed class UserScope : IAsyncDisposable
+{
+    public UserScope(PostgresFixture fixture, string userId)
+    {
+        UserId = userId;
+        Db = fixture.CreateContext(userId);
+        var currentUser = new FixedCurrentUser(userId);
+        Templates = new TemplateService(Db, currentUser);
+        Sessions = new SessionService(Db, currentUser, new ProfileLookup(Db), TimeProvider.System);
+        Bodyweights = new BodyweightService(Db, currentUser);
+        Exercises = new ExerciseService(Db);
+    }
+
+    public string UserId { get; }
+    public AppDbContext Db { get; }
+    public TemplateService Templates { get; }
+    public SessionService Sessions { get; }
+    public BodyweightService Bodyweights { get; }
+    public ExerciseService Exercises { get; }
+
+    public ValueTask DisposeAsync() => Db.DisposeAsync();
+}
