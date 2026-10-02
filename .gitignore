@@ -1,0 +1,13 @@
+bin/
+obj/
+*.user
+.vs/
+.idea/
+.DS_Store
+.firecrawl/
+
+# Runtime state and secrets on the server (see README)
+.env
+docker/.env
+db/
+keys/
