@@ -1,9 +1,14 @@
 // Caches static files only (SPEC section 8). Pages and data always come from the server;
 // when a page can't be fetched, the offline page is shown instead.
-const CACHE = "gym-static-v3";
+const CACHE = "gym-static-v4";
 const OFFLINE = "/offline.html";
 const PRECACHE = [
     OFFLINE,
+    "/manifest.webmanifest",
+    "/icons/icon-192.png",
+    "/icons/icon-512.png",
+    "/icons/apple-touch-icon.png",
+    "/icons/icon-32.png",
     "/css/site.css",
     "/js/site.js",
     "/js/session.js",

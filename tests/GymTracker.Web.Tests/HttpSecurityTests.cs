@@ -36,6 +36,16 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable
         (await client.GetAsync("/account/login")).StatusCode.Should().Be(HttpStatusCode.OK);
         (await client.GetAsync("/css/site.css")).StatusCode.Should().Be(HttpStatusCode.OK);
         (await client.GetAsync("/lib/htmx/htmx.min.js")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // iOS fetches the manifest and icons without the login cookie when installing the app.
+        var manifest = await client.GetAsync("/manifest.webmanifest");
+        manifest.StatusCode.Should().Be(HttpStatusCode.OK);
+        manifest.Content.Headers.ContentType!.MediaType.Should().Be("application/manifest+json");
+        (await manifest.Content.ReadAsStringAsync()).Should().Contain("\"start_url\": \"/today\"");
+        foreach (var icon in new[] { "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png", "/favicon.ico" })
+        {
+            (await client.GetAsync(icon)).StatusCode.Should().Be(HttpStatusCode.OK, icon);
+        }
     }
 
     [Fact]
