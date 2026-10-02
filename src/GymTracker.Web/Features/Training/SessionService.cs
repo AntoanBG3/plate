@@ -103,7 +103,7 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
 
         Validate(input.WeightKg, input.Reps, input.Rpe);
 
-        var exercise = await db.SessionExercises.SingleOrDefaultAsync(e => e.Id == input.SessionExerciseId, ct)
+        var exercise = await db.SessionExercises.Include(e => e.Session).SingleOrDefaultAsync(e => e.Id == input.SessionExerciseId, ct)
             ?? throw new NotFoundException();
 
         // Numbered in the order sets are logged, separately for warmups and working sets.
@@ -120,7 +120,7 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
             Reps = input.Reps,
             Rpe = input.Rpe,
             IsWarmup = input.IsWarmup,
-            CompletedAt = (input.CompletedAt ?? time.GetUtcNow()).ToUniversalTime(),
+            CompletedAt = CompletedAt(input.CompletedAt, exercise.Session.StartedAt),
         };
         db.Sets.Add(set);
 
@@ -278,6 +278,21 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         }
 
         return set;
+    }
+
+    /// <summary>
+    /// The time the phone says the set was done, so a set sent late from the offline queue keeps its real time.
+    /// A clock that is clearly wrong (before the session or in the future) falls back to now.
+    /// </summary>
+    private DateTimeOffset CompletedAt(DateTimeOffset? client, DateTimeOffset sessionStart)
+    {
+        var now = time.GetUtcNow();
+        if (client is { } t && t >= sessionStart.AddMinutes(-1) && t <= now.AddMinutes(5))
+        {
+            return t.ToUniversalTime();
+        }
+
+        return now;
     }
 
     private static void Validate(decimal weightKg, int reps, decimal? rpe)

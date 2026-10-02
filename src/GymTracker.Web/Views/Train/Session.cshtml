@@ -1,43 +1,57 @@
-@model WorkoutSession
+@model SessionViewModel
 @inject UserTime Time
 @{
-    ViewData["Title"] = Model.Template?.Name ?? "Freestyle";
-    var started = await Time.LocalAsync(Model.StartedAt);
+    ViewData["Title"] = Model.Session.Template?.Name ?? "Freestyle";
+    var started = await Time.LocalAsync(Model.Session.StartedAt);
 }
 <header class="row-between">
     <div>
         <p class="muted" style="margin: 0 0 4px;">
             @started.ToString("ddd d MMM, HH:mm", System.Globalization.CultureInfo.InvariantCulture)
-            @(Model.IsActive ? "· in progress" : "· finished")
+            @(Model.Session.IsActive ? "· in progress" : "· finished")
         </p>
-        <h1>@(Model.Template?.Name ?? "Freestyle")</h1>
+        <h1>@(Model.Session.Template?.Name ?? "Freestyle")</h1>
     </div>
-    @if (Model.IsActive)
+    @if (Model.Session.IsActive)
     {
-        <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Id/finish" onsubmit="return confirm('Finish this workout?')">
+        <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Session.Id/finish" onsubmit="return confirm('Finish this workout?')">
             <button type="submit" class="primary">Finish</button>
         </form>
     }
 </header>
+<p id="queue-status" class="queue-status" role="status" hidden></p>
 
-@foreach (var exercise in Model.Exercises)
+@foreach (var exercise in Model.Session.Exercises)
 {
-    <partial name="_ExerciseCard" model="exercise" />
+    <partial name="_ExerciseCard" model="new ExerciseCardViewModel(exercise, Model.Suggestions.GetValueOrDefault(exercise.Id))" />
 }
 
-<a class="button" href="/train/sessions/@Model.Id/add-exercise">Add exercise</a>
+<a class="button" href="/train/sessions/@Model.Session.Id/add-exercise">Add exercise</a>
 
-<form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Id/notes" class="stack card">
+<form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Session.Id/notes" class="stack card">
     <label>Notes
-        <textarea name="notes" rows="2" maxlength="2000">@Model.Notes</textarea>
+        <textarea name="notes" rows="2" maxlength="2000">@Model.Session.Notes</textarea>
     </label>
     <button type="submit">Save notes</button>
 </form>
 
-@if (!Model.IsActive)
+@* session.js reads these: which session pending sets belong to, and where the rest timer and queue state show. *@
+<div id="session" data-session-id="@Model.Session.Id" data-active="@(Model.Session.IsActive ? "true" : "false")" hidden></div>
+@if (Model.Session.IsActive)
 {
-    <p><a href="/train/sessions/@Model.Id/summary">Summary</a> · <a href="/train/history">History</a></p>
-    <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Id/delete" onsubmit="return confirm('Delete this session and all its sets? This cannot be undone.')">
+    <div id="rest-timer" class="rest-timer" hidden>
+        <div class="rest-fill" aria-hidden="true"></div>
+        <span class="rest-label">Rest</span>
+        <span class="rest-time" id="rest-time" role="timer">0:00</span>
+        <button type="button" id="rest-add">+30s</button>
+        <button type="button" id="rest-skip" class="rest-skip">Skip</button>
+    </div>
+}
+
+@if (!Model.Session.IsActive)
+{
+    <p><a href="/train/sessions/@Model.Session.Id/summary">Summary</a> · <a href="/train/history">History</a></p>
+    <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Session.Id/delete" onsubmit="return confirm('Delete this session and all its sets? This cannot be undone.')">
         <button type="submit" class="danger">Delete session</button>
     </form>
 }

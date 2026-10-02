@@ -1,12 +1,31 @@
-@model SessionSummary
-@{ ViewData["Title"] = "Summary"; }
-<h1>@(Model.Session.Template?.Name ?? "Freestyle")</h1>
+@model SummaryViewModel
+@{
+    var session = Model.Summary.Session;
+    ViewData["Title"] = "Summary";
+}
+<h1>@(session.Template?.Name ?? "Freestyle")</h1>
 <section class="card stats">
-    <div><span class="big">@Model.Duration.Elapsed()</span><span class="muted">Duration</span></div>
-    <div><span class="big">@Model.WorkingSets</span><span class="muted">Working sets</span></div>
+    <div><span class="big">@Model.Summary.Duration.Elapsed()</span><span class="muted">Duration</span></div>
+    <div><span class="big">@Model.Summary.WorkingSets</span><span class="muted">Working sets</span></div>
+    <div><span class="big">@Model.Records.Count</span><span class="muted">New records</span></div>
 </section>
+@if (Model.Records.Count > 0)
+{
+    <section class="card highlight">
+        <h2>New records</h2>
+        <ul class="list">
+            @foreach (var record in Model.Records)
+            {
+                <li class="row-between">
+                    <strong>@record.ExerciseName</strong>
+                    <span>@record.E1rmKg.Kg() kg e1RM <span class="muted">(was @record.PreviousBestKg?.Kg())</span></span>
+                </li>
+            }
+        </ul>
+    </section>
+}
 <ul class="list">
-    @foreach (var exercise in Model.Session.Exercises)
+    @foreach (var exercise in session.Exercises)
     {
         var sets = exercise.Sets.Where(s => !s.IsWarmup).ToList();
         <li>
@@ -17,5 +36,5 @@
 </ul>
 <nav class="links">
     <a class="button primary" href="/today">Done</a>
-    <a class="button" href="/train/sessions/@Model.Session.Id">Edit</a>
+    <a class="button" href="/train/sessions/@session.Id">Edit</a>
 </nav>

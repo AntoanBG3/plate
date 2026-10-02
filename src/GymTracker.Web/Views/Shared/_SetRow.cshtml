@@ -4,7 +4,7 @@
 }
 @if (set is not null)
 {
-    <form class="set-row done@(Model.IsWarmup ? " warmup" : "")" hx-post="/train/sets/@set.Id/update" hx-target="this" hx-swap="outerHTML">
+    <form class="set-row done@(Model.IsWarmup ? " warmup" : "")" data-client-id="@set.ClientId" hx-post="/train/sets/@set.Id/update" hx-target="this" hx-swap="outerHTML">
         <span class="set-label" aria-hidden="true"></span>
         <input type="number" name="weightKg" value="@set.WeightKg.Kg()" inputmode="decimal" step="any" min="0" aria-label="Weight in kg" required />
         <input type="number" name="reps" value="@set.Reps" inputmode="numeric" step="1" min="0" aria-label="Reps" required />
@@ -17,13 +17,14 @@
 }
 else
 {
-    <form class="set-row@(Model.IsWarmup ? " warmup" : "")" hx-post="/train/sets" hx-target="this" hx-swap="outerHTML" hx-disabled-elt="find button">
+    @* Submitted by session.js, which saves the set on the phone before sending it. *@
+    <form class="set-row@(Model.IsWarmup ? " warmup" : "")" data-log-set data-client-id="@Model.ClientId">
         <input type="hidden" name="clientId" value="@Model.ClientId" />
         <input type="hidden" name="sessionExerciseId" value="@Model.SessionExerciseId" />
         <input type="hidden" name="isWarmup" value="@(Model.IsWarmup ? "true" : "false")" />
         <span class="set-label" aria-hidden="true"></span>
-        <input type="number" name="weightKg" inputmode="decimal" step="any" min="0" aria-label="Weight in kg" required />
-        <input type="number" name="reps" inputmode="numeric" step="1" min="0" aria-label="Reps" required />
+        <input type="number" name="weightKg" value="@(Model.Target?.WeightKg.Kg())" inputmode="decimal" step="any" min="0" aria-label="Weight in kg" required />
+        <input type="number" name="reps" value="@(Model.Target?.Reps)" inputmode="numeric" step="1" min="0" aria-label="Reps" required />
         <span class="row-buttons">
             <button type="submit" class="check" aria-label="Log set"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></button>
         </span>

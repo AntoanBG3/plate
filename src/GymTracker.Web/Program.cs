@@ -5,6 +5,7 @@ using GymTracker.Web.Cli;
 using GymTracker.Web.Data;
 using GymTracker.Web.Data.Seed;
 using GymTracker.Web.Features;
+using GymTracker.Web.Features.Analytics;
 using GymTracker.Web.Features.Body;
 using GymTracker.Web.Features.Profile;
 using GymTracker.Web.Features.Training;
@@ -36,6 +37,7 @@ builder.Services.AddScoped<BodyweightService>();
 builder.Services.AddScoped<TemplateService>();
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<ExerciseService>();
+builder.Services.AddScoped<TrainingAnalytics>();
 builder.Services.AddScoped<UserTime>();
 builder.Services.AddScoped<UserCreator>();
 

@@ -16,7 +16,4 @@ public class HomeController : Controller
 
     [HttpGet("/food")]
     public IActionResult Food() => View("ComingSoon", "Food logging arrives in Phase 3.");
-
-    [HttpGet("/progress")]
-    public IActionResult Progress() => View("ComingSoon", "Charts arrive in Phase 2.");
 }

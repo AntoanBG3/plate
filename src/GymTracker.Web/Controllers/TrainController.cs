@@ -1,3 +1,4 @@
+using GymTracker.Web.Features.Analytics;
 using GymTracker.Web.Features.Training;
 using GymTracker.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -5,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymTracker.Web.Controllers;
 
 [Route("train")]
-public class TrainController(SessionService sessions, TemplateService templates, ExerciseService exercises) : Controller
+public class TrainController(SessionService sessions, TemplateService templates, ExerciseService exercises, TrainingAnalytics analytics) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct) =>
@@ -23,12 +24,18 @@ public class TrainController(SessionService sessions, TemplateService templates,
         View(await sessions.HistoryAsync(200, ct));
 
     [HttpGet("sessions/{id:int}")]
-    public async Task<IActionResult> Session(int id, CancellationToken ct) =>
-        View(await sessions.GetAsync(id, ct));
+    public async Task<IActionResult> Session(int id, CancellationToken ct)
+    {
+        var session = await sessions.GetAsync(id, ct);
+        return View(new SessionViewModel(session, await analytics.SuggestionsAsync(session, ct)));
+    }
 
     [HttpGet("sessions/{id:int}/summary")]
-    public async Task<IActionResult> Summary(int id, CancellationToken ct) =>
-        View(await sessions.SummaryAsync(id, ct));
+    public async Task<IActionResult> Summary(int id, CancellationToken ct)
+    {
+        var summary = await sessions.SummaryAsync(id, ct);
+        return View(new SummaryViewModel(summary, await analytics.RecordsAsync(summary.Session, ct)));
+    }
 
     [HttpPost("sessions/{id:int}/finish")]
     public async Task<IActionResult> Finish(int id, CancellationToken ct)
@@ -78,15 +85,19 @@ public class TrainController(SessionService sessions, TemplateService templates,
     [HttpGet("session-exercises/{id:int}/row")]
     public async Task<IActionResult> BlankRow(int id, bool warmup, CancellationToken ct)
     {
-        await sessions.GetExerciseAsync(id, ct);
-        return PartialView("_SetRow", SetRowViewModel.Blank(id, warmup));
+        var exercise = await sessions.GetExerciseAsync(id, ct);
+
+        // An extra working set starts from the last one logged.
+        var last = warmup ? null : exercise.Sets.Where(s => !s.IsWarmup).MaxBy(s => s.SetNumber);
+        var target = last is null ? null : new GymTracker.Core.Training.SetTarget(last.WeightKg, last.Reps);
+        return PartialView("_SetRow", SetRowViewModel.Blank(id, warmup, target));
     }
 
     [HttpPost("sets")]
     public async Task<IActionResult> LogSet(LogSetForm form, CancellationToken ct)
     {
         var set = await sessions.LogSetAsync(
-            new LogSetInput(form.ClientId, form.SessionExerciseId, form.WeightKg ?? 0, form.Reps ?? 0, form.Rpe, form.IsWarmup, null),
+            new LogSetInput(form.ClientId, form.SessionExerciseId, form.WeightKg ?? 0, form.Reps ?? 0, form.Rpe, form.IsWarmup, form.CompletedAt),
             ct);
         return PartialView("_SetRow", SetRowViewModel.For(set));
     }
@@ -102,5 +113,5 @@ public class TrainController(SessionService sessions, TemplateService templates,
         return PartialView("_SetRow", SetRowViewModel.Blank(set.SessionExerciseId, set.IsWarmup));
     }
 
-    public record LogSetForm(Guid ClientId, int SessionExerciseId, decimal? WeightKg, int? Reps, decimal? Rpe, bool IsWarmup);
+    public record LogSetForm(Guid ClientId, int SessionExerciseId, decimal? WeightKg, int? Reps, decimal? Rpe, bool IsWarmup, DateTimeOffset? CompletedAt);
 }

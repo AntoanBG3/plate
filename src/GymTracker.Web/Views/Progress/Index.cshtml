@@ -1,0 +1,66 @@
+@model ProgressViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Progress";
+    var e1rm = JsonSerializer.Serialize(new
+    {
+        labels = Model.E1rm.Select(p => p.Date.ToString("d MMM", System.Globalization.CultureInfo.InvariantCulture)),
+        values = Model.E1rm.Select(p => p.E1rmKg),
+    });
+    var trained = Model.Volume.Muscles.Where(m => m.ThisWeek > 0 || m.LastWeek > 0).ToList();
+    var volume = JsonSerializer.Serialize(new
+    {
+        labels = trained.Select(m => m.Muscle.ToString()),
+        thisWeek = trained.Select(m => m.ThisWeek),
+        lastWeek = trained.Select(m => m.LastWeek),
+    });
+}
+<h1>Progress</h1>
+
+<section class="card">
+    <h2>Estimated 1RM</h2>
+    @if (Model.Selected is null)
+    {
+        <p class="muted">Log a few workouts to see your strength trend.</p>
+    }
+    else
+    {
+        <form method="get" action="/progress" class="inline">
+            <label class="sr-only" for="exerciseId">Exercise</label>
+            <select id="exerciseId" name="exerciseId" onchange="this.form.submit()">
+                @foreach (var exercise in Model.Exercises)
+                {
+                    <option value="@exercise.Id" selected="@(exercise.Id == Model.Selected.Id)">@exercise.Name</option>
+                }
+            </select>
+            <noscript><button type="submit">Show</button></noscript>
+        </form>
+        @if (Model.E1rm.Count == 0)
+        {
+            <p class="muted">No sets of 1 to 12 reps logged for this exercise yet.</p>
+        }
+        else
+        {
+            <p class="muted">Best of each session, Epley formula. Latest: <strong>@Model.E1rm[^1].E1rmKg.Kg() kg</strong></p>
+            <div class="chart"><canvas id="e1rm-chart" aria-label="Estimated one-rep max per session"></canvas></div>
+            <script type="application/json" id="e1rm-data">@Html.Raw(e1rm)</script>
+        }
+    }
+</section>
+
+<section class="card">
+    <h2>Weekly sets per muscle</h2>
+    <p class="muted">Week @Model.Volume.ThisWeek.Week against last week. Secondary muscles count as half a set.</p>
+    @if (trained.Count == 0)
+    {
+        <p class="muted">No working sets in the last two weeks.</p>
+    }
+    else
+    {
+        <div class="chart tall" style="height: @(Math.Max(180, trained.Count * 44))px"><canvas id="volume-chart" aria-label="Working sets per muscle this week and last week"></canvas></div>
+        <script type="application/json" id="volume-data">@Html.Raw(volume)</script>
+    }
+</section>
+
+<script src="~/lib/chartjs/chart.umd.min.js" asp-append-version="true"></script>
+<script src="~/js/progress.js" asp-append-version="true"></script>

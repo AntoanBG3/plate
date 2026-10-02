@@ -20,6 +20,10 @@
     });
 
     document.body.addEventListener("htmx:sendError", () => {
-        show("No connection. The set was not saved; tap ✓ again when you have signal.");
+        show("No connection. That change was not saved; try again when you have signal.");
     });
 })();
+
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
