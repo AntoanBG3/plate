@@ -40,10 +40,11 @@ The repository is checked out at `~/docker/gymtracker`. The database lives in `~
 
 ### First time
 
-Copy the checkout from the Mac (git-ignored state such as `db/`, `keys/` and `docker/.env` is never sent):
+Copy the checkout from the Mac. Git-ignored files are not sent, and the `P` filters protect the server's own state from `--delete`. Keep them: the `.gitignore` filter alone does not stop rsync deleting `db/` and `keys/` on wizard (it deleted `keys/` on 2026-10-02 and only failed on `db/` because Postgres owns it).
 
 ```sh
-rsync -av --delete --filter=':- .gitignore' --exclude .git ~/Projects/homeserver-gym/ wizard:docker/gymtracker/
+rsync -av --delete --filter='P /db/' --filter='P /keys/' --filter='P /docker/.env' \
+    --filter=':- .gitignore' --exclude .git ~/Projects/homeserver-gym/ wizard:docker/gymtracker/
 ```
 
 Then on wizard:
