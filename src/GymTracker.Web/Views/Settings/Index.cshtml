@@ -39,6 +39,42 @@
     <button type="submit" class="primary">Save profile</button>
 </form>
 
+@{ var geminiKey = (GymTracker.Web.Integrations.GeminiKeyStatus)ViewData["GeminiKey"]!; }
+<section class="card stack">
+    <h2>Food text parser</h2>
+    <p class="muted">
+        @switch (geminiKey.Source)
+        {
+            case GymTracker.Web.Integrations.KeySource.Settings:
+                @:Gemini, with the key saved here (ending @geminiKey.Last4).
+                break;
+            case GymTracker.Web.Integrations.KeySource.Environment:
+                @:Gemini, with the key from the server's .env file (ending @geminiKey.Last4). A key saved here replaces it.
+                break;
+            default:
+                @:No Gemini key: typed food is split up by a simple built-in parser.
+                break;
+        }
+        The key is shared by both accounts and stored encrypted.
+    </p>
+    <form method="post" asp-antiforgery="true" action="/settings/gemini-key" class="stack">
+        <label>Gemini API key
+            <input type="password" name="apiKey" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="@GymTracker.Web.Integrations.GeminiKeyStore.MaxLength" required />
+        </label>
+        <button type="submit" class="primary">Save and test key</button>
+    </form>
+    @if (geminiKey.Source != GymTracker.Web.Integrations.KeySource.None)
+    {
+        <div class="card-actions">
+            <form method="post" asp-antiforgery="true" action="/settings/gemini-key/test" class="grow"><button type="submit" class="wide">Test key</button></form>
+            @if (geminiKey.Source == GymTracker.Web.Integrations.KeySource.Settings)
+            {
+                <form method="post" asp-antiforgery="true" action="/settings/gemini-key/remove" class="grow"><button type="submit" class="wide">Remove</button></form>
+            }
+        </div>
+    }
+</section>
+
 <section class="card stack">
     <h2>Your data</h2>
     <p class="muted">Workouts, sets, templates, weigh-ins, food log and targets as CSV files in a zip.</p>

@@ -21,7 +21,7 @@ public class GeminiOptions
 /// Reads foods and portions from free text with Gemini's generateContent and structured JSON output
 /// (SPEC 6.1). The model's nutrition numbers are only a fallback; the caller looks foods up in the database.
 /// </summary>
-public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, ILogger<GeminiFoodParser> log) : IFoodParser
+public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, ILogger<GeminiFoodParser> log)
 {
     private static readonly TimeSpan AttemptTimeout = TimeSpan.FromSeconds(15);
 
@@ -67,7 +67,14 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
         }
         """)!.AsObject();
 
-    public async Task<FoodParseResult> ParseAsync(string text, CancellationToken ct)
+    /// <summary>Checks a key with a one-line request. Returns null when it works, otherwise what went wrong.</summary>
+    public async Task<string?> TestAsync(string apiKey, CancellationToken ct)
+    {
+        var result = await ParseAsync("1 banana", apiKey, ct);
+        return result.Items.Count > 0 ? null : result.Error ?? "Gemini returned no food for \"1 banana\".";
+    }
+
+    public async Task<FoodParseResult> ParseAsync(string text, string apiKey, CancellationToken ct)
     {
         var o = options.Value;
         var body = new JsonObject
@@ -91,7 +98,7 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
                 {
                     Content = JsonContent.Create(body),
                 };
-                request.Headers.Add("x-goog-api-key", o.ApiKey);
+                request.Headers.Add("x-goog-api-key", apiKey);
 
                 using var response = await http.SendAsync(request, timeout.Token);
                 if ((int)response.StatusCode >= 500 && attempt == 1)
@@ -102,9 +109,13 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
                 if (!response.IsSuccessStatusCode)
                 {
                     log.LogWarning("Gemini returned {Status}: {Body}", (int)response.StatusCode, Truncate(await response.Content.ReadAsStringAsync(ct)));
-                    return FoodParseResult.Failed(response.StatusCode == HttpStatusCode.TooManyRequests
-                        ? "The food parser is busy. Try again in a minute, or enter the food by hand."
-                        : "The food parser could not read that. Enter the food by hand.");
+                    return FoodParseResult.Failed(response.StatusCode switch
+                    {
+                        HttpStatusCode.TooManyRequests => "The food parser is busy. Try again in a minute, or enter the food by hand.",
+                        HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden =>
+                            $"Gemini rejected the API key ({(int)response.StatusCode}). Check it in Settings, or enter the food by hand.",
+                        _ => "The food parser could not read that. Enter the food by hand.",
+                    });
                 }
 
                 return Read(await response.Content.ReadFromJsonAsync<JsonNode>(timeout.Token), o.Model);

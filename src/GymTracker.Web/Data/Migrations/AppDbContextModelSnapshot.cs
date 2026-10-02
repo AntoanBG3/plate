@@ -531,6 +531,29 @@ namespace GymTracker.Web.Data.Migrations
                     b.ToTable("Templates");
                 });
 
+            modelBuilder.Entity("GymTracker.Web.Data.AppSetting", b =>
+                {
+                    b.Property<string>("Name")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.HasKey("Name");
+
+                    b.ToTable("AppSettings");
+                });
+
             modelBuilder.Entity("GymTracker.Web.Data.AppUser", b =>
                 {
                     b.Property<string>("Id")

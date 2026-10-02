@@ -2,18 +2,26 @@ using GymTracker.Web.Data;
 using GymTracker.Web.Features;
 using GymTracker.Web.Features.Export;
 using GymTracker.Web.Features.Profile;
+using GymTracker.Web.Integrations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymTracker.Web.Controllers;
 
 [Route("settings")]
-public class SettingsController(ProfileService profiles, DataExport export, UserManager<AppUser> users, SignInManager<AppUser> signIn) : Controller
+public class SettingsController(
+    ProfileService profiles,
+    DataExport export,
+    GeminiKeyStore geminiKeys,
+    GeminiFoodParser gemini,
+    UserManager<AppUser> users,
+    SignInManager<AppUser> signIn) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         ViewData["Email"] = (await users.GetUserAsync(User))?.Email;
+        ViewData["GeminiKey"] = await geminiKeys.StatusAsync(ct);
         return View(await profiles.GetAsync(ct));
     }
 
@@ -48,6 +56,47 @@ public class SettingsController(ProfileService profiles, DataExport export, User
         decimal? TargetRatePercentPerWeek,
         decimal? ProteinGramsPerKg,
         decimal? DefaultWeightIncrementKg);
+
+    [HttpPost("gemini-key")]
+    public async Task<IActionResult> SetGeminiKey(string? apiKey, CancellationToken ct)
+    {
+        await geminiKeys.SetAsync(apiKey ?? "", ct);
+        await ReportGeminiTestAsync("Key saved", ct);
+        return Redirect("/settings");
+    }
+
+    [HttpPost("gemini-key/test")]
+    public async Task<IActionResult> TestGeminiKey(CancellationToken ct)
+    {
+        await ReportGeminiTestAsync("Key tested", ct);
+        return Redirect("/settings");
+    }
+
+    [HttpPost("gemini-key/remove")]
+    public async Task<IActionResult> RemoveGeminiKey(CancellationToken ct)
+    {
+        await geminiKeys.ClearAsync(ct);
+        TempData["Message"] = "Key removed from Settings.";
+        return Redirect("/settings");
+    }
+
+    private async Task ReportGeminiTestAsync(string done, CancellationToken ct)
+    {
+        if (await geminiKeys.GetAsync(ct) is not { } key)
+        {
+            TempData[FeatureExceptionFilter.ErrorKey] = "No Gemini key is set.";
+            return;
+        }
+
+        if (await gemini.TestAsync(key, ct) is { } error)
+        {
+            TempData[FeatureExceptionFilter.ErrorKey] = $"{done}, but it doesn't work yet: {error}";
+        }
+        else
+        {
+            TempData["Message"] = $"{done}: Gemini works.";
+        }
+    }
 
     [HttpGet("export")]
     public async Task<IActionResult> Export(CancellationToken ct)

@@ -103,6 +103,8 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable
         AppFactory.IsRedirectTo(response, "/today").Should().BeTrue();
         (await client.GetStringAsync("/today")).Should().Contain("Logged today: 82.4 kg, trend 82.4 kg");
 
+        (await client.GetStringAsync("/settings")).Should().Contain("Food text parser").And.Contain("No Gemini key");
+
         var progress = await client.GetStringAsync("/progress?range=4w");
         progress.Should().Contain("id=\"weight-data\"").And.Contain("Trend now: <strong>82.4 kg</strong>");
     }

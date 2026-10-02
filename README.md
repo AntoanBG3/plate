@@ -58,7 +58,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 docker builder prune -f                      # the SDK build cache sits on the boot SSD
 ```
 
-For food text parsing, put a Gemini API key in `GEMINI_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser), and an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
+For food text parsing, save a Gemini API key in the app under Settings → Food text parser (stored encrypted with the Data Protection keys, shared by both accounts, with a Test button), or put it in `GEMINI_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser), and an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
 
 The app joins the external `tunnel` network and publishes no host port. Memory limits are 256 MB per container; replace them with values from Beszel after a week of use.
 

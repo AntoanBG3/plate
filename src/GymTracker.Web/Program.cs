@@ -49,19 +49,15 @@ builder.Services.AddScoped<NutritionTargets>();
 builder.Services.AddScoped<GymTracker.Web.Features.Export.DataExport>();
 
 builder.Services.Configure<GeminiOptions>(config.GetSection("Gemini"));
-if (string.IsNullOrWhiteSpace(config["Gemini:ApiKey"]))
+builder.Services.AddHttpClient<GeminiFoodParser>(c =>
 {
-    // No key (local development, tests): a simple parser so the food flow still works.
-    builder.Services.AddSingleton<IFoodParser, FakeFoodParser>();
-}
-else
-{
-    builder.Services.AddHttpClient<IFoodParser, GeminiFoodParser>(c =>
-    {
-        c.BaseAddress = new Uri(config["Gemini:BaseUrl"] ?? "https://generativelanguage.googleapis.com/");
-        c.Timeout = TimeSpan.FromSeconds(40);
-    });
-}
+    c.BaseAddress = new Uri(config["Gemini:BaseUrl"] ?? "https://generativelanguage.googleapis.com/");
+    c.Timeout = TimeSpan.FromSeconds(40);
+});
+builder.Services.AddScoped<GeminiKeyStore>();
+
+// Gemini when a key is set (in Settings or GEMINI_API_KEY), otherwise a simple built-in parser.
+builder.Services.AddScoped<IFoodParser, SwitchingFoodParser>();
 
 builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>
 {

@@ -21,6 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<FoodItem> FoodItems => Set<FoodItem>();
     public DbSet<FoodLogEntry> FoodLog => Set<FoodLogEntry>();
     public DbSet<MaintenanceEstimate> MaintenanceEstimates => Set<MaintenanceEstimate>();
+    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -140,6 +141,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasOne(x => x.FoodItem).WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => new { x.UserId, x.Date });
             e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
+        // Shared by all accounts, so no user filter.
+        builder.Entity<AppSetting>(e =>
+        {
+            e.HasKey(x => x.Name);
+            e.Property(x => x.Name).HasMaxLength(64);
+            e.Property(x => x.Value).HasMaxLength(2000);
+            e.Property(x => x.UpdatedByUserId).HasMaxLength(450);
         });
 
         builder.Entity<MaintenanceEstimate>(e =>
