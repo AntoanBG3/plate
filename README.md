@@ -2,7 +2,13 @@
 
 Self-hosted training and nutrition tracker for two users, running on the home server "wizard" and used from iPhones as an installed web app at `https://gym.peychev.uk`. See `SPEC.md` for the full specification and build phases.
 
-Phases 1 to 3 are built: workout logging with progression suggestions, the rest timer and an offline set queue; training charts; and food logging by text, barcode, search and recents.
+All five build phases are in place:
+
+- Workouts: templates, sessions with double-progression suggestions, a rest timer, and an offline queue so sets logged on bad signal are never lost.
+- Training charts: estimated 1RM per exercise and weekly sets per muscle.
+- Food: logging by text (parsed by Gemini, numbers taken from the food database), barcode, search and recents.
+- Targets: trend weight, a weekly adaptive maintenance estimate, and calorie and protein targets for a cut, maintenance or bulk, with weight and calorie charts.
+- Settings: profile, CSV export of all your data, password change and logging out everywhere.
 
 ## Local development (Mac)
 
@@ -25,6 +31,8 @@ Tests: `dotnet build && dotnet test`. The integration tests start their own `pos
 The generic foods come from USDA FoodData Central (public domain). `tools/usda/build_usda_subset.py` rebuilds `src/GymTracker.Web/Data/Seed/usda-foods.csv`; the app imports it on first start.
 
 Add a migration: `dotnet ef migrations add <Name> --project src/GymTracker.Web --output-dir Data/Migrations`.
+
+The app icon is drawn in `tools/icons/icon.svg`. After changing it, run `cd tools/icons && swift render.swift ../../src/GymTracker.Web/wwwroot/icons` and bump the cache name in `wwwroot/sw.js` so installed apps pick it up.
 
 ## Deploying on wizard
 
@@ -97,6 +105,20 @@ docker run --rm -v /mnt/storage:/s:ro alpine cat /s/backups/latest/gymtracker-db
 docker compose -f docker/docker-compose.yml start app
 ```
 
+### Restore drill
+
+`tools/restore-drill.sh` restores a dump into a throwaway `postgres:18` container with no network and compares row counts per table with the live database. It touches nothing live. Run it on wizard after changing the backup or the database setup, and now and then to make sure the nightly dumps still restore:
+
+```sh
+cd ~/docker/gymtracker
+tools/restore-drill.sh            # dumps the live database now, the same way the nightly backup does
+tools/restore-drill.sh nightly    # uses /mnt/storage/backups/latest/gymtracker-db.dump
+```
+
+### Memory limits
+
+Both containers start with `mem_limit: 256m`. Right after deployment the app used about 115 MB and Postgres about 38 MB. After a week of real use, read the peaks in Beszel and set each limit to roughly twice its peak in `docker/docker-compose.yml`.
+
 ### Updating
 
 Run the same rsync from the Mac, then on wizard:
@@ -111,3 +133,5 @@ Migrations run automatically when the app starts.
 ## Installing on iPhone
 
 Open `https://gym.peychev.uk` in Safari, sign in, then Share → Add to Home Screen. Open it from the home screen icon from then on; the login lasts 30 days and renews with use.
+
+Your data can be downloaded at any time from Settings → Export all data: one CSV file per kind of data in a zip, readable in Excel or Numbers.
