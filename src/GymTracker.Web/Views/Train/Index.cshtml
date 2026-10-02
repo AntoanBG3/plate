@@ -1,0 +1,40 @@
+@model TrainViewModel
+@{ ViewData["Title"] = "Train"; }
+<h1>Train</h1>
+
+@if (Model.ActiveSession is not null)
+{
+    <section class="card highlight">
+        <p>@(Model.ActiveSession.Template?.Name ?? "Freestyle") is in progress.</p>
+        <a class="button primary" href="/train/sessions/@Model.ActiveSession.Id">Resume</a>
+    </section>
+}
+
+@foreach (var template in Model.Templates)
+{
+    <section class="card">
+        <div class="row-between">
+            <h2>@template.Name</h2>
+            @if (Model.ActiveSession is null)
+            {
+                <form method="post" asp-antiforgery="true" action="/train/start">
+                    <input type="hidden" name="templateId" value="@template.Id" />
+                    <button type="submit" class="primary">Start</button>
+                </form>
+            }
+        </div>
+        <p class="muted">@string.Join(", ", template.Exercises.Select(e => e.Exercise.Name))</p>
+    </section>
+}
+
+@if (Model.ActiveSession is null)
+{
+    <form method="post" asp-antiforgery="true" action="/train/start">
+        <button type="submit">Start empty session</button>
+    </form>
+}
+
+<nav class="links">
+    <a class="button" href="/train/templates">Templates</a>
+    <a class="button" href="/train/history">History</a>
+</nav>

@@ -1,0 +1,19 @@
+@model ExercisePickerViewModel
+@{ ViewData["Title"] = Model.Title; }
+<h1>@Model.Title</h1>
+<p><a href="@Model.BackUrl">Cancel</a></p>
+@foreach (var group in Model.Exercises.GroupBy(e => e.PrimaryMuscle))
+{
+    <h2 class="group">@group.Key</h2>
+    <ul class="list">
+        @foreach (var exercise in group)
+        {
+            <li>
+                <form method="post" asp-antiforgery="true" action="@Model.PostUrl">
+                    <input type="hidden" name="exerciseId" value="@exercise.Id" />
+                    <button type="submit" class="list-button">@exercise.Name <span class="muted">@exercise.Equipment</span></button>
+                </form>
+            </li>
+        }
+    </ul>
+}

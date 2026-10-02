@@ -1,0 +1,21 @@
+@model List<WorkoutTemplate>
+@{ ViewData["Title"] = "Templates"; }
+<h1>Templates</h1>
+<ul class="list">
+    @foreach (var template in Model)
+    {
+        <li class="row-between">
+            <a href="/train/templates/@template.Id"><strong>@template.Name</strong> <span class="muted">@template.Exercises.Count exercises</span></a>
+            <span class="icon-buttons">
+                <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/move"><input type="hidden" name="direction" value="-1" /><button type="submit" aria-label="Move up">↑</button></form>
+                <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" aria-label="Move down">↓</button></form>
+            </span>
+        </li>
+    }
+</ul>
+<form method="post" asp-antiforgery="true" action="/train/templates" class="inline card">
+    <input type="text" name="name" placeholder="New template, e.g. Upper A" maxlength="100" required aria-label="Template name" />
+    <button type="submit" class="primary">Create</button>
+</form>
+<p class="muted">Today suggests the template after the last one you finished, in this order.</p>
+<p><a href="/train">Back</a></p>

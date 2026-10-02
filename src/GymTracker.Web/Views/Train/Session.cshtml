@@ -1,0 +1,43 @@
+@model WorkoutSession
+@inject UserTime Time
+@{
+    ViewData["Title"] = Model.Template?.Name ?? "Freestyle";
+    var started = await Time.LocalAsync(Model.StartedAt);
+}
+<header class="row-between">
+    <div>
+        <h1>@(Model.Template?.Name ?? "Freestyle")</h1>
+        <p class="muted">
+            @started.ToString("ddd d MMM, HH:mm", System.Globalization.CultureInfo.InvariantCulture)
+            @(Model.IsActive ? "· in progress" : "· finished")
+        </p>
+    </div>
+</header>
+
+@foreach (var exercise in Model.Exercises)
+{
+    <partial name="_ExerciseCard" model="exercise" />
+}
+
+<a class="button" href="/train/sessions/@Model.Id/add-exercise">Add exercise</a>
+
+<form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Id/notes" class="stack card">
+    <label>Notes
+        <textarea name="notes" rows="2" maxlength="2000">@Model.Notes</textarea>
+    </label>
+    <button type="submit">Save notes</button>
+</form>
+
+@if (Model.IsActive)
+{
+    <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Id/finish" onsubmit="return confirm('Finish this workout?')">
+        <button type="submit" class="primary wide">Finish workout</button>
+    </form>
+}
+else
+{
+    <p><a href="/train/sessions/@Model.Id/summary">Summary</a> · <a href="/train/history">History</a></p>
+    <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Id/delete" onsubmit="return confirm('Delete this session and all its sets? This cannot be undone.')">
+        <button type="submit" class="danger">Delete session</button>
+    </form>
+}

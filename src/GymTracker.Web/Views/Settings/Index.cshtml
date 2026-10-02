@@ -1,0 +1,23 @@
+@model UserProfile
+@{ ViewData["Title"] = "Settings"; }
+<h1>Settings</h1>
+<section class="card">
+    <p><strong>@Model.DisplayName</strong></p>
+    <p class="muted">@ViewData["Email"] · @Model.TimeZoneId</p>
+    <p class="muted">Profile editing arrives with the nutrition phases.</p>
+</section>
+
+<form method="post" asp-antiforgery="true" action="/settings/password" class="stack card">
+    <h2>Change password</h2>
+    <label>Current password <input type="password" name="currentPassword" autocomplete="current-password" required /></label>
+    <label>New password (12+ characters) <input type="password" name="newPassword" autocomplete="new-password" minlength="12" required /></label>
+    <label>Repeat new password <input type="password" name="confirmPassword" autocomplete="new-password" minlength="12" required /></label>
+    <button type="submit">Change password</button>
+</form>
+
+<section class="card stack">
+    <form method="post" asp-antiforgery="true" action="/account/logout"><button type="submit" class="wide">Log out</button></form>
+    <form method="post" asp-antiforgery="true" action="/settings/logout-everywhere" onsubmit="return confirm('Sign out on every device, including this one?')">
+        <button type="submit" class="wide">Log out everywhere</button>
+    </form>
+</section>

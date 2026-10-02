@@ -1,0 +1,44 @@
+@model TodayViewModel
+@{ ViewData["Title"] = "Today"; }
+<h1>Hi, @Model.DisplayName</h1>
+<p class="muted">@Model.Today.ToString("dddd, d MMMM", System.Globalization.CultureInfo.InvariantCulture)</p>
+
+<section class="card">
+    <h2>Weight</h2>
+    <form method="post" asp-antiforgery="true" action="/today/weight" class="inline">
+        <input type="number" name="weightKg" inputmode="decimal" step="any" min="20" max="400"
+               placeholder="kg" aria-label="Weight in kg" required
+               value="@(Model.TodayWeight?.WeightKg.Kg())" @(Model.TodayWeight is null ? "autofocus" : "") />
+        <button type="submit" class="primary">@(Model.TodayWeight is null ? "Save" : "Update")</button>
+    </form>
+    @if (Model.TodayWeight is not null)
+    {
+        <p class="muted">Logged today: @Model.TodayWeight.WeightKg.Kg() kg</p>
+    }
+    else if (Model.LatestWeight is not null)
+    {
+        <p class="muted">Last: @Model.LatestWeight.WeightKg.Kg() kg on @Model.LatestWeight.Date.ToString("d MMM", System.Globalization.CultureInfo.InvariantCulture)</p>
+    }
+</section>
+
+<section class="card">
+    <h2>Workout</h2>
+    @if (Model.ActiveSession is not null)
+    {
+        <p>@(Model.ActiveSession.Template?.Name ?? "Freestyle") is in progress.</p>
+        <a class="button primary" href="/train/sessions/@Model.ActiveSession.Id">Resume</a>
+    }
+    else if (Model.NextTemplate is not null)
+    {
+        <p>Next up: <strong>@Model.NextTemplate.Name</strong></p>
+        <form method="post" asp-antiforgery="true" action="/train/start">
+            <input type="hidden" name="templateId" value="@Model.NextTemplate.Id" />
+            <button type="submit" class="primary">Start</button>
+        </form>
+    }
+    else
+    {
+        <p class="muted">No templates yet.</p>
+        <a class="button" href="/train/templates">Create a template</a>
+    }
+</section>

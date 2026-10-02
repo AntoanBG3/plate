@@ -1,0 +1,21 @@
+@model SessionSummary
+@{ ViewData["Title"] = "Summary"; }
+<h1>@(Model.Session.Template?.Name ?? "Freestyle")</h1>
+<section class="card stats">
+    <div><span class="big">@Model.Duration.Elapsed()</span><span class="muted">Duration</span></div>
+    <div><span class="big">@Model.WorkingSets</span><span class="muted">Working sets</span></div>
+</section>
+<ul class="list">
+    @foreach (var exercise in Model.Session.Exercises)
+    {
+        var sets = exercise.Sets.Where(s => !s.IsWarmup).ToList();
+        <li>
+            <strong>@exercise.Exercise.Name</strong>
+            <span class="muted">@(sets.Count == 0 ? "no sets" : string.Join(", ", sets.Select(s => $"{s.WeightKg.Kg()}×{s.Reps}")))</span>
+        </li>
+    }
+</ul>
+<nav class="links">
+    <a class="button primary" href="/today">Done</a>
+    <a class="button" href="/train/sessions/@Model.Session.Id">Edit</a>
+</nav>

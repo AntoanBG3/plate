@@ -1,0 +1,40 @@
+@model SessionExercise
+@{
+    var warmups = Model.Sets.Where(s => s.IsWarmup).OrderBy(s => s.SetNumber).ToList();
+    var working = Model.Sets.Where(s => !s.IsWarmup).OrderBy(s => s.SetNumber).ToList();
+    var blanks = Math.Max(0, Model.WorkingSets - working.Count);
+}
+<section class="card exercise" id="ex-@Model.Id">
+    <header class="row-between">
+        <div>
+            <h2>@Model.Exercise.Name</h2>
+            <p class="muted">@Model.RepMin–@Model.RepMax reps · @Model.WorkingSets sets · rest @Format.Rest(Model.RestSeconds)</p>
+        </div>
+        <div class="icon-buttons">
+            <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Model.Id/move"><input type="hidden" name="direction" value="-1" /><button type="submit" aria-label="Move up">↑</button></form>
+            <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Model.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" aria-label="Move down">↓</button></form>
+            <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Model.Id/remove" onsubmit="return confirm('Remove this exercise and its sets from the session?')"><button type="submit" aria-label="Remove exercise">✕</button></form>
+        </div>
+    </header>
+    <div class="set-head"><span></span><span>kg</span><span>reps</span><span></span></div>
+    <div class="rows warmups" id="warmups-@Model.Id">
+        @foreach (var set in warmups)
+        {
+            <partial name="_SetRow" model="SetRowViewModel.For(set)" />
+        }
+    </div>
+    <div class="rows working" id="rows-@Model.Id">
+        @foreach (var set in working)
+        {
+            <partial name="_SetRow" model="SetRowViewModel.For(set)" />
+        }
+        @for (var i = 0; i < blanks; i++)
+        {
+            <partial name="_SetRow" model="SetRowViewModel.Blank(Model.Id, false)" />
+        }
+    </div>
+    <div class="card-actions">
+        <button type="button" hx-get="/train/session-exercises/@Model.Id/row?warmup=true" hx-target="#warmups-@Model.Id" hx-swap="beforeend">+ Warmup</button>
+        <button type="button" hx-get="/train/session-exercises/@Model.Id/row?warmup=false" hx-target="#rows-@Model.Id" hx-swap="beforeend">+ Set</button>
+    </div>
+</section>

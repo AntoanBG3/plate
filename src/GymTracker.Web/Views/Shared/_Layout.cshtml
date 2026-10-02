@@ -1,0 +1,46 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var path = Context.Request.Path.Value ?? "";
+    var showTabs = ViewData["HideTabs"] is not true;
+    string Tab(string prefix) => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ? "tab active" : "tab";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#111418" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML","historyCacheSize":0}' />
+    <title>@(ViewData["Title"] is string t ? $"{t} · Gym" : "Gym")</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script src="~/lib/htmx/htmx.min.js" asp-append-version="true" defer></script>
+    <script src="~/js/site.js" asp-append-version="true" defer></script>
+</head>
+<body hx-headers='{"RequestVerificationToken": "@token"}'>
+    <main class="page">
+        @if (TempData[FeatureExceptionFilter.ErrorKey] is string error)
+        {
+            <p class="error" role="alert">@error</p>
+        }
+        @if (TempData["Message"] is string message)
+        {
+            <p class="notice" role="status">@message</p>
+        }
+        @RenderBody()
+    </main>
+    <div id="toast" class="toast" role="alert" hidden></div>
+    @if (showTabs)
+    {
+        <nav class="tabs" aria-label="Main">
+            <a class="@Tab("/today")" href="/today">Today</a>
+            <a class="@Tab("/train")" href="/train">Train</a>
+            <a class="@Tab("/food")" href="/food">Food</a>
+            <a class="@Tab("/progress")" href="/progress">Progress</a>
+            <a class="@Tab("/settings")" href="/settings">Settings</a>
+        </nav>
+    }
+</body>
+</html>

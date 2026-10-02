@@ -1,0 +1,31 @@
+@model SetRowViewModel
+@{
+    var set = Model.Logged;
+}
+@if (set is not null)
+{
+    <form class="set-row done@(Model.IsWarmup ? " warmup" : "")" hx-post="/train/sets/@set.Id/update" hx-target="this" hx-swap="outerHTML">
+        <span class="set-label" aria-hidden="true"></span>
+        <input type="number" name="weightKg" value="@set.WeightKg.Kg()" inputmode="decimal" step="any" min="0" aria-label="Weight in kg" required />
+        <input type="number" name="reps" value="@set.Reps" inputmode="numeric" step="1" min="0" aria-label="Reps" required />
+        <span class="row-buttons">
+            <button type="submit" class="check done" aria-label="Save changes">✓</button>
+            <button type="button" class="delete" aria-label="Delete set"
+                    hx-post="/train/sets/@set.Id/delete" hx-target="closest form" hx-swap="outerHTML" hx-confirm="Delete this set?">✕</button>
+        </span>
+    </form>
+}
+else
+{
+    <form class="set-row@(Model.IsWarmup ? " warmup" : "")" hx-post="/train/sets" hx-target="this" hx-swap="outerHTML" hx-disabled-elt="find button">
+        <input type="hidden" name="clientId" value="@Model.ClientId" />
+        <input type="hidden" name="sessionExerciseId" value="@Model.SessionExerciseId" />
+        <input type="hidden" name="isWarmup" value="@(Model.IsWarmup ? "true" : "false")" />
+        <span class="set-label" aria-hidden="true"></span>
+        <input type="number" name="weightKg" inputmode="decimal" step="any" min="0" aria-label="Weight in kg" required />
+        <input type="number" name="reps" inputmode="numeric" step="1" min="0" aria-label="Reps" required />
+        <span class="row-buttons">
+            <button type="submit" class="check" aria-label="Log set">✓</button>
+        </span>
+    </form>
+}
