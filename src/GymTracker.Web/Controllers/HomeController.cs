@@ -13,7 +13,4 @@ public class HomeController : Controller
     [HttpPost("/error/{code:int?}")]
     [IgnoreAntiforgeryToken]
     public IActionResult Error(int? code) => View(code ?? 500);
-
-    [HttpGet("/food")]
-    public IActionResult Food() => View("ComingSoon", "Food logging arrives in Phase 3.");
 }

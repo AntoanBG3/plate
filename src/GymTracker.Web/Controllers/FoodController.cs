@@ -1,0 +1,165 @@
+using GymTracker.Core.Domain;
+using GymTracker.Core.Nutrition;
+using GymTracker.Web.Features;
+using GymTracker.Web.Features.Food;
+using GymTracker.Web.Features.Profile;
+using GymTracker.Web.ViewModels;
+using Microsoft.AspNetCore.Mvc;
+
+namespace GymTracker.Web.Controllers;
+
+[Route("food")]
+public class FoodController(
+    FoodLogService log,
+    FoodItemService foods,
+    FoodMatcher matcher,
+    IFoodParser parser,
+    NutritionTargets targets,
+    ProfileService profiles,
+    UserTime userTime,
+    TimeProvider time) : Controller
+{
+    private static readonly string[] Tabs = ["text", "barcode", "search", "recent", "manual"];
+
+    [HttpGet("")]
+    public async Task<IActionResult> Index(DateOnly? date, CancellationToken ct)
+    {
+        var today = await profiles.TodayAsync(ct);
+        var day = await log.DayAsync(date ?? today, ct);
+        return View(new FoodDayViewModel(day, today, await targets.ForTodayAsync(ct)));
+    }
+
+    [HttpGet("add")]
+    public async Task<IActionResult> Add(DateOnly? date, Meal? meal, string? tab, string? q, bool off, CancellationToken ct)
+    {
+        var d = date ?? await profiles.TodayAsync(ct);
+        var m = meal ?? await DefaultMealAsync();
+        tab = Tabs.Contains(tab) ? tab! : "text";
+
+        var local = tab == "search" && !string.IsNullOrWhiteSpace(q) ? await foods.SearchAsync(q, 20, 0.3, ct) : [];
+        var offResults = tab == "search" && off && !string.IsNullOrWhiteSpace(q) ? await foods.SearchOpenFoodFactsAsync(q, ct) : null;
+        var recents = tab == "recent" ? await log.RecentsAsync(await profiles.TodayAsync(ct), ct) : [];
+        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents));
+    }
+
+    [HttpPost("parse")]
+    public async Task<IActionResult> Parse(DateOnly date, Meal meal, string? text, CancellationToken ct)
+    {
+        text = text?.Trim() ?? "";
+        if (text.Length is 0 or > 1000)
+        {
+            return View("Add", new FoodAddViewModel(date, meal, "text", text, "Write what you ate, up to 1000 characters.", null, [], null, []));
+        }
+
+        var result = await parser.ParseAsync(text, ct);
+        if (result.Items.Count == 0)
+        {
+            // Keep the text so nothing typed is lost, and offer manual entry.
+            return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? "Couldn't read that.", null, [], null, []));
+        }
+
+        var items = await matcher.ResolveAsync(result.Items, ct);
+        return View("Confirm", new ConfirmViewModel(date, meal, text, result.Model, items, result.Error));
+    }
+
+    [HttpPost("confirm")]
+    public async Task<IActionResult> Confirm(DateOnly date, Meal meal, string? aiModel, List<ConfirmRow> items, CancellationToken ct)
+    {
+        var entries = items
+            .Where(i => i.Include)
+            .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, new Per100g(i.Kcal, i.Protein, i.Carbs, i.Fat), i.FoodItemId, EntrySource.Ai, aiModel))
+            .ToList();
+        if (entries.Count == 0)
+        {
+            throw new ValidationException("Tick at least one food to save.");
+        }
+
+        await log.AddAsync(entries, ct);
+        return Redirect($"/food?date={date:yyyy-MM-dd}");
+    }
+
+    [HttpGet("barcode")]
+    public async Task<IActionResult> Barcode(DateOnly date, Meal meal, string? code, CancellationToken ct)
+    {
+        code = new string((code ?? "").Where(char.IsAsciiDigit).ToArray());
+        return View(new BarcodeViewModel(date, meal, code, await foods.LookupBarcodeAsync(code, ct)));
+    }
+
+    [HttpPost("log-item")]
+    public async Task<IActionResult> LogItem(DateOnly date, Meal meal, int foodItemId, decimal grams, EntrySource source, CancellationToken ct)
+    {
+        var item = await foods.GetAsync(foodItemId, ct);
+        var description = item.Brand is null ? item.Name : $"{item.Name} ({item.Brand})";
+        await log.AddAsync([new NewEntry(date, meal, description, grams, Per100(item), item.Id, source)], ct);
+        return Redirect($"/food?date={date:yyyy-MM-dd}");
+    }
+
+    [HttpPost("items")]
+    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? servingGrams, decimal grams, CancellationToken ct)
+    {
+        var item = await foods.CreateManualAsync(name, barcode, new Per100g(kcal, protein, carbs, fat), servingGrams, ct);
+        await log.AddAsync([new NewEntry(date, meal, item.Name, grams, Per100(item), item.Id, barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
+        return Redirect($"/food?date={date:yyyy-MM-dd}");
+    }
+
+    [HttpPost("log-recent")]
+    public async Task<IActionResult> LogRecent(DateOnly date, Meal meal, string description, int? foodItemId, decimal grams, decimal kcal, decimal protein, decimal carbs, decimal fat, CancellationToken ct)
+    {
+        await log.AddAsync([new NewEntry(date, meal, description, grams, new Per100g(kcal, protein, carbs, fat), foodItemId, EntrySource.Recent)], ct);
+        return Redirect($"/food?date={date:yyyy-MM-dd}");
+    }
+
+    [HttpPost("copy")]
+    public async Task<IActionResult> Copy(DateOnly date, Meal meal, CancellationToken ct)
+    {
+        var copied = await log.CopyMealAsync(date.AddDays(-1), date, meal, ct);
+        TempData["Message"] = copied == 0 ? $"Nothing was logged for {meal.ToString().ToLowerInvariant()} the day before." : $"Copied {copied} item(s).";
+        return Redirect($"/food?date={date:yyyy-MM-dd}");
+    }
+
+    [HttpGet("entries/{id:int}")]
+    public async Task<IActionResult> Entry(int id, CancellationToken ct) => View(await log.GetAsync(id, ct));
+
+    [HttpPost("entries/{id:int}")]
+    public async Task<IActionResult> UpdateEntry(int id, string description, decimal grams, Meal meal, CancellationToken ct)
+    {
+        await log.UpdateAsync(id, description, grams, meal, ct);
+        var entry = await log.GetAsync(id, ct);
+        return Redirect($"/food?date={entry.Date:yyyy-MM-dd}");
+    }
+
+    [HttpPost("entries/{id:int}/delete")]
+    public async Task<IActionResult> DeleteEntry(int id, CancellationToken ct)
+    {
+        var date = await log.DeleteAsync(id, ct);
+        return Redirect($"/food?date={date:yyyy-MM-dd}");
+    }
+
+    private static Per100g Per100(FoodItem f) => new(f.KcalPer100g, f.ProteinPer100g, f.CarbsPer100g, f.FatPer100g);
+
+    /// <summary>The meal that fits the user's local time of day.</summary>
+    private async Task<Meal> DefaultMealAsync()
+    {
+        var hour = (await userTime.LocalAsync(time.GetUtcNow())).Hour;
+        return hour switch
+        {
+            < 4 => Meal.Snack,
+            < 11 => Meal.Breakfast,
+            < 16 => Meal.Lunch,
+            < 22 => Meal.Dinner,
+            _ => Meal.Snack,
+        };
+    }
+
+    public class ConfirmRow
+    {
+        public bool Include { get; set; }
+        public string? Description { get; set; }
+        public decimal Grams { get; set; }
+        public decimal Kcal { get; set; }
+        public decimal Protein { get; set; }
+        public decimal Carbs { get; set; }
+        public decimal Fat { get; set; }
+        public int? FoodItemId { get; set; }
+    }
+}

@@ -27,3 +27,18 @@
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
 }
+
+// Live per-row totals on the food confirmation list and portion forms.
+document.addEventListener("input", (event) => {
+    const row = event.target.closest("[data-per100]");
+    if (!row) {
+        return;
+    }
+    const grams = parseFloat((row.querySelector('input[name$="Grams"], input[name="grams"]') || {}).value) || 0;
+    const per = row.dataset.per100.split(",").map(Number);
+    const out = row.querySelector("[data-totals]");
+    if (out) {
+        const f = grams / 100;
+        out.textContent = `${Math.round(per[0] * f)} kcal · ${(per[1] * f).toFixed(1)} g protein`;
+    }
+});

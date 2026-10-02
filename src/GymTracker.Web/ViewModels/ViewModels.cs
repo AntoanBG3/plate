@@ -14,7 +14,9 @@ public record TodayViewModel(
     BodyweightEntry? LatestWeight,
     WorkoutSession? ActiveSession,
     WorkoutTemplate? NextTemplate,
-    bool HasTemplates);
+    bool HasTemplates,
+    GymTracker.Core.Nutrition.Totals Eaten,
+    GymTracker.Web.Features.Food.DailyTargets Targets);
 
 public record TrainViewModel(WorkoutSession? ActiveSession, IReadOnlyList<WorkoutTemplate> Templates);
 
@@ -45,3 +47,20 @@ public record ProgressViewModel(
     VolumeComparison Volume);
 
 public record ExercisePickerViewModel(string Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises);
+
+public record FoodDayViewModel(GymTracker.Web.Features.Food.DayLog Day, DateOnly Today, GymTracker.Web.Features.Food.DailyTargets Targets);
+
+public record FoodAddViewModel(
+    DateOnly Date,
+    Meal Meal,
+    string Tab,
+    string? Text,
+    string? Error,
+    string? Query,
+    IReadOnlyList<GymTracker.Web.Features.Food.FoodMatch> Local,
+    GymTracker.Core.Nutrition.ProductSearch? OpenFoodFacts,
+    IReadOnlyList<GymTracker.Web.Features.Food.RecentFood> Recents);
+
+public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, string? Warning);
+
+public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result);

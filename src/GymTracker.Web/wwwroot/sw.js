@@ -1,6 +1,6 @@
 // Caches static files only (SPEC section 8). Pages and data always come from the server;
 // when a page can't be fetched, the offline page is shown instead.
-const CACHE = "gym-static-v1";
+const CACHE = "gym-static-v2";
 const OFFLINE = "/offline.html";
 const PRECACHE = [
     OFFLINE,
@@ -8,6 +8,9 @@ const PRECACHE = [
     "/js/site.js",
     "/js/session.js",
     "/js/progress.js",
+    "/js/scanner.js",
+    "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+    "/lib/barcode-detector/zxing_reader.wasm",
     "/lib/htmx/htmx.min.js",
     "/lib/chartjs/chart.umd.min.js",
     "/lib/fonts/fonts.css",

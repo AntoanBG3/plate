@@ -1,0 +1,24 @@
+@model (DateOnly Date, Meal Meal, string? Barcode, string? Name)
+@{
+    var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+}
+<form method="post" asp-antiforgery="true" action="/food/items" class="card stack">
+    <input type="hidden" name="date" value="@date" />
+    <input type="hidden" name="meal" value="@Model.Meal" />
+    @if (Model.Barcode is not null)
+    {
+        <input type="hidden" name="barcode" value="@Model.Barcode" />
+        <p class="muted">Barcode @Model.Barcode. Saved for both of you, so it only needs entering once.</p>
+    }
+    <label>Name <input type="text" name="name" value="@Model.Name" maxlength="200" required /></label>
+    <p class="muted">Per 100 g, from the label:</p>
+    <div class="grid-form">
+        <label>kcal <input type="number" name="kcal" min="0" max="900" step="any" inputmode="decimal" required /></label>
+        <label>Protein <input type="number" name="protein" min="0" max="100" step="any" inputmode="decimal" required /></label>
+        <label>Carbs <input type="number" name="carbs" min="0" max="100" step="any" inputmode="decimal" required /></label>
+        <label>Fat <input type="number" name="fat" min="0" max="100" step="any" inputmode="decimal" required /></label>
+        <label>Serving g <input type="number" name="servingGrams" min="1" max="3000" step="any" inputmode="decimal" /></label>
+        <label>You ate g <input type="number" name="grams" min="1" max="3000" step="any" inputmode="decimal" required /></label>
+    </div>
+    <button type="submit" class="primary">Save and add</button>
+</form>

@@ -1,11 +1,43 @@
 @model UserProfile
 @{ ViewData["Title"] = "Settings"; }
 <h1>Settings</h1>
-<section class="card">
-    <p><strong>@Model.DisplayName</strong></p>
-    <p class="muted">@ViewData["Email"] · @Model.TimeZoneId</p>
-    <p class="muted">Profile editing arrives with the nutrition phases.</p>
-</section>
+
+<form method="post" asp-antiforgery="true" action="/settings/profile" class="card stack">
+    <h2>Profile</h2>
+    <p class="muted">@ViewData["Email"]</p>
+    <label>Name <input type="text" name="displayName" value="@Model.DisplayName" maxlength="100" required /></label>
+    <div class="grid-form two">
+        <label>Sex
+            <select name="sex">
+                <option value="" selected="@(Model.Sex is null)">Not set</option>
+                <option value="Male" selected="@(Model.Sex == Sex.Male)">Male</option>
+                <option value="Female" selected="@(Model.Sex == Sex.Female)">Female</option>
+            </select>
+        </label>
+        <label>Birth year <input type="number" name="birthYear" value="@Model.BirthYear" min="1920" max="2015" inputmode="numeric" /></label>
+        <label>Height cm <input type="number" name="heightCm" value="@Model.HeightCm" min="120" max="230" inputmode="numeric" /></label>
+        <label>Starting maintenance kcal <input type="number" name="initialMaintenanceKcal" value="@Model.InitialMaintenanceKcal" min="1200" max="6000" inputmode="numeric" placeholder="estimate for me" /></label>
+    </div>
+    <p class="muted">Leave starting maintenance empty to estimate it from sex, height, age and weight. It adapts to your logged data later.</p>
+
+    <h2>Goal</h2>
+    <div class="grid-form two">
+        <label>Goal
+            <select name="goal">
+                @foreach (var goal in Enum.GetValues<Goal>())
+                {
+                    <option value="@goal" selected="@(goal == Model.Goal)">@goal</option>
+                }
+            </select>
+        </label>
+        <label>% of bodyweight per week <input type="number" name="targetRatePercentPerWeek" value="@Model.TargetRatePercentPerWeek.Kg()" min="0" max="1" step="0.05" inputmode="decimal" /></label>
+        <label>Protein g per kg <input type="number" name="proteinGramsPerKg" value="@Model.ProteinGramsPerKg.Kg()" min="0.8" max="3.5" step="0.1" inputmode="decimal" /></label>
+        <label>Weight jump kg <input type="number" name="defaultWeightIncrementKg" value="@Model.DefaultWeightIncrementKg.Kg()" min="0.25" max="20" step="any" inputmode="decimal" /></label>
+    </div>
+    <p class="muted">Cuts are capped at 1% and bulks at 0.5% of bodyweight per week.</p>
+    <label>Time zone <input type="text" name="timeZoneId" value="@Model.TimeZoneId" maxlength="64" /></label>
+    <button type="submit" class="primary">Save profile</button>
+</form>
 
 <form method="post" asp-antiforgery="true" action="/settings/password" class="stack card">
     <h2>Change password</h2>

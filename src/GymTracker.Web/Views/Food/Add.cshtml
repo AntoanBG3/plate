@@ -1,0 +1,154 @@
+@model FoodAddViewModel
+@{
+    ViewData["Title"] = "Add food";
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    var date = Model.Date.ToString("yyyy-MM-dd", inv);
+    string TabUrl(string tab) => $"/food/add?date={date}&meal={Model.Meal}&tab={tab}";
+    string TabClass(string tab) => tab == Model.Tab ? "seg active" : "seg";
+}
+<h1>Add to @Model.Meal.ToString().ToLowerInvariant()</h1>
+<p class="muted"><a href="/food?date=@date">← @Model.Date.ToString("ddd d MMM", inv)</a></p>
+
+<nav class="segments" aria-label="How to add">
+    <a class="@TabClass("text")" href="@TabUrl("text")">Text</a>
+    <a class="@TabClass("barcode")" href="@TabUrl("barcode")">Scan</a>
+    <a class="@TabClass("search")" href="@TabUrl("search")">Search</a>
+    <a class="@TabClass("recent")" href="@TabUrl("recent")">Recent</a>
+    <a class="@TabClass("manual")" href="@TabUrl("manual")">Manual</a>
+</nav>
+
+@if (Model.Error is not null)
+{
+    <p class="error" role="alert">@Model.Error</p>
+}
+
+@switch (Model.Tab)
+{
+    case "text":
+        <form method="post" asp-antiforgery="true" action="/food/parse" class="stack card">
+            <input type="hidden" name="date" value="@date" />
+            <input type="hidden" name="meal" value="@Model.Meal" />
+            <label>What did you eat?
+                <textarea name="text" rows="4" maxlength="1000" placeholder="200 g chicken breast, 150 g cooked rice, a banana" autofocus>@Model.Text</textarea>
+            </label>
+            <button type="submit" class="primary">Read it</button>
+            <p class="muted">English or Bulgarian. You'll check every item before anything is saved.</p>
+        </form>
+        @if (Model.Error is not null)
+        {
+            <p><a href="@TabUrl("manual")">Enter it by hand instead</a></p>
+        }
+        break;
+
+    case "barcode":
+        <section class="card stack" id="scanner">
+            <video playsinline muted hidden></video>
+            <button type="button" class="primary" data-start>Open camera</button>
+            <label class="button">Take a photo instead
+                <input type="file" accept="image/*" capture="environment" data-photo class="sr-only" />
+            </label>
+            <p class="muted" data-status role="status">The camera may ask for permission each time the app opens.</p>
+        </section>
+        <form method="get" action="/food/barcode" id="barcode-form" class="inline card">
+            <input type="hidden" name="date" value="@date" />
+            <input type="hidden" name="meal" value="@Model.Meal" />
+            <input type="text" name="code" inputmode="numeric" pattern="[0-9]{8,14}" placeholder="or type the digits" aria-label="Barcode digits" required />
+            <button type="submit">Look up</button>
+        </form>
+        <script src="~/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js" asp-append-version="true"></script>
+        <script src="~/js/scanner.js" asp-append-version="true"></script>
+        break;
+
+    case "search":
+        <form method="get" action="/food/add" class="inline card">
+            <input type="hidden" name="date" value="@date" />
+            <input type="hidden" name="meal" value="@Model.Meal" />
+            <input type="hidden" name="tab" value="search" />
+            <input type="search" name="q" value="@Model.Query" placeholder="e.g. oats, skyr, кашкавал" aria-label="Search foods" autofocus />
+            <button type="submit">Search</button>
+        </form>
+        @if (!string.IsNullOrWhiteSpace(Model.Query))
+        {
+            @foreach (var f in Model.Local)
+            {
+                <form method="post" asp-antiforgery="true" action="/food/log-item" class="card portion" data-per100="@f.KcalPer100g.Kg(),@f.ProteinPer100g.Kg()">
+                    <input type="hidden" name="date" value="@date" />
+                    <input type="hidden" name="meal" value="@Model.Meal" />
+                    <input type="hidden" name="foodItemId" value="@f.Id" />
+                    <input type="hidden" name="source" value="Search" />
+                    <strong>@f.Name</strong>
+                    <span class="muted">@(f.Brand is null ? "" : f.Brand + " · ")@Math.Round(f.KcalPer100g) kcal, @f.ProteinPer100g.Kg() g protein per 100 g</span>
+                    <div class="inline">
+                        <input type="number" name="grams" value="@((f.DefaultServingGrams ?? 100).Kg())" min="1" max="3000" step="any" inputmode="decimal" aria-label="Grams" required />
+                        <span class="muted">g</span>
+                        <button type="submit" class="primary">Add</button>
+                    </div>
+                    <span class="muted" data-totals></span>
+                </form>
+            }
+            @if (Model.OpenFoodFacts is null)
+            {
+                <p class="muted">@(Model.Local.Count == 0 ? "Nothing saved matches." : "Not what you wanted?")</p>
+                <a class="button" href="/food/add?date=@date&amp;meal=@Model.Meal&amp;tab=search&amp;q=@Uri.EscapeDataString(Model.Query)&amp;off=true">Search Open Food Facts</a>
+            }
+            else if (Model.OpenFoodFacts.Status == GymTracker.Core.Nutrition.LookupStatus.RateLimited)
+            {
+                <p class="error">Open Food Facts is limiting requests right now. Try again in a minute.</p>
+            }
+            else if (Model.OpenFoodFacts.Status != GymTracker.Core.Nutrition.LookupStatus.Found)
+            {
+                <p class="error">Open Food Facts didn't answer. Try again later, or add the food by hand.</p>
+            }
+            else
+            {
+                <h2 class="group">Open Food Facts</h2>
+                @if (Model.OpenFoodFacts.Products.Count == 0)
+                {
+                    <p class="muted">No products with nutrition data found.</p>
+                }
+                <ul class="list">
+                    @foreach (var p in Model.OpenFoodFacts.Products.Where(p => GymTracker.Core.Nutrition.Barcodes.IsValid(p.Barcode)))
+                    {
+                        <li>
+                            <a href="/food/barcode?date=@date&amp;meal=@Model.Meal&amp;code=@p.Barcode">
+                                <strong>@p.Name</strong>
+                                <span class="muted">@(p.Brand is null ? "" : p.Brand + " · ")@Math.Round(p.Per100.Kcal) kcal per 100 g</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+        }
+        break;
+
+    case "recent":
+        @if (Model.Recents.Count == 0)
+        {
+            <p class="muted">Foods you log in the next 30 days will show up here.</p>
+        }
+        @foreach (var r in Model.Recents)
+        {
+            <form method="post" asp-antiforgery="true" action="/food/log-recent" class="card portion" data-per100="@r.Per100.Kcal.Kg(),@r.Per100.Protein.Kg()">
+                <input type="hidden" name="date" value="@date" />
+                <input type="hidden" name="meal" value="@Model.Meal" />
+                <input type="hidden" name="description" value="@r.Description" />
+                <input type="hidden" name="foodItemId" value="@r.FoodItemId" />
+                <input type="hidden" name="kcal" value="@r.Per100.Kcal.Kg()" />
+                <input type="hidden" name="protein" value="@r.Per100.Protein.Kg()" />
+                <input type="hidden" name="carbs" value="@r.Per100.Carbs.Kg()" />
+                <input type="hidden" name="fat" value="@r.Per100.Fat.Kg()" />
+                <strong>@r.Description</strong>
+                <div class="inline">
+                    <input type="number" name="grams" value="@r.LastGrams.Kg()" min="1" max="3000" step="any" inputmode="decimal" aria-label="Grams" required />
+                    <span class="muted">g</span>
+                    <button type="submit" class="primary">Add</button>
+                </div>
+                <span class="muted" data-totals>logged @r.Times× in 30 days</span>
+            </form>
+        }
+        break;
+
+    default:
+        <partial name="_ManualFoodForm" model="(Model.Date, Model.Meal, (string?)null, Model.Text)" />
+        break;
+}

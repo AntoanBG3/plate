@@ -2,7 +2,7 @@
 
 Self-hosted training and nutrition tracker for two users, running on the home server "wizard" and used from iPhones as an installed web app at `https://gym.peychev.uk`. See `SPEC.md` for the full specification and build phases.
 
-Phase 1 (workout logging) is built: login, templates, sessions with set logging, history, and bodyweight on the Today page.
+Phases 1 to 3 are built: workout logging with progression suggestions, the rest timer and an offline set queue; training charts; and food logging by text, barcode, search and recents.
 
 ## Local development (Mac)
 
@@ -21,6 +21,8 @@ dotnet run --project src/GymTracker.Web -- create-user --email me@example.test -
 ```
 
 Tests: `dotnet build && dotnet test`. The integration tests start their own `postgres:18` container through Testcontainers. If Docker Hub pulls fail with "authentication required", pull the helper image once with `docker pull testcontainers/ryuk:0.14.0`.
+
+The generic foods come from USDA FoodData Central (public domain). `tools/usda/build_usda_subset.py` rebuilds `src/GymTracker.Web/Data/Seed/usda-foods.csv`; the app imports it on first start.
 
 Add a migration: `dotnet ef migrations add <Name> --project src/GymTracker.Web --output-dir Data/Migrations`.
 
@@ -46,6 +48,8 @@ openssl rand -base64 32 | tr -d '/+='        # paste as POSTGRES_PASSWORD in doc
 docker compose -f docker/docker-compose.yml up -d --build
 docker builder prune -f                      # the SDK build cache sits on the boot SSD
 ```
+
+For food text parsing, put a Gemini API key in `GEMINI_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser), and an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
 
 The app joins the external `tunnel` network and publishes no host port. Memory limits are 256 MB per container; replace them with values from Beszel after a week of use.
 

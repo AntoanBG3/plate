@@ -16,6 +16,38 @@ public class SettingsController(ProfileService profiles, UserManager<AppUser> us
         return View(await profiles.GetAsync(ct));
     }
 
+    [HttpPost("profile")]
+    public async Task<IActionResult> Profile(ProfileForm form, CancellationToken ct)
+    {
+        await profiles.UpdateAsync(p =>
+        {
+            p.DisplayName = form.DisplayName?.Trim() ?? "";
+            p.TimeZoneId = string.IsNullOrWhiteSpace(form.TimeZoneId) ? GymTracker.Core.Domain.UserProfile.DefaultTimeZoneId : form.TimeZoneId.Trim();
+            p.Sex = form.Sex;
+            p.HeightCm = form.HeightCm;
+            p.BirthYear = form.BirthYear;
+            p.InitialMaintenanceKcal = form.InitialMaintenanceKcal;
+            p.Goal = form.Goal;
+            p.TargetRatePercentPerWeek = form.TargetRatePercentPerWeek ?? 0;
+            p.ProteinGramsPerKg = form.ProteinGramsPerKg ?? 2.0m;
+            p.DefaultWeightIncrementKg = form.DefaultWeightIncrementKg ?? 2.5m;
+        }, ct);
+        TempData["Message"] = "Profile saved.";
+        return Redirect("/settings");
+    }
+
+    public record ProfileForm(
+        string? DisplayName,
+        string? TimeZoneId,
+        GymTracker.Core.Domain.Sex? Sex,
+        int? HeightCm,
+        int? BirthYear,
+        int? InitialMaintenanceKcal,
+        GymTracker.Core.Domain.Goal Goal,
+        decimal? TargetRatePercentPerWeek,
+        decimal? ProteinGramsPerKg,
+        decimal? DefaultWeightIncrementKg);
+
     [HttpPost("password")]
     public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
     {

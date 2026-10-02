@@ -1,0 +1,53 @@
+@model ConfirmViewModel
+@{
+    ViewData["Title"] = "Check foods";
+    var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+}
+<h1>Check before saving</h1>
+<p class="muted">“@Model.Text”</p>
+@if (Model.Warning is not null)
+{
+    <p class="error" role="alert">@Model.Warning</p>
+}
+
+<form method="post" asp-antiforgery="true" action="/food/confirm">
+    <input type="hidden" name="date" value="@date" />
+    <input type="hidden" name="meal" value="@Model.Meal" />
+    <input type="hidden" name="aiModel" value="@Model.AiModel" />
+    @for (var i = 0; i < Model.Items.Count; i++)
+    {
+        var item = Model.Items[i];
+        <section class="card portion confirm-@item.Confidence.ToString().ToLowerInvariant()" data-per100="@item.Per100.Kcal.Kg(),@item.Per100.Protein.Kg()">
+            <div class="row-between">
+                <label class="check-label"><input type="checkbox" name="items[@i].Include" value="true" checked /> Include</label>
+                <span class="badge">@(item.Confidence switch { GymTracker.Web.Features.Food.Confidence.High => "Good match", GymTracker.Web.Features.Food.Confidence.Medium => "Check match", _ => "AI estimate" })</span>
+            </div>
+            <input type="text" name="items[@i].Description" value="@item.Description" maxlength="200" aria-label="Description" required />
+            <div class="inline">
+                <input type="number" name="items[@i].Grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" aria-label="Grams" required />
+                <span class="muted">g</span>
+                <span class="muted" data-totals>@Math.Round(item.Per100.Kcal * item.Grams / 100) kcal · @((item.Per100.Protein * item.Grams / 100).ToString("0.0")) g protein</span>
+            </div>
+            @if (item.MatchedName is not null)
+            {
+                <p class="muted">Using: @item.MatchedName</p>
+            }
+            @if (item.Note is not null)
+            {
+                <p class="muted">@item.Note</p>
+            }
+            <details>
+                <summary class="muted">Per 100 g values</summary>
+                <div class="grid-form">
+                    <label>kcal <input type="number" name="items[@i].Kcal" value="@item.Per100.Kcal.Kg()" min="0" max="900" step="any" inputmode="decimal" /></label>
+                    <label>Protein <input type="number" name="items[@i].Protein" value="@item.Per100.Protein.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
+                    <label>Carbs <input type="number" name="items[@i].Carbs" value="@item.Per100.Carbs.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
+                    <label>Fat <input type="number" name="items[@i].Fat" value="@item.Per100.Fat.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
+                </div>
+            </details>
+            <input type="hidden" name="items[@i].FoodItemId" value="@item.FoodItemId" />
+        </section>
+    }
+    <button type="submit" class="primary wide">Save @Model.Meal.ToString().ToLowerInvariant()</button>
+</form>
+<p><a href="/food/add?date=@date&amp;meal=@Model.Meal&amp;tab=text">Start over</a></p>

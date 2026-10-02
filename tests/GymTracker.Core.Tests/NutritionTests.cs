@@ -118,3 +118,18 @@ public class ProfileRulesTests
         ProfileRules.Validate(p, 2026).Should().NotBeNull();
     }
 }
+
+public class BarcodeTests
+{
+    [Theory]
+    [InlineData("4006381333931", true)]   // EAN-13
+    [InlineData("5449000000996", true)]   // EAN-13
+    [InlineData("96385074", true)]        // EAN-8
+    [InlineData("036000291452", true)]    // UPC-A
+    [InlineData("4006381333932", false)]  // wrong check digit
+    [InlineData("12345", false)]
+    [InlineData("abcdefghijklm", false)]
+    [InlineData(null, false)]
+    public void Checks_length_digits_and_check_digit(string? code, bool valid) =>
+        Barcodes.IsValid(code).Should().Be(valid);
+}

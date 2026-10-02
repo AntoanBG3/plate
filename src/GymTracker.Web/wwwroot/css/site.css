@@ -358,3 +358,44 @@ select {
     border-radius: var(--radius-sm);
 }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Food */
+.date-title { text-align: center; }
+.date-title h1 { margin: 0; }
+.button.icon { width: var(--tap); padding: 0; border-radius: 999px; }
+.totals { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; gap: 4px; }
+.totals div { display: flex; flex-direction: column; }
+.totals .big { font-size: 2rem; }
+.big.sky { color: var(--sky); }
+.mid { font-family: var(--display); font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.entry span:first-child { font-weight: 500; }
+.grow { flex: 1; display: flex; }
+.segments {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: 4px;
+    margin: 12px 0;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+}
+.seg { min-height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 999px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
+.seg.active { background: var(--lime); color: var(--on-lime); }
+.portion { display: flex; flex-direction: column; gap: 8px; }
+.portion .inline input[type=number] { max-width: 120px; }
+.badge { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: var(--muted); }
+.confirm-high .badge { background: rgba(200, 240, 49, 0.16); color: var(--lime-text); }
+.confirm-low { border-color: rgba(255, 180, 80, 0.45); }
+.confirm-low .badge { background: rgba(255, 180, 80, 0.16); color: #ffcf8a; }
+.check-label { flex-direction: row; align-items: center; gap: 8px; color: var(--text); }
+.check-label input { width: 22px; min-height: 22px; accent-color: var(--lime); }
+details summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: center; }
+#scanner video { width: 100%; border-radius: var(--radius-sm); background: #000; aspect-ratio: 4 / 3; object-fit: cover; }
+.meter { height: 12px; border-radius: 6px; background: rgba(255, 255, 255, 0.1); overflow: hidden; margin: 6px 0 4px; }
+.meter > div { height: 100%; border-radius: 6px; background: var(--lime); }
+.meter.sky > div { background: var(--sky); }
+.meter.over > div { background: #ff9f5a; }
+.grid-form.two { grid-template-columns: repeat(2, 1fr); }
+.nutrition-card { display: block; color: var(--text); text-decoration: none; }
+.nutrition-card .big { font-size: 2.2rem; }

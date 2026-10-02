@@ -3,6 +3,37 @@
 <h1>Hi, @Model.DisplayName</h1>
 <p class="muted">@Model.Today.ToString("dddd, d MMMM", System.Globalization.CultureInfo.InvariantCulture)</p>
 
+@{
+    var t = Model.Targets;
+    var eaten = Model.Eaten;
+    int Pct(decimal value, int? target) => target is > 0 ? (int)Math.Min(100, value * 100 / target.Value) : 0;
+}
+<a class="card nutrition-card" href="/food">
+    @if (t.Kcal is { } kcal)
+    {
+        var left = kcal - (int)Math.Round(eaten.Kcal);
+        <div class="row-between">
+            <span><span class="big">@Math.Abs(left)</span> <span class="muted">kcal @(left >= 0 ? "left" : "over")</span></span>
+            <span class="muted">@Math.Round(eaten.Kcal) of @kcal</span>
+        </div>
+        <div class="meter@(left < 0 ? " over" : "")"><div style="width: @Pct(eaten.Kcal, kcal)%"></div></div>
+    }
+    @if (t.ProteinG is { } protein)
+    {
+        var leftP = protein - (int)Math.Round(eaten.ProteinG);
+        <div class="row-between">
+            <span><span class="big sky">@Math.Max(0, leftP)</span> <span class="muted">g protein left</span></span>
+            <span class="muted">@Math.Round(eaten.ProteinG) of @protein g</span>
+        </div>
+        <div class="meter sky"><div style="width: @Pct(eaten.ProteinG, protein)%"></div></div>
+    }
+    @if (t.Missing is not null)
+    {
+        <p class="muted">@t.Missing</p>
+    }
+    <p class="muted">Target is your starting maintenance estimate. It adapts once you have a few weeks of logs.</p>
+</a>
+
 <section class="card">
     <h2>Weight</h2>
     <form method="post" asp-antiforgery="true" action="/today/weight" class="inline">

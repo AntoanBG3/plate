@@ -6,6 +6,9 @@ using GymTracker.Web.Data;
 using GymTracker.Web.Data.Seed;
 using GymTracker.Web.Features;
 using GymTracker.Web.Features.Analytics;
+using GymTracker.Web.Features.Food;
+using GymTracker.Web.Integrations;
+using GymTracker.Core.Nutrition;
 using GymTracker.Web.Features.Body;
 using GymTracker.Web.Features.Profile;
 using GymTracker.Web.Features.Training;
@@ -38,6 +41,34 @@ builder.Services.AddScoped<TemplateService>();
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<ExerciseService>();
 builder.Services.AddScoped<TrainingAnalytics>();
+builder.Services.AddScoped<FoodItemService>();
+builder.Services.AddScoped<FoodMatcher>();
+builder.Services.AddScoped<FoodLogService>();
+builder.Services.AddScoped<NutritionTargets>();
+
+builder.Services.Configure<GeminiOptions>(config.GetSection("Gemini"));
+if (string.IsNullOrWhiteSpace(config["Gemini:ApiKey"]))
+{
+    // No key (local development, tests): a simple parser so the food flow still works.
+    builder.Services.AddSingleton<IFoodParser, FakeFoodParser>();
+}
+else
+{
+    builder.Services.AddHttpClient<IFoodParser, GeminiFoodParser>(c =>
+    {
+        c.BaseAddress = new Uri(config["Gemini:BaseUrl"] ?? "https://generativelanguage.googleapis.com/");
+        c.Timeout = TimeSpan.FromSeconds(40);
+    });
+}
+
+builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>
+{
+    c.BaseAddress = new Uri(config["OpenFoodFacts:BaseUrl"] ?? "https://world.openfoodfacts.org/");
+    c.Timeout = TimeSpan.FromSeconds(10);
+    // Open Food Facts requires an app name, version and contact.
+    var contact = config["OpenFoodFacts:ContactEmail"];
+    c.DefaultRequestHeaders.UserAgent.ParseAdd(string.IsNullOrWhiteSpace(contact) ? "GymTracker/1.0" : $"GymTracker/1.0 ({contact})");
+});
 builder.Services.AddScoped<UserTime>();
 builder.Services.AddScoped<UserCreator>();
 
@@ -144,6 +175,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
     await ExerciseSeed.SeedAsync(db, CancellationToken.None);
+    await UsdaSeed.SeedAsync(db, UsdaSeed.DefaultPath, CancellationToken.None);
 }
 
 if (args.Length > 0 && args[0] == CreateUserCommand.Name)

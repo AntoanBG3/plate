@@ -1,0 +1,40 @@
+@model BarcodeViewModel
+@using GymTracker.Core.Nutrition
+@{
+    ViewData["Title"] = "Barcode";
+    var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    var item = Model.Result.Item;
+}
+<p class="muted"><a href="/food/add?date=@date&amp;meal=@Model.Meal&amp;tab=barcode">← Scan another</a></p>
+@if (item is not null)
+{
+    <h1>@item.Name</h1>
+    @if (item.Brand is not null)
+    {
+        <p class="muted">@item.Brand</p>
+    }
+    <form method="post" asp-antiforgery="true" action="/food/log-item" class="card stack portion" data-per100="@item.KcalPer100g.Kg(),@item.ProteinPer100g.Kg()">
+        <input type="hidden" name="date" value="@date" />
+        <input type="hidden" name="meal" value="@Model.Meal" />
+        <input type="hidden" name="foodItemId" value="@item.Id" />
+        <input type="hidden" name="source" value="Barcode" />
+        <p class="muted">Per 100 g: @Math.Round(item.KcalPer100g) kcal · @item.ProteinPer100g.Kg() g protein · @item.CarbsPer100g.Kg() g carbs · @item.FatPer100g.Kg() g fat</p>
+        <label>How many grams?
+            <input type="number" name="grams" value="@((item.DefaultServingGrams ?? 100).Kg())" min="1" max="3000" step="any" inputmode="decimal" required autofocus />
+        </label>
+        <span class="muted" data-totals></span>
+        <button type="submit" class="primary">Add to @Model.Meal.ToString().ToLowerInvariant()</button>
+    </form>
+}
+else
+{
+    <h1>@(Model.Result.Status switch { LookupStatus.NoNutrition => "No nutrition data", LookupStatus.RateLimited => "Try again shortly", LookupStatus.Unavailable => "Lookup failed", _ => "Not found" })</h1>
+    <p>@(Model.Result.Status switch
+    {
+        LookupStatus.NoNutrition => "Open Food Facts knows this product but not its nutrition. Enter it from the label once and it's saved for both of you.",
+        LookupStatus.RateLimited => "Open Food Facts is limiting requests. Wait a minute, or enter it from the label.",
+        LookupStatus.Unavailable => "Open Food Facts didn't answer. Enter it from the label, or try again later.",
+        _ => "This product isn't in Open Food Facts. Enter it from the label once and it's saved for both of you.",
+    })</p>
+    <partial name="_ManualFoodForm" model="(Model.Date, Model.Meal, (string?)Model.Code, (string?)null)" />
+}
