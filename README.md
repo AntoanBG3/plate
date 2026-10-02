@@ -30,26 +30,16 @@ The repository is checked out at `~/docker/gymtracker`. The database lives in `~
 
 ### First time
 
-The repository is private (`github.com/AntoanBG3/gymtracker`). wizard reads it with a read-only deploy key:
+Copy the checkout from the Mac (git-ignored state such as `db/`, `keys/` and `docker/.env` is never sent):
 
 ```sh
-ssh-keygen -t ed25519 -f ~/.ssh/gymtracker_deploy -N "" -C "wizard gymtracker deploy"
-cat >> ~/.ssh/config <<'CFG'
-Host github-gymtracker
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/gymtracker_deploy
-    IdentitiesOnly yes
-CFG
-cat ~/.ssh/gymtracker_deploy.pub   # add under the repo's Settings > Deploy keys, read-only
+rsync -av --delete --filter=':- .gitignore' --exclude .git ~/Projects/homeserver-gym/ wizard:docker/gymtracker/
 ```
 
-Then:
+Then on wizard:
 
 ```sh
-cd ~/docker
-git clone github-gymtracker:AntoanBG3/gymtracker.git gymtracker
-cd gymtracker
+cd ~/docker/gymtracker
 mkdir keys                                   # must exist before the first start so it is owned by antoan
 cp docker/.env.example docker/.env
 openssl rand -base64 32 | tr -d '/+='        # paste as POSTGRES_PASSWORD in docker/.env
@@ -105,8 +95,10 @@ docker compose -f docker/docker-compose.yml start app
 
 ### Updating
 
+Run the same rsync from the Mac, then on wizard:
+
 ```sh
-cd ~/docker/gymtracker && git pull
+cd ~/docker/gymtracker
 docker compose -f docker/docker-compose.yml up -d --build && docker builder prune -f
 ```
 
