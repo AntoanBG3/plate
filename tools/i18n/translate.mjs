@@ -79,6 +79,7 @@ Domain vocabulary (use these consistently)
 - Muscles: Chest = Гърди, Back = Гръб, Shoulders = Рамене, Biceps = Бицепс, Triceps = Трицепс, Forearms = Предмишници,
   Quads = Квадрицепс, Hamstrings = Задно бедро, Glutes = Седалище, Calves = Прасци, Abs = Корем.
 - Units: kg = кг, g = г, cm = см, s (seconds) = с, h = ч, min = мин. Keep numbers and their format exactly as in the English.
+  Join a number or placeholder and its unit with a non-breaking space (U+00A0), e.g. "{0}\u00a0кг", so they never wrap apart.
 
 Hard rules
 - Keep every placeholder ({0}, {1}, …) exactly once, unchanged; move it wherever Bulgarian grammar wants it.
