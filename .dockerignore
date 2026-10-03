@@ -8,3 +8,4 @@ db
 keys
 docker/.env
 *.md
+design-samples

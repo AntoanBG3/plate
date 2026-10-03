@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Sample A · Fitness</title>
+<style>
+/* @motion */
+
+/* ---- Sample A tokens: true black, rounded numerals, one ember accent ---- */
+:root {
+    color-scheme: dark;
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --surface-2: #2c2c2e;
+    --fill: rgb(118 118 128 / 0.24);
+    --fill-strong: rgb(118 118 128 / 0.36);
+    --label: #ffffff;
+    --label-2: rgb(235 235 245 / 0.62);
+    --label-3: rgb(235 235 245 / 0.32);
+    --separator: rgb(84 84 88 / 0.6);
+    --accent: #ff6a2b;
+    --accent-text: #ff7a42;
+    --on-accent: #000000;
+    --suggested: #8e8e93;
+    --ring-2: #f2f2f7;
+    --destructive: #ff453a;
+    --material: rgb(22 22 24 / 0.72);
+    --material-border: rgb(255 255 255 / 0.08);
+
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, "Fira Sans", "Segoe UI", Roboto, sans-serif;
+    --font-num: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, "Fira Sans", sans-serif;
+
+    --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-7: 32px; --s-8: 44px; --s-9: 64px;
+    --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-sheet: 22px;
+    --tap: 44px;
+    --shadow-float: 0 8px 24px rgb(0 0 0 / 0.5);
+}
+:root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f2f2f7;
+    --surface: #ffffff;
+    --surface-2: #f2f2f7;
+    --fill: rgb(120 120 128 / 0.12);
+    --fill-strong: rgb(120 120 128 / 0.2);
+    --label: #000000;
+    --label-2: rgb(60 60 67 / 0.62);
+    --label-3: rgb(60 60 67 / 0.32);
+    --separator: rgb(60 60 67 / 0.2);
+    --accent: #c84a12;
+    --suggested: #86868b;
+    --accent-text: #c2410c;
+    --on-accent: #ffffff;
+    --ring-2: #1c1c1e;
+    --destructive: #ff3b30;
+    --material: rgb(249 249 249 / 0.78);
+    --material-border: rgb(0 0 0 / 0.08);
+    --shadow-float: 0 8px 24px rgb(0 0 0 / 0.12);
+}
+
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--label); font: 400 17px/1.29 var(--font); letter-spacing: -0.4px; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+svg.icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-sm); }
+
+.app { min-height: 100vh; background: var(--bg); }
+main { padding: calc(env(safe-area-inset-top) + 44px) var(--s-4) calc(env(safe-area-inset-bottom) + 140px); max-width: 560px; margin: 0 auto; }
+
+/* ---- top bar: invisible over the large title, material once it scrolls under ---- */
+.topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+    height: calc(env(safe-area-inset-top) + 44px); padding: env(safe-area-inset-top) var(--s-2) 0;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    border-bottom: 0.5px solid transparent;
+    transition: background-color var(--dur-small) var(--ease-out), border-color var(--dur-small) var(--ease-out);
+}
+.topbar.is-compact { background: var(--material); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-color: var(--separator); }
+.topbar-title { font-weight: 600; opacity: 0; transform: translateY(6px); transition: opacity var(--dur-small) var(--ease-out), transform var(--dur-small) var(--ease-out); white-space: nowrap; }
+.topbar.is-compact .topbar-title { opacity: 1; transform: none; }
+.topbar-back { justify-self: start; display: flex; align-items: center; gap: 2px; min-height: var(--tap); padding-right: var(--s-2); color: var(--accent-text); }
+.topbar-trailing { justify-self: end; min-height: var(--tap); padding: 0 var(--s-2); color: var(--accent-text); font-weight: 600; }
+
+/* ---- type ---- */
+.eyebrow { margin: var(--s-2) 0 0; font-size: 13px; letter-spacing: -0.08px; color: var(--label-2); }
+.large-title { margin: 2px 0 var(--s-4); font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: 0.37px; }
+.headline { font-size: 17px; font-weight: 600; }
+.subhead { font-size: 15px; letter-spacing: -0.24px; color: var(--label-2); }
+.footnote { font-size: 13px; letter-spacing: -0.08px; color: var(--label-2); }
+
+.surface { background: var(--surface); border-radius: var(--r-lg); padding: var(--s-4); margin-bottom: var(--s-3); }
+
+/* ---- Today: rings ---- */
+.rings { display: grid; grid-template-columns: 148px 1fr; gap: var(--s-5); align-items: center; }
+.rings svg { width: 148px; height: 148px; transform: rotate(-90deg); }
+.rings circle { fill: none; stroke-width: 15; stroke-linecap: round; }
+.ring-track-1 { stroke: color-mix(in srgb, var(--accent) 22%, transparent); }
+.ring-1 { stroke: var(--accent); }
+.ring-track-2 { stroke: color-mix(in srgb, var(--ring-2) 16%, transparent); }
+.ring-2 { stroke: var(--ring-2); }
+.metric + .metric { margin-top: var(--s-4); }
+.metric-value { font-size: 40px; line-height: 1; font-weight: 600; letter-spacing: -0.5px; }
+.metric-unit { font-size: 20px; font-weight: 600; color: var(--label-2); margin-left: 2px; }
+.metric-label { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.rings-foot { margin: var(--s-4) 0 0; padding-top: var(--s-3); border-top: 0.5px solid var(--separator); display: flex; justify-content: space-between; }
+
+.workout .footnote { display: flex; align-items: center; gap: 6px; }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.workout-title { margin: 6px 0 var(--s-4); font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: 0.35px; }
+.btn-primary {
+    display: flex; align-items: center; justify-content: center; width: 100%; min-height: 50px;
+    border-radius: var(--r-md); background: var(--accent); color: var(--on-accent); font-weight: 600;
+}
+.btn-secondary { min-height: var(--tap); padding: 0 var(--s-4); border-radius: var(--r-md); background: var(--fill); font-weight: 600; }
+
+.trend { display: grid; grid-template-columns: 1fr auto; gap: var(--s-2) var(--s-4); align-items: end; }
+.trend-value { font-size: 34px; line-height: 1; font-weight: 600; margin-top: var(--s-2); }
+.trend svg { width: 132px; height: 48px; overflow: visible; }
+.spark-line { fill: none; stroke: var(--label); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.spark-fill { fill: url(#spark-grad); }
+.spark-dot { fill: var(--label-3); }
+.weight-form { display: flex; gap: var(--s-2); margin-top: var(--s-4); padding-top: var(--s-4); border-top: 0.5px solid var(--separator); }
+.weight-field { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; min-height: var(--tap); padding: 0 var(--s-3); border-radius: var(--r-md); background: var(--fill); }
+.weight-field input { flex: 1; min-width: 0; border: 0; background: none; font-size: 17px; outline: none; }
+.weight-field span { color: var(--label-2); }
+.weight-form.is-saved .btn-secondary { color: var(--accent-text); }
+
+.row-link { display: flex; align-items: center; gap: var(--s-3); min-height: 60px; text-decoration: none; color: inherit; }
+.row-link .icon-tile { width: 32px; height: 32px; border-radius: var(--r-sm); background: var(--fill); display: grid; place-items: center; }
+.row-link .icon-tile svg { width: 20px; height: 20px; }
+.row-link .text { flex: 1; min-width: 0; }
+.row-link .text .footnote { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chev { color: var(--label-3); width: 18px; height: 18px; }
+.page-foot { margin: var(--s-5) var(--s-1) 0; }
+
+/* ---- Session ---- */
+.exercise { background: var(--surface); border-radius: var(--r-lg); padding: var(--s-4) 0 var(--s-2); margin-bottom: var(--s-3); }
+.ex-meta { font-size: 15px; letter-spacing: -0.24px; color: var(--label-2); }
+.suggestion { font-size: 13px; letter-spacing: -0.08px; color: var(--label-2); }
+.ex-head { display: flex; align-items: flex-start; gap: var(--s-2); padding: 0 var(--s-2) 0 var(--s-4); }
+.ex-head > div:first-child { flex: 1; min-width: 0; }
+.ex-name { margin: 0; font-size: 20px; line-height: 25px; font-weight: 600; letter-spacing: 0.38px; }
+.ex-meta { margin: 2px 0 0; }
+.icon-btn { width: var(--tap); height: var(--tap); display: grid; place-items: center; border-radius: 50%; color: var(--label-2); margin-top: -10px; }
+.suggestion { display: flex; gap: 6px; align-items: center; margin: var(--s-3) var(--s-4) var(--s-2); }
+.suggestion svg { width: 16px; height: 16px; color: var(--label-2); }
+.menu { background: var(--surface-2); border-radius: var(--r-md); box-shadow: var(--shadow-float); overflow: hidden; }
+.menu button { display: flex; width: 100%; justify-content: space-between; align-items: center; min-height: var(--tap); padding: 0 var(--s-4); }
+.menu button + button { border-top: 0.5px solid var(--separator); }
+.menu .danger { color: var(--destructive); }
+
+.cols { display: grid; grid-template-columns: 28px 1fr 1fr 48px; gap: var(--s-2); padding: 0 var(--s-4); margin-top: var(--s-2); }
+.cols span { font-size: 12px; color: var(--label-3); text-align: center; }
+.set-content { display: grid; grid-template-columns: 28px 1fr 1fr 48px; gap: var(--s-2); align-items: center; padding: 5px var(--s-4); background: var(--surface); }
+.set-n { font-size: 15px; font-weight: 600; color: var(--label-2); text-align: center; }
+.field { display: flex; align-items: baseline; justify-content: center; gap: 3px; height: 50px; padding-top: 11px; border-radius: var(--r-md); background: var(--fill); transition: background-color var(--dur-small) var(--ease-out); }
+.field input { width: 3.4ch; border: 0; background: none; outline: none; padding: 0; text-align: right; font-size: 24px; font-weight: 600; font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.field input.reps { width: 2.2ch; }
+.suggestion + [data-rows] { margin-top: var(--s-1); }
+.field input::placeholder { color: var(--suggested); }
+.field small { font-size: 13px; color: var(--label-3); }
+[data-set].is-done .field small { color: var(--label-2); }
+.field:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
+.done-btn { width: 48px; height: 48px; display: grid; place-items: center; }
+.done-btn .disc { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 2px var(--label-3); transition: background-color var(--dur-small) var(--ease-out), box-shadow var(--dur-small) var(--ease-out); }
+.done-btn svg { width: 22px; height: 22px; fill: none; stroke: var(--on-accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+[data-set].is-done .disc { background: var(--accent); box-shadow: none; }
+[data-set].is-done .field { background: transparent; }
+[data-set].is-warmup .set-content { padding-top: 0; padding-bottom: 0; }
+[data-set].is-warmup .field { height: 40px; padding-top: 8px; }
+[data-set].is-warmup .field input { font-size: 18px; font-weight: 500; color: var(--label-2); }
+[data-set].is-warmup .set-n { font-size: 13px; color: var(--label-3); }
+[data-set].is-warmup .disc { width: 28px; height: 28px; }
+[data-set].is-warmup .done-btn svg { width: 16px; height: 16px; }
+[data-set].is-warmup.is-done .disc { background: var(--fill-strong); }
+[data-set].is-warmup .done-btn svg { stroke: var(--label); }
+.set-delete { background: var(--destructive); color: #fff; font-weight: 600; font-size: 15px; }
+.ex-actions { display: flex; gap: var(--s-1); padding: var(--s-1) var(--s-2) 0; }
+.plain-btn { display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); padding: 0 var(--s-2); color: var(--label-2); font-size: 15px; }
+.plain-btn svg { width: 18px; height: 18px; }
+.add-exercise { display: flex; justify-content: center; width: 100%; min-height: 50px; align-items: center; gap: 6px; border-radius: var(--r-lg); background: var(--surface); color: var(--accent-text); font-weight: 600; }
+
+/* ---- tab bar ---- */
+.tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    padding: 0 var(--s-2) env(safe-area-inset-bottom);
+    background: var(--material); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+    border-top: 0.5px solid var(--separator);
+}
+.tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 0 4px; min-height: 49px; font-size: 10px; font-weight: 500; letter-spacing: 0.1px; color: var(--label-3); }
+.tab svg { width: 26px; height: 26px; }
+.tab .fillable { fill: currentColor; fill-opacity: 0; transition: fill-opacity var(--dur-small) var(--ease-out); }
+.tab.is-active { color: var(--accent); }
+.tab.is-active .fillable { fill-opacity: 0.22; }
+
+/* ---- rest timer pill + sheet ---- */
+.timer-pill {
+    position: fixed; z-index: 29; left: var(--s-4); right: var(--s-4); bottom: calc(env(safe-area-inset-bottom) + 49px + var(--s-3));
+    display: grid; grid-template-columns: 40px 1fr auto auto; align-items: center; gap: var(--s-3);
+    height: 60px; padding: 0 var(--s-2) 0 var(--s-3); border-radius: 30px; text-align: left;
+    background: var(--material); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: var(--shadow-float), inset 0 0 0 0.5px var(--material-border);
+}
+.mini-ring { width: 40px; height: 40px; transform: rotate(-90deg); }
+.mini-ring circle, .big-ring circle { fill: none; stroke-linecap: round; }
+.mini-ring .track, .big-ring .track { stroke: color-mix(in srgb, var(--accent) 22%, transparent); }
+.mini-ring .bar, .big-ring .bar { stroke: var(--accent); }
+.pill-time { font-size: 28px; font-weight: 600; line-height: 1; }
+.pill-label { display: block; font-size: 12px; color: var(--label-2); margin-bottom: 2px; }
+.pill-btn { min-width: var(--tap); height: var(--tap); padding: 0 var(--s-3); border-radius: 22px; background: var(--fill); font-weight: 600; font-size: 15px; display: grid; place-items: center; }
+.timer-done .pill-time, .timer-done .sheet-time { color: var(--accent-text); }
+
+.sheet-panel {
+    background: var(--surface); border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+    padding: var(--s-2) var(--s-5) calc(env(safe-area-inset-bottom) + var(--s-6)); text-align: center;
+}
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--fill-strong); margin: 0 auto var(--s-4); }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; }
+.sheet-head .headline { margin: 0; }
+.big-ring-wrap { position: relative; width: 260px; height: 260px; margin: var(--s-5) auto var(--s-6); }
+.big-ring { width: 260px; height: 260px; transform: rotate(-90deg); }
+.sheet-time { position: absolute; inset: 0; display: grid; place-content: center; font-size: 64px; font-weight: 600; letter-spacing: -1px; }
+.sheet-time small { display: block; font-size: 15px; font-weight: 400; color: var(--label-2); letter-spacing: -0.2px; margin-top: 4px; font-family: var(--font); }
+.sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.sheet-actions button { min-height: 50px; border-radius: var(--r-md); background: var(--fill); font-weight: 600; }
+.sheet-actions .skip { background: var(--accent); color: var(--on-accent); }
+</style>
+</head>
+<body>
+<!-- @icons -->
+<div class="app">
+  <header class="topbar" data-topbar>
+    <button class="topbar-back tap" data-topbar-back data-go="today" data-dir="back" hidden><svg class="icon"><use href="#i-back"/></svg>Today</button>
+    <span class="topbar-title" data-topbar-title></span>
+    <button class="topbar-trailing" data-topbar-trailing hidden>Finish</button>
+  </header>
+
+  <main>
+    <!-- ================= Today ================= -->
+    <section data-screen="today">
+      <p class="eyebrow">Saturday, 3 October</p>
+      <h1 class="large-title" data-title-sentinel="Today">Today</h1>
+
+      <div class="surface">
+        <div class="rings">
+          <svg viewBox="0 0 148 148" aria-hidden="true">
+            <circle class="ring-track-1" cx="74" cy="74" r="66"/>
+            <circle class="ring-1" cx="74" cy="74" r="66" data-progress="0.356"/>
+            <circle class="ring-track-2" cx="74" cy="74" r="48"/>
+            <circle class="ring-2" cx="74" cy="74" r="48" data-progress="0.594"/>
+          </svg>
+          <div>
+            <div class="metric">
+              <div><span class="metric-value num" data-count="1451">1451</span></div>
+              <div class="metric-label subhead"><span class="dot" style="background: var(--accent)"></span>kcal left</div>
+            </div>
+            <div class="metric">
+              <div><span class="metric-value num" data-count="67">67</span><span class="metric-unit">g</span></div>
+              <div class="metric-label subhead"><span class="dot" style="background: var(--ring-2)"></span>protein left</div>
+            </div>
+          </div>
+        </div>
+        <p class="rings-foot footnote"><span><span class="num">802</span> of <span class="num">2253</span> kcal</span><span><span class="num">98</span> of <span class="num">165</span> g protein</span></p>
+      </div>
+
+      <div class="surface workout">
+        <div class="footnote"><span class="live-dot"></span>In progress · <span class="num">35</span> min</div>
+        <div class="workout-title">Горна част Б</div>
+        <button class="btn-primary" data-go="session" data-dir="forward">Resume workout</button>
+      </div>
+
+      <div class="surface">
+        <div class="trend">
+          <div>
+            <div class="headline">Trend weight</div>
+            <div class="trend-value num"><span data-trend data-count="82.4">82.4</span><span class="metric-unit">kg</span></div>
+          </div>
+          <svg viewBox="0 0 132 48" aria-label="Trend over the last two weeks">
+            <defs><linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity="0.18"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
+            <g style="color: var(--label)">
+              <path class="spark-fill" d="M0 10 C 20 12, 30 16, 44 18 S 70 24, 88 28 S 118 33, 132 36 L132 48 L0 48 Z"/>
+              <circle class="spark-dot" cx="6" cy="6" r="2"/><circle class="spark-dot" cx="24" cy="18" r="2"/><circle class="spark-dot" cx="40" cy="12" r="2"/><circle class="spark-dot" cx="58" cy="26" r="2"/><circle class="spark-dot" cx="76" cy="20" r="2"/><circle class="spark-dot" cx="94" cy="34" r="2"/><circle class="spark-dot" cx="112" cy="28" r="2"/><circle class="spark-dot" cx="128" cy="40" r="2"/>
+              <path class="spark-line" data-draw d="M0 10 C 20 12, 30 16, 44 18 S 70 24, 88 28 S 118 33, 132 36"/>
+            </g>
+          </svg>
+          <div class="footnote" style="grid-column: 1 / -1"><span class="num">−0.4</span> kg this week</div>
+        </div>
+        <form class="weight-form" data-weight-form>
+          <label class="weight-field"><span class="sr-only">Today's weight</span><input class="num" inputmode="decimal" placeholder="Today's weight" value="82.0"><span>kg</span></label>
+          <button class="btn-secondary" type="submit">Update</button>
+        </form>
+      </div>
+
+      <div class="surface" style="padding-top: 0; padding-bottom: 0">
+        <a class="row-link tap" href="#">
+          <span class="icon-tile"><svg class="icon"><use href="#i-food"/></svg></span>
+          <span class="text"><span class="headline">Log food</span><div class="footnote">Last: Овесени ядки с кисело мляко и боровинки</div></span>
+          <svg class="icon chev"><use href="#i-chevron"/></svg>
+        </a>
+      </div>
+
+      <p class="footnote page-foot">Maintenance <span class="num">2706</span> kcal, adaptive from <span class="num">21</span> days of data.</p>
+    </section>
+
+    <!-- ================= Session ================= -->
+    <section data-screen="session" data-tab-of="train" data-back="1" data-trailing="1" hidden>
+      <p class="eyebrow">In progress · <span class="num">35:12</span></p>
+      <h1 class="large-title" data-title-sentinel="Горна част Б">Горна част Б</h1>
+
+      <!-- @session -->
+
+      <button class="add-exercise tap"><svg class="icon" style="width:20px;height:20px"><use href="#i-plus"/></svg>Add exercise</button>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Main">
+    <button class="tab" data-tab="today" data-go="today"><svg class="icon"><use href="#i-today"/></svg>Today</button>
+    <button class="tab" data-tab="train" data-go="session"><svg class="icon"><use href="#i-train"/></svg>Train</button>
+    <button class="tab" data-tab="food"><svg class="icon"><use href="#i-food"/></svg>Food</button>
+    <button class="tab" data-tab="progress"><svg class="icon"><use href="#i-progress"/></svg>Progress</button>
+    <button class="tab" data-tab="settings"><svg class="icon"><use href="#i-settings"/></svg>Settings</button>
+  </nav>
+
+  <div class="timer-pill tap" data-timer-pill role="button" tabindex="0" aria-label="Rest timer, open">
+    <svg class="mini-ring" viewBox="0 0 40 40" aria-hidden="true"><circle class="track" cx="20" cy="20" r="16" stroke-width="5"/><circle class="bar" cx="20" cy="20" r="16" stroke-width="5" data-timer-ring/></svg>
+    <span><span class="pill-label">Rest</span><span class="pill-time num" data-timer-text role="timer">1:24</span></span>
+    <button class="pill-btn num" data-timer-add>+30</button>
+    <button class="pill-btn" data-timer-skip>Skip</button>
+  </div>
+</div>
+
+<div class="sheet" data-sheet hidden>
+  <div class="sheet-scrim"></div>
+  <div class="sheet-panel" role="dialog" aria-label="Rest timer">
+    <div class="grabber"></div>
+    <div class="sheet-head"><span class="footnote">Seated cable row · set 2 next</span><button class="plain-btn" data-sheet-close style="color: var(--accent-text); font-weight: 600">Done</button></div>
+    <div class="big-ring-wrap">
+      <svg class="big-ring" viewBox="0 0 260 260" aria-hidden="true"><circle class="track" cx="130" cy="130" r="118" stroke-width="16"/><circle class="bar" cx="130" cy="130" r="118" stroke-width="16" data-timer-ring/></svg>
+      <div class="sheet-time num"><span data-timer-text>1:24</span><small>of 3:00 rest</small></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="num" data-timer-add>+30 s</button>
+      <button class="skip" data-timer-skip>Skip rest</button>
+    </div>
+  </div>
+</div>
+<div class="sr-only" aria-live="assertive" data-timer-live></div>
+<script>
+/* @shared */
+</script>
+</body>
+</html>

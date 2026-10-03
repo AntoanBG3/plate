@@ -14,3 +14,7 @@ keys/
 
 # Local Docker test login
 docker/.local-login.txt
+
+# Design sample screenshots, videos and the local playwright-core link
+design-samples/screenshots/
+design-samples/tools/node_modules
