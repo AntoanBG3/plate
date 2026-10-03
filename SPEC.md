@@ -34,7 +34,7 @@ Build in the phases at the end of this document. Each phase must be usable on it
 | Front-end delivery | No CDNs. Pinned copies of every library (htmx, Alpine, Chart.js, the barcode scanner and its `.wasm`) are vendored into `wwwroot/lib` and precached by the service worker |
 | Database | PostgreSQL 18, EF Core with Npgsql provider |
 | Auth | ASP.NET Core Identity, cookie auth, sliding 30-day persistent login, lockout and login rate limiting on (section 9). No Cloudflare Access in front of the app |
-| LLM | Google Gemini API (`gemini-3.5-flash-lite` by default, configurable) via typed HttpClient, behind an interface. It extracts foods and grams; nutrition values come from the food database (section 6.1) |
+| LLM | OpenRouter chat completions API (`google/gemini-3.5-flash-lite` by default, model picked in Settings) via typed HttpClient, behind an interface. It extracts foods and grams; nutrition values come from the food database (section 6.1) |
 | Food database | Users' own and shared `FoodItem`s, a locally imported subset of USDA FoodData Central for generic foods, and Open Food Facts API v3 for barcodes |
 | Barcode scanning | `barcode-detector` ponyfill (ZXing-C++ compiled to WASM), self-hosted. Safari on iOS ships the native `BarcodeDetector` API disabled, and `@zxing/browser` sits on a library in maintenance mode |
 | Tests | xUnit, FluentAssertions; Testcontainers (`postgres:18`) for PostgreSQL integration tests |
@@ -55,7 +55,7 @@ src/
   GymTracker.Core/            Domain entities, enums, pure calculation services. No EF, no HTTP, no ASP.NET references.
   GymTracker.Web/             Controllers, views, view models, htmx partials, static assets, PWA manifest and service worker.
     Data/                     EF DbContext, migrations, seed data (exercises, USDA subset).
-    Integrations/             Gemini client, Open Food Facts client.
+    Integrations/             OpenRouter client and model catalog, Open Food Facts client.
     Features/                 Thin feature services that use the DbContext directly and call Core for the math.
 tests/
   GymTracker.Core.Tests/      Unit tests for all calculation logic.
@@ -151,7 +151,7 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Grams`
 - `Kcal`, `ProteinG`, `CarbsG`, `FatG` (stored totals, so the entry is stable even if the FoodItem changes)
 - `FoodItemId` (nullable), `Source` (Barcode, Search, Ai, Manual, Recent)
-- `AiModel` (nullable; the Gemini model name for AI-parsed entries, so a shift in estimates after a model change can be traced)
+- `AiModel` (nullable; the OpenRouter model id for AI-parsed entries, so a shift in estimates after a model change can be traced)
 - `CreatedAt`
 
 **MaintenanceEstimate**
@@ -220,7 +220,7 @@ Test with synthetic data: stable weight at known intake returns that intake; ste
 
 ## 6. External integrations (GymTracker.Web/Integrations)
 
-### 6.1 Food parsing via Gemini
+### 6.1 Food parsing via OpenRouter
 
 Interface in Core:
 
@@ -239,11 +239,11 @@ LLM nutrition estimates are unreliable on their own (published studies show ener
 - `Assumption` (string such as "assumed one medium banana, 120 g")
 - `EstimatedKcalPer100g`, `EstimatedProteinPer100g`, `EstimatedCarbsPer100g`, `EstimatedFatPer100g`: the model's own values, used only as a fallback
 
-Implementation `GeminiFoodParser`:
-- Typed `HttpClient` calling the Gemini `generateContent` REST endpoint.
-- Model name from configuration `Gemini:Model`; do not hardcode. Default `gemini-3.5-flash-lite` (no shutdown announced; 3.1 Flash-Lite shuts down 2027-05-07, 2.5 Flash-Lite is closed to new users). Use the lowest thinking budget.
-- API key from configuration `Gemini:ApiKey` (environment variable `Gemini__ApiKey` in Docker). Never commit it.
-- Request structured output: `responseMimeType: "application/json"` with `responseJsonSchema` (standard JSON Schema, generated from the C# type) matching `ParsedFoodItem[]`. Check the current field names in the Gemini docs before coding.
+Implementation `OpenRouterFoodParser`:
+- Typed `HttpClient` calling OpenRouter's `POST /api/v1/chat/completions`.
+- Model: picked in Settings from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `google/gemini-3.5-flash-lite`. The model is one setting shared by both accounts, like the key, and a saved id must be in the catalog.
+- API key from Settings (encrypted with Data Protection) or configuration `OpenRouter:ApiKey` (environment variable `OPENROUTER_API_KEY` in Docker). Never commit it.
+- Request structured output: `response_format: {type: "json_schema", json_schema: {name, strict: true, schema}}` with a strict-compatible schema (`additionalProperties: false`, every property required, nullable ones typed `["string","null"]`) matching `ParsedFoodItem[]`, and `provider: {require_parameters: true}`. Because that excludes providers lacking any sent parameter, `temperature` and `reasoning.effort` (the model's lowest supported effort) are sent only when the catalog lists them for the model.
 - System prompt: the user writes foods in English or Bulgarian; return one item per food; estimate grams for vague quantities ("a banana", "a plate of rice") and state the assumption; assume raw weight for meat and cooked weight for rice and pasta unless stated; always fill `NameEn`.
 - Timeout 15 seconds, one retry on 5xx or timeout. On failure, the UI falls back to manual entry with the text preserved.
 
@@ -255,7 +255,7 @@ Resolving nutrition values (a Web feature service, not the parser):
 
 Results are never saved directly. The user always sees an editable confirmation list first. Saved entries record `AiModel`.
 
-Also provide `FakeFoodParser` for tests and local development without a key (selected when `Gemini:ApiKey` is empty).
+Also provide `FakeFoodParser` for tests and local development without a key (selected when no OpenRouter key is set).
 
 ### 6.2 Open Food Facts
 
@@ -402,7 +402,7 @@ HTTPS (required for the camera and PWA install): add the public hostname `gym.pe
 - **Done when:** all Core tests for 5.1 to 5.3 pass; logging sets with airplane mode toggled on and off, and with the app closed or the phone locked mid-request, results in no lost or duplicated sets; and the rest timer sound works on both users' iPhones.
 
 ### Phase 3: Nutrition
-- FoodItem and FoodLogEntry, USDA subset import, text parsing via Gemini with database matching and confirmation, barcode scanning with its fallbacks, Open Food Facts lookup and caching, search, recents, copy meal.
+- FoodItem and FoodLogEntry, USDA subset import, text parsing via OpenRouter with database matching and confirmation, barcode scanning with its fallbacks, Open Food Facts lookup and caching, search, recents, copy meal.
 - Daily totals on the Food and Today pages, using the prior maintenance estimate.
 - **Done when:** a typical day can be logged in under two minutes total, and the app works with `FakeFoodParser` when no API key is set.
 

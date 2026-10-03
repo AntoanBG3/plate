@@ -6,7 +6,7 @@ All five build phases are in place:
 
 - Workouts: templates, sessions with double-progression suggestions, a rest timer, and an offline queue so sets logged on bad signal are never lost.
 - Training charts: estimated 1RM per exercise and weekly sets per muscle.
-- Food: logging by text (parsed by Gemini, numbers taken from the food database), barcode, search and recents.
+- Food: logging by text (parsed by an LLM through OpenRouter, numbers taken from the food database), barcode, search and recents.
 - Targets: trend weight, a weekly adaptive maintenance estimate, and calorie and protein targets for a cut, maintenance or bulk, with weight and calorie charts.
 - Settings: profile, CSV export of all your data, password change and logging out everywhere.
 
@@ -32,17 +32,17 @@ Tests: `dotnet build && dotnet test`. The integration tests start their own `pos
 
 Three sources are imported on start, each only adding what is missing:
 
-- USDA FoodData Central (public domain): `tools/usda/build_usda_subset.py` rebuilds `src/GymTracker.Web/Data/Seed/usda-foods.csv`. Its `name_bg` column holds Bulgarian names, added by `node tools/foods/translate-usda.mjs` (Gemini; run it again after a rebuild). Databases seeded before the column existed get the names on the next start.
+- USDA FoodData Central (public domain): `tools/usda/build_usda_subset.py` rebuilds `src/GymTracker.Web/Data/Seed/usda-foods.csv`. Its `name_bg` column holds Bulgarian names, added by `node tools/foods/translate-usda.mjs` (an LLM through OpenRouter; run it again after a rebuild). Databases seeded before the column existed get the names on the next start.
 - Bulgarian foods and dishes (`Data/Seed/bg-foods.csv`, kind `generic`): compiled by `tools/foods` from public Bulgarian calorie tables and per-dish web pages found with firecrawl. Every row lists the pages its values came from; values from several pages are combined by median. Sites whose terms forbid reuse (BB-Team) are excluded.
 - Products sold in Bulgaria from [Open Food Facts](https://world.openfoodfacts.org) (kind `product`), © Open Food Facts contributors, available under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/).
 
-To refresh the Bulgarian data (needs the `firecrawl` CLI and a Gemini key in `~/.config/gymtracker/gemini-key`):
+To refresh the Bulgarian data (needs the `firecrawl` CLI and an OpenRouter key in `~/.config/gymtracker/openrouter-key` or `OPENROUTER_API_KEY`; `OPENROUTER_MODEL` overrides the model):
 
 ```sh
 node tools/foods/collect-tables.mjs     # after scraping the two tables, see the comment at the top
 node tools/foods/collect-dishes.mjs     # one firecrawl search per line of tools/foods/dishes.txt
 node tools/foods/collect-off.mjs        # Open Food Facts search API, one page a second
-node tools/foods/merge.mjs              # Gemini 3.8 Flash removes duplicates against USDA and between sources
+node tools/foods/merge.mjs              # an LLM removes duplicates against USDA and between sources
 ```
 
 ### Language and theme
@@ -51,7 +51,7 @@ Each account chooses its language (English or Bulgarian) and theme (dark, light 
 
 ```sh
 GYM_WRITE_KEYS=1 dotnet test --filter CatalogueTests   # lists every string in Resources/strings.keys.json
-node tools/i18n/translate.mjs                           # Gemini drafts the missing ones; review them before committing
+node tools/i18n/translate.mjs                           # an LLM drafts the missing ones; review them before committing
 ```
 
 The design tokens (colour, type, spacing, motion) are in `wwwroot/css/tokens.css`; components in `wwwroot/css/app.css`; shared motion in `wwwroot/js/motion.js`. `design-samples/` holds the three directions the design was chosen from and the screenshot tooling.
@@ -84,7 +84,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 docker builder prune -f                      # the SDK build cache sits on the boot SSD
 ```
 
-For food text parsing, save a Gemini API key in the app under Settings → Food text parser (stored encrypted with the Data Protection keys, shared by both accounts, with a Test button), or put it in `GEMINI_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser), and an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
+For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the app under Settings → Food text parser (stored encrypted with the Data Protection keys, shared by both accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The model is picked from OpenRouter's catalog on the same Settings page (default `google/gemini-3.5-flash-lite`, or `OPENROUTER_MODEL`). Add an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
 
 The app joins the external `tunnel` network and publishes no host port. Memory limits are 256 MB per container; replace them with values from Beszel after a week of use.
 

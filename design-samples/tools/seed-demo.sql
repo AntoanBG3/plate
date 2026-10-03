@@ -126,7 +126,7 @@ picked as (
 )
 insert into "FoodLog"("UserId","Date","Meal","Description","Grams","Kcal","ProteinG","CarbsG","FatG","FoodItemId","Source","AiModel","CreatedAt")
 select :'uid', d, meal, description, grams, kcal, p, c, f, null, src,
-       case when src = 'Ai' then 'gemini-3.5-flash-lite' end,
+       case when src = 'Ai' then 'google/gemini-3.5-flash-lite' end,
        (d::timestamp + case meal when 'Breakfast' then time '08:00' when 'Lunch' then time '13:00' when 'Dinner' then time '19:30' else time '16:00' end) at time zone 'Europe/Sofia'
 from picked
 where ((meal in ('Breakfast','Dinner') and rn = 1)

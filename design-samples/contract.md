@@ -36,7 +36,7 @@ Everything here is read by JavaScript, htmx, the service worker or the tests. Re
 
 ## Tests (`tests/GymTracker.Web.Tests`)
 - `/today` contains the text `Logged today: 82.4 kg, trend 82.4 kg`.
-- `/settings` contains `Food text parser` and `No Gemini key`.
+- `/settings` contains `Food text parser` and `No OpenRouter key`.
 - `/progress` contains `id="weight-data"` and `Trend now: <strong>82.4 kg</strong>`.
 - Login after lockout contains `Too many failed attempts`.
 - `/manifest.webmanifest` contains `"start_url": "/today"`.
