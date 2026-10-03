@@ -5,7 +5,7 @@ using GymTracker.Core.Nutrition;
 namespace GymTracker.Web.Integrations;
 
 /// <summary>
-/// Stand-in used when no Gemini key is configured (local development and tests). Splits on commas,
+/// Stand-in used when no OpenRouter key is configured (local development and tests). Splits on commas,
 /// "and" and new lines, reads "200g" style amounts, and leaves the numbers to the database match.
 /// </summary>
 public partial class FakeFoodParser : IFoodParser

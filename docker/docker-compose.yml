@@ -38,8 +38,8 @@ services:
       ConnectionStrings__Default: "Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       DataProtection__KeysPath: /keys
       ReverseProxy__KnownProxies: 172.30.0.10
-      Gemini__ApiKey: "${GEMINI_API_KEY:-}"
-      Gemini__Model: "${GEMINI_MODEL:-gemini-3.5-flash-lite}"
+      OpenRouter__ApiKey: "${OPENROUTER_API_KEY:-}"
+      OpenRouter__Model: "${OPENROUTER_MODEL:-}"
       OpenFoodFacts__ContactEmail: "${OFF_CONTACT_EMAIL:-}"
     volumes:
       - ../keys:/keys

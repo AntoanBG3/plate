@@ -1,6 +1,7 @@
 using System.Net;
 using FluentAssertions;
 using GymTracker.Web.Features.Training;
+using GymTracker.Web.Integrations;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Tests;
@@ -118,7 +119,14 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable
         AppFactory.IsRedirectTo(response, "/today").Should().BeTrue();
         (await client.GetStringAsync("/today")).Should().Contain("Logged today: 82.4 kg, trend 82.4 kg");
 
-        (await client.GetStringAsync("/settings")).Should().Contain("Food text parser").And.Contain("No Gemini key");
+        (await client.GetStringAsync("/settings")).Should().Contain("Food text parser").And.Contain("No OpenRouter key").And.Contain(OpenRouterOptions.DefaultModel);
+
+        // The test app can't reach OpenRouter, so there is no model list and no model can be picked.
+        (await client.GetStringAsync("/settings/model")).Should().Contain("be loaded right now");
+        var settingsToken = await AppFactory.TokenAsync(client, "/settings");
+        var pick = await AppFactory.PostAsync(client, "/settings/model", settingsToken, new() { ["modelId"] = "openai/gpt-x" });
+        pick.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await pick.Content.ReadAsStringAsync()).Should().Contain("model list can't be loaded");
 
         var progress = await client.GetStringAsync("/progress?range=4w");
         progress.Should().Contain("id=\"weight-data\"").And.Contain("Trend now: <strong>82.4 kg</strong>");

@@ -68,3 +68,9 @@ public record FoodAddViewModel(
 public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, GymTracker.Core.Text.LocalText? Warning);
 
 public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result);
+
+/// <param name="ModelInfo">The current model's catalog entry, or null when the catalog can't be loaded or no longer lists it.</param>
+public record ParserStatus(GymTracker.Web.Integrations.OpenRouterKeyStatus Key, string Model, GymTracker.Web.Integrations.OpenRouterModel? ModelInfo);
+
+/// <param name="Models">Null when OpenRouter's model list can't be loaded.</param>
+public record ModelPickerViewModel(IReadOnlyList<GymTracker.Web.Integrations.OpenRouterModel>? Models, string Current);

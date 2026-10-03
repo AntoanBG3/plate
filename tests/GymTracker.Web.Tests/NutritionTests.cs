@@ -179,31 +179,31 @@ public class NutritionTests(PostgresFixture fixture)
 public class IntegrationParsingTests
 {
     private static JsonNode Response(string json) =>
-        new JsonObject { ["candidates"] = new JsonArray(new JsonObject { ["content"] = new JsonObject { ["parts"] = new JsonArray(new JsonObject { ["text"] = json }) } }) };
+        new JsonObject { ["choices"] = new JsonArray(new JsonObject { ["message"] = new JsonObject { ["role"] = "assistant", ["content"] = json } }) };
 
     [Fact]
-    public void Gemini_items_are_read_and_impossible_ones_skipped()
+    public void Parsed_items_are_read_and_impossible_ones_skipped()
     {
-        var result = GeminiFoodParser.Read(Response("""
+        var result = OpenRouterFoodParser.Read(Response("""
             {"items":[
               {"nameEn":"chicken breast","nameOriginal":"пилешко филе","grams":200,"state":"raw","preparation":"grilled","assumption":null,
                "kcalPer100g":120,"proteinPer100g":22.5,"carbsPer100g":0,"fatPer100g":2.6},
               {"nameEn":"rice","nameOriginal":"rice","grams":5000,"state":"cooked","kcalPer100g":130,"proteinPer100g":2.7,"carbsPer100g":28,"fatPer100g":0.3}
             ]}
-            """), "gemini-3.5-flash-lite");
+            """), "google/gemini-3.5-flash-lite");
 
-        result.Model.Should().Be("gemini-3.5-flash-lite");
+        result.Model.Should().Be("google/gemini-3.5-flash-lite");
         result.Items.Should().ContainSingle();
         result.Items[0].Should().BeEquivalentTo(new ParsedFoodItem("chicken breast", "пилешко филе", 200, FoodState.Raw, "grilled", null, new Per100g(120, 22.5m, 0, 2.6m)));
         result.Error!.ToString().Should().Contain("Skipped 1");
     }
 
     [Fact]
-    public void Gemini_garbage_becomes_a_friendly_error()
+    public void Parser_garbage_becomes_a_friendly_error()
     {
-        GeminiFoodParser.Read(Response("not json"), "m").Items.Should().BeEmpty();
-        GeminiFoodParser.Read(new JsonObject(), "m").Error.Should().NotBeNull();
-        GeminiFoodParser.Read(Response("""{"items":[]}"""), "m").Error!.ToString().Should().Be("No food found in that text.");
+        OpenRouterFoodParser.Read(Response("not json"), "m").Items.Should().BeEmpty();
+        OpenRouterFoodParser.Read(new JsonObject(), "m").Error.Should().NotBeNull();
+        OpenRouterFoodParser.Read(Response("""{"items":[]}"""), "m").Error!.ToString().Should().Be("No food found in that text.");
     }
 
     [Fact]

@@ -1,4 +1,7 @@
 {
+  "${0} in, ${1} out per million tokens": [
+    "src/GymTracker.Web/Integrations/OpenRouterModels.cs"
+  ],
   "% of weight": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -432,6 +435,9 @@
   "Found {0}. Looking it up…": [
     "wwwroot/js"
   ],
+  "Free": [
+    "src/GymTracker.Web/Integrations/OpenRouterModels.cs"
+  ],
   "Freestyle": [
     "extra",
     "src/GymTracker.Web/Views/Today/Index.cshtml",
@@ -442,18 +448,6 @@
   ],
   "Front squat": [
     "exercise"
-  ],
-  "Gemini rejected the API key ({0}). Check it in Settings, or enter the food by hand.": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
-  ],
-  "Gemini returned no food for \"1 banana\".": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
-  ],
-  "Gemini, with the key from the server": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
-  "Gemini, with the key saved here": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Glutes": [
     "enum"
@@ -531,10 +525,16 @@
   "Key removed from Settings.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
-  "Key saved: Gemini works.": [
+  "Key saved, but it doesn't work yet: {0}": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
-  "Key tested: Gemini works.": [
+  "Key saved: food parsing works.": [
+    "src/GymTracker.Web/Controllers/SettingsController.cs"
+  ],
+  "Key tested, but it doesn't work yet: {0}": [
+    "src/GymTracker.Web/Controllers/SettingsController.cs"
+  ],
+  "Key tested: food parsing works.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
   "Language": [
@@ -662,6 +662,19 @@
   "Minimum reps": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
+  "Model": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml",
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
+  "Model saved, but it doesn't work yet: {0}": [
+    "src/GymTracker.Web/Controllers/SettingsController.cs"
+  ],
+  "Model saved.": [
+    "src/GymTracker.Web/Controllers/SettingsController.cs"
+  ],
+  "Model saved: food parsing works.": [
+    "src/GymTracker.Web/Controllers/SettingsController.cs"
+  ],
   "Move down": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
@@ -705,10 +718,10 @@
   "Next: {0}": [
     "wwwroot/js"
   ],
-  "No Gemini key": [
+  "No OpenRouter key": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "No Gemini key is set.": [
+  "No OpenRouter key is set.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
   "No barcode found in that photo. Try again closer, or type the digits.": [
@@ -729,10 +742,13 @@
   ],
   "No food found in that text.": [
     "src/GymTracker.Web/Integrations/FakeFoodParser.cs",
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "No food logged in the last 4 weeks.": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
+  ],
+  "No model matches.": [
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
   ],
   "No nutrition data": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
@@ -802,6 +818,9 @@
   "One serving": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
+  "Only models that can return structured answers are listed. Prices are OpenRouter's, per million tokens; parsing one entry uses about a thousand.": [
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
   "Only {0} of {1} sets last time. Hold {2} kg": [
     "src/GymTracker.Core/Training/Progression.cs"
   ],
@@ -822,6 +841,19 @@
   ],
   "Open the rest timer": [
     "src/GymTracker.Web/Views/Train/Session.cshtml"
+  ],
+  "OpenRouter rejected the API key ({0}). Check it in Settings, or enter the food by hand.": [
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "OpenRouter's model list can't be loaded right now. Try again later.": [
+    "src/GymTracker.Web/Integrations/OpenRouterSettings.cs",
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
+  "OpenRouter, with the key from the server": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "OpenRouter, with the key saved here": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Optional": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
@@ -1037,6 +1069,9 @@
   "Search foods": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "Search models": [
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
   "Seated cable row": [
     "exercise"
   ],
@@ -1051,6 +1086,7 @@
   ],
   "Settings": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
+    "src/GymTracker.Web/Views/Settings/Model.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
   "Sex": [
@@ -1075,10 +1111,10 @@
     "src/GymTracker.Web/Views/Train/Session.cshtml"
   ],
   "Skipped 1 item with impossible amounts or values.": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "Skipped {0} items with impossible amounts or values.": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "Skull crusher": [
     "exercise"
@@ -1143,10 +1179,13 @@
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "That doesn't look like an API key.": [
-    "src/GymTracker.Web/Integrations/GeminiKeyStore.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
   "That isn't a valid EAN or UPC barcode.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
+  ],
+  "That model can't parse food.": [
+    "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
   "That page doesn't exist, or it isn't yours.": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
@@ -1156,6 +1195,9 @@
   ],
   "That set's exercise no longer exists.": [
     "wwwroot/js"
+  ],
+  "The OpenRouter account is out of credits. Top it up, or enter the food by hand.": [
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "The calories don't add up from the macros.": [
     "src/GymTracker.Web/Features/Food/FoodMatcher.cs"
@@ -1170,28 +1212,34 @@
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
   "The food parser could not read that. Enter the food by hand.": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "The food parser is busy. Try again in a minute, or enter the food by hand.": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "The food parser is unavailable. Enter the food by hand.": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "The food parser is unreachable. Enter the food by hand.": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "The food parser returned nothing. Enter the food by hand.": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "The food parser returned something unreadable. Enter the food by hand.": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "The food parser took too long. Try again, or enter the food by hand.": [
-    "src/GymTracker.Web/Integrations/GeminiFoodParser.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
-  "The key is shared by both accounts and stored encrypted.": [
+  "The key and model are shared by both accounts; the key is stored encrypted.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "The model returned no food for \"1 banana\".": [
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The model {0} can't parse food right now. Pick another one in Settings, or enter the food by hand.": [
+    "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "The new password needs at least 12 characters.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
@@ -1270,7 +1318,7 @@
   "Type": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
-  "Typed food is read by Gemini; the numbers come from the food database.": [
+  "Typed food is read by the model above; the numbers come from the food database.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Under {0} reps twice at {1} kg, deload to {2} kg": [

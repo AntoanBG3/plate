@@ -50,15 +50,29 @@ builder.Services.AddScoped<FoodLogService>();
 builder.Services.AddScoped<NutritionTargets>();
 builder.Services.AddScoped<GymTracker.Web.Features.Export.DataExport>();
 
-builder.Services.Configure<GeminiOptions>(config.GetSection("Gemini"));
-builder.Services.AddHttpClient<GeminiFoodParser>(c =>
+builder.Services.Configure<OpenRouterOptions>(config.GetSection("OpenRouter"));
+var openRouterUrl = new Uri(config["OpenRouter:BaseUrl"] ?? new OpenRouterOptions().BaseUrl);
+void OpenRouterClient(HttpClient c)
 {
-    c.BaseAddress = new Uri(config["Gemini:BaseUrl"] ?? "https://generativelanguage.googleapis.com/");
+    c.BaseAddress = openRouterUrl;
+    // Optional attribution headers OpenRouter shows in its usage logs.
+    c.DefaultRequestHeaders.Add("HTTP-Referer", "https://gym.peychev.uk");
+    c.DefaultRequestHeaders.Add("X-Title", "GymTracker");
+}
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<OpenRouterModels>(c =>
+{
+    OpenRouterClient(c);
+    c.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddHttpClient<OpenRouterFoodParser>(c =>
+{
+    OpenRouterClient(c);
     c.Timeout = TimeSpan.FromSeconds(40);
 });
-builder.Services.AddScoped<GeminiKeyStore>();
+builder.Services.AddScoped<OpenRouterSettings>();
 
-// Gemini when a key is set (in Settings or GEMINI_API_KEY), otherwise a simple built-in parser.
+// OpenRouter when a key is set (in Settings or OPENROUTER_API_KEY), otherwise a simple built-in parser.
 builder.Services.AddScoped<IFoodParser, SwitchingFoodParser>();
 
 builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>

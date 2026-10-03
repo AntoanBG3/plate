@@ -1,28 +1,30 @@
 using GymTracker.Core.Text;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using GymTracker.Core.Nutrition;
-using Microsoft.Extensions.Options;
 
 namespace GymTracker.Web.Integrations;
 
-public class GeminiOptions
+public class OpenRouterOptions
 {
-    public string ApiKey { get; set; } = "";
-    public string Model { get; set; } = "gemini-3.5-flash-lite";
-    public string BaseUrl { get; set; } = "https://generativelanguage.googleapis.com/";
+    public const string DefaultModel = "google/gemini-3.5-flash-lite";
 
-    /// <summary>MINIMAL keeps parsing fast and cheap; empty sends no thinking setting.</summary>
-    public string ThinkingLevel { get; set; } = "MINIMAL";
+    public string ApiKey { get; set; } = "";
+
+    /// <summary>Used until a model is picked in Settings.</summary>
+    public string Model { get; set; } = DefaultModel;
+
+    public string BaseUrl { get; set; } = "https://openrouter.ai/api/v1/";
 }
 
 /// <summary>
-/// Reads foods and portions from free text with Gemini's generateContent and structured JSON output
+/// Reads foods and portions from free text with an OpenRouter chat completion and strict structured JSON output
 /// (SPEC 6.1). The model's nutrition numbers are only a fallback; the caller looks foods up in the database.
 /// </summary>
-public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, ILogger<GeminiFoodParser> log)
+public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILogger<OpenRouterFoodParser> log)
 {
     private static readonly TimeSpan AttemptTimeout = TimeSpan.FromSeconds(15);
 
@@ -57,55 +59,43 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
                 "properties": {
                   "nameEn": { "type": "string" },
                   "nameOriginal": { "type": "string" },
-                  "grams": { "type": "number", "minimum": 0 },
+                  "grams": { "type": "number" },
                   "state": { "type": "string", "enum": ["raw", "cooked", "na"] },
                   "preparation": { "type": ["string", "null"] },
                   "assumption": { "type": ["string", "null"] },
-                  "kcalPer100g": { "type": "number", "minimum": 0 },
-                  "proteinPer100g": { "type": "number", "minimum": 0 },
-                  "carbsPer100g": { "type": "number", "minimum": 0 },
-                  "fatPer100g": { "type": "number", "minimum": 0 }
+                  "kcalPer100g": { "type": "number" },
+                  "proteinPer100g": { "type": "number" },
+                  "carbsPer100g": { "type": "number" },
+                  "fatPer100g": { "type": "number" }
                 },
-                "required": ["nameEn", "nameOriginal", "grams", "state", "kcalPer100g", "proteinPer100g", "carbsPer100g", "fatPer100g"]
+                "required": ["nameEn", "nameOriginal", "grams", "state", "preparation", "assumption", "kcalPer100g", "proteinPer100g", "carbsPer100g", "fatPer100g"],
+                "additionalProperties": false
               }
             }
           },
-          "required": ["items"]
+          "required": ["items"],
+          "additionalProperties": false
         }
         """)!.AsObject();
 
-    /// <summary>Checks a key with a one-line request. Returns null when it works, otherwise what went wrong.</summary>
-    public async Task<LocalText?> TestAsync(string apiKey, CancellationToken ct)
+    /// <summary>Checks a key and model with a one-line request. Returns null when it works, otherwise what went wrong.</summary>
+    public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct)
     {
-        var result = await ParseAsync("1 banana", apiKey, ct);
-        return result.Items.Count > 0 ? null : result.Error ?? new LocalText("Gemini returned no food for \"1 banana\".");
+        var result = await ParseAsync("1 banana", apiKey, model, ct);
+        return result.Items.Count > 0 ? null : result.Error ?? new LocalText("The model returned no food for \"1 banana\".");
     }
 
-    public async Task<FoodParseResult> ParseAsync(string text, string apiKey, CancellationToken ct)
+    public async Task<FoodParseResult> ParseAsync(string text, string apiKey, string model, CancellationToken ct)
     {
-        var o = options.Value;
-        var body = new JsonObject
-        {
-            ["systemInstruction"] = new JsonObject { ["parts"] = new JsonArray(new JsonObject { ["text"] = Instructions + AssumptionLanguage() }) },
-            ["contents"] = new JsonArray(new JsonObject
-            {
-                ["role"] = "user",
-                ["parts"] = new JsonArray(new JsonObject { ["text"] = text }),
-            }),
-            ["generationConfig"] = GenerationConfig(o),
-        };
-
+        var body = await BodyAsync(text, model, ct);
         for (var attempt = 1; attempt <= 2; attempt++)
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(AttemptTimeout);
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Post, $"v1beta/models/{Uri.EscapeDataString(o.Model)}:generateContent")
-                {
-                    Content = JsonContent.Create(body),
-                };
-                request.Headers.Add("x-goog-api-key", apiKey);
+                using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(body) };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
                 using var response = await http.SendAsync(request, timeout.Token);
                 if ((int)response.StatusCode >= 500 && attempt == 1)
@@ -115,17 +105,19 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    log.LogWarning("Gemini returned {Status}: {Body}", (int)response.StatusCode, Truncate(await response.Content.ReadAsStringAsync(ct)));
+                    log.LogWarning("OpenRouter returned {Status} for {Model}: {Body}", (int)response.StatusCode, model, Truncate(await response.Content.ReadAsStringAsync(ct)));
                     return FoodParseResult.Failed(response.StatusCode switch
                     {
                         HttpStatusCode.TooManyRequests => new LocalText("The food parser is busy. Try again in a minute, or enter the food by hand."),
                         HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden =>
-                            new LocalText("Gemini rejected the API key ({0}). Check it in Settings, or enter the food by hand.", (int)response.StatusCode),
+                            new LocalText("OpenRouter rejected the API key ({0}). Check it in Settings, or enter the food by hand.", (int)response.StatusCode),
+                        HttpStatusCode.PaymentRequired => new LocalText("The OpenRouter account is out of credits. Top it up, or enter the food by hand."),
+                        HttpStatusCode.NotFound => new LocalText("The model {0} can't parse food right now. Pick another one in Settings, or enter the food by hand.", model),
                         _ => new LocalText("The food parser could not read that. Enter the food by hand."),
                     });
                 }
 
-                return Read(await response.Content.ReadFromJsonAsync<JsonNode>(timeout.Token), o.Model);
+                return Read(await response.Content.ReadFromJsonAsync<JsonNode>(timeout.Token), model);
             }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested && attempt == 1)
             {
@@ -137,7 +129,7 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
             }
             catch (HttpRequestException ex)
             {
-                log.LogWarning(ex, "Gemini request failed");
+                log.LogWarning(ex, "OpenRouter request failed");
                 if (attempt == 2)
                 {
                     return FoodParseResult.Failed("The food parser is unreachable. Enter the food by hand.");
@@ -148,26 +140,43 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
         return FoodParseResult.Failed("The food parser is unavailable. Enter the food by hand.");
     }
 
-    private static JsonObject GenerationConfig(GeminiOptions o)
+    /// <summary>
+    /// require_parameters makes OpenRouter use only providers that honour every parameter sent, so temperature and
+    /// reasoning effort are sent only when the catalog says the model takes them.
+    /// </summary>
+    private async Task<JsonObject> BodyAsync(string text, string model, CancellationToken ct)
     {
-        var config = new JsonObject
+        var info = await catalog.FindAsync(model, ct);
+        var body = new JsonObject
         {
-            ["responseMimeType"] = "application/json",
-            ["responseJsonSchema"] = Schema.DeepClone(),
-            ["temperature"] = 0.2,
+            ["model"] = model,
+            ["messages"] = new JsonArray(
+                new JsonObject { ["role"] = "system", ["content"] = Instructions + AssumptionLanguage() },
+                new JsonObject { ["role"] = "user", ["content"] = text }),
+            ["response_format"] = new JsonObject
+            {
+                ["type"] = "json_schema",
+                ["json_schema"] = new JsonObject { ["name"] = "food_items", ["strict"] = true, ["schema"] = Schema.DeepClone() },
+            },
+            ["provider"] = new JsonObject { ["require_parameters"] = true },
         };
-        if (!string.IsNullOrEmpty(o.ThinkingLevel))
+        if (info?.SupportsTemperature == true)
         {
-            config["thinkingConfig"] = new JsonObject { ["thinkingLevel"] = o.ThinkingLevel };
+            body["temperature"] = 0.2;
         }
 
-        return config;
+        if (info?.LowestEffort is { } effort)
+        {
+            body["reasoning"] = new JsonObject { ["effort"] = effort };
+        }
+
+        return body;
     }
 
-    /// <summary>Pulls the JSON text out of the first candidate and validates each item.</summary>
+    /// <summary>Pulls the JSON text out of the first choice and validates each item.</summary>
     internal static FoodParseResult Read(JsonNode? response, string model)
     {
-        var json = response?["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.GetValue<string>();
+        var json = response?["choices"]?[0]?["message"]?["content"] is JsonValue content && content.TryGetValue<string>(out var c) ? c : null;
         if (string.IsNullOrWhiteSpace(json))
         {
             return FoodParseResult.Failed("The food parser returned nothing. Enter the food by hand.");

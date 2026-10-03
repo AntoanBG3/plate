@@ -2,7 +2,7 @@
 @using GymTracker.Web.Integrations
 @{
     ViewData["Title"] = L["Settings"];
-    var geminiKey = (GeminiKeyStatus)ViewData["GeminiKey"]!;
+    var parser = (ParserStatus)ViewData["Parser"]!;
 }
 <header class="page-head">
     <h1 class="large-title">@L["Settings"]</h1>
@@ -84,53 +84,61 @@
             <span class="row-icon neutral">@Ui.Icon("key")</span>
             <span class="row-main">
                 <span class="row-title">
-                    @switch (geminiKey.Source)
+                    @switch (parser.Key.Source)
                     {
                         case KeySource.Settings:
-                            @L["Gemini, with the key saved here"]
+                            @L["OpenRouter, with the key saved here"]
                             break;
                         case KeySource.Environment:
-                            @L["Gemini, with the key from the server"]
+                            @L["OpenRouter, with the key from the server"]
                             break;
                         default:
-                            @L["No Gemini key"]
+                            @L["No OpenRouter key"]
                             break;
                     }
                 </span>
-                @if (geminiKey.Last4 is not null)
+                @if (parser.Key.Last4 is not null)
                 {
-                    <span class="row-sub" style="display: block">@L["Key ending {0}", geminiKey.Last4]</span>
+                    <span class="row-sub" style="display: block">@L["Key ending {0}", parser.Key.Last4]</span>
                 }
             </span>
         </div>
-        <form method="post" asp-antiforgery="true" action="/settings/gemini-key">
+        <a class="row row-link" href="/settings/model">
+            <span class="row-icon neutral">@Ui.Icon("text")</span>
+            <span class="row-main">
+                <span class="row-title">@(parser.ModelInfo?.Name ?? parser.Model)</span>
+                <span class="row-sub" style="display: block">@(parser.ModelInfo is { } info ? L[info.Price] : L["Model"])</span>
+            </span>
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+        <form method="post" asp-antiforgery="true" action="/settings/openrouter-key">
             <div class="field-row stacked">
                 <label for="apiKey" class="sr-only">@L["New key"]</label>
-                <input id="apiKey" type="password" name="apiKey" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="@GeminiKeyStore.MaxLength" required placeholder="@L["Paste a new key"]" />
+                <input id="apiKey" type="password" name="apiKey" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="@OpenRouterSettings.MaxLength" required placeholder="@L["Paste a new key"]" />
             </div>
             <div class="row" style="padding-top: 0; padding-bottom: 0"><button type="submit" class="btn btn-plain" style="padding: 0">@L["Save and test key"]</button></div>
         </form>
-        @if (geminiKey.Source != KeySource.None)
+        @if (parser.Key.Source != KeySource.None)
         {
-            <form method="post" asp-antiforgery="true" action="/settings/gemini-key/test" class="row" style="padding-top: 0; padding-bottom: 0">
+            <form method="post" asp-antiforgery="true" action="/settings/openrouter-key/test" class="row" style="padding-top: 0; padding-bottom: 0">
                 <button type="submit" class="btn btn-plain" style="padding: 0">@L["Test key"]</button>
             </form>
-            @if (geminiKey.Source == KeySource.Settings)
+            @if (parser.Key.Source == KeySource.Settings)
             {
-                <form method="post" asp-antiforgery="true" action="/settings/gemini-key/remove" class="row" style="padding-top: 0; padding-bottom: 0">
+                <form method="post" asp-antiforgery="true" action="/settings/openrouter-key/remove" class="row" style="padding-top: 0; padding-bottom: 0">
                     <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--destructive)">@L["Remove key"]</button>
                 </form>
             }
         }
     </div>
     <p class="section-footer">
-        @(geminiKey.Source switch
+        @(parser.Key.Source switch
         {
             KeySource.Environment => L["A key saved here replaces the one from the server's .env file."],
             KeySource.None => L["Without a key, typed food is split up by a simple built-in parser."],
-            _ => L["Typed food is read by Gemini; the numbers come from the food database."],
+            _ => L["Typed food is read by the model above; the numbers come from the food database."],
         })
-        @L["The key is shared by both accounts and stored encrypted."]
+        @L["The key and model are shared by both accounts; the key is stored encrypted."]
     </p>
 </section>
 

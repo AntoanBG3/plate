@@ -15,6 +15,8 @@ public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000) : WebA
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Default", db.ConnectionString);
         builder.UseSetting("RateLimits:LoginPerWindow", loginLimit.ToString());
+        // Never reach the real OpenRouter from tests: nothing listens on the discard port.
+        builder.UseSetting("OpenRouter:BaseUrl", "http://127.0.0.1:9/");
     }
 
     public HttpClient NewClient() => CreateClient(new WebApplicationFactoryClientOptions

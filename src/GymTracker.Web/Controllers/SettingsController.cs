@@ -5,6 +5,7 @@ using GymTracker.Web.Features;
 using GymTracker.Web.Features.Export;
 using GymTracker.Web.Features.Profile;
 using GymTracker.Web.Integrations;
+using GymTracker.Web.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,8 +15,9 @@ namespace GymTracker.Web.Controllers;
 public class SettingsController(
     ProfileService profiles,
     DataExport export,
-    GeminiKeyStore geminiKeys,
-    GeminiFoodParser gemini,
+    OpenRouterSettings openRouter,
+    OpenRouterModels models,
+    OpenRouterFoodParser parser,
     UserManager<AppUser> users,
     SignInManager<AppUser> signIn,
     Localizer localizer) : Controller
@@ -24,7 +26,7 @@ public class SettingsController(
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         ViewData["Email"] = (await users.GetUserAsync(User))?.Email;
-        ViewData["GeminiKey"] = await geminiKeys.StatusAsync(ct);
+        ViewData["Parser"] = await ParserStatusAsync(ct);
         return View(await profiles.GetAsync(ct));
     }
 
@@ -71,45 +73,72 @@ public class SettingsController(
         return Redirect("/settings");
     }
 
-    [HttpPost("gemini-key")]
-    public async Task<IActionResult> SetGeminiKey(string? apiKey, CancellationToken ct)
+    private async Task<ParserStatus> ParserStatusAsync(CancellationToken ct)
     {
-        await geminiKeys.SetAsync(apiKey ?? "", ct);
-        await ReportGeminiTestAsync(saved: true, ct);
+        var model = await openRouter.GetModelAsync(ct);
+        return new ParserStatus(await openRouter.KeyStatusAsync(ct), model, await models.FindAsync(model, ct));
+    }
+
+    [HttpPost("openrouter-key")]
+    public async Task<IActionResult> SetOpenRouterKey(string? apiKey, CancellationToken ct)
+    {
+        await openRouter.SetKeyAsync(apiKey ?? "", ct);
+        await ReportTestAsync(new LocalText("Key saved: food parsing works."), new LocalText("Key saved, but it doesn't work yet: {0}"), ct);
         return Redirect("/settings");
     }
 
-    [HttpPost("gemini-key/test")]
-    public async Task<IActionResult> TestGeminiKey(CancellationToken ct)
+    [HttpPost("openrouter-key/test")]
+    public async Task<IActionResult> TestOpenRouterKey(CancellationToken ct)
     {
-        await ReportGeminiTestAsync(saved: false, ct);
+        await ReportTestAsync(new LocalText("Key tested: food parsing works."), new LocalText("Key tested, but it doesn't work yet: {0}"), ct);
         return Redirect("/settings");
     }
 
-    [HttpPost("gemini-key/remove")]
-    public async Task<IActionResult> RemoveGeminiKey(CancellationToken ct)
+    [HttpPost("openrouter-key/remove")]
+    public async Task<IActionResult> RemoveOpenRouterKey(CancellationToken ct)
     {
-        await geminiKeys.ClearAsync(ct);
+        await openRouter.ClearKeyAsync(ct);
         TempData.Notice("Key removed from Settings.");
         return Redirect("/settings");
     }
 
-    private async Task ReportGeminiTestAsync(bool saved, CancellationToken ct)
-    {
-        if (await geminiKeys.GetAsync(ct) is not { } key)
-        {
-            TempData.Error("No Gemini key is set.");
-            return;
-        }
+    [HttpGet("model")]
+    public async Task<IActionResult> Model(CancellationToken ct) =>
+        View(new ModelPickerViewModel(await models.ListAsync(ct), await openRouter.GetModelAsync(ct)));
 
-        if (await gemini.TestAsync(key, ct) is { } error)
+    [HttpPost("model")]
+    public async Task<IActionResult> SetModel(string? modelId, CancellationToken ct)
+    {
+        await openRouter.SetModelAsync(modelId ?? "", ct);
+        if (await openRouter.GetKeyAsync(ct) is null)
         {
-            // The parser's error is a whole sentence, translated here because TempData carries plain text.
-            TempData.Error(new LocalText(saved ? "Key saved, but it doesn't work yet: {0}" : "Key tested, but it doesn't work yet: {0}", localizer[error]));
+            TempData.Notice("Model saved.");
         }
         else
         {
-            TempData.Notice(saved ? "Key saved: Gemini works." : "Key tested: Gemini works.");
+            await ReportTestAsync(new LocalText("Model saved: food parsing works."), new LocalText("Model saved, but it doesn't work yet: {0}"), ct);
+        }
+
+        return Redirect("/settings");
+    }
+
+    /// <summary>Parses "1 banana" with the current key and model and reports the outcome as a notice or error.</summary>
+    private async Task ReportTestAsync(LocalText works, LocalText fails, CancellationToken ct)
+    {
+        if (await openRouter.GetKeyAsync(ct) is not { } key)
+        {
+            TempData.Error("No OpenRouter key is set.");
+            return;
+        }
+
+        if (await parser.TestAsync(key, await openRouter.GetModelAsync(ct), ct) is { } error)
+        {
+            // The parser's error is a whole sentence, translated here because TempData carries plain text.
+            TempData.Error(fails with { Args = [localizer[error]] });
+        }
+        else
+        {
+            TempData.Notice(works);
         }
     }
 

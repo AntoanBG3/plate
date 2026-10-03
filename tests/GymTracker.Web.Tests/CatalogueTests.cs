@@ -37,7 +37,7 @@ public partial class CatalogueTests(ITestOutputHelper output)
     // Strings that reach the user without a pattern above.
     private static readonly string[] Extra = ["assumed 100 g", "Freestyle", "Dark", "Light", "Match phone"];
 
-    // Matched by a pattern but never shown: instructions sent to Gemini.
+    // Matched by a pattern but never shown: instructions sent to the model.
     private static readonly string[] Ignore = ["Write assumption in English."];
 
     public static SortedDictionary<string, SortedSet<string>> Extract()

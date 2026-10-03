@@ -1,0 +1,51 @@
+@model ModelPickerViewModel
+@{
+    ViewData["Title"] = L["Model"];
+    ViewData["BackUrl"] = "/settings";
+    ViewData["BackLabel"] = L["Settings"];
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Model"]</h1>
+</header>
+
+@if (Model.Models is null)
+{
+    <p class="empty">@L["OpenRouter's model list can't be loaded right now. Try again later."]</p>
+}
+else
+{
+    <div class="search-field">
+        @Ui.Icon("search")
+        <input type="search" class="input" placeholder="@L["Search models"]" aria-label="@L["Search models"]" data-filter="#model-groups" autocomplete="off" />
+    </div>
+
+    <div id="model-groups">
+        @foreach (var group in Model.Models.GroupBy(m => m.Provider))
+        {
+            <section class="section" data-filter-group style="margin-top: var(--s-5)">
+                <h2 class="section-header">@group.Key</h2>
+                <div class="list">
+                    @foreach (var m in group)
+                    {
+                        var current = m.Id == Model.Current;
+                        <form method="post" asp-antiforgery="true" action="/settings/model" class="row row-link" data-filter-item="@group.Key @m.Name @m.Id">
+                            <input type="hidden" name="modelId" value="@m.Id" />
+                            <button type="submit" class="row-main" style="text-align: left; display: flex; justify-content: space-between; gap: var(--s-3); align-items: center; min-height: 22px" aria-current="@(current ? "true" : null)">
+                                <span style="min-width: 0">
+                                    <span class="row-title" style="display: block">@m.Name</span>
+                                    <span class="row-sub" style="display: block">@L[m.Price]</span>
+                                </span>
+                                @if (current)
+                                {
+                                    <span style="color: var(--accent); flex: none">@Ui.Icon("check")</span>
+                                }
+                            </button>
+                        </form>
+                    }
+                </div>
+            </section>
+        }
+        <p class="empty" data-filter-empty hidden>@L["No model matches."]</p>
+    </div>
+    <p class="section-footer">@L["Only models that can return structured answers are listed. Prices are OpenRouter's, per million tokens; parsing one entry uses about a thousand."]</p>
+}
