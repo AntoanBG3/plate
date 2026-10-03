@@ -1,20 +1,30 @@
 @model LoginViewModel
 @{
-    ViewData["Title"] = "Sign in";
+    ViewData["Title"] = L["Sign in"];
     ViewData["HideTabs"] = true;
 }
-<h1>Sign in</h1>
-@if (Model.Error is not null)
-{
-    <p class="error" role="alert">@Model.Error</p>
-}
-<form method="post" asp-antiforgery="true" action="/account/login" class="stack">
-    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-    <label>Email
-        <input type="email" name="email" value="@Model.Email" autocomplete="username" autocapitalize="none" required autofocus />
-    </label>
-    <label>Password
-        <input type="password" name="password" autocomplete="current-password" required />
-    </label>
-    <button type="submit" class="primary">Sign in</button>
-</form>
+<div class="auth">
+    <img class="auth-icon" src="/icons/icon-192.png" alt="" width="72" height="72" />
+    <h1 class="large-title">@L["Sign in"]</h1>
+    <p class="subhead">GymTracker</p>
+
+    @if (Model.Error is not null)
+    {
+        <div class="banner is-error" role="alert" style="margin-top: var(--s-5); text-align: left">@Ui.Icon("alert")<span>@L[Model.Error]</span></div>
+    }
+
+    <form method="post" asp-antiforgery="true" action="/account/login" class="auth-form">
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+        <div class="list">
+            <div class="field-row stacked">
+                <label for="email" class="sr-only">@L["Email"]</label>
+                <input id="email" type="email" name="email" value="@Model.Email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="@L["Email"]" required autofocus />
+            </div>
+            <div class="field-row stacked">
+                <label for="password" class="sr-only">@L["Password"]</label>
+                <input id="password" type="password" name="password" autocomplete="current-password" placeholder="@L["Password"]" required />
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Sign in"]</button>
+    </form>
+</div>

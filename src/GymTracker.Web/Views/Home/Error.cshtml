@@ -1,13 +1,16 @@
 @model int
 @{
-    ViewData["Title"] = "Error";
-    var text = Model switch
+    ViewData["Title"] = Model == 404 ? L["Not found"] : L["Error"];
+    var (icon, title, text) = Model switch
     {
-        404 => "That page doesn't exist, or it isn't yours.",
-        429 => "Too many attempts. Wait a few minutes and try again.",
-        _ => "Something went wrong.",
+        404 => ("search", L["Not found"], L["That page doesn't exist, or it isn't yours."]),
+        429 => ("clock", L["Too many attempts"], L["Wait a few minutes and try again."]),
+        _ => ("alert", L["Something went wrong"], L["Try again. If it keeps happening, the server may be restarting."]),
     };
 }
-<h1>@(Model == 404 ? "Not found" : "Error")</h1>
-<p>@text</p>
-<p><a class="button" href="/today">Back to Today</a></p>
+<div class="empty" style="padding-top: 18vh">
+    <div class="empty-icon">@Ui.Icon(icon)</div>
+    <h1 class="large-title" style="font-size: var(--text-title-2); view-transition-name: none">@title</h1>
+    <p style="margin-top: var(--s-2)">@text</p>
+    <a class="btn btn-secondary" href="/today">@L["Back to Today"]</a>
+</div>

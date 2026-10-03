@@ -308,6 +308,13 @@ body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
 .stat-value { font-size: var(--text-title-2); font-weight: var(--weight-semibold); }
 .stat-label { font-size: var(--text-footnote); color: var(--label-2); margin-top: 2px; }
 
+/* ---------- sign in ---------- */
+
+.auth { min-height: calc(100dvh - env(safe-area-inset-top) - 120px); display: flex; flex-direction: column; justify-content: center; text-align: center; max-width: 400px; margin: 0 auto; }
+.auth-icon { width: 72px; height: 72px; border-radius: 16px; margin: 0 auto var(--s-5); box-shadow: var(--shadow-float); }
+.auth .subhead { margin-top: var(--s-1); }
+.auth-form { margin-top: var(--s-7); text-align: left; }
+
 /* ---------- food ---------- */
 
 .date-stepper { display: grid; grid-template-columns: auto 1fr auto; align-items: center; padding: var(--s-1); margin-bottom: var(--s-3); }
