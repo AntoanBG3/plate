@@ -20,7 +20,7 @@ else
     </div>
 
     <div id="model-groups">
-        @foreach (var group in Model.Models.GroupBy(m => m.Provider))
+        @foreach (var group in Model.Models.GroupBy(m => m.Provider).OrderByDescending(g => g.Any(m => m.Id == Model.Current)))
         {
             <section class="section" data-filter-group style="margin-top: var(--s-5)">
                 <h2 class="section-header">@group.Key</h2>

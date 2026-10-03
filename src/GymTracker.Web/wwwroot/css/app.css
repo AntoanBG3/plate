@@ -153,7 +153,8 @@ a.section-aside { color: var(--accent-text) !important; }
 .field-row { display: flex; align-items: center; gap: var(--s-3); min-height: 44px; padding: 6px var(--s-4); position: relative; }
 .field-row > label, .field-row > .field-label { flex: 1; min-width: 0; }
 .field-row input, .field-row select {
-    flex: 0 1 50%; min-width: 0; min-height: 32px; border: 0; background: none; outline: none; padding: 0;
+    /* 44 px to tap; the negative margin lets the box reach into the row's padding without making the row taller. */
+    flex: 0 1 50%; min-width: 0; min-height: 44px; margin: -6px 0; border: 0; background: none; outline: none; padding: 0;
     text-align: right; color: var(--label-2); font-size: var(--text-body);
 }
 .field-row input:focus { color: var(--label); }
@@ -217,17 +218,18 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 /* Segmented control. The selected thumb morphs between pages with a view transition. */
 .segmented { display: flex; padding: 2px; border-radius: 9px; background: var(--fill); gap: 2px; }
 .segment {
-    position: relative; flex: 1; min-height: 32px; display: grid; place-items: center; padding: 0 var(--s-2);
+    position: relative; flex: 1; min-height: 40px; display: grid; place-items: center; padding: 0 var(--s-2);
     border-radius: 7px; color: var(--label); font-size: var(--text-footnote); font-weight: var(--weight-semibold); text-align: center; line-height: 1.15;
 }
 .segment.is-active, .segment:has(:checked) { background: var(--surface-2); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); view-transition-name: segment-thumb; }
 :root[data-theme="light"] .segment.is-active, :root[data-theme="light"] .segment:has(:checked) { background: var(--surface); }
 @media (prefers-color-scheme: light) { :root[data-theme="system"] .segment.is-active, :root[data-theme="system"] .segment:has(:checked) { background: var(--surface); } }
 .segment input { position: absolute; opacity: 0; pointer-events: none; }
+/* Reaches over the control's 2 px padding so each segment is 44 px tall to tap. */
+.segment::before { content: ""; position: absolute; inset: -2px -1px; }
 .segment:has(:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 .segment { cursor: pointer; transition: background-color var(--dur-small) var(--ease-out), box-shadow var(--dur-small) var(--ease-out), transform 360ms var(--ease-snappy); }
 .segmented-wrap { padding: var(--s-1) 0 var(--s-4); }
-.segmented.tall .segment { min-height: 40px; }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px var(--s-2); border-radius: 999px; font-size: var(--text-caption); font-weight: var(--weight-semibold); white-space: nowrap; background: var(--fill); color: var(--label-2); }
 .chip.good { background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--success); }
@@ -333,7 +335,7 @@ body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
 .macro-value small { font-size: var(--text-footnote); color: var(--label-2); font-weight: var(--weight-regular); }
 
 .composer { display: flex; align-items: flex-end; gap: var(--s-2); padding: 6px 6px 6px var(--s-4); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow-card), inset 0 0 0 0.5px var(--separator); }
-.composer textarea { flex: 1; min-width: 0; min-height: 36px; max-height: 40vh; padding: 7px 0; border: 0; background: none; outline: none; resize: none; font-size: var(--text-body); line-height: 1.35; field-sizing: content; }
+.composer textarea { flex: 1; min-width: 0; min-height: 44px; margin: -4px 0; max-height: 40vh; padding: 7px 0; border: 0; background: none; outline: none; resize: none; font-size: var(--text-body); line-height: 1.35; field-sizing: content; }
 .composer textarea::placeholder { color: var(--label-3); }
 .composer:focus-within { box-shadow: var(--shadow-card), inset 0 0 0 1.5px var(--accent); }
 .send-btn { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
@@ -590,3 +592,9 @@ html[data-nav="back"]::view-transition-new(large-title) { animation-name: vt-fad
     ::view-transition-old(*) { animation: 150ms linear both vt-fade-out !important; }
     ::view-transition-new(*) { animation: 150ms linear both vt-fade-in !important; }
 }
+
+/* Compact controls get a 44 px hit area without changing how they look. */
+.set-row.warmup .set-field, .result-amount .grams, .portion-line .grams, .send-btn { position: relative; }
+.set-row.warmup .set-field::before, .result-amount .grams::before, .portion-line .grams::before { content: ""; position: absolute; inset: -4px 0; }
+.send-btn::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
+.section-title .section-aside { padding: 12px 8px; margin: 0 -8px; }

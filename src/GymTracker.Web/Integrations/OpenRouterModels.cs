@@ -70,7 +70,8 @@ public class OpenRouterModels(HttpClient http, IMemoryCache cache, ILogger<OpenR
             var id = Str(m?["id"]);
             var parameters = Strings(m?["supported_parameters"]);
             var output = Strings(m?["architecture"]?["output_modalities"]);
-            if (id is null || id.EndsWith(":batch", StringComparison.Ordinal)
+            // Batch variants are asynchronous; openrouter/* routers pick a different model per request.
+            if (id is null || id.EndsWith(":batch", StringComparison.Ordinal) || id.StartsWith("openrouter/", StringComparison.Ordinal)
                 || !parameters.Contains("structured_outputs") || !parameters.Contains("response_format")
                 || output is not ["text"])
             {
