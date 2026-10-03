@@ -74,9 +74,9 @@ public class OpenRouterCatalogTests
     [Fact]
     public async Task Only_text_models_with_structured_output_and_a_fixed_price_are_listed()
     {
-        var models = await new StubOpenRouter().Catalog().ListAsync(default);
+        var models = (await new StubOpenRouter().Catalog().ListAsync(default))!;
 
-        models!.Select(m => m.Id).Should().Equal("google/gemini-3.5-flash-lite", "openai/gpt-x");
+        models.Select(m => m.Id).Should().Equal("google/gemini-3.5-flash-lite", "openai/gpt-x");
         var gemini = models[0];
         gemini.Should().Match<OpenRouterModel>(m => m.Provider == "Google" && m.Name == "Gemini 3.5 Flash Lite"
             && m.PromptPerMillion == 0.3m && m.CompletionPerMillion == 2.5m && m.SupportsTemperature && m.LowestEffort == "minimal");
