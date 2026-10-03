@@ -16,7 +16,9 @@ public record TodayViewModel(
     WorkoutTemplate? NextTemplate,
     bool HasTemplates,
     GymTracker.Core.Nutrition.Totals Eaten,
-    GymTracker.Web.Features.Food.DailyTargets Targets);
+    GymTracker.Web.Features.Food.DailyTargets Targets,
+    IReadOnlyList<GymTracker.Core.Nutrition.TrendPoint> RecentWeights,
+    string? LastFood);
 
 public record TrainViewModel(WorkoutSession? ActiveSession, IReadOnlyList<WorkoutTemplate> Templates);
 
@@ -48,7 +50,7 @@ public record ProgressViewModel(
     GymTracker.Web.Features.Body.WeightChart Weight,
     IReadOnlyList<GymTracker.Web.Features.Body.CalorieDay> Calories);
 
-public record ExercisePickerViewModel(string Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises);
+public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises);
 
 public record FoodDayViewModel(GymTracker.Web.Features.Food.DayLog Day, DateOnly Today, GymTracker.Web.Features.Food.DailyTargets Targets);
 

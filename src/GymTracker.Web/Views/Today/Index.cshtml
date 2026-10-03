@@ -1,98 +1,173 @@
 @model TodayViewModel
-@{ ViewData["Title"] = "Today"; }
-<h1>Hi, @Model.DisplayName</h1>
-<p class="muted">@Model.Today.ToString("dddd, d MMMM", System.Globalization.CultureInfo.InvariantCulture)</p>
-
+@inject UserTime Time
+@inject TimeProvider Clock
 @{
+    var localNow = await Time.LocalAsync(Clock.GetUtcNow());
+    ViewData["Title"] = L["Today"];
     var t = Model.Targets;
     var eaten = Model.Eaten;
-    int Pct(decimal value, int? target) => target is > 0 ? (int)Math.Min(100, value * 100 / target.Value) : 0;
+    const string Arc = "M31.16 118.84 A62 62 0 1 1 118.84 118.84";
+    string Share(decimal value, int target) => (target > 0 ? Math.Min(1m, value / target) : 0m).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+    var spark = Sparkline.From(Model.RecentWeights);
+    var trendNow = t.TrendWeightKg;
+    var weekAgo = Model.RecentWeights.Count > 7 ? Model.RecentWeights[^8].TrendKg : (decimal?)null;
+    var weekDelta = trendNow is { } now && weekAgo is { } ago ? now - ago : (decimal?)null;
 }
-<a class="card nutrition-card" href="/food">
-    @if (t.Kcal is { } kcal)
+<header class="page-head">
+    <p class="eyebrow">@Ui.LongDate(Model.Today)</p>
+    <h1 class="large-title">@L["Today"]</h1>
+</header>
+
+<a class="card tap" href="/food" aria-label="@L["Food today"]">
+    @if (t.Kcal is { } kcal && t.ProteinG is { } protein)
     {
         var left = kcal - (int)Math.Round(eaten.Kcal);
-        <div class="row-between">
-            <span><span class="big">@Math.Abs(left)</span> <span class="muted">kcal @(left >= 0 ? "left" : "over")</span></span>
-            <span class="muted">@Math.Round(eaten.Kcal) of @kcal</span>
-        </div>
-        <div class="meter@(left < 0 ? " over" : "")"><div style="width: @Pct(eaten.Kcal, kcal)%"></div></div>
-    }
-    @if (t.ProteinG is { } protein)
-    {
         var leftP = protein - (int)Math.Round(eaten.ProteinG);
-        <div class="row-between">
-            <span><span class="big sky">@Math.Max(0, leftP)</span> <span class="muted">g protein left</span></span>
-            <span class="muted">@Math.Round(eaten.ProteinG) of @protein g</span>
+        <div class="gauges">
+            <div class="gauge@(left < 0 ? " over" : "")">
+                <svg viewBox="0 0 150 128" aria-hidden="true"><path class="track" d="@Arc"/><path class="bar-kcal" d="@Arc" data-progress="@Share(eaten.Kcal, kcal)"/></svg>
+                <div class="gauge-center">
+                    <div class="gauge-value num" data-count="@Math.Abs(left)">@Math.Abs(left)</div>
+                    <div class="gauge-label">@(left >= 0 ? L["kcal left"] : L["kcal over"])</div>
+                </div>
+            </div>
+            <div class="gauge">
+                <svg viewBox="0 0 150 128" aria-hidden="true"><path class="track" d="@Arc"/><path class="bar-protein" d="@Arc" data-progress="@Share(eaten.ProteinG, protein)"/></svg>
+                <div class="gauge-center">
+                    <div class="gauge-value num"><span data-count="@Math.Max(0, leftP)">@Math.Max(0, leftP)</span><small> @L["g"]</small></div>
+                    <div class="gauge-label">@L["protein left"]</div>
+                </div>
+            </div>
         </div>
-        <div class="meter sky"><div style="width: @Pct(eaten.ProteinG, protein)%"></div></div>
-    }
-    @if (t.Missing is not null)
-    {
-        <p class="muted">@t.Missing</p>
-    }
-    @if (t.FloorApplied)
-    {
-        <p class="muted warn">Raised to the @t.FloorKcal kcal minimum. Consider a slower rate in Settings.</p>
-    }
-    @if (t.Estimate is { } estimate)
-    {
-        if (estimate.Method == GymTracker.Core.Domain.MaintenanceMethod.Adaptive)
-        {
-            <p class="muted">
-                Maintenance @estimate.EstimatedTdeeKcal kcal, adaptive from @estimate.DaysOfData days of data.
-                @if (estimate.LowConfidence)
-                {
-                    <span class="warn">Low confidence: weigh-ins had a gap of 3 or more days.</span>
-                }
-            </p>
-        }
-        else
-        {
-            <p class="muted">
-                Maintenance @estimate.EstimatedTdeeKcal kcal, initial estimate@(estimate.DaysOfData > 0 ? $" ({estimate.DaysOfData} days of data, food logged on {(int)Math.Round(estimate.LoggingCompleteness * 100)}%)" : "").
-                It adapts weekly once you have 2 weeks of weigh-ins on most days and food logged on 80% of days.
-            </p>
-        }
-    }
-</a>
-
-<section class="card">
-    <h2>Weight</h2>
-    <form method="post" asp-antiforgery="true" action="/today/weight" class="inline">
-        <input type="number" name="weightKg" inputmode="decimal" step="any" min="20" max="400"
-               placeholder="kg" aria-label="Weight in kg" required
-               value="@(Model.TodayWeight?.WeightKg.Kg())" @(Model.TodayWeight is null ? "autofocus" : "") />
-        <button type="submit" class="primary">@(Model.TodayWeight is null ? "Save" : "Update")</button>
-    </form>
-    @if (Model.TodayWeight is not null)
-    {
-        <p class="muted">Logged today: @Model.TodayWeight.WeightKg.Kg() kg@(t.TrendWeightKg is { } trendToday ? $", trend {trendToday.Kg(1)} kg" : "")</p>
-    }
-    else if (Model.LatestWeight is not null)
-    {
-        <p class="muted">Last: @Model.LatestWeight.WeightKg.Kg() kg on @Model.LatestWeight.Date.ToString("d MMM", System.Globalization.CultureInfo.InvariantCulture)@(t.TrendWeightKg is { } trendLast ? $", trend {trendLast.Kg(1)} kg" : "")</p>
-    }
-</section>
-
-<section class="card highlight">
-    <h2>Workout</h2>
-    @if (Model.ActiveSession is not null)
-    {
-        <p>@(Model.ActiveSession.Template?.Name ?? "Freestyle") is in progress.</p>
-        <a class="button primary" href="/train/sessions/@Model.ActiveSession.Id">Resume</a>
-    }
-    else if (Model.NextTemplate is not null)
-    {
-        <p>Next up: <strong>@Model.NextTemplate.Name</strong></p>
-        <form method="post" asp-antiforgery="true" action="/train/start">
-            <input type="hidden" name="templateId" value="@Model.NextTemplate.Id" />
-            <button type="submit" class="primary">Start</button>
-        </form>
+        <p class="gauges-foot footnote">@L["Eaten {0} of {1} kcal and {2} of {3} g protein", Math.Round(eaten.Kcal), kcal, Math.Round(eaten.ProteinG), protein]</p>
     }
     else
     {
-        <p class="muted">No templates yet.</p>
-        <a class="button" href="/train/templates">Create a template</a>
+        <div class="card-pad">
+            <p class="headline">@L["{0} kcal eaten", Math.Round(eaten.Kcal)]</p>
+            @if (t.Missing is not null)
+            {
+                <p class="subhead" style="margin-top: 4px">@L[t.Missing]</p>
+            }
+        </div>
+    }
+</a>
+
+<section class="section">
+    <h2 class="section-title">@L["Workout"]</h2>
+    @if (Model.ActiveSession is { } active)
+    {
+        <div class="card card-pad">
+            <p class="footnote">@L["In progress · {0}", L.Duration(Clock.GetUtcNow() - active.StartedAt)]</p>
+            <p class="large-title" style="font-size: var(--text-title-1); margin: 4px 0 var(--s-4); view-transition-name: none">@(active.Template?.Name ?? L["Freestyle"])</p>
+            <a class="btn btn-primary btn-block" href="/train/sessions/@active.Id">@Ui.Icon("play")@L["Resume workout"]</a>
+        </div>
+    }
+    else if (Model.NextTemplate is { } next)
+    {
+        <div class="card card-pad">
+            <p class="footnote">@L["Up next"]</p>
+            <p class="large-title" style="font-size: var(--text-title-1); margin: 4px 0 2px; view-transition-name: none">@next.Name</p>
+            <p class="subhead row-ellipsis" style="margin-bottom: var(--s-4)">@string.Join(", ", next.Exercises.OrderBy(e => e.SortOrder).Select(e => L.Exercise(e.Exercise)))</p>
+            <form method="post" asp-antiforgery="true" action="/train/start">
+                <input type="hidden" name="templateId" value="@next.Id" />
+                <button type="submit" class="btn btn-primary btn-block">@Ui.Icon("play")@L["Start {0}", next.Name]</button>
+            </form>
+        </div>
+    }
+    else
+    {
+        <div class="card empty">
+            <div class="empty-icon">@Ui.Icon("train")</div>
+            <h2>@L["No workouts yet"]</h2>
+            <p>@L["Make a template with the exercises you do, and Today will suggest the next one."]</p>
+            <a class="btn btn-tinted" href="/train/templates">@L["Create a template"]</a>
+        </div>
     }
 </section>
+
+<section class="section">
+    <h2 class="section-title">@L["Body"]</h2>
+    <div class="list">
+        @if (trendNow is { } trend)
+        {
+            <div class="row">
+                <div class="row-main">
+                    <div>@L["Trend weight"]</div>
+                    <div class="metric-value num" style="font-size: var(--text-large-title); margin-top: 6px"><span data-count="@trend.Kg(1)">@trend.Kg(1)</span><span class="metric-unit">@L["kg"]</span></div>
+                    @if (weekDelta is { } delta)
+                    {
+                        <div class="footnote" style="margin-top: 4px">@L["{0} kg this week", (delta >= 0 ? "+" : "−") + Math.Abs(delta).Kg(1)]</div>
+                    }
+                </div>
+                @if (spark is not null)
+                {
+                    <svg class="spark" viewBox="0 0 128 52" aria-hidden="true">
+                        <path class="spark-area" d="@spark.Area"/>
+                        @foreach (var (x, y) in spark.Dots)
+                        {
+                            <circle class="spark-dot" cx="@x.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" cy="@y.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" r="2"/>
+                        }
+                        <path class="spark-line" d="@spark.Line" data-draw/>
+                    </svg>
+                }
+            </div>
+        }
+        <form method="post" asp-antiforgery="true" action="/today/weight" class="field-row">
+            <label for="weightKg">@L["Today's weight"]</label>
+            <input id="weightKg" class="num" type="number" name="weightKg" inputmode="decimal" step="any" min="20" max="400"
+                   placeholder="@L["kg"]" required value="@(Model.TodayWeight?.WeightKg.Kg())" @(Model.TodayWeight is null ? "autofocus" : "") />
+            <span class="unit">@L["kg"]</span>
+            <button type="submit" class="btn btn-plain">@(Model.TodayWeight is null ? L["Save"] : L["Update"])</button>
+        </form>
+    </div>
+    @if (Model.TodayWeight is not null)
+    {
+        <p class="section-footer">@L["Logged today: {0} kg, trend {1} kg", Model.TodayWeight.WeightKg.Kg(), t.TrendWeightKg?.Kg(1)]</p>
+    }
+    else if (Model.LatestWeight is not null)
+    {
+        <p class="section-footer">@L["Last weigh-in: {0} kg on {1}", Model.LatestWeight.WeightKg.Kg(), Ui.DayMonth(Model.LatestWeight.Date)]</p>
+    }
+</section>
+
+<section class="section">
+    <div class="list">
+        <a class="row row-link" href="/food/add?date=@Model.Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)&amp;meal=@Ui.MealAt(localNow)">
+            <span class="row-icon">@Ui.Icon("food")</span>
+            <span class="row-main">
+                <span class="row-title">@L["Log food"]</span>
+                @if (Model.LastFood is not null)
+                {
+                    <span class="row-sub row-ellipsis" style="display: block">@L["Last: {0}", Model.LastFood]</span>
+                }
+            </span>
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+    </div>
+</section>
+
+@if (t.Estimate is { } estimate)
+{
+    <p class="section-footer" style="margin-top: var(--s-6)">
+        @if (estimate.Method == MaintenanceMethod.Adaptive)
+        {
+            @L["Maintenance {0} kcal, adaptive from {1} days of data.", estimate.EstimatedTdeeKcal, estimate.DaysOfData]
+            if (estimate.LowConfidence)
+            {
+                <span class="warn"> @L["Low confidence: weigh-ins had a gap of 3 or more days."]</span>
+            }
+        }
+        else
+        {
+            @(estimate.DaysOfData > 0
+                ? L["Maintenance {0} kcal, initial estimate ({1} days of data, food logged on {2}%).", estimate.EstimatedTdeeKcal, estimate.DaysOfData, (int)Math.Round(estimate.LoggingCompleteness * 100)]
+                : L["Maintenance {0} kcal, initial estimate.", estimate.EstimatedTdeeKcal])
+            @(" ")@L["It adapts weekly once you have 2 weeks of weigh-ins on most days and food logged on 80% of days."]
+        }
+        @if (t.FloorApplied)
+        {
+            <span class="warn"> @L["Raised to the {0} kcal minimum. Consider a slower rate in Settings.", t.FloorKcal]</span>
+        }
+    </p>
+}
