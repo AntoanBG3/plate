@@ -50,5 +50,14 @@ public class Localizer
     public static string Humanize(string name) =>
         string.Concat(name.Select((c, i) => i > 0 && char.IsUpper(c) ? " " + char.ToLowerInvariant(c) : c.ToString()));
 
+    /// <summary>Seeded exercises have English names that are translated; a user's own exercises keep their name.</summary>
+    public string Exercise(GymTracker.Core.Domain.Exercise exercise) =>
+        exercise.OwnerUserId is null ? this[exercise.Name] : exercise.Name;
+
+    /// <summary>"45 min" or "1 h 5 min" in the user's language.</summary>
+    public string Duration(TimeSpan span) => span.TotalHours >= 1
+        ? this["{0} h {1} min", (int)span.TotalHours, span.Minutes]
+        : this["{0} min", Math.Max(0, span.Minutes)];
+
     public IReadOnlyDictionary<string, string> Catalogue => bg;
 }

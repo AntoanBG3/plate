@@ -30,11 +30,26 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable
     }
 
     [Fact]
+    public async Task Every_file_the_service_worker_precaches_exists()
+    {
+        // One missing file makes the service worker's install fail, and the app then has no offline page.
+        var client = app.NewClient();
+        var sw = await client.GetStringAsync("/sw.js");
+        var paths = System.Text.RegularExpressions.Regex.Matches(sw, "\"(/[^\"]+\\.[a-z0-9]+)\"").Select(m => m.Groups[1].Value).Distinct().ToList();
+        paths.Should().Contain("/css/app.css").And.Contain("/offline.html");
+        foreach (var path in paths)
+        {
+            (await client.GetAsync(path)).StatusCode.Should().Be(HttpStatusCode.OK, path);
+        }
+    }
+
+    [Fact]
     public async Task Static_assets_and_login_page_are_public()
     {
         var client = app.NewClient();
         (await client.GetAsync("/account/login")).StatusCode.Should().Be(HttpStatusCode.OK);
-        (await client.GetAsync("/css/site.css")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await client.GetAsync("/css/tokens.css")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await client.GetAsync("/css/app.css")).StatusCode.Should().Be(HttpStatusCode.OK);
         (await client.GetAsync("/lib/htmx/htmx.min.js")).StatusCode.Should().Be(HttpStatusCode.OK);
 
         // iOS fetches the manifest and icons without the login cookie when installing the app.

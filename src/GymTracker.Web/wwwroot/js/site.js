@@ -1,14 +1,7 @@
-// Shows htmx failures as a toast instead of failing silently.
+// Shows htmx failures as a toast instead of failing silently, registers the service worker,
+// and keeps the live per-portion totals on the food forms up to date.
 (function () {
-    const toast = document.getElementById("toast");
-    let timer;
-
-    function show(text) {
-        toast.textContent = text;
-        toast.hidden = false;
-        clearTimeout(timer);
-        timer = setTimeout(() => { toast.hidden = true; }, 5000);
-    }
+    "use strict";
 
     document.body.addEventListener("htmx:responseError", (event) => {
         const xhr = event.detail.xhr;
@@ -16,29 +9,50 @@
             window.location.href = "/account/login?returnUrl=" + encodeURIComponent(window.location.pathname);
             return;
         }
-        show(xhr.status === 400 && xhr.responseText ? xhr.responseText : "Something went wrong (" + xhr.status + "). Try again.");
+        window.gymToast(xhr.status === 400 && xhr.responseText ? xhr.responseText : t("Something went wrong ({0}). Try again.", xhr.status));
     });
 
     document.body.addEventListener("htmx:sendError", () => {
-        show("No connection. That change was not saved; try again when you have signal.");
+        window.gymToast(t("No connection. That change was not saved; try again when you have signal."));
+    });
+
+    // Settings that apply as soon as they change. A theme change previews at once with a crossfade, then saves.
+    document.addEventListener("change", (event) => {
+        const form = event.target.closest("form[data-autosubmit]");
+        if (!form) {
+            return;
+        }
+        const theme = event.target.dataset.themePreview;
+        const submit = () => form.requestSubmit();
+        if (!theme) {
+            submit();
+            return;
+        }
+        const apply = () => { document.documentElement.dataset.theme = theme; };
+        if (document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            document.startViewTransition(apply).finished.then(submit, submit);
+        } else {
+            apply();
+            submit();
+        }
+    });
+
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+
+    // Live per-row totals on the food confirmation list and portion forms.
+    document.addEventListener("input", (event) => {
+        const row = event.target.closest("[data-per100]");
+        if (!row) {
+            return;
+        }
+        const grams = parseFloat((row.querySelector('input[name$="Grams"], input[name="grams"]') || {}).value) || 0;
+        const per = row.dataset.per100.split(",").map(Number);
+        const out = row.querySelector("[data-totals]");
+        if (out) {
+            const f = grams / 100;
+            out.textContent = t("{0} kcal · {1} g protein", Math.round(per[0] * f), (per[1] * f).toFixed(1));
+        }
     });
 })();
-
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
-}
-
-// Live per-row totals on the food confirmation list and portion forms.
-document.addEventListener("input", (event) => {
-    const row = event.target.closest("[data-per100]");
-    if (!row) {
-        return;
-    }
-    const grams = parseFloat((row.querySelector('input[name$="Grams"], input[name="grams"]') || {}).value) || 0;
-    const per = row.dataset.per100.split(",").map(Number);
-    const out = row.querySelector("[data-totals]");
-    if (out) {
-        const f = grams / 100;
-        out.textContent = `${Math.round(per[0] * f)} kcal · ${(per[1] * f).toFixed(1)} g protein`;
-    }
-});

@@ -1,6 +1,6 @@
 // Caches static files only (SPEC section 8). Pages and data always come from the server;
 // when a page can't be fetched, the offline page is shown instead.
-const CACHE = "gym-static-v4";
+const CACHE = "gym-static-v5";
 const OFFLINE = "/offline.html";
 const PRECACHE = [
     OFFLINE,
@@ -9,7 +9,10 @@ const PRECACHE = [
     "/icons/icon-512.png",
     "/icons/apple-touch-icon.png",
     "/icons/icon-32.png",
-    "/css/site.css",
+    "/css/tokens.css",
+    "/css/app.css",
+    "/js/i18n.js",
+    "/js/motion.js",
     "/js/site.js",
     "/js/session.js",
     "/js/progress.js",
@@ -25,10 +28,6 @@ const PRECACHE = [
     "/lib/fonts/fira-sans-500-cyrillic.woff2",
     "/lib/fonts/fira-sans-600-latin.woff2",
     "/lib/fonts/fira-sans-600-cyrillic.woff2",
-    "/lib/fonts/fira-sans-condensed-700-latin.woff2",
-    "/lib/fonts/fira-sans-condensed-700-cyrillic.woff2",
-    "/lib/fonts/fira-sans-condensed-800-latin.woff2",
-    "/lib/fonts/fira-sans-condensed-800-cyrillic.woff2",
 ];
 
 self.addEventListener("install", (event) => {
