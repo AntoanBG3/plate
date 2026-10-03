@@ -60,6 +60,17 @@ public class SettingsController(
         decimal? ProteinGramsPerKg,
         decimal? DefaultWeightIncrementKg);
 
+    [HttpPost("appearance")]
+    public async Task<IActionResult> Appearance(GymTracker.Core.Domain.Theme theme, GymTracker.Core.Domain.Language language, CancellationToken ct)
+    {
+        await profiles.UpdateAsync(p =>
+        {
+            p.Theme = theme;
+            p.Language = language;
+        }, ct);
+        return Redirect("/settings");
+    }
+
     [HttpPost("gemini-key")]
     public async Task<IActionResult> SetGeminiKey(string? apiKey, CancellationToken ct)
     {
