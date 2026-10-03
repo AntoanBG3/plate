@@ -597,4 +597,4 @@ html[data-nav="back"]::view-transition-new(large-title) { animation-name: vt-fad
 .set-row.warmup .set-field, .result-amount .grams, .portion-line .grams, .send-btn { position: relative; }
 .set-row.warmup .set-field::before, .result-amount .grams::before, .portion-line .grams::before { content: ""; position: absolute; inset: -4px 0; }
 .send-btn::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
-.section-title .section-aside { padding: 12px 8px; margin: 0 -8px; }
+.section-title .section-aside { padding: 12px 10px; margin: 0 -10px; }
