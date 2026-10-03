@@ -88,8 +88,10 @@
         Chart.defaults.elements.line.borderJoinStyle = "round";
         Chart.defaults.elements.line.borderCapStyle = "round";
 
+        // No thousands separator, like the numbers in the rest of the app ("2253 kcal").
+        const plain = (v) => Number(v).toLocaleString("en-US", { useGrouping: false, maximumFractionDigits: 2 });
         const xAxis = { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: 5, maxRotation: 0, color: label3 } };
-        const yAxis = (extra) => Object.assign({ position: "right", grid: { color: grid, drawTicks: false }, border: { display: false }, ticks: { maxTicksLimit: 4, padding: 8, color: label3 } }, extra);
+        const yAxis = (extra) => Object.assign({ position: "right", grid: { color: grid, drawTicks: false }, border: { display: false }, ticks: { maxTicksLimit: 4, padding: 8, color: label3, callback: plain } }, extra);
         const kg = (v) => t("{0} kg", v);
         const motion = animate ? { duration: 900, easing: "easeOutQuart" } : false;
 
