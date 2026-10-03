@@ -46,7 +46,7 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     {
         var template = await templates.GetAsync(id, ct);
         return View("ExercisePicker", new ExercisePickerViewModel(
-            $"Add to {template.Name}", $"/train/templates/{id}/exercises", $"/train/templates/{id}", await exercises.ListAsync(ct)));
+            new GymTracker.Core.Text.LocalText("Add to {0}", template.Name), $"/train/templates/{id}/exercises", $"/train/templates/{id}", await exercises.ListAsync(ct)));
     }
 
     [HttpPost("{id:int}/exercises")]

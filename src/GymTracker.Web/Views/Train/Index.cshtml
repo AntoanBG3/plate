@@ -1,40 +1,72 @@
 @model TrainViewModel
-@{ ViewData["Title"] = "Train"; }
-<h1>Train</h1>
+@inject TimeProvider Clock
+@{
+    ViewData["Title"] = L["Train"];
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Train"]</h1>
+</header>
 
-@if (Model.ActiveSession is not null)
+@if (Model.ActiveSession is { } active)
 {
-    <section class="card highlight">
-        <p>@(Model.ActiveSession.Template?.Name ?? "Freestyle") is in progress.</p>
-        <a class="button primary" href="/train/sessions/@Model.ActiveSession.Id">Resume</a>
-    </section>
+    <div class="card card-pad">
+        <p class="footnote">@L["In progress · {0}", L.Duration(Clock.GetUtcNow() - active.StartedAt)]</p>
+        <p class="headline" style="font-size: var(--text-title-2); margin: 4px 0 var(--s-4)">@(active.Template?.Name ?? L["Freestyle"])</p>
+        <a class="btn btn-primary btn-block" href="/train/sessions/@active.Id">@Ui.Icon("play")@L["Resume workout"]</a>
+    </div>
 }
 
-@foreach (var template in Model.Templates)
-{
-    <section class="card">
-        <div class="row-between">
-            <h2>@template.Name</h2>
-            @if (Model.ActiveSession is null)
+<section class="section">
+    <h2 class="section-title">@L["Workouts"]<a class="section-aside" href="/train/templates">@L["Edit"]</a></h2>
+    @if (Model.Templates.Count == 0)
+    {
+        <div class="card empty">
+            <div class="empty-icon">@Ui.Icon("list")</div>
+            <h2>@L["No templates yet"]</h2>
+            <p>@L["A template is the list of exercises for one workout, like Upper A or Legs."]</p>
+            <a class="btn btn-tinted" href="/train/templates">@L["Create a template"]</a>
+        </div>
+    }
+    else
+    {
+        <div class="list">
+            @foreach (var template in Model.Templates)
             {
-                <form method="post" asp-antiforgery="true" action="/train/start">
-                    <input type="hidden" name="templateId" value="@template.Id" />
-                    <button type="submit" class="primary">Start</button>
-                </form>
+                <div class="row">
+                    <div class="row-main">
+                        <div class="row-title headline">@template.Name</div>
+                        <div class="row-sub">@(template.Exercises.Count == 0 ? L["No exercises yet"] : string.Join(", ", template.Exercises.OrderBy(e => e.SortOrder).Select(e => L.Exercise(e.Exercise))))</div>
+                    </div>
+                    @if (Model.ActiveSession is null)
+                    {
+                        <form method="post" asp-antiforgery="true" action="/train/start">
+                            <input type="hidden" name="templateId" value="@template.Id" />
+                            <button type="submit" class="btn btn-tinted btn-small" aria-label="@L["Start {0}", template.Name]">@L["Start"]</button>
+                        </form>
+                    }
+                </div>
             }
         </div>
-        <p class="muted">@string.Join(", ", template.Exercises.Select(e => e.Exercise.Name))</p>
-    </section>
-}
+    }
+    @if (Model.ActiveSession is null)
+    {
+        <form method="post" asp-antiforgery="true" action="/train/start" style="margin-top: var(--s-3)">
+            <button type="submit" class="btn btn-secondary btn-block">@Ui.Icon("plus")@L["Start an empty workout"]</button>
+        </form>
+    }
+</section>
 
-@if (Model.ActiveSession is null)
-{
-    <form method="post" asp-antiforgery="true" action="/train/start">
-        <button type="submit">Start empty session</button>
-    </form>
-}
-
-<nav class="links">
-    <a class="button" href="/train/templates">Templates</a>
-    <a class="button" href="/train/history">History</a>
-</nav>
+<section class="section">
+    <div class="list">
+        <a class="row row-link" href="/train/history">
+            <span class="row-icon neutral">@Ui.Icon("history")</span>
+            <span class="row-main">@L["History"]</span>
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+        <a class="row row-link" href="/train/templates">
+            <span class="row-icon neutral">@Ui.Icon("list")</span>
+            <span class="row-main">@L["Templates"]</span>
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+    </div>
+</section>

@@ -1,21 +1,51 @@
 @model List<WorkoutTemplate>
-@{ ViewData["Title"] = "Templates"; }
-<h1>Templates</h1>
-<ul class="list">
-    @foreach (var template in Model)
-    {
-        <li class="row-between">
-            <a href="/train/templates/@template.Id"><strong>@template.Name</strong> <span class="muted">@template.Exercises.Count exercises</span></a>
-            <span class="icon-buttons">
-                <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/move"><input type="hidden" name="direction" value="-1" /><button type="submit" aria-label="Move up">↑</button></form>
-                <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" aria-label="Move down">↓</button></form>
-            </span>
-        </li>
-    }
-</ul>
-<form method="post" asp-antiforgery="true" action="/train/templates" class="inline card">
-    <input type="text" name="name" placeholder="New template, e.g. Upper A" maxlength="100" required aria-label="Template name" />
-    <button type="submit" class="primary">Create</button>
+@{
+    ViewData["Title"] = L["Templates"];
+    ViewData["BackUrl"] = "/train";
+    ViewData["BackLabel"] = L["Train"];
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Templates"]</h1>
+</header>
+
+@if (Model.Count > 0)
+{
+    <div class="list">
+        @for (var i = 0; i < Model.Count; i++)
+        {
+            var template = Model[i];
+            <div class="row">
+                <a class="row-main tap" href="/train/templates/@template.Id" style="color: inherit">
+                    <span class="row-title headline" style="display: block">@template.Name</span>
+                    <span class="row-sub" style="display: block">@L.Count(template.Exercises.Count, "1 exercise", "{0} exercises")</span>
+                </a>
+                <div class="menu-wrap">
+                    <button type="button" class="icon-btn" data-menu-trigger aria-expanded="false" aria-label="@L["Actions for {0}", template.Name]">@Ui.Icon("more")</button>
+                    <div class="menu" role="menu">
+                        @if (i > 0)
+                        {
+                            <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/move"><input type="hidden" name="direction" value="-1" /><button type="submit" role="menuitem">@L["Move up"]@Ui.Icon("up")</button></form>
+                        }
+                        @if (i < Model.Count - 1)
+                        {
+                            <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" role="menuitem">@L["Move down"]@Ui.Icon("down")</button></form>
+                        }
+                        <a href="/train/templates/@template.Id" role="menuitem">@L["Edit"]@Ui.Icon("pencil")</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <p class="section-footer">@L["Today suggests the template after the last one you finished, in this order."]</p>
+}
+
+<form method="post" asp-antiforgery="true" action="/train/templates" class="section">
+    <h2 class="section-title">@L["New template"]</h2>
+    <div class="list">
+        <div class="field-row stacked">
+            <label for="name" class="sr-only">@L["Template name"]</label>
+            <input id="name" type="text" name="name" placeholder="@L["Name, e.g. Upper A"]" maxlength="100" required />
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-3)">@L["Create template"]</button>
 </form>
-<p class="muted">Today suggests the template after the last one you finished, in this order.</p>
-<p><a href="/train">Back</a></p>
