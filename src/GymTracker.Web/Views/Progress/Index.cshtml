@@ -1,24 +1,24 @@
 @model ProgressViewModel
 @using System.Text.Json
 @{
-    ViewData["Title"] = "Progress";
-    var e1rm = JsonSerializer.Serialize(new
-    {
-        labels = Model.E1rm.Select(p => p.Date.ToString("d MMM", System.Globalization.CultureInfo.InvariantCulture)),
-        values = Model.E1rm.Select(p => p.E1rmKg),
-    });
-    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    ViewData["Title"] = L["Progress"];
     var points = Model.Weight.Points;
+    var weighIns = points.Count(p => p.RawKg is not null);
     var weight = JsonSerializer.Serialize(new
     {
-        labels = points.Select(p => p.Date.ToString("d MMM", inv)),
+        labels = points.Select(p => Ui.DayMonth(p.Date)),
         raw = points.Select(p => p.RawKg),
         trend = points.Select(p => decimal.Round(p.TrendKg, 2)),
+    });
+    var e1rm = JsonSerializer.Serialize(new
+    {
+        labels = Model.E1rm.Select(p => Ui.DayMonth(p.Date)),
+        values = Model.E1rm.Select(p => p.E1rmKg),
     });
     var calorieDays = Model.Calories;
     var calories = JsonSerializer.Serialize(new
     {
-        labels = calorieDays.Select(d => d.Date.ToString("d MMM", inv)),
+        labels = calorieDays.Select(d => Ui.DayMonth(d.Date)),
         kcal = calorieDays.Select(d => d.Kcal),
         target = calorieDays.Select(d => d.TargetKcal),
         maintenance = calorieDays.Select(d => d.MaintenanceKcal),
@@ -26,91 +26,149 @@
     var trained = Model.Volume.Muscles.Where(m => m.ThisWeek > 0 || m.LastWeek > 0).ToList();
     var volume = JsonSerializer.Serialize(new
     {
-        labels = trained.Select(m => m.Muscle.ToString()),
+        labels = trained.Select(m => L.Enum(m.Muscle)),
         thisWeek = trained.Select(m => m.ThisWeek),
         lastWeek = trained.Select(m => m.LastWeek),
     });
+    var loggedDays = calorieDays.Where(d => d.Kcal is not null).ToList();
 }
-<h1>Progress</h1>
+<header class="page-head">
+    <h1 class="large-title">@L["Progress"]</h1>
+</header>
 
-<section class="card">
-    <h2>Bodyweight</h2>
-    <nav class="segments three" aria-label="Range">
+<section class="section">
+    <h2 class="section-title">@L["Bodyweight"]</h2>
+    <nav class="segmented" aria-label="@L["Range"]" style="margin-bottom: var(--s-3)">
         @foreach (var (key, label) in GymTracker.Web.Features.Body.BodyAnalytics.Ranges)
         {
-            <a class="seg@(key == Model.Weight.Range ? " active" : "")" href="/progress?range=@key@(Model.Selected is null ? "" : $"&exerciseId={Model.Selected.Id}")">@label</a>
+            <a class="segment@(key == Model.Weight.Range ? " is-active" : "")" aria-current="@(key == Model.Weight.Range ? "page" : null)" href="/progress?range=@key@(Model.Selected is null ? "" : $"&exerciseId={Model.Selected.Id}")">@L[label]</a>
         }
     </nav>
-    @if (points.Count == 0)
-    {
-        <p class="muted">No weigh-ins in this range. Log your weight on the Today page.</p>
-    }
-    else
-    {
-        <p class="muted">Dots are weigh-ins, the line is the trend. Trend now: <strong>@points[^1].TrendKg.Kg(1) kg</strong></p>
-        <div class="chart"><canvas id="weight-chart" aria-label="Weigh-ins and trend weight"></canvas></div>
-        <script type="application/json" id="weight-data">@Html.Raw(weight)</script>
-    }
-</section>
-
-<section class="card">
-    <h2>Estimated 1RM</h2>
-    @if (Model.Selected is null)
-    {
-        <p class="muted">Log a few workouts to see your strength trend.</p>
-    }
-    else
-    {
-        <form method="get" action="/progress" class="inline">
-            <input type="hidden" name="range" value="@Model.Weight.Range" />
-            <label class="sr-only" for="exerciseId">Exercise</label>
-            <select id="exerciseId" name="exerciseId" onchange="this.form.submit()">
-                @foreach (var exercise in Model.Exercises)
-                {
-                    <option value="@exercise.Id" selected="@(exercise.Id == Model.Selected.Id)">@exercise.Name</option>
-                }
-            </select>
-            <noscript><button type="submit">Show</button></noscript>
-        </form>
-        @if (Model.E1rm.Count == 0)
+    <div class="card chart-card">
+        @if (points.Count == 0)
         {
-            <p class="muted">No sets of 1 to 12 reps logged for this exercise yet.</p>
+            <div class="empty" style="padding: var(--s-5) 0">
+                <div class="empty-icon">@Ui.Icon("scale")</div>
+                <h2>@L["No weigh-ins yet"]</h2>
+                <p>@L["Log your weight on the Today page; the trend appears after a few days."]</p>
+            </div>
         }
         else
         {
-            <p class="muted">Best of each session, Epley formula. Latest: <strong>@Model.E1rm[^1].E1rmKg.Kg() kg</strong></p>
-            <div class="chart"><canvas id="e1rm-chart" aria-label="Estimated one-rep max per session"></canvas></div>
-            <script type="application/json" id="e1rm-data">@Html.Raw(e1rm)</script>
+            <div class="chart-head">
+                <div>
+                    <div class="chart-value num">@points[^1].TrendKg.Kg(1)<small>@L["kg"]</small></div>
+                    <div class="footnote">@L["Trend now:"] <strong>@points[^1].TrendKg.Kg(1) kg</strong></div>
+                </div>
+            </div>
+            @if (weighIns < 3)
+            {
+                <p class="chart-sparse subhead">@L["The trend line appears after a few more weigh-ins."]</p>
+            }
+            else
+            {
+                <div class="chart"><canvas id="weight-chart" role="img" aria-label="@L["Weigh-ins and trend weight"]"></canvas></div>
+                <div class="legend"><span><i style="background: var(--label-3); border-radius: 50%; width: 7px; height: 7px"></i>@L["Weigh-in"]</span><span><i class="line" style="background: var(--accent)"></i>@L["Trend"]</span></div>
+            }
+            <script type="application/json" id="weight-data">@Html.Raw(weight)</script>
         }
-    }
+    </div>
 </section>
 
-<section class="card">
-    <h2>Weekly sets per muscle</h2>
-    <p class="muted">Week @Model.Volume.ThisWeek.Week against last week. Secondary muscles count as half a set.</p>
-    @if (trained.Count == 0)
+<section class="section">
+    <h2 class="section-title">@L["Estimated 1RM"]</h2>
+    @if (Model.Selected is null)
     {
-        <p class="muted">No working sets in the last two weeks.</p>
+        <div class="card empty">
+            <div class="empty-icon">@Ui.Icon("trend")</div>
+            <h2>@L["No strength data yet"]</h2>
+            <p>@L["Log a few workouts to see your strength trend."]</p>
+        </div>
     }
     else
     {
-        <div class="chart tall" style="height: @(Math.Max(180, trained.Count * 44))px"><canvas id="volume-chart" aria-label="Working sets per muscle this week and last week"></canvas></div>
-        <script type="application/json" id="volume-data">@Html.Raw(volume)</script>
+        <form method="get" action="/progress" class="list" style="margin-bottom: var(--s-3)">
+            <input type="hidden" name="range" value="@Model.Weight.Range" />
+            <div class="field-row">
+                <label for="exerciseId">@L["Exercise"]</label>
+                <select id="exerciseId" name="exerciseId" onchange="this.form.submit()">
+                    @foreach (var exercise in Model.Exercises)
+                    {
+                        <option value="@exercise.Id" selected="@(exercise.Id == Model.Selected.Id)">@L[exercise.Name]</option>
+                    }
+                </select>
+            </div>
+            <noscript><button type="submit" class="btn btn-plain">@L["Show"]</button></noscript>
+        </form>
+        <div class="card chart-card">
+            @if (Model.E1rm.Count == 0)
+            {
+                <p class="chart-sparse subhead">@L["No sets of 1 to 12 reps logged for this exercise yet."]</p>
+            }
+            else
+            {
+                <div class="chart-head">
+                    <div>
+                        <div class="chart-value num">@Model.E1rm[^1].E1rmKg.Kg()<small>@L["kg"]</small></div>
+                        <div class="footnote">@L["Latest, best set of the session (Epley)"]</div>
+                    </div>
+                    @if (Model.E1rm.Count > 1)
+                    {
+                        var change = Model.E1rm[^1].E1rmKg - Model.E1rm[0].E1rmKg;
+                        <span class="chip @(change >= 0 ? "good" : "")">@((change >= 0 ? "+" : "−") + Math.Abs(change).Kg(1)) @L["kg"]</span>
+                    }
+                </div>
+                @if (Model.E1rm.Count < 3)
+                {
+                    <p class="chart-sparse subhead">@L["The chart appears after a few more sessions."]</p>
+                }
+                else
+                {
+                    <div class="chart"><canvas id="e1rm-chart" role="img" aria-label="@L["Estimated one-rep max per session"]"></canvas></div>
+                    <script type="application/json" id="e1rm-data">@Html.Raw(e1rm)</script>
+                }
+            }
+        </div>
     }
 </section>
 
-<section class="card">
-    <h2>Calories</h2>
-    @if (calorieDays.All(d => d.Kcal is null))
-    {
-        <p class="muted">No food logged in the last 4 weeks.</p>
-    }
-    else
-    {
-        <p class="muted">Last 4 weeks: intake against your target, with the maintenance estimate.</p>
-        <div class="chart"><canvas id="calories-chart" aria-label="Daily calories against target for the last 4 weeks"></canvas></div>
-        <script type="application/json" id="calories-data">@Html.Raw(calories)</script>
-    }
+<section class="section">
+    <h2 class="section-title">@L["Weekly sets"]</h2>
+    <div class="card chart-card">
+        @if (trained.Count == 0)
+        {
+            <p class="chart-sparse subhead">@L["No working sets in the last two weeks."]</p>
+        }
+        else
+        {
+            <div class="chart-head"><div class="footnote">@L["Working sets per muscle, week {0} against last week. Secondary muscles count as half a set.", Model.Volume.ThisWeek.Week]</div></div>
+            <div class="chart tall" style="height: @(Math.Max(160, trained.Count * 40))px"><canvas id="volume-chart" role="img" aria-label="@L["Working sets per muscle this week and last week"]"></canvas></div>
+            <div class="legend"><span><i style="background: var(--accent)"></i>@L["This week"]</span><span><i style="background: var(--fill-strong)"></i>@L["Last week"]</span></div>
+            <script type="application/json" id="volume-data">@Html.Raw(volume)</script>
+        }
+    </div>
+</section>
+
+<section class="section">
+    <h2 class="section-title">@L["Calories"]</h2>
+    <div class="card chart-card">
+        @if (loggedDays.Count == 0)
+        {
+            <p class="chart-sparse subhead">@L["No food logged in the last 4 weeks."]</p>
+        }
+        else
+        {
+            <div class="chart-head">
+                <div>
+                    <div class="chart-value num">@Math.Round(loggedDays.Average(d => d.Kcal!.Value))<small>@L["kcal"]</small></div>
+                    <div class="footnote">@L["Average on logged days, last 4 weeks"]</div>
+                </div>
+            </div>
+            <div class="chart"><canvas id="calories-chart" role="img" aria-label="@L["Daily calories against target for the last 4 weeks"]"></canvas></div>
+            <div class="legend"><span><i style="background: var(--fill-strong)"></i>@L["Eaten"]</span><span><i class="line" style="background: var(--accent)"></i>@L["Target"]</span><span><i class="dash"></i>@L["Maintenance"]</span></div>
+            <script type="application/json" id="calories-data">@Html.Raw(calories)</script>
+        }
+    </div>
 </section>
 
 <script src="~/lib/chartjs/chart.umd.min.js" asp-append-version="true"></script>
