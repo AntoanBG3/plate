@@ -1,4 +1,5 @@
 using GymTracker.Core.Nutrition;
+using GymTracker.Core.Text;
 
 namespace GymTracker.Web.Features.Food;
 
@@ -17,7 +18,7 @@ public record ConfirmItem(
     int? FoodItemId,
     string? MatchedName,
     Confidence Confidence,
-    string? Note);
+    IReadOnlyList<LocalText> Notes);
 
 /// <summary>Turns parsed foods into database foods: the model reads the text, the database supplies the numbers (SPEC 6.1).</summary>
 public class FoodMatcher(FoodItemService foods)
@@ -48,10 +49,10 @@ public class FoodMatcher(FoodItemService foods)
                 .Select(x => x.Food)
                 .FirstOrDefault();
 
-            var notes = new List<string>();
+            var notes = new List<LocalText>();
             if (!string.IsNullOrEmpty(item.Assumption))
             {
-                notes.Add(item.Assumption);
+                notes.Add(new LocalText(item.Assumption));
             }
 
             if (best is not null)
@@ -63,17 +64,17 @@ public class FoodMatcher(FoodItemService foods)
                     best.Id,
                     best.Name,
                     best.Score >= HighConfidence ? Confidence.High : Confidence.Medium,
-                    notes.Count > 0 ? string.Join(". ", notes) : null));
+                    notes));
                 continue;
             }
 
-            notes.Add("No database match, so these numbers are the AI's estimate");
+            notes.Add(new LocalText("No database match, so these numbers are the AI's estimate."));
             if (FoodMath.MacrosDisagree(item.Estimated))
             {
-                notes.Add("calories don't add up from the macros");
+                notes.Add(new LocalText("The calories don't add up from the macros."));
             }
 
-            result.Add(new ConfirmItem(Description(item), item.Grams, item.Estimated, null, null, Confidence.Low, string.Join(". ", notes)));
+            result.Add(new ConfirmItem(Description(item), item.Grams, item.Estimated, null, null, Confidence.Low, notes));
         }
 
         return result;

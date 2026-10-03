@@ -1,53 +1,83 @@
 @model ConfirmViewModel
+@using GymTracker.Web.Features.Food
 @{
-    ViewData["Title"] = "Check foods";
     var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    ViewData["Title"] = L["Check foods"];
+    ViewData["BackUrl"] = $"/food/add?date={date}&meal={Model.Meal}&tab=text";
+    ViewData["BackLabel"] = L["Start over"];
 }
-<h1>Check before saving</h1>
-<p class="muted">“@Model.Text”</p>
+<header class="page-head">
+    <h1 class="large-title">@L["Check foods"]</h1>
+    <p class="subhead">@L["Untick anything wrong and fix the grams. Nothing is saved until you tap Save."]</p>
+</header>
+
+<p class="bubble">@Model.Text</p>
+
 @if (Model.Warning is not null)
 {
-    <p class="error" role="alert">@Model.Warning</p>
+    <div class="banner is-error" role="alert" style="margin-top: var(--s-4)">@Ui.Icon("alert")<span>@L[Model.Warning]</span></div>
 }
 
-<form method="post" asp-antiforgery="true" action="/food/confirm">
+<form method="post" asp-antiforgery="true" action="/food/confirm" style="margin-top: var(--s-5)">
     <input type="hidden" name="date" value="@date" />
     <input type="hidden" name="meal" value="@Model.Meal" />
     <input type="hidden" name="aiModel" value="@Model.AiModel" />
-    @for (var i = 0; i < Model.Items.Count; i++)
-    {
-        var item = Model.Items[i];
-        <section class="card portion confirm-@item.Confidence.ToString().ToLowerInvariant()" data-per100="@item.Per100.Kcal.Kg(),@item.Per100.Protein.Kg()">
-            <div class="row-between">
-                <label class="check-label"><input type="checkbox" name="items[@i].Include" value="true" checked /> Include</label>
-                <span class="badge">@(item.Confidence switch { GymTracker.Web.Features.Food.Confidence.High => "Good match", GymTracker.Web.Features.Food.Confidence.Medium => "Check match", _ => "AI estimate" })</span>
-            </div>
-            <input type="text" name="items[@i].Description" value="@item.Description" maxlength="200" aria-label="Description" required />
-            <div class="inline">
-                <input type="number" name="items[@i].Grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" aria-label="Grams" required />
-                <span class="muted">g</span>
-                <span class="muted" data-totals>@Math.Round(item.Per100.Kcal * item.Grams / 100) kcal · @((item.Per100.Protein * item.Grams / 100).ToString("0.0")) g protein</span>
-            </div>
-            @if (item.MatchedName is not null)
+    <div class="list">
+        @for (var i = 0; i < Model.Items.Count; i++)
+        {
+            var item = Model.Items[i];
+            var (chip, label) = item.Confidence switch
             {
-                <p class="muted">Using: @item.MatchedName</p>
-            }
-            @if (item.Note is not null)
-            {
-                <p class="muted">@item.Note</p>
-            }
-            <details>
-                <summary class="muted">Per 100 g values</summary>
-                <div class="grid-form">
-                    <label>kcal <input type="number" name="items[@i].Kcal" value="@item.Per100.Kcal.Kg()" min="0" max="900" step="any" inputmode="decimal" /></label>
-                    <label>Protein <input type="number" name="items[@i].Protein" value="@item.Per100.Protein.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
-                    <label>Carbs <input type="number" name="items[@i].Carbs" value="@item.Per100.Carbs.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
-                    <label>Fat <input type="number" name="items[@i].Fat" value="@item.Per100.Fat.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
+                Confidence.High => ("good", L["Database"]),
+                Confidence.Medium => ("check", L["Check match"]),
+                _ => ("ai", L["AI estimate"]),
+            };
+            <div class="result portion" data-per100="@item.Per100.Kcal.Kg(),@item.Per100.Protein.Kg()" style="animation-delay: @(i * 70)ms">
+                <div class="result-head">
+                    <input type="checkbox" class="check-input" name="items[@i].Include" value="true" checked aria-label="@L["Include {0}", item.Description]" />
+                    <input type="text" class="input" name="items[@i].Description" value="@item.Description" maxlength="200" aria-label="@L["Description"]" required />
+                    <span class="chip @chip">@label</span>
                 </div>
-            </details>
-            <input type="hidden" name="items[@i].FoodItemId" value="@item.FoodItemId" />
-        </section>
-    }
-    <button type="submit" class="primary wide">Save @Model.Meal.ToString().ToLowerInvariant()</button>
+                <div class="result-amount">
+                    <label class="grams"><input type="number" name="items[@i].Grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
+                    <span class="footnote num" data-totals>@L["{0} kcal · {1} g protein", Math.Round(item.Per100.Kcal * item.Grams / 100), (item.Per100.Protein * item.Grams / 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)]</span>
+                </div>
+                @if (item.MatchedName is not null || item.Notes.Count > 0)
+                {
+                    <div class="result-notes footnote">
+                        @if (item.MatchedName is not null)
+                        {
+                            <span>@L["Using: {0}", item.MatchedName]</span>
+                        }
+                        @foreach (var note in item.Notes)
+                        {
+                            <span>@L[note]</span>
+                        }
+                    </div>
+                }
+                <details>
+                    <summary>@L["Per 100 g values"]</summary>
+                    <div class="per100">
+                        <label>@L["kcal"]<input class="input num" type="number" name="items[@i].Kcal" value="@item.Per100.Kcal.Kg()" min="0" max="900" step="any" inputmode="decimal" /></label>
+                        <label>@L["Protein"]<input class="input num" type="number" name="items[@i].Protein" value="@item.Per100.Protein.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
+                        <label>@L["Carbs"]<input class="input num" type="number" name="items[@i].Carbs" value="@item.Per100.Carbs.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
+                        <label>@L["Fat"]<input class="input num" type="number" name="items[@i].Fat" value="@item.Per100.Fat.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
+                    </div>
+                </details>
+                <input type="hidden" name="items[@i].FoodItemId" value="@item.FoodItemId" />
+            </div>
+        }
+    </div>
+    <p class="section-footer">@L["Database values come from USDA or foods you saved. AI estimates are the model's own numbers; check them against the label if you can."]</p>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L[SaveTo[Model.Meal]]</button>
 </form>
-<p><a href="/food/add?date=@date&amp;meal=@Model.Meal&amp;tab=text">Start over</a></p>
+
+@functions {
+    private static readonly Dictionary<Meal, string> SaveTo = new()
+    {
+        [Meal.Breakfast] = "Save to breakfast",
+        [Meal.Lunch] = "Save to lunch",
+        [Meal.Dinner] = "Save to dinner",
+        [Meal.Snack] = "Save as a snack",
+    };
+}

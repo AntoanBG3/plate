@@ -1,24 +1,40 @@
 @model FoodLogEntry
 @{
-    ViewData["Title"] = "Edit food";
     var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    ViewData["Title"] = Model.Description;
+    ViewData["BackUrl"] = $"/food?date={date}";
+    ViewData["BackLabel"] = L["Food"];
 }
-<p class="muted"><a href="/food?date=@date">← Back</a></p>
-<h1>Edit</h1>
-<form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id" class="card stack">
-    <label>Description <input type="text" name="description" value="@Model.Description" maxlength="200" required /></label>
-    <label>Grams <input type="number" name="grams" value="@Model.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" required /></label>
-    <label>Meal
-        <select name="meal">
-            @foreach (var meal in Enum.GetValues<Meal>())
-            {
-                <option value="@meal" selected="@(meal == Model.Meal)">@meal</option>
-            }
-        </select>
-    </label>
-    <p class="muted">Now @Math.Round(Model.Kcal) kcal · @Model.ProteinG.Kg() g protein · @Model.CarbsG.Kg() g carbs · @Model.FatG.Kg() g fat. Changing grams scales these.</p>
-    <button type="submit" class="primary">Save</button>
+<header class="page-head">
+    <p class="eyebrow">@Ui.ShortDate(Model.Date) · @L.Enum(Model.Meal)</p>
+    <h1 class="large-title" style="font-size: var(--text-title-1)">@Model.Description</h1>
+</header>
+
+<div class="card stat-grid" style="grid-template-columns: repeat(4, 1fr)">
+    <div class="stat"><div class="stat-value num">@Math.Round(Model.Kcal)</div><div class="stat-label">@L["kcal"]</div></div>
+    <div class="stat"><div class="stat-value num">@Model.ProteinG.Kg(0)</div><div class="stat-label">@L["protein"]</div></div>
+    <div class="stat"><div class="stat-value num">@Model.CarbsG.Kg(0)</div><div class="stat-label">@L["carbs"]</div></div>
+    <div class="stat"><div class="stat-value num">@Model.FatG.Kg(0)</div><div class="stat-label">@L["fat"]</div></div>
+</div>
+
+<form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id" class="section">
+    <div class="list">
+        <div class="field-row"><label for="description">@L["Description"]</label><input id="description" type="text" name="description" value="@Model.Description" maxlength="200" required /></div>
+        <div class="field-row"><label for="grams">@L["Amount"]</label><input id="grams" class="num" type="number" name="grams" value="@Model.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" required /><span class="unit">@L["g"]</span></div>
+        <div class="field-row">
+            <label for="meal">@L["Meal"]</label>
+            <select id="meal" name="meal">
+                @foreach (var meal in Enum.GetValues<Meal>())
+                {
+                    <option value="@meal" selected="@(meal == Model.Meal)">@L.Enum(meal)</option>
+                }
+            </select>
+        </div>
+    </div>
+    <p class="section-footer">@L["Changing the amount scales calories and macros with it."]</p>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Save"]</button>
 </form>
-<form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id/delete" onsubmit="return confirm('Delete this entry?')">
-    <button type="submit" class="danger">Delete</button>
+
+<form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id/delete" onsubmit="return confirm(this.dataset.confirm)" data-confirm="@L["Delete this entry?"]" style="margin-top: var(--s-3)">
+    <button type="submit" class="btn btn-destructive btn-block">@L["Delete entry"]</button>
 </form>

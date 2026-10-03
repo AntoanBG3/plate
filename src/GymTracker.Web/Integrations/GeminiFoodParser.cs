@@ -40,6 +40,12 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
         Never invent foods that are not in the text. If the text contains no food, return an empty list.
         """;
 
+    // The user reads the assumption on the confirmation list, so it is written in their interface language.
+    private static string AssumptionLanguage() =>
+        Features.Localization.Localizer.IsBulgarian
+            ? "Write assumption in natural Bulgarian, as a person would say it (\"приех една средна банана, 120 г\")."
+            : "Write assumption in English.";
+
     private static readonly JsonObject Schema = JsonNode.Parse("""
         {
           "type": "object",
@@ -80,7 +86,7 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
         var o = options.Value;
         var body = new JsonObject
         {
-            ["systemInstruction"] = new JsonObject { ["parts"] = new JsonArray(new JsonObject { ["text"] = Instructions }) },
+            ["systemInstruction"] = new JsonObject { ["parts"] = new JsonArray(new JsonObject { ["text"] = Instructions + AssumptionLanguage() }) },
             ["contents"] = new JsonArray(new JsonObject
             {
                 ["role"] = "user",

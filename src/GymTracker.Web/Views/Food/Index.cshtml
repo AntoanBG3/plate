@@ -1,63 +1,110 @@
 @model FoodDayViewModel
 @{
-    ViewData["Title"] = "Food";
+    ViewData["Title"] = L["Food"];
     var day = Model.Day;
     var isToday = day.Date == Model.Today;
     var inv = System.Globalization.CultureInfo.InvariantCulture;
     string Iso(DateOnly d) => d.ToString("yyyy-MM-dd", inv);
+    var targetKcal = isToday ? Model.Targets.Kcal : null;
+    var targetProtein = isToday ? Model.Targets.ProteinG : null;
+    string Share(decimal value, int? target) => (target is > 0 ? Math.Min(1m, value / target.Value) : 0m).ToString("0.###", inv);
 }
-<header class="row-between">
-    <a class="button icon" href="/food?date=@Iso(day.Date.AddDays(-1))" aria-label="Previous day">←</a>
-    <div class="date-title">
-        <h1>@(isToday ? "Today" : day.Date.ToString("ddd d MMM", inv))</h1>
-        @if (!isToday)
-        {
-            <a href="/food">Back to today</a>
-        }
-    </div>
-    <a class="button icon" href="/food?date=@Iso(day.Date.AddDays(1))" aria-label="Next day">→</a>
+<header class="page-head">
+    <h1 class="large-title">@L["Food"]</h1>
 </header>
 
-<section class="card totals">
-    <div><span class="big">@Math.Round(day.Totals.Kcal)</span><span class="muted">kcal@(isToday && Model.Targets.Kcal is { } t ? $" of {t}" : "")</span></div>
-    <div><span class="big sky">@Math.Round(day.Totals.ProteinG)</span><span class="muted">g protein@(isToday && Model.Targets.ProteinG is { } p ? $" of {p}" : "")</span></div>
-    <div><span class="mid">@Math.Round(day.Totals.CarbsG)</span><span class="muted">g carbs</span></div>
-    <div><span class="mid">@Math.Round(day.Totals.FatG)</span><span class="muted">g fat</span></div>
-</section>
+<nav class="date-stepper card" aria-label="@L["Day"]">
+    <a class="icon-btn tap" href="/food?date=@Iso(day.Date.AddDays(-1))" aria-label="@L["Previous day"]">@Ui.Icon("back")</a>
+    <div class="date-stepper-label">
+        <span class="headline">@(isToday ? L["Today"] : day.Date == Model.Today.AddDays(-1) ? L["Yesterday"] : Ui.ShortDate(day.Date))</span>
+        @if (!isToday)
+        {
+            <a class="footnote" href="/food" style="color: var(--accent-text)">@L["Back to today"]</a>
+        }
+        else
+        {
+            <span class="footnote">@Ui.LongDate(day.Date)</span>
+        }
+    </div>
+    <a class="icon-btn tap" href="/food?date=@Iso(day.Date.AddDays(1))" aria-label="@L["Next day"]">@Ui.Icon("forward")</a>
+</nav>
+
+<div class="card macro-card">
+    <div class="macro-main">
+        <div>
+            <span class="metric-value num" data-count="@Math.Round(day.Totals.Kcal)">@Math.Round(day.Totals.Kcal)</span>
+            <span class="metric-unit">@L["kcal"]</span>
+        </div>
+        @if (targetKcal is { } tk)
+        {
+            <span class="subhead">@L["of {0}", tk]</span>
+        }
+    </div>
+    @if (targetKcal is not null)
+    {
+        <div class="meter" role="img" aria-label="@L["{0} of {1} kcal", Math.Round(day.Totals.Kcal), targetKcal]"><i style="--p: @Share(day.Totals.Kcal, targetKcal)"></i></div>
+    }
+    <div class="macro-grid">
+        <div>
+            <div class="macro-value num">@Math.Round(day.Totals.ProteinG)<small> @L["g"]</small></div>
+            <div class="footnote">@(targetProtein is { } tp ? L["protein of {0} g", tp] : L["protein"])</div>
+            @if (targetProtein is not null)
+            {
+                <div class="meter small"><i style="--p: @Share(day.Totals.ProteinG, targetProtein); background: var(--label)"></i></div>
+            }
+        </div>
+        <div><div class="macro-value num">@Math.Round(day.Totals.CarbsG)<small> @L["g"]</small></div><div class="footnote">@L["carbs"]</div></div>
+        <div><div class="macro-value num">@Math.Round(day.Totals.FatG)<small> @L["g"]</small></div><div class="footnote">@L["fat"]</div></div>
+    </div>
+</div>
 
 @foreach (var meal in Enum.GetValues<Meal>())
 {
     var entries = day.For(meal).ToList();
     var mealTotals = day.TotalsFor(meal);
-    <section class="card meal">
-        <div class="row-between">
-            <h2>@meal</h2>
-            <span class="muted">@Math.Round(mealTotals.Kcal) kcal</span>
-        </div>
-        @if (entries.Count > 0)
-        {
-            <ul class="list">
-                @foreach (var e in entries)
-                {
-                    <li>
-                        <a href="/food/entries/@e.Id" class="entry">
-                            <span>@e.Description</span>
-                            <span class="muted">@e.Grams.Kg() g · @Math.Round(e.Kcal) kcal · @e.ProteinG.Kg() g protein</span>
-                        </a>
-                    </li>
-                }
-            </ul>
-        }
-        <div class="card-actions">
-            <a class="button" href="/food/add?date=@Iso(day.Date)&amp;meal=@meal">+ Add</a>
+    <section class="section">
+        <h2 class="section-title">@L.Enum(meal)<span class="section-aside num">@(entries.Count > 0 ? L["{0} kcal", Math.Round(mealTotals.Kcal)] : "")</span></h2>
+        <div class="list">
+            @foreach (var e in entries)
+            {
+                <a href="/food/entries/@e.Id" class="row row-link">
+                    <span class="row-main">
+                        <span class="row-title" style="display: block">@e.Description</span>
+                        <span class="row-sub num" style="display: block">@L["{0} g · {1} kcal · {2} g protein", e.Grams.Kg(), Math.Round(e.Kcal), e.ProteinG.Kg(1)]</span>
+                    </span>
+                    @Ui.Icon("chevron", "row-chevron")
+                </a>
+            }
+            <a class="row row-link" href="/food/add?date=@Iso(day.Date)&amp;meal=@meal" style="color: var(--accent-text)">
+                @Ui.Icon("plus", "icon-sm")<span class="row-main">@L[AddTo[meal]]</span>
+            </a>
             @if (entries.Count == 0)
             {
-                <form method="post" asp-antiforgery="true" action="/food/copy" class="grow">
+                <form method="post" asp-antiforgery="true" action="/food/copy" class="row" style="padding-top: 0; padding-bottom: 0">
                     <input type="hidden" name="date" value="@Iso(day.Date)" />
                     <input type="hidden" name="meal" value="@meal" />
-                    <button type="submit" class="wide">Copy yesterday's</button>
+                    <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--label-2)">@Ui.Icon("copy", "icon-sm")@L[CopyFrom[meal]]</button>
                 </form>
             }
         </div>
     </section>
+}
+
+@functions {
+    // Whole phrases per meal: Bulgarian meal names change form inside a sentence.
+    private static readonly Dictionary<Meal, string> AddTo = new()
+    {
+        [Meal.Breakfast] = "Add to breakfast",
+        [Meal.Lunch] = "Add to lunch",
+        [Meal.Dinner] = "Add to dinner",
+        [Meal.Snack] = "Add a snack",
+    };
+
+    private static readonly Dictionary<Meal, string> CopyFrom = new()
+    {
+        [Meal.Breakfast] = "Copy yesterday's breakfast",
+        [Meal.Lunch] = "Copy yesterday's lunch",
+        [Meal.Dinner] = "Copy yesterday's dinner",
+        [Meal.Snack] = "Copy yesterday's snacks",
+    };
 }

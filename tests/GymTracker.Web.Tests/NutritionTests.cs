@@ -59,7 +59,7 @@ public class NutritionTests(PostgresFixture fixture)
         item.FoodItemId.Should().BeNull();
         item.Confidence.Should().Be(Confidence.Low);
         item.Per100.Kcal.Should().Be(300);
-        item.Note.Should().Contain("don't add up");
+        item.Notes.Should().Contain(n => n.Format.Contains("don't add up"));
     }
 
     [Fact]

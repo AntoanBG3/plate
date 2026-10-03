@@ -2,23 +2,31 @@
 @{
     var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 }
-<form method="post" asp-antiforgery="true" action="/food/items" class="card stack">
+<form method="post" asp-antiforgery="true" action="/food/items">
     <input type="hidden" name="date" value="@date" />
     <input type="hidden" name="meal" value="@Model.Meal" />
     @if (Model.Barcode is not null)
     {
         <input type="hidden" name="barcode" value="@Model.Barcode" />
-        <p class="muted">Barcode @Model.Barcode. Saved for both of you, so it only needs entering once.</p>
     }
-    <label>Name <input type="text" name="name" value="@Model.Name" maxlength="200" required /></label>
-    <p class="muted">Per 100 g, from the label:</p>
-    <div class="grid-form">
-        <label>kcal <input type="number" name="kcal" min="0" max="900" step="any" inputmode="decimal" required /></label>
-        <label>Protein <input type="number" name="protein" min="0" max="100" step="any" inputmode="decimal" required /></label>
-        <label>Carbs <input type="number" name="carbs" min="0" max="100" step="any" inputmode="decimal" required /></label>
-        <label>Fat <input type="number" name="fat" min="0" max="100" step="any" inputmode="decimal" required /></label>
-        <label>Serving g <input type="number" name="servingGrams" min="1" max="3000" step="any" inputmode="decimal" /></label>
-        <label>You ate g <input type="number" name="grams" min="1" max="3000" step="any" inputmode="decimal" required /></label>
+    <div class="list">
+        <div class="field-row stacked"><label for="m-name" class="sr-only">@L["Name"]</label><input id="m-name" type="text" name="name" value="@Model.Name" maxlength="200" required placeholder="@L["Food name, e.g. Кисело мляко 2%"]" /></div>
     </div>
-    <button type="submit" class="primary">Save and add</button>
+    <h2 class="section-header" style="margin-top: var(--s-5)">@L["Per 100 g, from the label"]</h2>
+    <div class="list">
+        <div class="field-row"><label for="m-kcal">@L["Energy"]</label><input id="m-kcal" class="num" type="number" name="kcal" min="0" max="900" step="any" inputmode="decimal" required /><span class="unit">@L["kcal"]</span></div>
+        <div class="field-row"><label for="m-protein">@L["Protein"]</label><input id="m-protein" class="num" type="number" name="protein" min="0" max="100" step="any" inputmode="decimal" required /><span class="unit">@L["g"]</span></div>
+        <div class="field-row"><label for="m-carbs">@L["Carbs"]</label><input id="m-carbs" class="num" type="number" name="carbs" min="0" max="100" step="any" inputmode="decimal" required /><span class="unit">@L["g"]</span></div>
+        <div class="field-row"><label for="m-fat">@L["Fat"]</label><input id="m-fat" class="num" type="number" name="fat" min="0" max="100" step="any" inputmode="decimal" required /><span class="unit">@L["g"]</span></div>
+    </div>
+    <h2 class="section-header" style="margin-top: var(--s-5)">@L["Portion"]</h2>
+    <div class="list">
+        <div class="field-row"><label for="m-serving">@L["One serving"]</label><input id="m-serving" class="num" type="number" name="servingGrams" min="1" max="3000" step="any" inputmode="decimal" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+        <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="number" name="grams" min="1" max="3000" step="any" inputmode="decimal" required /><span class="unit">@L["g"]</span></div>
+    </div>
+    @if (Model.Barcode is not null)
+    {
+        <p class="section-footer">@L["Barcode {0}. Saved for both of you, so it only needs entering once.", Model.Barcode]</p>
+    }
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Save and add"]</button>
 </form>

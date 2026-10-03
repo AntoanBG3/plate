@@ -1,12 +1,14 @@
 // Barcode scanning for the Food page (SPEC 7). Safari ships BarcodeDetector disabled, so this uses the
 // barcode-detector ponyfill (ZXing-C++ in WebAssembly), served from this app rather than a CDN.
-// The camera opens without changing the URL, since a route change can stop the stream or re-prompt on iOS.
+// The camera opens in a full-screen sheet without changing the URL, since a route change can stop the
+// stream or re-prompt on iOS. Closing the sheet stops the camera.
 (function () {
     "use strict";
 
     const root = document.getElementById("scanner");
     const api = window.BarcodeDetectionAPI;
-    if (!root || !api) {
+    const start = document.querySelector("[data-start]");
+    if (!root || !api || !start) {
         return;
     }
 
@@ -40,27 +42,30 @@
 
     function found(code) {
         stop();
-        say(`Found ${code}. Looking it up…`);
+        say(t("Found {0}. Looking it up…", code));
         codeInput.value = code;
         form.requestSubmit();
     }
 
-    root.querySelector("[data-start]").addEventListener("click", async () => {
+    root.addEventListener("sheet:close", stop);
+
+    start.addEventListener("click", async () => {
+        window.gymSheet.show(root);
+        say(t("Point the camera at the barcode."));
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            say("This browser can't open the camera. Type the digits or take a photo instead.");
+            say(t("This browser can't open the camera. Type the digits or take a photo instead."));
             return;
         }
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
         } catch {
-            say("Camera access was refused. Type the digits or take a photo instead.");
+            say(t("Camera access was refused. Type the digits or take a photo instead."));
             return;
         }
 
         video.srcObject = stream;
         video.hidden = false;
         await video.play().catch(() => {});
-        say("Point the camera at the barcode.");
 
         let busy = false;
         timer = setInterval(async () => {
@@ -87,16 +92,16 @@
             return;
         }
         stop();
-        say("Reading the photo…");
+        say(t("Reading the photo…"));
         try {
             const codes = await detector.detect(await createImageBitmap(file));
             if (codes.length) {
                 found(codes[0].rawValue);
             } else {
-                say("No barcode found in that photo. Try again closer, or type the digits.");
+                say(t("No barcode found in that photo. Try again closer, or type the digits."));
             }
         } catch {
-            say("Couldn't read that photo. Type the digits instead.");
+            say(t("Couldn't read that photo. Type the digits instead."));
         }
     });
 

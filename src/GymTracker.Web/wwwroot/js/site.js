@@ -37,6 +37,21 @@
         }
     });
 
+    // Forms that take a while (the food text parser): show the busy state and stop a second send.
+    document.addEventListener("submit", (event) => {
+        const form = event.target.closest("form[data-busy]");
+        if (form && !event.defaultPrevented) {
+            form.classList.add("is-busy");
+            form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = true; });
+        }
+    });
+    window.addEventListener("pageshow", () => {
+        document.querySelectorAll("form.is-busy").forEach((form) => {
+            form.classList.remove("is-busy");
+            form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = false; });
+        });
+    });
+
     if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
