@@ -20,6 +20,8 @@ export function openRouterKey() {
 }
 
 export const defaultModel = process.env.OPENROUTER_MODEL || "google/gemini-3.8-flash";
+/** Reasoning effort, e.g. "max"; by default the lowest the model accepts. */
+export const defaultEffort = process.env.OPENROUTER_EFFORT || undefined;
 
 let catalog;
 /** The model's catalog entry from OpenRouter (public endpoint), or undefined. Cached per process. */
@@ -35,7 +37,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * Calls an OpenRouter model with strict structured JSON output and returns the parsed result. Strict schemas need an
  * object at the root, so an array schema is wrapped as { items: [...] } and unwrapped again.
  */
-export async function llm({ model = defaultModel, system, prompt, schema, temperature = 0.1 }) {
+export async function llm({ model = defaultModel, effort = defaultEffort, system, prompt, schema, temperature = 0.1 }) {
     const key = openRouterKey();
     const wrapped = schema.type === "array";
     const rootSchema = wrapped ? { type: "object", properties: { items: schema }, required: ["items"], additionalProperties: false } : schema;
@@ -49,7 +51,10 @@ export async function llm({ model = defaultModel, system, prompt, schema, temper
     };
     if (supports.has("temperature")) body.temperature = temperature;
     const efforts = info?.reasoning?.supported_efforts;
-    if (supports.has("reasoning") && efforts?.length) body.reasoning = { effort: efforts.at(-1) };
+    if (effort && !efforts?.includes(effort)) {
+        throw new Error(`${model} does not accept reasoning effort "${effort}" (it takes: ${efforts?.join(", ") || "none"})`);
+    }
+    if (supports.has("reasoning") && efforts?.length) body.reasoning = { effort: effort || efforts.at(-1) };
 
     let lastError = "";
     for (let attempt = 1; attempt <= 5; attempt++) {
@@ -57,7 +62,7 @@ export async function llm({ model = defaultModel, system, prompt, schema, temper
         try {
             res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
-                signal: AbortSignal.timeout(120000),
+                signal: AbortSignal.timeout(600000), // high reasoning effort on a full batch can take minutes
                 headers: { "content-type": "application/json", authorization: `Bearer ${key}`, "x-title": "GymTracker tools" },
                 body: JSON.stringify(body),
             });

@@ -4,7 +4,8 @@
 //   node tools/i18n/translate.mjs [--all] [--dry-run]           # fills in strings.bg.json
 //
 // Only keys missing from strings.bg.json are sent unless --all is given. The API key is read from OPENROUTER_API_KEY
-// or ~/.config/gymtracker/openrouter-key; the model from OPENROUTER_MODEL (see the default below).
+// or ~/.config/gymtracker/openrouter-key; the model from OPENROUTER_MODEL (see the default below), the reasoning effort
+// from OPENROUTER_EFFORT.
 // Review the output by hand before committing: this produces a draft, not the final text.
 import fs from "node:fs";
 import path from "node:path";

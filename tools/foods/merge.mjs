@@ -10,7 +10,7 @@
 // de-duplicated by barcode.
 import fs from "node:fs";
 import path from "node:path";
-import { raw, repo, llm, readCsv, writeCsv } from "./lib.mjs";
+import { raw, repo, llm, readCsv, writeCsv, pool } from "./lib.mjs";
 
 const seedDir = path.join(repo, "src/GymTracker.Web/Data/Seed");
 const usda = readCsv(path.join(seedDir, "usda-foods.csv")).map((r) => ({ ...r, id: "u" + r.fdc_id }));
@@ -65,21 +65,29 @@ the same food: the same thing in the same state (raw/cooked, with or without ski
 so that a person logging it would not care which entry they pick, and the per-100 g values are close (energy within
 about 15 %). A regional variant that differs in recipe or composition (Bulgarian кашкавал vs cheddar, бяло саламурено
 сирене vs feta) is NOT a duplicate unless the values are nearly identical. Answer with the candidate id or null.`;
-for (let i = 0; i < todo.length; i += 25) {
-    const batch = todo.slice(i, i + 25);
+const batches = [];
+for (let i = 0; i < todo.length; i += 25) batches.push(todo.slice(i, i + 25));
+let judged = 0;
+await pool(batches, 4, async (batch) => {
+    const offered = new Map();
     const prompt = batch.map((g) => {
-        const cands = [...usdaCandidates(g).map((u) => `${u.id}: ${u.name} (${fmt(u)})`), ...bgCandidates(g).map((o) => `${o.id}: ${o.name_bg} [${english[o.name_bg]}] (${fmt(o)})`)];
-        return `FOOD ${g.id}: ${g.name_bg} [${english[g.name_bg]}] (${fmt(g)})\nCANDIDATES:\n${cands.join("\n") || "(none)"}`;
+        const cands = [...usdaCandidates(g).map((u) => [u.id, `${u.id}: ${u.name} (${fmt(u)})`]), ...bgCandidates(g).map((o) => [o.id, `${o.id}: ${o.name_bg} [${english[o.name_bg]}] (${fmt(o)})`])];
+        offered.set(g.id, new Set(cands.map(([id]) => id)));
+        return `FOOD ${g.id}: ${g.name_bg} [${english[g.name_bg]}] (${fmt(g)})\nCANDIDATES:\n${cands.map(([, line]) => line).join("\n") || "(none)"}`;
     }).join("\n\n");
     const out = await llm({
         system: SYSTEM,
         prompt,
         schema: { type: "array", items: { type: "object", properties: { id: { type: "string" }, duplicate_of: { type: ["string", "null"] } }, required: ["id", "duplicate_of"] } },
     }).catch((e) => (console.error(`\nduplicate batch failed: ${e.message}`), []));
-    for (const o of out || []) decisions[o.id] = o.duplicate_of || null;
+    // Only answers about foods in this batch that point at a candidate actually offered count.
+    for (const o of out || []) {
+        if (offered.has(o.id) && (!o.duplicate_of || offered.get(o.id).has(o.duplicate_of))) decisions[o.id] = o.duplicate_of || null;
+    }
     fs.writeFileSync(decisionsFile, JSON.stringify(decisions, null, 1));
-    process.stdout.write(`judged ${Math.min(i + 25, todo.length)}/${todo.length}\r`);
-}
+    judged += batch.length;
+    process.stdout.write(`judged ${judged}/${todo.length}\r`);
+});
 console.log();
 const undecided = generic.filter((g) => !(g.id in decisions)).length;
 if (undecided > 0) {
