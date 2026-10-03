@@ -68,3 +68,34 @@ public class FoodSeedTests(PostgresFixture fixture)
         (await check.FoodItems.IgnoreQueryFilters().SingleAsync(f => f.Name == $"Apples, raw {tag}")).NameBg.Should().Be("Already named");
     }
 }
+
+/// <summary>Checks the seed files that ship with the app, so a broken data pipeline run fails the build.</summary>
+public class ShippedSeedFileTests
+{
+    public static TheoryData<string, int> Files => new()
+    {
+        { UsdaSeed.DefaultPath, 2 },
+        { BgFoodSeed.DefaultPath, 5 },
+    };
+
+    [Theory]
+    [MemberData(nameof(Files))]
+    public void Every_row_has_a_name_and_numeric_macros(string path, int firstMacroColumn)
+    {
+        if (!File.Exists(path))
+        {
+            return; // bg-foods.csv is optional
+        }
+
+        var bad = File.ReadLines(path).Skip(1)
+            .Select(UsdaSeed.ParseCsvLine)
+            .Where(f => f.Count <= firstMacroColumn + 3
+                || f.Skip(firstMacroColumn).Take(4).Any(v => !decimal.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) || d < 0))
+            .Select(f => string.Join(",", f))
+            .Take(5)
+            .ToList();
+
+        bad.Should().BeEmpty();
+        File.ReadLines(path).Skip(1).Should().NotBeEmpty();
+    }
+}

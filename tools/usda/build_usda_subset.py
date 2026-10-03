@@ -65,7 +65,7 @@ def main():
             key = name.lower()
             if key in rows:
                 continue  # Foundation comes first and wins over the older SR Legacy entry
-            rows[key] = (fdc_id, name, round(kcal, 1), round(protein, 2), round(carbs or 0.0, 2), round(fat, 2))
+            rows[key] = (fdc_id, name, round(kcal, 1), round(protein, 2), round(max(carbs or 0.0, 0.0), 2), round(fat, 2))  # carbs "by difference" can dip below 0
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="", encoding="utf-8") as f:
