@@ -1,3 +1,4 @@
+using GymTracker.Web.Features.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -10,7 +11,7 @@ public static class RateLimits
 }
 
 /// <summary>Maps service exceptions to HTTP responses so controllers stay thin.</summary>
-public class FeatureExceptionFilter(ITempDataDictionaryFactory tempDataFactory) : IExceptionFilter
+public class FeatureExceptionFilter(ITempDataDictionaryFactory tempDataFactory, Localizer localizer) : IExceptionFilter
 {
     public const string ErrorKey = "Error";
 
@@ -28,7 +29,7 @@ public class FeatureExceptionFilter(ITempDataDictionaryFactory tempDataFactory) 
                 context.Result = new ContentResult
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
-                    Content = ex.Message,
+                    Content = localizer[ex.Text],
                     ContentType = "text/plain; charset=utf-8",
                 };
                 context.ExceptionHandled = true;
@@ -36,7 +37,7 @@ public class FeatureExceptionFilter(ITempDataDictionaryFactory tempDataFactory) 
 
             case ValidationException ex:
                 // Plain form post: go back to the page with the message shown by the layout.
-                tempDataFactory.GetTempData(context.HttpContext)[ErrorKey] = ex.Message;
+                tempDataFactory.GetTempData(context.HttpContext).Error(ex.Text);
                 var referer = context.HttpContext.Request.Headers.Referer.ToString();
                 context.Result = new RedirectResult(IsLocal(referer, context.HttpContext.Request) ? referer : "/today");
                 context.ExceptionHandled = true;

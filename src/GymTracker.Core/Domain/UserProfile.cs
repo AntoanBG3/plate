@@ -15,4 +15,6 @@ public class UserProfile
     public decimal TargetRatePercentPerWeek { get; set; }
     public decimal ProteinGramsPerKg { get; set; } = 2.0m;
     public decimal DefaultWeightIncrementKg { get; set; } = 2.5m;
+    public Theme Theme { get; set; } = Theme.Dark;
+    public Language Language { get; set; } = Language.English;
 }

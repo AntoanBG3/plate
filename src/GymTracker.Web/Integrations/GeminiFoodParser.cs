@@ -1,3 +1,4 @@
+using GymTracker.Core.Text;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -68,10 +69,10 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
         """)!.AsObject();
 
     /// <summary>Checks a key with a one-line request. Returns null when it works, otherwise what went wrong.</summary>
-    public async Task<string?> TestAsync(string apiKey, CancellationToken ct)
+    public async Task<LocalText?> TestAsync(string apiKey, CancellationToken ct)
     {
         var result = await ParseAsync("1 banana", apiKey, ct);
-        return result.Items.Count > 0 ? null : result.Error ?? "Gemini returned no food for \"1 banana\".";
+        return result.Items.Count > 0 ? null : result.Error ?? new LocalText("Gemini returned no food for \"1 banana\".");
     }
 
     public async Task<FoodParseResult> ParseAsync(string text, string apiKey, CancellationToken ct)
@@ -111,10 +112,10 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
                     log.LogWarning("Gemini returned {Status}: {Body}", (int)response.StatusCode, Truncate(await response.Content.ReadAsStringAsync(ct)));
                     return FoodParseResult.Failed(response.StatusCode switch
                     {
-                        HttpStatusCode.TooManyRequests => "The food parser is busy. Try again in a minute, or enter the food by hand.",
+                        HttpStatusCode.TooManyRequests => new LocalText("The food parser is busy. Try again in a minute, or enter the food by hand."),
                         HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden =>
-                            $"Gemini rejected the API key ({(int)response.StatusCode}). Check it in Settings, or enter the food by hand.",
-                        _ => "The food parser could not read that. Enter the food by hand.",
+                            new LocalText("Gemini rejected the API key ({0}). Check it in Settings, or enter the food by hand.", (int)response.StatusCode),
+                        _ => new LocalText("The food parser could not read that. Enter the food by hand."),
                     });
                 }
 
@@ -203,7 +204,9 @@ public class GeminiFoodParser(HttpClient http, IOptions<GeminiOptions> options, 
             items.Add(item);
         }
 
-        var error = rejected > 0 ? $"Skipped {rejected} item(s) with impossible amounts or values." : null;
+        var error = rejected > 0
+            ? LocalText.Count(rejected, "Skipped 1 item with impossible amounts or values.", "Skipped {0} items with impossible amounts or values.")
+            : null;
         if (items.Count == 0)
         {
             return FoodParseResult.Failed(error ?? "No food found in that text.");

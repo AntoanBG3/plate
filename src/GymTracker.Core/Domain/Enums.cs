@@ -37,3 +37,16 @@ public enum Goal
     Maintain,
     Bulk,
 }
+
+public enum Theme
+{
+    Dark,
+    Light,
+    System,
+}
+
+public enum Language
+{
+    English,
+    Bulgarian,
+}

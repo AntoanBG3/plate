@@ -1,3 +1,5 @@
+using GymTracker.Core.Text;
+
 namespace GymTracker.Core.Domain;
 
 public static class ProfileRules
@@ -6,7 +8,7 @@ public static class ProfileRules
     public const decimal MaxBulkRatePercent = 0.5m;
 
     /// <summary>Returns an error message, or null when the profile is valid (including the SPEC 5.6 safety limits).</summary>
-    public static string? Validate(UserProfile p, int currentYear)
+    public static LocalText? Validate(UserProfile p, int currentYear)
     {
         if (string.IsNullOrWhiteSpace(p.DisplayName) || p.DisplayName.Length > 100)
         {
@@ -35,12 +37,12 @@ public static class ProfileRules
 
         if (p.Goal == Goal.Cut && p.TargetRatePercentPerWeek > MaxCutRatePercent)
         {
-            return $"A cut can't be faster than {MaxCutRatePercent}% of bodyweight per week.";
+            return new LocalText("A cut can't be faster than {0}% of bodyweight per week.", MaxCutRatePercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
         }
 
         if (p.Goal == Goal.Bulk && p.TargetRatePercentPerWeek > MaxBulkRatePercent)
         {
-            return $"A bulk can't be faster than {MaxBulkRatePercent}% of bodyweight per week.";
+            return new LocalText("A bulk can't be faster than {0}% of bodyweight per week.", MaxBulkRatePercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
         }
 
         if (p.ProteinGramsPerKg is < 0.8m or > 3.5m)

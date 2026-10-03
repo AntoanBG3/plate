@@ -1,3 +1,5 @@
+using GymTracker.Core.Text;
+using GymTracker.Web.Features.Localization;
 using GymTracker.Core.Domain;
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Features;
@@ -55,7 +57,7 @@ public class FoodController(
         if (result.Items.Count == 0)
         {
             // Keep the text so nothing typed is lost, and offer manual entry.
-            return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? "Couldn't read that.", null, [], null, []));
+            return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? new LocalText("Couldn't read that."), null, [], null, []));
         }
 
         var items = await matcher.ResolveAsync(result.Items, ct);
@@ -113,9 +115,20 @@ public class FoodController(
     public async Task<IActionResult> Copy(DateOnly date, Meal meal, CancellationToken ct)
     {
         var copied = await log.CopyMealAsync(date.AddDays(-1), date, meal, ct);
-        TempData["Message"] = copied == 0 ? $"Nothing was logged for {meal.ToString().ToLowerInvariant()} the day before." : $"Copied {copied} item(s).";
+        TempData.Notice(copied == 0
+            ? new LocalText(NothingToCopy[meal])
+            : LocalText.Count(copied, "Copied 1 item.", "Copied {0} items."));
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
+
+    // One sentence per meal: Bulgarian meal names change form inside a sentence.
+    private static readonly Dictionary<Meal, string> NothingToCopy = new()
+    {
+        [Meal.Breakfast] = "Nothing was logged for breakfast the day before.",
+        [Meal.Lunch] = "Nothing was logged for lunch the day before.",
+        [Meal.Dinner] = "Nothing was logged for dinner the day before.",
+        [Meal.Snack] = "No snacks were logged the day before.",
+    };
 
     [HttpGet("entries/{id:int}")]
     public async Task<IActionResult> Entry(int id, CancellationToken ct) => View(await log.GetAsync(id, ct));

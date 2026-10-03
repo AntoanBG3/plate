@@ -7,6 +7,7 @@ using GymTracker.Web.Data.Seed;
 using GymTracker.Web.Features;
 using GymTracker.Web.Features.Analytics;
 using GymTracker.Web.Features.Food;
+using GymTracker.Web.Features.Localization;
 using GymTracker.Web.Integrations;
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Features.Body;
@@ -34,6 +35,7 @@ builder.Services.AddDbContext<AppDbContext>(o =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton(Localizer.Load(builder.Environment.ContentRootPath));
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<ProfileLookup>();
 builder.Services.AddScoped<BodyweightService>();
@@ -193,6 +195,7 @@ app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<UserPreferencesMiddleware>();
 
 app.MapStaticAssets().AllowAnonymous();
 app.MapControllers();

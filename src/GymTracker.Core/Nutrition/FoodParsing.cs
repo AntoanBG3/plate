@@ -1,3 +1,5 @@
+using GymTracker.Core.Text;
+
 namespace GymTracker.Core.Nutrition;
 
 public enum FoodState
@@ -20,9 +22,9 @@ public record ParsedFoodItem(
     string? Assumption,
     Per100g Estimated);
 
-public record FoodParseResult(IReadOnlyList<ParsedFoodItem> Items, string? Error, string? Model)
+public record FoodParseResult(IReadOnlyList<ParsedFoodItem> Items, LocalText? Error, string? Model)
 {
-    public static FoodParseResult Failed(string error) => new([], error, null);
+    public static FoodParseResult Failed(LocalText error) => new([], error, null);
 }
 
 public interface IFoodParser

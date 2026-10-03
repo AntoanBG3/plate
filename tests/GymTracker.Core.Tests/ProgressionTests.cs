@@ -27,7 +27,7 @@ public class ProgressionTests
 
         s.Kind.Should().Be(ProgressionKind.Progress);
         s.Sets.Should().HaveCount(3).And.OnlyContain(t => t.WeightKg == 82.5m && t.Reps == 8);
-        s.Reason.Should().Be("All sets hit 12, +2.5 kg");
+        s.Reason.ToString().Should().Be("All sets hit 12, +2.5 kg");
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class ProgressionTests
 
         s.Kind.Should().Be(ProgressionKind.Hold);
         s.Sets.Select(t => (t.WeightKg, t.Reps)).Should().Equal((80m, 12), (80m, 11), (80m, 10));
-        s.Reason.Should().Be("Hold 80 kg, add a rep");
+        s.Reason.ToString().Should().Be("Hold 80 kg, add a rep");
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class ProgressionTests
         s.Kind.Should().Be(ProgressionKind.Deload);
         // 80 * 0.9 = 72 → down to 70 on a 2.5 kg increment
         s.Sets.Should().OnlyContain(t => t.WeightKg == 70m && t.Reps == 8);
-        s.Reason.Should().Be("Under 8 reps twice at 80 kg, deload to 70 kg");
+        s.Reason.ToString().Should().Be("Under 8 reps twice at 80 kg, deload to 70 kg");
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class ProgressionTests
 
         s.Kind.Should().Be(ProgressionKind.Hold);
         s.Sets.Select(t => (t.WeightKg, t.Reps)).Should().Equal((80m, 12), (80m, 12), (80m, 12));
-        s.Reason.Should().Be("Only 2 of 3 sets last time. Hold 80 kg");
+        s.Reason.ToString().Should().Be("Only 2 of 3 sets last time. Hold 80 kg");
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public class ProgressionTests
         var s = Suggest(rules, Sets((0, 12), (0, 12), (0, 10)))!;
 
         s.Sets.Select(t => (t.WeightKg, t.Reps)).Should().Equal((0m, 13), (0m, 13), (0m, 11));
-        s.Reason.Should().Be("Bodyweight: one more rep per set");
+        s.Reason.ToString().Should().Be("Bodyweight: one more rep per set");
     }
 
     [Fact]

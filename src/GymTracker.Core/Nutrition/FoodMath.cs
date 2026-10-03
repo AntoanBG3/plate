@@ -1,3 +1,5 @@
+using GymTracker.Core.Text;
+
 namespace GymTracker.Core.Nutrition;
 
 public record Per100g(decimal Kcal, decimal Protein, decimal Carbs, decimal Fat);
@@ -37,11 +39,11 @@ public static class FoodMath
     }
 
     /// <summary>Returns an error message, or null when the values are acceptable.</summary>
-    public static string? Validate(decimal grams, Per100g per100)
+    public static LocalText? Validate(decimal grams, Per100g per100)
     {
         if (grams <= 0 || grams > MaxGrams)
         {
-            return $"Grams must be above 0 and at most {MaxGrams:0}.";
+            return new LocalText("Grams must be above 0 and at most {0}.", MaxGrams.ToString("0", System.Globalization.CultureInfo.InvariantCulture));
         }
 
         if (per100.Kcal < 0 || per100.Protein < 0 || per100.Carbs < 0 || per100.Fat < 0)

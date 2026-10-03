@@ -57,12 +57,12 @@ public record FoodAddViewModel(
     Meal Meal,
     string Tab,
     string? Text,
-    string? Error,
+    GymTracker.Core.Text.LocalText? Error,
     string? Query,
     IReadOnlyList<GymTracker.Web.Features.Food.FoodMatch> Local,
     GymTracker.Core.Nutrition.ProductSearch? OpenFoodFacts,
     IReadOnlyList<GymTracker.Web.Features.Food.RecentFood> Recents);
 
-public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, string? Warning);
+public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, GymTracker.Core.Text.LocalText? Warning);
 
 public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result);

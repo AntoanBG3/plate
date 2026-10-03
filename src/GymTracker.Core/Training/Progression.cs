@@ -1,3 +1,5 @@
+using GymTracker.Core.Text;
+
 namespace GymTracker.Core.Training;
 
 public record LoggedSet(decimal WeightKg, int Reps, bool IsWarmup = false);
@@ -14,7 +16,7 @@ public enum ProgressionKind
     Deload,
 }
 
-public record ProgressionSuggestion(ProgressionKind Kind, IReadOnlyList<SetTarget> Sets, string Reason);
+public record ProgressionSuggestion(ProgressionKind Kind, IReadOnlyList<SetTarget> Sets, LocalText Reason);
 
 /// <summary>Double progression (SPEC 5.1).</summary>
 public static class Progression
@@ -55,7 +57,7 @@ public static class Progression
             return new ProgressionSuggestion(
                 ProgressionKind.Deload,
                 Repeat(new SetTarget(deloaded, rules.RepMin), count),
-                $"Under {rules.RepMin} reps twice at {Kg(lastWeight)} kg, deload to {Kg(deloaded)} kg");
+                new LocalText("Under {0} reps twice at {1} kg, deload to {2} kg", rules.RepMin, Kg(lastWeight), Kg(deloaded)));
         }
 
         // Progress: every planned working set reached the top of the range.
@@ -65,7 +67,7 @@ public static class Progression
             return new ProgressionSuggestion(
                 ProgressionKind.Progress,
                 Repeat(new SetTarget(next, rules.RepMin), count),
-                $"All sets hit {rules.RepMax}, +{Kg(increment)} kg");
+                new LocalText("All sets hit {0}, +{1} kg", rules.RepMax, Kg(increment)));
         }
 
         // Hold: same weight, one more rep than last time on each set.
@@ -74,8 +76,8 @@ public static class Progression
             .Select(i => new SetTarget(held, Math.Min(rules.RepMax, RepsAt(last, i) + 1)))
             .ToList();
         var reason = last.Count < count
-            ? $"Only {last.Count} of {count} sets last time. Hold {Kg(held)} kg"
-            : $"Hold {Kg(held)} kg, add a rep";
+            ? new LocalText("Only {0} of {1} sets last time. Hold {2} kg", last.Count, count, Kg(held))
+            : new LocalText("Hold {0} kg, add a rep", Kg(held));
         return new ProgressionSuggestion(ProgressionKind.Hold, targets, reason);
     }
 

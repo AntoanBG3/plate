@@ -440,6 +440,11 @@ namespace GymTracker.Web.Data.Migrations
                     b.Property<int?>("InitialMaintenanceKcal")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
                     b.Property<decimal>("ProteinGramsPerKg")
                         .HasPrecision(4, 2)
                         .HasColumnType("numeric(4,2)");
@@ -451,6 +456,11 @@ namespace GymTracker.Web.Data.Migrations
                     b.Property<decimal>("TargetRatePercentPerWeek")
                         .HasPrecision(4, 2)
                         .HasColumnType("numeric(4,2)");
+
+                    b.Property<string>("Theme")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<string>("TimeZoneId")
                         .IsRequired()

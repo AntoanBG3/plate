@@ -1,3 +1,5 @@
+using GymTracker.Core.Text;
+
 namespace GymTracker.Core.Training;
 
 public static class SetRules
@@ -6,7 +8,7 @@ public static class SetRules
     public const int MaxReps = 200;
 
     /// <summary>Returns an error message, or null if the set is valid.</summary>
-    public static string? Validate(decimal weightKg, int reps, decimal? rpe)
+    public static LocalText? Validate(decimal weightKg, int reps, decimal? rpe)
     {
         if (weightKg < 0 || weightKg > MaxWeightKg)
         {
@@ -20,7 +22,7 @@ public static class SetRules
 
         if (reps < 0 || reps > MaxReps)
         {
-            return $"Reps must be between 0 and {MaxReps}.";
+            return new LocalText("Reps must be between 0 and {0}.", MaxReps);
         }
 
         if (rpe is { } r && (r < 5 || r > 10 || r * 2 != decimal.Truncate(r * 2)))

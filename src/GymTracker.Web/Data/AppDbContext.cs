@@ -41,6 +41,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(p => p.TargetRatePercentPerWeek).HasPrecision(4, 2);
             e.Property(p => p.ProteinGramsPerKg).HasPrecision(4, 2);
             e.Property(p => p.DefaultWeightIncrementKg).HasPrecision(6, 2);
+            e.Property(p => p.Theme).HasConversion<string>().HasMaxLength(10);
+            e.Property(p => p.Language).HasConversion<string>().HasMaxLength(12);
             e.HasQueryFilter(p => p.UserId == CurrentUserId);
         });
 

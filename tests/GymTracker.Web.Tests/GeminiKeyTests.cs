@@ -112,7 +112,7 @@ public class GeminiKeyTests(PostgresFixture fixture)
     {
         var stub = new StubGemini(HttpStatusCode.Unauthorized, """{"error":{"code":401}}""");
 
-        (await Parser(stub).TestAsync(SettingsKey, default)).Should().Contain("rejected the API key (401)").And.Contain("Settings");
+        (await Parser(stub).TestAsync(SettingsKey, default))!.ToString().Should().Contain("rejected the API key (401)").And.Contain("Settings");
     }
 
     [Fact]

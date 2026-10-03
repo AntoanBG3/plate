@@ -1,3 +1,5 @@
+using GymTracker.Core.Text;
+using GymTracker.Web.Features.Localization;
 using GymTracker.Web.Data;
 using GymTracker.Web.Features;
 using GymTracker.Web.Features.Export;
@@ -15,7 +17,8 @@ public class SettingsController(
     GeminiKeyStore geminiKeys,
     GeminiFoodParser gemini,
     UserManager<AppUser> users,
-    SignInManager<AppUser> signIn) : Controller
+    SignInManager<AppUser> signIn,
+    Localizer localizer) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -41,7 +44,7 @@ public class SettingsController(
             p.ProteinGramsPerKg = form.ProteinGramsPerKg ?? 2.0m;
             p.DefaultWeightIncrementKg = form.DefaultWeightIncrementKg ?? 2.5m;
         }, ct);
-        TempData["Message"] = "Profile saved.";
+        TempData.Notice("Profile saved.");
         return Redirect("/settings");
     }
 
@@ -61,14 +64,14 @@ public class SettingsController(
     public async Task<IActionResult> SetGeminiKey(string? apiKey, CancellationToken ct)
     {
         await geminiKeys.SetAsync(apiKey ?? "", ct);
-        await ReportGeminiTestAsync("Key saved", ct);
+        await ReportGeminiTestAsync(saved: true, ct);
         return Redirect("/settings");
     }
 
     [HttpPost("gemini-key/test")]
     public async Task<IActionResult> TestGeminiKey(CancellationToken ct)
     {
-        await ReportGeminiTestAsync("Key tested", ct);
+        await ReportGeminiTestAsync(saved: false, ct);
         return Redirect("/settings");
     }
 
@@ -76,25 +79,26 @@ public class SettingsController(
     public async Task<IActionResult> RemoveGeminiKey(CancellationToken ct)
     {
         await geminiKeys.ClearAsync(ct);
-        TempData["Message"] = "Key removed from Settings.";
+        TempData.Notice("Key removed from Settings.");
         return Redirect("/settings");
     }
 
-    private async Task ReportGeminiTestAsync(string done, CancellationToken ct)
+    private async Task ReportGeminiTestAsync(bool saved, CancellationToken ct)
     {
         if (await geminiKeys.GetAsync(ct) is not { } key)
         {
-            TempData[FeatureExceptionFilter.ErrorKey] = "No Gemini key is set.";
+            TempData.Error("No Gemini key is set.");
             return;
         }
 
         if (await gemini.TestAsync(key, ct) is { } error)
         {
-            TempData[FeatureExceptionFilter.ErrorKey] = $"{done}, but it doesn't work yet: {error}";
+            // The parser's error is a whole sentence, translated here because TempData carries plain text.
+            TempData.Error(new LocalText(saved ? "Key saved, but it doesn't work yet: {0}" : "Key tested, but it doesn't work yet: {0}", localizer[error]));
         }
         else
         {
-            TempData["Message"] = $"{done}: Gemini works.";
+            TempData.Notice(saved ? "Key saved: Gemini works." : "Key tested: Gemini works.");
         }
     }
 
@@ -122,7 +126,7 @@ public class SettingsController(
 
         // Changing the password updates the security stamp; sign in again so this device stays logged in.
         await signIn.SignInAsync(user, isPersistent: true);
-        TempData["Message"] = "Password changed. Other devices will be signed out.";
+        TempData.Notice("Password changed. Other devices will be signed out.");
         return Redirect("/settings");
     }
 

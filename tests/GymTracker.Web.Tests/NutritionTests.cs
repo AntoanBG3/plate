@@ -195,7 +195,7 @@ public class IntegrationParsingTests
         result.Model.Should().Be("gemini-3.5-flash-lite");
         result.Items.Should().ContainSingle();
         result.Items[0].Should().BeEquivalentTo(new ParsedFoodItem("chicken breast", "пилешко филе", 200, FoodState.Raw, "grilled", null, new Per100g(120, 22.5m, 0, 2.6m)));
-        result.Error.Should().Contain("Skipped 1");
+        result.Error!.ToString().Should().Contain("Skipped 1");
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public class IntegrationParsingTests
     {
         GeminiFoodParser.Read(Response("not json"), "m").Items.Should().BeEmpty();
         GeminiFoodParser.Read(new JsonObject(), "m").Error.Should().NotBeNull();
-        GeminiFoodParser.Read(Response("""{"items":[]}"""), "m").Error.Should().Be("No food found in that text.");
+        GeminiFoodParser.Read(Response("""{"items":[]}"""), "m").Error!.ToString().Should().Be("No food found in that text.");
     }
 
     [Fact]
