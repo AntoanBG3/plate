@@ -1,3 +1,4 @@
+using GymTracker.Core.Text;
 using GymTracker.Core.Domain;
 using GymTracker.Web.Data;
 using GymTracker.Web.Features;
@@ -21,7 +22,7 @@ public class BodyweightService(AppDbContext db, ICurrentUser currentUser)
     {
         if (weightKg < MinWeightKg || weightKg > MaxWeightKg)
         {
-            throw new ValidationException($"Weight must be between {MinWeightKg} and {MaxWeightKg} kg.");
+            throw new ValidationException(new LocalText("Weight must be between {0} and {1} kg.", MinWeightKg, MaxWeightKg));
         }
 
         var entry = await GetForDayAsync(date, ct);

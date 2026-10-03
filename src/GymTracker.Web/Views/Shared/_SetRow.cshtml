@@ -8,7 +8,7 @@
     <form class="set-row done@(Model.IsWarmup ? " warmup" : "")" data-client-id="@set.ClientId" hx-post="/train/sets/@set.Id/update" hx-target="this" hx-swap="outerHTML">
         <button type="button" class="set-delete" hx-post="/train/sets/@set.Id/delete" hx-target="closest form" hx-swap="outerHTML swap:180ms">@L["Delete"]</button>
         <div class="set-content">
-            <span class="set-n" aria-hidden="true">@(Model.IsWarmup ? L["W"] : "")</span>
+            <span class="set-n" aria-hidden="true">@(Model.IsWarmup ? Ui.Icon("warmup", "icon-sm") : null)</span>
             <label class="set-field"><input type="number" name="weightKg" value="@set.WeightKg.Kg()" inputmode="decimal" step="any" min="0" aria-label="@L["Weight in kg"]" required /><small>@L["kg"]</small></label>
             <label class="set-field"><input type="number" name="reps" value="@set.Reps" inputmode="numeric" step="1" min="0" aria-label="@L["Reps"]" required /><small>@L["reps"]</small></label>
             <button type="submit" class="done-btn" aria-label="@L["Save changes"]"><span class="disc">@Html.Raw(Check)</span></button>
@@ -24,7 +24,7 @@ else
         <input type="hidden" name="sessionExerciseId" value="@Model.SessionExerciseId" />
         <input type="hidden" name="isWarmup" value="@(Model.IsWarmup ? "true" : "false")" />
         <div class="set-content">
-            <span class="set-n" aria-hidden="true">@(Model.IsWarmup ? L["W"] : "")</span>
+            <span class="set-n" aria-hidden="true">@(Model.IsWarmup ? Ui.Icon("warmup", "icon-sm") : null)</span>
             <label class="set-field"><input type="number" name="weightKg" placeholder="@(Model.Target?.WeightKg.Kg() ?? "")" data-suggested="@(Model.Target?.WeightKg.Kg())" inputmode="decimal" step="any" min="0" aria-label="@(Model.Target is { } w ? L["Weight in kg, suggested {0}", w.WeightKg.Kg()] : L["Weight in kg"])" required /><small>@L["kg"]</small></label>
             <label class="set-field"><input type="number" name="reps" placeholder="@(Model.Target?.Reps)" data-suggested="@(Model.Target?.Reps)" inputmode="numeric" step="1" min="0" aria-label="@(Model.Target is { } r ? L["Reps, suggested {0}", r.Reps] : L["Reps"])" required /><small>@L["reps"]</small></label>
             <button type="submit" class="done-btn" aria-label="@L["Log set"]"><span class="disc">@Html.Raw(Check)</span></button>

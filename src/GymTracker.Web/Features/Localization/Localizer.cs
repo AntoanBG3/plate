@@ -37,8 +37,11 @@ public class Localizer
     public string this[string format, params object?[] args] =>
         string.Format(CultureInfo.InvariantCulture, this[format], args);
 
+    /// <summary>Arguments that are themselves LocalText (a food's error inside a sentence) are translated too.</summary>
     public string this[LocalText text] =>
-        text.Args.Length == 0 ? this[text.Format] : string.Format(CultureInfo.InvariantCulture, this[text.Format], text.Args);
+        text.Args.Length == 0
+            ? this[text.Format]
+            : string.Format(CultureInfo.InvariantCulture, this[text.Format], text.Args.Select(a => a is LocalText inner ? this[inner] : a).ToArray());
 
     /// <summary>Singular for 1, plural otherwise; the count fills {0}.</summary>
     public string Count(long n, string one, string other) => this[LocalText.Count(n, one, other)];

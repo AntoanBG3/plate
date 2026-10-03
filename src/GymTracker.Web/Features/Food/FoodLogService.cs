@@ -1,3 +1,4 @@
+using GymTracker.Core.Text;
 using GymTracker.Core.Domain;
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Data;
@@ -41,7 +42,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
         {
             if (FoodMath.Validate(e.Grams, e.Per100) is { } error)
             {
-                throw new ValidationException($"{e.Description}: {error}");
+                throw new ValidationException(new LocalText("{0}: {1}", e.Description, error));
             }
 
             if (e.FoodItemId is { } id && !await db.FoodItems.AnyAsync(f => f.Id == id, ct))

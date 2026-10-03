@@ -35,7 +35,7 @@
                 <div class="row">
                     <div class="row-main">
                         <div class="row-title headline">@template.Name</div>
-                        <div class="row-sub">@(template.Exercises.Count == 0 ? L["No exercises yet"] : string.Join(", ", template.Exercises.OrderBy(e => e.SortOrder).Select(e => L.Exercise(e.Exercise))))</div>
+                        <div class="row-sub clamp-2">@(template.Exercises.Count == 0 ? L["No exercises yet"] : string.Join(", ", template.Exercises.OrderBy(e => e.SortOrder).Select(e => L.Exercise(e.Exercise))))</div>
                     </div>
                     @if (Model.ActiveSession is null)
                     {

@@ -132,7 +132,14 @@ public class SettingsController(
         var result = await users.ChangePasswordAsync(user, currentPassword ?? "", newPassword ?? "");
         if (!result.Succeeded)
         {
-            throw new ValidationException(string.Join(" ", result.Errors.Select(e => e.Description)));
+            // Identity's own descriptions are English only; the errors a user can hit here get our sentences.
+            var error = result.Errors.First();
+            throw new ValidationException(error.Code switch
+            {
+                "PasswordMismatch" => "The current password is wrong.",
+                "PasswordTooShort" => "The new password needs at least 12 characters.",
+                _ => error.Description,
+            });
         }
 
         // Changing the password updates the security stamp; sign in again so this device stays logged in.

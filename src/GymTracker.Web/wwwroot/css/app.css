@@ -17,6 +17,8 @@ html {
 
 body {
     margin: 0;
+    /* Standard Cyrillic shapes in Bulgarian too: the Bulgarian forms of д, в and з read like g, 8 and 3 at small sizes. */
+    font-feature-settings: "locl" 0;
     min-height: 100vh;
     min-height: 100dvh;
     background: var(--bg);
@@ -145,6 +147,7 @@ a.section-aside { color: var(--accent-text) !important; }
 .row-icon .icon { width: 18px; height: 18px; stroke-width: 2; }
 .row-icon.neutral { background: var(--fill-strong); color: var(--label); }
 .row-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* Rows that hold a form field: label on the left, the value editable on the right. */
 .field-row { display: flex; align-items: center; gap: var(--s-3); min-height: 44px; padding: 6px var(--s-4); position: relative; }
@@ -291,10 +294,10 @@ body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
 .gauge .bar-kcal { stroke: var(--accent); }
 .gauge .bar-protein { stroke: var(--label); }
 .gauge.over .bar-kcal { stroke: var(--destructive); }
-.gauge-center { position: absolute; inset: 4px 0 0; display: grid; place-content: center; }
+.gauge-center { position: absolute; inset: 4px 20% 0; display: grid; place-content: center; }
 .gauge-value { font-size: var(--text-title-1); font-weight: var(--weight-semibold); line-height: 1; letter-spacing: -0.03em; }
 .gauge-value small { font-size: var(--text-body); }
-.gauge-label { font-size: var(--text-footnote); color: var(--label-2); margin-top: 4px; }
+.gauge-label { font-size: var(--text-footnote); line-height: 1.2; color: var(--label-2); margin-top: 4px; }
 .gauges-foot { padding: var(--s-2) var(--s-4) var(--s-4); text-align: center; }
 
 .spark { width: 128px; height: 52px; overflow: visible; flex: none; }
@@ -444,7 +447,8 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .set-row.warmup .set-content { padding-top: 3px; padding-bottom: 3px; }
 .set-row.warmup .set-field { min-height: 36px; padding-top: 6px; padding-bottom: 4px; }
 .set-row.warmup .set-field input { font-size: var(--text-body); font-weight: var(--weight-regular); color: var(--label-2); }
-.set-row.warmup .set-n { font-weight: var(--weight-regular); font-size: var(--text-footnote); color: var(--label-3); }
+.set-row.warmup .set-n { font-weight: var(--weight-regular); font-size: var(--text-footnote); color: var(--label-3); display: grid; place-items: start; }
+.set-row.warmup .set-n .icon { width: 16px; height: 16px; }
 .set-row.warmup .disc { width: 22px; height: 22px; }
 .set-row.warmup.done .disc { background: var(--fill-strong); }
 .set-row.warmup .done-btn svg { width: 13px; height: 13px; stroke: var(--label); }

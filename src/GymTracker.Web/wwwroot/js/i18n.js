@@ -1,4 +1,4 @@
-// t("English text", ...args): the translation from the layout's #i18n block, or the English text.
+// t(text, ...args): the translation from the layout's #i18n block, or the English text.
 // Arguments fill {0}, {1}. Loaded before the other scripts.
 (function () {
     "use strict";
