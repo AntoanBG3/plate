@@ -29,7 +29,8 @@ public class FoodMatcher(FoodItemService foods)
     private static readonly string[] CookedWords = ["cooked", "boiled", "roasted", "grilled", "baked", "fried", "broiled", "steamed", "stewed", "braised"];
 
     // USDA entries that are rarely what someone means by a plain food name.
-    private static readonly string[] Niche = ["babyfood", "restaurant", "fast food", "fast foods", "school lunch", "infant", "breaded", "with ", "mix", "flour", "juice", "chips", "glutinous", "dehydrated", "dried", "powder", "canned", "frozen"];
+    private static readonly string[] Niche = ["babyfood", "restaurant", "fast food", "fast foods", "school lunch", "infant", "breaded", "with ", "mix", "flour", "juice", "chips", "glutinous", "dehydrated", "dried", "powder", "canned", "frozen",
+        ", skin,", "skin only", "peel"]; // the skin of a potato or fruit, eaten on its own
 
     public async Task<List<ConfirmItem>> ResolveAsync(IEnumerable<ParsedFoodItem> parsed, CancellationToken ct)
     {

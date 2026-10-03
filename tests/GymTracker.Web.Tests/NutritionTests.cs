@@ -47,6 +47,9 @@ public class NutritionTests(PostgresFixture fixture)
         items[1].Per100.Kcal.Should().BeInRange(110, 150);
         items[2].MatchedName.Should().StartWith("Bananas, raw");
         items.Should().OnlyContain(i => i.Confidence != Confidence.Low, "all three are in the USDA data");
+
+        var potatoes = (await s.Matcher.ResolveAsync([Parsed("potatoes, boiled", 200, FoodState.Cooked)], default)).Single();
+        potatoes.MatchedName.Should().Contain("Potatoes").And.NotContain(", skin,", "the skin on its own is not what \"potatoes\" means");
     }
 
     [Fact]
