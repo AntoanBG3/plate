@@ -53,6 +53,34 @@ public class NutritionTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task Food_typed_in_Bulgarian_matches_the_Bulgarian_food_of_that_name()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..6];
+        int soupId;
+        await using (var db = fixture.CreateContext(null))
+        {
+            var soup = new FoodItem { Name = $"Bean soup {tag}", NameBg = $"Боб чорба {tag}", Source = FoodSource.Reference, KcalPer100g = 80, ProteinPer100g = 4.5m, CarbsPer100g = 10, FatPer100g = 2.5m };
+            db.FoodItems.AddRange(soup, new FoodItem
+            {
+                Name = $"Пилешко месо от растителен произход {tag}", NameBg = $"Пилешко месо от растителен произход {tag}",
+                Source = FoodSource.OpenFoodFacts, Barcode = "20" + Random.Shared.NextInt64(10_000_000_000, 99_999_999_999), KcalPer100g = 220, ProteinPer100g = 20,
+            });
+            await db.SaveChangesAsync();
+            soupId = soup.Id;
+        }
+
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var items = await s.Matcher.ResolveAsync(
+        [
+            new ParsedFoodItem("bean soup", $"боб чорба {tag}", 400, FoodState.NotApplicable, null, null, new Per100g(60, 4, 8, 1)),
+            new ParsedFoodItem("chicken breast, skinless", $"пилешко месо {tag}", 150, FoodState.Cooked, null, null, new Per100g(165, 31, 0, 3.6m)),
+        ], default);
+
+        items[0].FoodItemId.Should().Be(soupId, "the Bulgarian dish beats USDA's condensed bean with bacon soup");
+        items[1].MatchedName.Should().NotContain("растителен", "a plant-based substitute is not chicken");
+    }
+
+    [Fact]
     public async Task Unmatched_foods_fall_back_to_the_ai_estimate_with_low_confidence()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

@@ -30,22 +30,32 @@ public class FoodMatcher(FoodItemService foods)
 
     // USDA entries that are rarely what someone means by a plain food name.
     private static readonly string[] Niche = ["babyfood", "restaurant", "fast food", "fast foods", "school lunch", "infant", "breaded", "with ", "mix", "flour", "juice", "chips", "glutinous", "dehydrated", "dried", "powder", "canned", "frozen",
-        ", skin,", "skin only", "peel"]; // the skin of a potato or fruit, eaten on its own
+        ", skin,", "skin only", "peel", // the skin of a potato or fruit, eaten on its own
+        "plant-based", "vegetarian", "vegan", "meatless", "imitation", "substitute",
+        "растителен", "вегетариан", "веган", "заместител",
+        // The same niches in the Bulgarian names (the English ones above don't appear in them).
+        "консерв", "замразен", "сушен", "на прах", "бебешк", "ресторант", "панир", "с кожа"];
+
+    private static readonly string[] CookedWordsBg = ["варен", "печен", "на скара", "пържен", "задушен", "сготвен", "на фурна", "запечен"];
 
     public async Task<List<ConfirmItem>> ResolveAsync(IEnumerable<ParsedFoodItem> parsed, CancellationToken ct)
     {
         var result = new List<ConfirmItem>();
         foreach (var item in parsed)
         {
-            var candidates = await foods.SearchAsync(item.NameEn, 120, MatchThreshold, ct);
+            var ranked = (await foods.SearchAsync(item.NameEn, 120, MatchThreshold, ct))
+                .Select(c => (Food: c, Score: Rank(c, item.NameEn, item.State)))
+                .ToList();
             if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
             {
-                // A Bulgarian name may match a food someone saved in Bulgarian.
-                candidates.AddRange(await foods.SearchAsync(item.NameOriginal, 5, MatchThreshold, ct));
+                // Typed in Bulgarian: Bulgarian dishes and products, and USDA foods by their Bulgarian names, are
+                // ranked by how well their Bulgarian name fits what the user wrote.
+                ranked.AddRange((await foods.SearchAsync(item.NameOriginal, 120, MatchThreshold, ct))
+                    .Where(c => !string.IsNullOrEmpty(c.NameBg))
+                    .Select(c => (Food: c, Score: Rank(c, item.NameOriginal, item.State, bulgarian: true))));
             }
 
-            var best = candidates
-                .Select(c => (Food: c, Score: Rank(c, item.NameEn, item.State)))
+            var best = ranked
                 .OrderByDescending(x => x.Score)
                 .Select(x => x.Food)
                 .FirstOrDefault();
@@ -86,14 +96,19 @@ public class FoodMatcher(FoodItemService foods)
     /// the user's own foods first; USDA's main food word (before the first comma) being one the user wrote;
     /// how many of the user's words appear; the right raw or cooked state; and fewer niche variants.
     /// </summary>
-    internal static double Rank(FoodMatch food, string query, FoodState state)
+    internal static double Rank(FoodMatch food, string query, FoodState state, bool bulgarian = false)
     {
-        var name = food.Name.ToLowerInvariant();
-        var cooked = CookedWords.Any(name.Contains);
-        var raw = name.Contains("raw");
+        var name = (bulgarian ? food.NameBg ?? "" : food.Name).ToLowerInvariant();
+        var cooked = (bulgarian ? CookedWordsBg : CookedWords).Any(name.Contains);
+        var raw = name.Contains(bulgarian ? "суров" : "raw");
         var score = food.Score + (food.Own ? 0.15 : 0);
 
         var queryWords = Words(query).ToHashSet();
+        if (queryWords.Count > 0 && Words(name).ToHashSet().SetEquals(queryWords))
+        {
+            score += 0.3; // exactly the food the user named, e.g. "Боб чорба" for "боб чорба"
+        }
+
         var head = Words(name.Split(',')[0]).ToList();
         if (head.Count > 0 && head.All(queryWords.Contains))
         {
