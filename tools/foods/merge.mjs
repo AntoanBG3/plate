@@ -5,7 +5,8 @@
 // for USDA foods that a Bulgarian source duplicated; the USDA translation pass uses them).
 //
 // Duplicates are decided by an LLM through OpenRouter on candidates found locally: a Bulgarian generic food is compared with
-// the USDA foods and other Bulgarian rows sharing words with its English name. USDA wins over a duplicate (lab data);
+// the USDA foods and other Bulgarian rows sharing words with its English name. USDA wins over a duplicate (lab data),
+// except over Bulgarian dishes, which are kept for their Bulgarian names;
 // among Bulgarian sources the row backed by more sources wins. Branded products (with barcodes) are only
 // de-duplicated by barcode.
 import fs from "node:fs";
@@ -99,12 +100,15 @@ if (undecided > 0) {
 const byId = new Map(generic.map((g) => [g.id, g]));
 const rank = (g) => (g.origin === "dish" ? 10 : 0) + +g.sources;
 const parent = new Map(generic.map((g) => [g.id, g.id]));
+parent.set("U", "U"); // the root for every food that duplicates a USDA food
 const find = (x) => (parent.get(x) === x ? x : find(parent.get(x)));
 const usdaNames = new Map();
 for (const g of generic) {
     const d = decisions[g.id];
     if (!d) continue;
     if (d.startsWith("u")) {
+        // Bulgarian dishes stay even when USDA has something close: their Bulgarian names are what people search for.
+        if (g.origin === "dish") continue;
         const u = usda.find((x) => x.id === d);
         if (u && !usdaNames.has(u.fdc_id)) usdaNames.set(u.fdc_id, g.name_bg);
         parent.set(find(g.id), "U");
@@ -117,18 +121,19 @@ for (const g of generic) {
         }
     }
 }
-parent.set("U", "U");
 const keptGeneric = generic.filter((g) => find(g.id) === g.id);
+// Some tables prefix names with emoji ("🧀 Кашкавал краве").
+const clean = (name) => name.replace(/[\p{Extended_Pictographic}\u200d\ufe0f]/gu, "").replace(/\s+/g, " ").trim();
 const seenNames = new Set();
 const out = [];
 for (const g of keptGeneric) {
-    const key = g.name_bg.toLowerCase();
+    const key = clean(g.name_bg).toLowerCase();
     if (seenNames.has(key)) continue;
     seenNames.add(key);
-    out.push({ kind: "generic", barcode: "", name_bg: g.name_bg, name_en: english[g.name_bg] || "", brand: "", kcal: g.kcal, protein: g.protein, carbs: g.carbs, fat: g.fat, serving_g: "", source: g.source });
+    out.push({ kind: "generic", barcode: "", name_bg: clean(g.name_bg), name_en: english[g.name_bg] || "", brand: "", kcal: g.kcal, protein: g.protein, carbs: g.carbs, fat: g.fat, serving_g: "", source: g.source });
 }
 for (const p of off) {
-    out.push({ kind: "product", barcode: p.barcode, name_bg: p.name_bg, name_en: "", brand: p.brand, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, serving_g: p.serving_g, source: "https://world.openfoodfacts.org/product/" + p.barcode });
+    out.push({ kind: "product", barcode: p.barcode, name_bg: clean(p.name_bg), name_en: "", brand: p.brand, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, serving_g: p.serving_g, source: "https://world.openfoodfacts.org/product/" + p.barcode });
 }
 writeCsv(path.join(seedDir, "bg-foods.csv"), ["kind", "barcode", "name_bg", "name_en", "brand", "kcal", "protein", "carbs", "fat", "serving_g", "source"], out);
 writeCsv(path.join(raw, "usda-bg-names.csv"), ["fdc_id", "name_bg"], [...usdaNames].map(([fdc_id, name_bg]) => ({ fdc_id, name_bg })));
