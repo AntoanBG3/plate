@@ -31,12 +31,15 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
     private const string Instructions = """
         You turn a short food diary entry into a list of foods with portion sizes.
         The text is in English or Bulgarian. Return one item per distinct food.
-        - nameEn: a plain English name as a nutrition database would list it, e.g. "chicken breast", "white rice", "banana".
-        - nameOriginal: the food as the user wrote it.
+        - nameEn: a plain English name as a nutrition database would list it, e.g. "chicken breast, skinless", "white rice", "banana".
+          Include what changes the nutrition: skinless for poultry unless the text mentions skin, fat level for dairy.
+        - nameOriginal: the food's name as the user wrote it, in their language, without the amount or unit
+          ("пилешко филе", not "200 г пилешко филе").
         - grams: the edible weight. Estimate vague amounts ("a banana", "a plate of rice", "една филия") and explain in assumption.
         - state: "raw" or "cooked" for meat, fish, rice, pasta, grains and legumes; otherwise "na".
           Assume raw weight for meat and fish and cooked weight for rice and pasta unless the text says otherwise.
-        - preparation: e.g. "grilled", "fried in oil", or null.
+        - preparation: how it was cooked, only if the text says so, in the language of the text
+          (e.g. "на скара", "grilled", "пържено в олио"); otherwise null.
         - assumption: a short note on anything you assumed, or null.
         - kcalPer100g, proteinPer100g, carbsPer100g, fatPer100g: standard nutrition database values for that food and state.
         Never invent foods that are not in the text. If the text contains no food, return an empty list.
