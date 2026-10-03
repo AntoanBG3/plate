@@ -28,7 +28,33 @@ dotnet run --project src/GymTracker.Web -- create-user --email me@example.test -
 
 Tests: `dotnet build && dotnet test`. The integration tests start their own `postgres:18` container through Testcontainers. If Docker Hub pulls fail with "authentication required", pull the helper image once with `docker pull testcontainers/ryuk:0.14.0`.
 
-The generic foods come from USDA FoodData Central (public domain). `tools/usda/build_usda_subset.py` rebuilds `src/GymTracker.Web/Data/Seed/usda-foods.csv`; the app imports it on first start.
+### Food data
+
+Three sources are imported on start, each only adding what is missing:
+
+- USDA FoodData Central (public domain): `tools/usda/build_usda_subset.py` rebuilds `src/GymTracker.Web/Data/Seed/usda-foods.csv`. Its `name_bg` column holds Bulgarian names, added by `node tools/foods/translate-usda.mjs` (Gemini; run it again after a rebuild). Databases seeded before the column existed get the names on the next start.
+- Bulgarian foods and dishes (`Data/Seed/bg-foods.csv`, kind `generic`): compiled by `tools/foods` from public Bulgarian calorie tables and per-dish web pages found with firecrawl. Every row lists the pages its values came from; values from several pages are combined by median. Sites whose terms forbid reuse (BB-Team) are excluded.
+- Products sold in Bulgaria from [Open Food Facts](https://world.openfoodfacts.org) (kind `product`), © Open Food Facts contributors, available under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/).
+
+To refresh the Bulgarian data (needs the `firecrawl` CLI and a Gemini key in `~/.config/gymtracker/gemini-key`):
+
+```sh
+node tools/foods/collect-tables.mjs     # after scraping the two tables, see the comment at the top
+node tools/foods/collect-dishes.mjs     # one firecrawl search per line of tools/foods/dishes.txt
+node tools/foods/collect-off.mjs        # Open Food Facts search API, one page a second
+node tools/foods/merge.mjs              # Gemini 3.8 Flash removes duplicates against USDA and between sources
+```
+
+### Language and theme
+
+Each account chooses its language (English or Bulgarian) and theme (dark, light or match phone) in Settings. Interface text goes through `L["English text"]` in views and `LocalText` in code; Bulgarian lives in `src/GymTracker.Web/Resources/strings.bg.json`. `CatalogueTests` fails when a string has no translation. To add translations:
+
+```sh
+GYM_WRITE_KEYS=1 dotnet test --filter CatalogueTests   # lists every string in Resources/strings.keys.json
+node tools/i18n/translate.mjs                           # Gemini drafts the missing ones; review them before committing
+```
+
+The design tokens (colour, type, spacing, motion) are in `wwwroot/css/tokens.css`; components in `wwwroot/css/app.css`; shared motion in `wwwroot/js/motion.js`. `design-samples/` holds the three directions the design was chosen from and the screenshot tooling.
 
 Add a migration: `dotnet ef migrations add <Name> --project src/GymTracker.Web --output-dir Data/Migrations`.
 

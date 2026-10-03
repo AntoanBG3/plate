@@ -62,7 +62,7 @@ public class FoodMatcher(FoodItemService foods)
                     item.Grams,
                     best.Per100,
                     best.Id,
-                    best.Name,
+                    best.DisplayName,
                     best.Score >= HighConfidence ? Confidence.High : Confidence.Medium,
                     notes));
                 continue;

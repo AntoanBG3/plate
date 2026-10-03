@@ -91,7 +91,8 @@ public class FoodController(
     public async Task<IActionResult> LogItem(DateOnly date, Meal meal, int foodItemId, decimal grams, EntrySource source, CancellationToken ct)
     {
         var item = await foods.GetAsync(foodItemId, ct);
-        var description = item.Brand is null ? item.Name : $"{item.Name} ({item.Brand})";
+        var name = item.DisplayName();
+        var description = item.Brand is null ? name : $"{name} ({item.Brand})";
         await log.AddAsync([new NewEntry(date, meal, description, grams, Per100(item), item.Id, source)], ct);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }

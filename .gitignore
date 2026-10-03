@@ -18,3 +18,6 @@ docker/.local-login.txt
 # Design sample screenshots, videos and the local playwright-core link
 design-samples/screenshots/
 design-samples/tools/node_modules
+
+# Food pipeline scrapes (third-party pages; only the compiled seed CSV is committed)
+tools/foods/raw/

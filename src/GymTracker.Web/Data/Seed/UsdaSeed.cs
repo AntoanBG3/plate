@@ -15,8 +15,14 @@ public static class UsdaSeed
 
     public static async Task SeedAsync(AppDbContext db, string path, CancellationToken ct)
     {
-        if (!File.Exists(path) || await db.FoodItems.IgnoreQueryFilters().AnyAsync(f => f.Source == FoodSource.Usda, ct))
+        if (!File.Exists(path))
         {
+            return;
+        }
+
+        if (await db.FoodItems.IgnoreQueryFilters().AnyAsync(f => f.Source == FoodSource.Usda, ct))
+        {
+            await AddBulgarianNamesAsync(db, path, ct);
             return;
         }
 
@@ -31,11 +37,12 @@ public static class UsdaSeed
 
             items.Add(new FoodItem
             {
-                Name = f[1].Length > 200 ? f[1][..200] : f[1],
+                Name = Cut(f[1]),
                 KcalPer100g = D(f[2]),
                 ProteinPer100g = D(f[3]),
                 CarbsPer100g = D(f[4]),
                 FatPer100g = D(f[5]),
+                NameBg = f.Count > 6 && f[6].Length > 0 ? Cut(f[6]) : null,
                 Source = FoodSource.Usda,
             });
         }
@@ -50,6 +57,46 @@ public static class UsdaSeed
 
         db.ChangeTracker.AutoDetectChangesEnabled = true;
     }
+
+    /// <summary>
+    /// Databases seeded before the CSV had Bulgarian names get them once: USDA rows without one are matched by
+    /// their English name. Rows that already have a Bulgarian name are left alone.
+    /// </summary>
+    private static async Task AddBulgarianNamesAsync(AppDbContext db, string path, CancellationToken ct)
+    {
+        var missing = await db.FoodItems.IgnoreQueryFilters().Where(f => f.Source == FoodSource.Usda && f.NameBg == null).ToListAsync(ct);
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        var names = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var line in File.ReadLines(path).Skip(1))
+        {
+            var f = ParseCsvLine(line);
+            if (f.Count > 6 && f[6].Length > 0)
+            {
+                names.TryAdd(Cut(f[1]), Cut(f[6]));
+            }
+        }
+
+        if (names.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var item in missing)
+        {
+            if (names.TryGetValue(item.Name, out var bg))
+            {
+                item.NameBg = bg;
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static string Cut(string s) => s.Length > 200 ? s[..200] : s;
 
     private static decimal D(string s) => decimal.Parse(s, NumberStyles.Float, CultureInfo.InvariantCulture);
 

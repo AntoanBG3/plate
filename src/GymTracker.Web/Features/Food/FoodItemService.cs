@@ -6,9 +6,12 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Features.Food;
 
 /// <summary>A food from a name search, with how closely it matched (0 to 1).</summary>
-public record FoodMatch(int Id, string Name, string? Brand, decimal KcalPer100g, decimal ProteinPer100g, decimal CarbsPer100g, decimal FatPer100g, decimal? DefaultServingGrams, bool Own, double Score)
+public record FoodMatch(int Id, string Name, string? NameBg, string? Brand, decimal KcalPer100g, decimal ProteinPer100g, decimal CarbsPer100g, decimal FatPer100g, decimal? DefaultServingGrams, bool Own, double Score)
 {
     public Per100g Per100 => new(KcalPer100g, ProteinPer100g, CarbsPer100g, FatPer100g);
+
+    /// <summary>The Bulgarian name for a Bulgarian interface when there is one.</summary>
+    public string DisplayName => Localization.Localizer.IsBulgarian && !string.IsNullOrEmpty(NameBg) ? NameBg : Name;
 }
 
 public record BarcodeResult(LookupStatus Status, FoodItem? Item);
@@ -30,7 +33,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
         // Raw SQL bypasses the global query filter, so ownership is checked explicitly here.
         var userId = currentUser.UserId ?? "";
         return await db.Database.SqlQuery<FoodMatch>($"""
-            SELECT f."Id", f."Name", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
+            SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                    f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
                    GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')))::float8 AS "Score"
             FROM "FoodItems" f

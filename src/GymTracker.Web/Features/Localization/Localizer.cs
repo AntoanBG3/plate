@@ -9,6 +9,13 @@ namespace GymTracker.Web.Features.Localization;
 /// is Bulgarian. Keys are the English text, so English needs no catalogue and a missing translation shows English.
 /// Numbers keep the invariant culture in both languages; only words and dates change.
 /// </summary>
+public static class FoodNames
+{
+    /// <summary>The Bulgarian name for a Bulgarian interface when the food has one.</summary>
+    public static string DisplayName(this GymTracker.Core.Domain.FoodItem item) =>
+        Localizer.IsBulgarian && !string.IsNullOrEmpty(item.NameBg) ? item.NameBg : item.Name;
+}
+
 public class Localizer
 {
     public const string CatalogueFile = "Resources/strings.bg.json";

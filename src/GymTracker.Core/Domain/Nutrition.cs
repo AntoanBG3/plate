@@ -6,6 +6,9 @@ public enum FoodSource
     Usda,
     Manual,
     Ai,
+
+    /// <summary>Bulgarian foods and dishes compiled from public tables (tools/foods), shared.</summary>
+    Reference,
 }
 
 public enum Meal

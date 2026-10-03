@@ -3,7 +3,7 @@
 @{
     var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
     var item = Model.Result.Item;
-    ViewData["Title"] = item?.Name ?? L["Barcode"];
+    ViewData["Title"] = item?.DisplayName() ?? L["Barcode"];
     ViewData["BackUrl"] = $"/food/add?date={date}&meal={Model.Meal}&tab=barcode";
     ViewData["BackLabel"] = L["Scan"];
 }
@@ -11,7 +11,7 @@
 {
     <header class="page-head">
         <p class="eyebrow">@(item.Brand ?? L["Barcode {0}", Model.Code])</p>
-        <h1 class="large-title" style="font-size: var(--text-title-1)">@item.Name</h1>
+        <h1 class="large-title" style="font-size: var(--text-title-1)">@item.DisplayName()</h1>
     </header>
     <div class="card stat-grid" style="grid-template-columns: repeat(4, 1fr)">
         <div class="stat"><div class="stat-value num">@Math.Round(item.KcalPer100g)</div><div class="stat-label">@L["kcal"]</div></div>

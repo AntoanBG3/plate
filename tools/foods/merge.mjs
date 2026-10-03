@@ -1,0 +1,122 @@
+// Merges the collected Bulgarian foods with the USDA subset and removes duplicates across them.
+//   node tools/foods/merge.mjs
+// Inputs: raw/tables.csv, raw/dishes.csv, raw/off-bg.csv and the committed USDA seed.
+// Output: src/GymTracker.Web/Data/Seed/bg-foods.csv (new foods) and raw/usda-bg-names.csv (Bulgarian names found
+// for USDA foods that a Bulgarian source duplicated; the USDA translation pass uses them).
+//
+// Duplicates are decided by Gemini 3.8 Flash on candidates found locally: a Bulgarian generic food is compared with
+// the USDA foods and other Bulgarian rows sharing words with its English name. USDA wins over a duplicate (lab data);
+// among Bulgarian sources the row backed by more sources wins. Branded products (with barcodes) are only
+// de-duplicated by barcode.
+import fs from "node:fs";
+import path from "node:path";
+import { raw, repo, gemini, readCsv, writeCsv } from "./lib.mjs";
+
+const seedDir = path.join(repo, "src/GymTracker.Web/Data/Seed");
+const usda = readCsv(path.join(seedDir, "usda-foods.csv")).map((r) => ({ ...r, id: "u" + r.fdc_id }));
+const tables = readCsv(path.join(raw, "tables.csv")).map((r) => ({ ...r, sources: 1, origin: "table" }));
+const dishes = fs.existsSync(path.join(raw, "dishes.csv")) ? readCsv(path.join(raw, "dishes.csv")).map((r) => ({ ...r, origin: "dish" })) : [];
+const off = readCsv(path.join(raw, "off-bg.csv"));
+
+const generic = [...dishes, ...tables].map((r, i) => ({ ...r, id: "b" + i }));
+console.log(`generic ${generic.length} (dishes ${dishes.length}, tables ${tables.length}), products ${off.length}, usda ${usda.length}`);
+
+// ---- 1. English names for the Bulgarian generic foods ----
+const englishFile = path.join(raw, "english-names.json");
+const english = fs.existsSync(englishFile) ? JSON.parse(fs.readFileSync(englishFile, "utf8")) : {};
+const needEnglish = [...new Set(generic.map((g) => g.name_bg))].filter((n) => !english[n]);
+for (let i = 0; i < needEnglish.length; i += 80) {
+    const batch = needEnglish.slice(i, i + 80);
+    const out = await gemini({
+        system: "Give each Bulgarian food name the English name USDA FoodData Central would use for the same food, in USDA style (\"Cheese, feta\", \"Bread, rye\", \"Yogurt, plain, whole milk\"), including raw or cooked when it matters. For Bulgarian dishes with no USDA equivalent give a plain English description.",
+        prompt: JSON.stringify(batch),
+        schema: { type: "array", items: { type: "object", properties: { bg: { type: "string" }, en: { type: "string" } }, required: ["bg", "en"] } },
+    });
+    for (const o of out || []) english[o.bg] = o.en;
+    fs.writeFileSync(englishFile, JSON.stringify(english, null, 1));
+    process.stdout.write(`english ${Math.min(i + 80, needEnglish.length)}/${needEnglish.length}\r`);
+}
+console.log();
+
+// ---- 2. Candidates by shared words ----
+const words = (s) => (s || "").toLowerCase().replace(/[^a-zа-я0-9 ]+/gi, " ").split(/\s+/).filter((w) => w.length > 2 && !["raw", "with", "and", "the", "без", "със", "или"].includes(w));
+const usdaIndex = new Map();
+for (const u of usda) for (const w of new Set(words(u.name))) (usdaIndex.get(w) || usdaIndex.set(w, []).get(w)).push(u);
+
+function usdaCandidates(g) {
+    const ws = words(english[g.name_bg]);
+    const score = new Map();
+    for (const w of ws) for (const u of usdaIndex.get(w) || []) score.set(u, (score.get(u) || 0) + 1 / (1 + Math.log(1 + (usdaIndex.get(w).length))));
+    return [...score.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([u]) => u);
+}
+function bgCandidates(g) {
+    const ws = new Set(words(g.name_bg));
+    const en = new Set(words(english[g.name_bg]));
+    return generic.filter((o) => o.id !== g.id && (words(o.name_bg).some((w) => ws.has(w)) || words(english[o.name_bg]).filter((w) => en.has(w)).length >= 2)).slice(0, 6);
+}
+
+// ---- 3. Gemini decides ----
+const decisionsFile = path.join(raw, "duplicates.json");
+const decisions = fs.existsSync(decisionsFile) ? JSON.parse(fs.readFileSync(decisionsFile, "utf8")) : {};
+const fmt = (x) => `${x.kcal} kcal, P ${x.protein}, C ${x.carbs}, F ${x.fat}`;
+const todo = generic.filter((g) => !(g.id in decisions));
+const SYSTEM = `You remove duplicate foods from a nutrition database. For each food, decide whether one of its candidates is
+the same food: the same thing in the same state (raw/cooked, with or without skin, same fat level for dairy and meat),
+so that a person logging it would not care which entry they pick, and the per-100 g values are close (energy within
+about 15 %). A regional variant that differs in recipe or composition (Bulgarian кашкавал vs cheddar, бяло саламурено
+сирене vs feta) is NOT a duplicate unless the values are nearly identical. Answer with the candidate id or null.`;
+for (let i = 0; i < todo.length; i += 25) {
+    const batch = todo.slice(i, i + 25);
+    const prompt = batch.map((g) => {
+        const cands = [...usdaCandidates(g).map((u) => `${u.id}: ${u.name} (${fmt(u)})`), ...bgCandidates(g).map((o) => `${o.id}: ${o.name_bg} [${english[o.name_bg]}] (${fmt(o)})`)];
+        return `FOOD ${g.id}: ${g.name_bg} [${english[g.name_bg]}] (${fmt(g)})\nCANDIDATES:\n${cands.join("\n") || "(none)"}`;
+    }).join("\n\n");
+    const out = await gemini({
+        system: SYSTEM,
+        prompt,
+        schema: { type: "array", items: { type: "object", properties: { id: { type: "string" }, duplicate_of: { type: ["string", "null"] } }, required: ["id", "duplicate_of"] } },
+    });
+    for (const o of out || []) decisions[o.id] = o.duplicate_of || null;
+    fs.writeFileSync(decisionsFile, JSON.stringify(decisions, null, 1));
+    process.stdout.write(`judged ${Math.min(i + 25, todo.length)}/${todo.length}\r`);
+}
+console.log();
+
+// ---- 4. Resolve: USDA wins; among Bulgarian rows the better-sourced one wins ----
+const byId = new Map(generic.map((g) => [g.id, g]));
+const rank = (g) => (g.origin === "dish" ? 10 : 0) + +g.sources;
+const parent = new Map(generic.map((g) => [g.id, g.id]));
+const find = (x) => (parent.get(x) === x ? x : find(parent.get(x)));
+const usdaNames = new Map();
+for (const g of generic) {
+    const d = decisions[g.id];
+    if (!d) continue;
+    if (d.startsWith("u")) {
+        const u = usda.find((x) => x.id === d);
+        if (u && !usdaNames.has(u.fdc_id)) usdaNames.set(u.fdc_id, g.name_bg);
+        parent.set(find(g.id), "U");
+    } else if (byId.has(d)) {
+        const a = find(g.id), b = find(d);
+        if (a !== b && a !== "U" && b !== "U") {
+            if (rank(byId.get(a)) >= rank(byId.get(b))) parent.set(b, a); else parent.set(a, b);
+        } else if (b === "U" || a === "U") {
+            parent.set(a, "U"); parent.set(b, "U");
+        }
+    }
+}
+parent.set("U", "U");
+const keptGeneric = generic.filter((g) => find(g.id) === g.id);
+const seenNames = new Set();
+const out = [];
+for (const g of keptGeneric) {
+    const key = g.name_bg.toLowerCase();
+    if (seenNames.has(key)) continue;
+    seenNames.add(key);
+    out.push({ kind: "generic", barcode: "", name_bg: g.name_bg, name_en: english[g.name_bg] || "", brand: "", kcal: g.kcal, protein: g.protein, carbs: g.carbs, fat: g.fat, serving_g: "", source: g.source });
+}
+for (const p of off) {
+    out.push({ kind: "product", barcode: p.barcode, name_bg: p.name_bg, name_en: "", brand: p.brand, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, serving_g: p.serving_g, source: "https://world.openfoodfacts.org/product/" + p.barcode });
+}
+writeCsv(path.join(seedDir, "bg-foods.csv"), ["kind", "barcode", "name_bg", "name_en", "brand", "kcal", "protein", "carbs", "fat", "serving_g", "source"], out);
+writeCsv(path.join(raw, "usda-bg-names.csv"), ["fdc_id", "name_bg"], [...usdaNames].map(([fdc_id, name_bg]) => ({ fdc_id, name_bg })));
+console.log(`kept ${keptGeneric.length} generic (${generic.length - keptGeneric.length} duplicates removed, ${usdaNames.size} of them matched USDA), ${off.length} products`);
