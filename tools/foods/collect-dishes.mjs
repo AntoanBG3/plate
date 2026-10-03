@@ -1,11 +1,11 @@
 // For each food in dishes.txt: a firecrawl search that scrapes the top pages (excluding sites whose terms forbid
-// reuse, and social media), then Gemini reads the per-100 g values off each page. Values agreeing across sources
+// reuse, and social media), then an LLM (OpenRouter, tools/foods/lib.mjs) reads the per-100 g values off each page. Values agreeing across sources
 // are combined (median); every row keeps the URLs it came from. Writes raw/dishes.csv. Resumable.
 import fs from "node:fs";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { raw, here, gemini, writeCsv, plausible, pool } from "./lib.mjs";
+import { raw, here, llm, writeCsv, plausible, pool } from "./lib.mjs";
 const run = promisify(execFile);
 
 const EXCLUDE = ["bb-team.org", "facebook.com", "instagram.com", "youtube.com", "tiktok.com", "scribd.com", "pinterest.com"];
@@ -74,7 +74,7 @@ const rows = (await pool(dishes, 4, async (dish, i) => {
         console.log(`no pages: ${dish}`);
         return null;
     }
-    const read = await gemini({
+    const read = await llm({
         system: SYSTEM,
         schema,
         prompt: `Food: ${dish}\n\n` + pages.map((p) => `PAGE ${p.url}\n${excerpt(p.markdown)}`).join("\n\n----\n\n"),

@@ -1,9 +1,9 @@
 // Adds Bulgarian names to the USDA subset (src/GymTracker.Web/Data/Seed/usda-foods.csv, column name_bg) with
-// Gemini 3.8 Flash. Cached in raw/usda-bg.json, so re-runs only translate new rows. Run again after
+// an LLM through OpenRouter (tools/foods/lib.mjs). Cached in raw/usda-bg.json, so re-runs only translate new rows. Run again after
 // tools/usda/build_usda_subset.py rebuilds the CSV.
 import fs from "node:fs";
 import path from "node:path";
-import { raw, repo, gemini, readCsv, writeCsv, pool } from "./lib.mjs";
+import { raw, repo, llm, readCsv, writeCsv, pool } from "./lib.mjs";
 
 const file = path.join(repo, "src/GymTracker.Web/Data/Seed/usda-foods.csv");
 const rows = readCsv(file);
@@ -24,7 +24,7 @@ let done = 0;
 const batches = [];
 for (let i = 0; i < todo.length; i += 100) batches.push(todo.slice(i, i + 100));
 await pool(batches, 4, async (batch) => {
-    const out = await gemini({
+    const out = await llm({
         system: SYSTEM,
         prompt: JSON.stringify(batch),
         schema: { type: "array", items: { type: "object", properties: { en: { type: "string" }, bg: { type: "string" } }, required: ["en", "bg"] } },

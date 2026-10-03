@@ -8,42 +8,94 @@ export const raw = path.join(here, "raw");
 export const repo = path.resolve(here, "../..");
 fs.mkdirSync(raw, { recursive: true });
 
-export function geminiKey() {
-    if (process.env.GEMINI_API_KEY) {
-        return process.env.GEMINI_API_KEY.trim();
+export function openRouterKey() {
+    if (process.env.OPENROUTER_API_KEY) {
+        return process.env.OPENROUTER_API_KEY.trim();
     }
-    return fs.readFileSync(path.join(os.homedir(), ".config/gymtracker/gemini-key"), "utf8").trim();
+    const file = path.join(os.homedir(), ".config/gymtracker/openrouter-key");
+    if (!fs.existsSync(file)) {
+        throw new Error(`No OpenRouter key: set OPENROUTER_API_KEY or save it to ${file}`);
+    }
+    return fs.readFileSync(file, "utf8").trim();
 }
 
-/** Calls Gemini with structured JSON output and returns the parsed result. */
-export async function gemini({ model = "gemini-3.8-flash", system, prompt, schema, temperature = 0.1 }) {
-    for (let attempt = 1; attempt <= 4; attempt++) {
+export const defaultModel = process.env.OPENROUTER_MODEL || "google/gemini-3.8-flash";
+
+let catalog;
+/** The model's catalog entry from OpenRouter (public endpoint), or undefined. Cached per process. */
+async function modelInfo(model) {
+    catalog ??= fetch("https://openrouter.ai/api/v1/models", { signal: AbortSignal.timeout(30000) })
+        .then((r) => r.json()).then((j) => j.data).catch(() => []);
+    return (await catalog).find((m) => m.id === model);
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Calls an OpenRouter model with strict structured JSON output and returns the parsed result. Strict schemas need an
+ * object at the root, so an array schema is wrapped as { items: [...] } and unwrapped again.
+ */
+export async function llm({ model = defaultModel, system, prompt, schema, temperature = 0.1 }) {
+    const key = openRouterKey();
+    const wrapped = schema.type === "array";
+    const rootSchema = wrapped ? { type: "object", properties: { items: schema }, required: ["items"], additionalProperties: false } : schema;
+    const info = await modelInfo(model);
+    const supports = new Set(info?.supported_parameters || []);
+    const body = {
+        model,
+        messages: [...(system ? [{ role: "system", content: system }] : []), { role: "user", content: prompt }],
+        response_format: { type: "json_schema", json_schema: { name: "result", strict: true, schema: strict(rootSchema) } },
+        provider: { require_parameters: true },
+    };
+    if (supports.has("temperature")) body.temperature = temperature;
+    const efforts = info?.reasoning?.supported_efforts;
+    if (supports.has("reasoning") && efforts?.length) body.reasoning = { effort: efforts.at(-1) };
+
+    let lastError = "";
+    for (let attempt = 1; attempt <= 5; attempt++) {
         let res;
         try {
-            res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-            method: "POST",
-            signal: AbortSignal.timeout(90000),
-            headers: { "content-type": "application/json", "x-goog-api-key": geminiKey() },
-            body: JSON.stringify({
-                systemInstruction: system ? { parts: [{ text: system }] } : undefined,
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-                generationConfig: { temperature, responseMimeType: "application/json", responseJsonSchema: schema },
-            }),
-        });
-        } catch {
-            continue; // timed out or the connection dropped: try again
+            res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                signal: AbortSignal.timeout(120000),
+                headers: { "content-type": "application/json", authorization: `Bearer ${key}`, "x-title": "GymTracker tools" },
+                body: JSON.stringify(body),
+            });
+        } catch (e) {
+            lastError = e.message; // timed out or the connection dropped
+            await sleep(2000 * 2 ** attempt);
+            continue;
         }
         if (res.status === 429 || res.status >= 500) {
-            await new Promise((r) => setTimeout(r, 2000 * attempt));
+            lastError = `${res.status} ${(await res.text()).slice(0, 200)}`;
+            await sleep(2000 * 2 ** attempt);
             continue;
         }
         if (!res.ok) {
-            throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
+            throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
         }
         const json = await res.json();
-        return JSON.parse(json.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "null");
+        const text = json.choices?.[0]?.message?.content;
+        if (!text) {
+            lastError = `empty answer: ${JSON.stringify(json).slice(0, 200)}`;
+            continue;
+        }
+        const parsed = JSON.parse(text);
+        return wrapped ? parsed.items : parsed;
     }
-    throw new Error("Gemini kept failing");
+    throw new Error(`OpenRouter kept failing (${model}): ${lastError}`);
+}
+
+/** Makes a JSON schema strict-mode compatible: no extra properties, every property required. */
+function strict(schema) {
+    if (schema?.type === "object" || schema?.properties) {
+        const properties = Object.fromEntries(Object.entries(schema.properties || {}).map(([k, v]) => [k, strict(v)]));
+        return { ...schema, properties, required: Object.keys(properties), additionalProperties: false };
+    }
+    if (schema?.items) {
+        return { ...schema, items: strict(schema.items) };
+    }
+    return schema;
 }
 
 export function csvField(v) {
@@ -56,7 +108,7 @@ export function writeCsv(file, header, rows) {
 }
 
 export function readCsv(file) {
-    const lines = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
+    const lines = fs.readFileSync(file, "utf8").split(/\r?\n/).filter(Boolean);
     const parse = (line) => {
         const out = [];
         let field = "";

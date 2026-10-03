@@ -4,13 +4,13 @@
 // Output: src/GymTracker.Web/Data/Seed/bg-foods.csv (new foods) and raw/usda-bg-names.csv (Bulgarian names found
 // for USDA foods that a Bulgarian source duplicated; the USDA translation pass uses them).
 //
-// Duplicates are decided by Gemini 3.8 Flash on candidates found locally: a Bulgarian generic food is compared with
+// Duplicates are decided by an LLM through OpenRouter on candidates found locally: a Bulgarian generic food is compared with
 // the USDA foods and other Bulgarian rows sharing words with its English name. USDA wins over a duplicate (lab data);
 // among Bulgarian sources the row backed by more sources wins. Branded products (with barcodes) are only
 // de-duplicated by barcode.
 import fs from "node:fs";
 import path from "node:path";
-import { raw, repo, gemini, readCsv, writeCsv } from "./lib.mjs";
+import { raw, repo, llm, readCsv, writeCsv } from "./lib.mjs";
 
 const seedDir = path.join(repo, "src/GymTracker.Web/Data/Seed");
 const usda = readCsv(path.join(seedDir, "usda-foods.csv")).map((r) => ({ ...r, id: "u" + r.fdc_id }));
@@ -27,11 +27,11 @@ const english = fs.existsSync(englishFile) ? JSON.parse(fs.readFileSync(englishF
 const needEnglish = [...new Set(generic.map((g) => g.name_bg))].filter((n) => !english[n]);
 for (let i = 0; i < needEnglish.length; i += 80) {
     const batch = needEnglish.slice(i, i + 80);
-    const out = await gemini({
+    const out = await llm({
         system: "Give each Bulgarian food name the English name USDA FoodData Central would use for the same food, in USDA style (\"Cheese, feta\", \"Bread, rye\", \"Yogurt, plain, whole milk\"), including raw or cooked when it matters. For Bulgarian dishes with no USDA equivalent give a plain English description.",
         prompt: JSON.stringify(batch),
         schema: { type: "array", items: { type: "object", properties: { bg: { type: "string" }, en: { type: "string" } }, required: ["bg", "en"] } },
-    });
+    }).catch((e) => (console.error(`\nenglish names batch failed: ${e.message}`), []));
     for (const o of out || []) english[o.bg] = o.en;
     fs.writeFileSync(englishFile, JSON.stringify(english, null, 1));
     process.stdout.write(`english ${Math.min(i + 80, needEnglish.length)}/${needEnglish.length}\r`);
@@ -55,7 +55,7 @@ function bgCandidates(g) {
     return generic.filter((o) => o.id !== g.id && (words(o.name_bg).some((w) => ws.has(w)) || words(english[o.name_bg]).filter((w) => en.has(w)).length >= 2)).slice(0, 6);
 }
 
-// ---- 3. Gemini decides ----
+// ---- 3. The model decides ----
 const decisionsFile = path.join(raw, "duplicates.json");
 const decisions = fs.existsSync(decisionsFile) ? JSON.parse(fs.readFileSync(decisionsFile, "utf8")) : {};
 const fmt = (x) => `${x.kcal} kcal, P ${x.protein}, C ${x.carbs}, F ${x.fat}`;
@@ -71,16 +71,21 @@ for (let i = 0; i < todo.length; i += 25) {
         const cands = [...usdaCandidates(g).map((u) => `${u.id}: ${u.name} (${fmt(u)})`), ...bgCandidates(g).map((o) => `${o.id}: ${o.name_bg} [${english[o.name_bg]}] (${fmt(o)})`)];
         return `FOOD ${g.id}: ${g.name_bg} [${english[g.name_bg]}] (${fmt(g)})\nCANDIDATES:\n${cands.join("\n") || "(none)"}`;
     }).join("\n\n");
-    const out = await gemini({
+    const out = await llm({
         system: SYSTEM,
         prompt,
         schema: { type: "array", items: { type: "object", properties: { id: { type: "string" }, duplicate_of: { type: ["string", "null"] } }, required: ["id", "duplicate_of"] } },
-    });
+    }).catch((e) => (console.error(`\nduplicate batch failed: ${e.message}`), []));
     for (const o of out || []) decisions[o.id] = o.duplicate_of || null;
     fs.writeFileSync(decisionsFile, JSON.stringify(decisions, null, 1));
     process.stdout.write(`judged ${Math.min(i + 25, todo.length)}/${todo.length}\r`);
 }
 console.log();
+const undecided = generic.filter((g) => !(g.id in decisions)).length;
+if (undecided > 0) {
+    console.error(`${undecided} foods are still undecided; run again to retry them (decisions so far are cached). Nothing written.`);
+    process.exit(1);
+}
 
 // ---- 4. Resolve: USDA wins; among Bulgarian rows the better-sourced one wins ----
 const byId = new Map(generic.map((g) => [g.id, g]));

@@ -1,14 +1,14 @@
-// Translates the interface strings into Bulgarian with Gemini (dev-only; the app never calls this).
+// Translates the interface strings into Bulgarian with an LLM through OpenRouter (dev-only; the app never calls this).
 //
 //   GYM_WRITE_KEYS=1 dotnet test --filter CatalogueTests      # writes src/GymTracker.Web/Resources/strings.keys.json
 //   node tools/i18n/translate.mjs [--all] [--dry-run]           # fills in strings.bg.json
 //
-// Only keys missing from strings.bg.json are sent unless --all is given. The API key is read from GEMINI_API_KEY
-// or ~/.config/gymtracker/gemini-key; the model from GEMINI_MODEL, otherwise the newest "pro" model the key can use.
+// Only keys missing from strings.bg.json are sent unless --all is given. The API key is read from OPENROUTER_API_KEY
+// or ~/.config/gymtracker/openrouter-key; the model from OPENROUTER_MODEL (see the default below).
 // Review the output by hand before committing: this produces a draft, not the final text.
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import { llm } from "../foods/lib.mjs";
 
 const repo = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
 const keysFile = path.join(repo, "src/GymTracker.Web/Resources/strings.keys.json");
@@ -81,73 +81,23 @@ Domain vocabulary (use these consistently)
 
 Hard rules
 - Keep every placeholder ({0}, {1}, …) exactly once, unchanged; move it wherever Bulgarian grammar wants it.
-- Keep product and format names as they are: Gemini, Open Food Facts, USDA, CSV, EAN, UPC, .env, GymTracker.
+- Keep product and format names as they are: OpenRouter, Open Food Facts, USDA, CSV, EAN, UPC, .env, GymTracker.
 - Strings that already contain Bulgarian (example food names) keep that Bulgarian.
 - "W" is the label for a warm-up set in a narrow column: use a single letter (З).
 - If a string is a count form ("1 set" / "{0} sets"), give the matching Bulgarian form (1 серия / {0} серии).
 - Return every input string, with "en" copied exactly.
 `;
 
-function apiKey() {
-    if (process.env.GEMINI_API_KEY) {
-        return process.env.GEMINI_API_KEY.trim();
-    }
-    const file = path.join(os.homedir(), ".config/gymtracker/gemini-key");
-    if (fs.existsSync(file)) {
-        return fs.readFileSync(file, "utf8").trim();
-    }
-    console.error("No Gemini key: set GEMINI_API_KEY or put it in ~/.config/gymtracker/gemini-key");
-    process.exit(1);
-}
+// A strong writer rather than a fast model: these strings are few and the user reads every one.
+const model = process.env.OPENROUTER_MODEL || "google/gemini-4-carbon";
 
-const base = "https://generativelanguage.googleapis.com/v1beta";
-
-async function pickModel(key) {
-    if (process.env.GEMINI_MODEL) {
-        return process.env.GEMINI_MODEL;
-    }
-    const res = await fetch(`${base}/models?pageSize=1000`, { headers: { "x-goog-api-key": key } });
-    if (!res.ok) {
-        throw new Error(`Listing models failed: ${res.status} ${await res.text()}`);
-    }
-    const names = (await res.json()).models
-        .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
-        .map((m) => m.name.replace("models/", ""))
-        .filter((n) => /^gemini-\d+(\.\d+)?-pro($|-preview)/.test(n));
-    names.sort((a, b) => parseFloat(b.split("-")[1]) - parseFloat(a.split("-")[1]) || a.length - b.length);
-    if (!names.length) {
-        throw new Error("No Gemini pro model available; set GEMINI_MODEL");
-    }
-    return names[0];
-}
-
-const placeholders = (s) => (s.match(/\{\d+\}/g) || []).sort().join(",");
-
-async function translate(key, model, batch) {
-    const body = {
-        systemInstruction: { parts: [{ text: BRIEF }] },
-        contents: [{ role: "user", parts: [{ text: "Localize these interface strings. Each has where it appears in the app and notes.\n" + JSON.stringify(batch.map(hint), null, 1) }] }],
-        generationConfig: {
-            temperature: 0.3,
-            responseMimeType: "application/json",
-            responseJsonSchema: {
-                type: "array",
-                items: { type: "object", properties: { en: { type: "string" }, bg: { type: "string" } }, required: ["en", "bg"] },
-            },
-        },
-    };
-    const res = await fetch(`${base}/models/${model}:generateContent`, {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-        throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 400)}`);
-    }
-    const json = await res.json();
-    const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "[]";
-    return JSON.parse(text);
-}
+const translate = (batch) => llm({
+    model,
+    system: BRIEF,
+    prompt: "Localize these interface strings. Each has where it appears in the app and notes.\n" + JSON.stringify(batch.map(hint), null, 1),
+    schema: { type: "array", items: { type: "object", properties: { en: { type: "string" }, bg: { type: "string" } }, required: ["en", "bg"] } },
+    temperature: 0.3,
+});
 
 if (dryRun) {
     console.log(BRIEF);
@@ -155,8 +105,6 @@ if (dryRun) {
     process.exit(0);
 }
 
-const key = apiKey();
-const model = await pickModel(key);
 console.log("model:", model);
 
 let pending = todo;
@@ -166,7 +114,7 @@ for (let round = 1; round <= 3 && pending.length; round++) {
         const batch = pending.slice(i, i + 50);
         let out = [];
         try {
-            out = await translate(key, model, batch);
+            out = (await translate(batch)) || [];
         } catch (e) {
             console.error(e.message);
         }
