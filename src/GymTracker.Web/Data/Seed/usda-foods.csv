@@ -1933,7 +1933,7 @@ fdc_id,name,kcal,protein,carbs,fat,name_bg
 174075,"Bread, chapati or roti, whole wheat, commercially prepared, frozen",299.0,7.85,46.13,9.2,"Хляб чапати или роти, пълнозърнест, замразен"
 167944,"Bread, cheese",408.0,10.42,44.83,20.83,Хляб със сирене/кашкавал
 171849,"Bread, cinnamon",253.0,7.05,44.38,5.29,Хляб с канела
-174908,"Bread, cornbread, dry mix, enriched (includes corn muffin mix)",418.0,7.0,69.5,12.2,
+174908,"Bread, cornbread, dry mix, enriched (includes corn muffin mix)",418.0,7.0,69.5,12.2,"Царевичен хляб, суха смес"
 174909,"Bread, cornbread, dry mix, prepared with 2% milk, 80% margarine, and eggs",330.0,6.59,54.46,9.58,"Царевичен хляб, от суха смес, с прясно мляко 2%, маргарин и яйца"
 172815,"Bread, cornbread, dry mix, unenriched (includes corn muffin mix)",418.0,7.0,69.5,12.2,"Царевичен хляб, суха смес, необогатена"
 174910,"Bread, cornbread, prepared from recipe, made with low fat (2%) milk",266.0,6.7,43.5,7.1,"Царевичен хляб, домашен, с прясно мляко 2%"
@@ -3483,7 +3483,7 @@ fdc_id,name,kcal,protein,carbs,fat,name_bg
 172082,"Fast foods, cheeseburger; single, large patty; with condiments",269.0,15.21,19.72,14.4,"Голям чийзбургер, със сосове"
 172081,"Fast foods, cheeseburger; single, large patty; with condiments, vegetables and mayonnaise",268.0,13.69,17.73,15.8,"Голям чийзбургер, със зеленчуци и майонеза"
 170691,"Fast foods, cheeseburger; single, regular patty, with condiments",270.0,13.49,25.46,12.9,"Чийзбургер, стандартен, със сосове"
-170692,"Fast foods, cheeseburger; single, regular patty, with condiments and vegetables",254.0,13.06,24.97,11.5,
+170692,"Fast foods, cheeseburger; single, regular patty, with condiments and vegetables",254.0,13.06,24.97,11.5,"Чийзбургер с едно кюфте, сосове и зеленчуци"
 170690,"Fast foods, cheeseburger; single, regular patty; plain",308.0,16.51,28.03,14.72,"Чийзбургер, стандартен, само месо и кашкавал"
 170295,"Fast foods, chicken fillet sandwich, plain with pickles",250.0,16.28,20.89,11.19,Сандвич с пилешко филе и кисели краставички
 173321,"Fast foods, chicken tenders",271.0,19.22,17.25,13.95,Пилешки панирани пръчици (тендърс)
