@@ -1,40 +1,59 @@
 @model SummaryViewModel
 @{
     var session = Model.Summary.Session;
-    ViewData["Title"] = "Summary";
+    var name = session.Template?.Name ?? L["Freestyle"];
+    ViewData["Title"] = L["Summary"];
+    ViewData["BackUrl"] = $"/train/sessions/{session.Id}";
+    ViewData["BackLabel"] = name;
 }
-<h1>@(session.Template?.Name ?? "Freestyle")</h1>
-<section class="card stats">
-    <div><span class="big">@Model.Summary.Duration.Elapsed()</span><span class="muted">Duration</span></div>
-    <div><span class="big">@Model.Summary.WorkingSets</span><span class="muted">Working sets</span></div>
-    <div><span class="big">@Model.Records.Count</span><span class="muted">New records</span></div>
-</section>
+<header class="page-head">
+    <p class="eyebrow">@L["Workout finished"]</p>
+    <h1 class="large-title">@name</h1>
+</header>
+
+<div class="card stat-grid">
+    <div class="stat"><div class="stat-value num">@L.Duration(Model.Summary.Duration)</div><div class="stat-label">@L["Duration"]</div></div>
+    <div class="stat"><div class="stat-value num" data-count="@Model.Summary.WorkingSets">@Model.Summary.WorkingSets</div><div class="stat-label">@L["Working sets"]</div></div>
+    <div class="stat"><div class="stat-value num" data-count="@Model.Records.Count">@Model.Records.Count</div><div class="stat-label">@L["New records"]</div></div>
+</div>
+
 @if (Model.Records.Count > 0)
 {
-    <section class="card highlight">
-        <h2>New records</h2>
-        <ul class="list">
+    <section class="section">
+        <h2 class="section-title">@L["New records"]</h2>
+        <div class="list">
             @foreach (var record in Model.Records)
             {
-                <li class="row-between">
-                    <strong>@record.ExerciseName</strong>
-                    <span>@record.E1rmKg.Kg() kg e1RM <span class="muted">(was @record.PreviousBestKg?.Kg())</span></span>
-                </li>
+                <div class="row">
+                    <span class="row-icon">@Ui.Icon("medal")</span>
+                    <span class="row-main">
+                        <span class="row-title headline" style="display: block">@L[record.ExerciseName]</span>
+                        <span class="row-sub" style="display: block">@(record.PreviousBestKg is { } was ? L["Estimated 1RM, was {0} kg", was.Kg()] : L["Estimated 1RM, first time"])</span>
+                    </span>
+                    <span class="num headline" style="font-size: var(--text-title-3)">@record.E1rmKg.Kg()<span class="muted" style="font-size: var(--text-subhead)"> @L["kg"]</span></span>
+                </div>
             }
-        </ul>
+        </div>
     </section>
 }
-<ul class="list">
-    @foreach (var exercise in session.Exercises)
-    {
-        var sets = exercise.Sets.Where(s => !s.IsWarmup).ToList();
-        <li>
-            <strong>@exercise.Exercise.Name</strong>
-            <span class="muted">@(sets.Count == 0 ? "no sets" : string.Join(", ", sets.Select(s => $"{s.WeightKg.Kg()}×{s.Reps}")))</span>
-        </li>
-    }
-</ul>
-<nav class="links">
-    <a class="button primary" href="/today">Done</a>
-    <a class="button" href="/train/sessions/@session.Id">Edit</a>
-</nav>
+
+<section class="section">
+    <h2 class="section-title">@L["Exercises"]</h2>
+    <div class="list">
+        @foreach (var exercise in session.Exercises)
+        {
+            var sets = exercise.Sets.Where(s => !s.IsWarmup).OrderBy(s => s.SetNumber).ToList();
+            <div class="row">
+                <span class="row-main">
+                    <span class="row-title" style="display: block">@L.Exercise(exercise.Exercise)</span>
+                    <span class="row-sub num" style="display: block">@(sets.Count == 0 ? L["No sets"] : string.Join("   ", sets.Select(s => $"{s.WeightKg.Kg()} × {s.Reps}")))</span>
+                </span>
+            </div>
+        }
+    </div>
+</section>
+
+<div class="btn-stack" style="margin-top: var(--s-7)">
+    <a class="btn btn-primary" href="/today">@L["Done"]</a>
+    <a class="btn btn-secondary" href="/train/sessions/@session.Id">@L["Edit workout"]</a>
+</div>

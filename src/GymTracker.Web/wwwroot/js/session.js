@@ -58,6 +58,12 @@
 
     function markPending(form, item) {
         form.classList.add("pending");
+        // Looks logged straight away; "Waiting for signal" only appears if the server hasn't answered soon.
+        setTimeout(() => {
+            if (form.isConnected && form.classList.contains("pending")) {
+                form.classList.add("is-waiting");
+            }
+        }, navigator.onLine ? 1500 : 0);
         form.dataset.clientId = item.clientId;
         form.querySelector('input[name="clientId"]').value = item.clientId;
         form.querySelector('input[name="weightKg"]').value = item.weightKg;
@@ -74,18 +80,14 @@
         const count = loadQueue().length;
         status.hidden = count === 0;
         status.textContent = count === 1
-            ? "1 set is saved on this phone and will send when the connection is back."
-            : `${count} sets are saved on this phone and will send when the connection is back.`;
+            ? t("1 set is saved on this phone and will send when the connection is back.")
+            : t("{0} sets are saved on this phone and will send when the connection is back.", count);
     }
 
     function toast(message) {
-        const el = document.getElementById("toast");
-        if (!el) {
-            return;
+        if (window.gymToast) {
+            window.gymToast(message);
         }
-        el.textContent = message;
-        el.hidden = false;
-        setTimeout(() => { el.hidden = true; }, 5000);
     }
 
     let sending = false;
@@ -171,17 +173,38 @@
                 row.classList.remove("pending");
                 row.querySelectorAll("input, button").forEach((el) => { el.disabled = false; });
             }
-            toast(response.status === 400 ? (await response.text()) || "That set was not valid." : "That set's exercise no longer exists.");
+            row && row.classList.remove("is-waiting");
+            toast(response.status === 400 ? (await response.text()) || t("That set was not valid.") : t("That set's exercise no longer exists."));
             return "next";
         }
 
         return "stop"; // server error: try again later
     }
 
+    // Suggested values are placeholders until the set is logged; an untouched field takes the suggestion.
+    // This runs on the tap (and on Enter, which clicks the submit button) because the browser checks
+    // required fields before the submit event fires.
+    function fillSuggestions(form) {
+        form.querySelectorAll("input[data-suggested]").forEach((input) => {
+            if (input.value === "" && input.dataset.suggested) {
+                input.value = input.dataset.suggested;
+            }
+        });
+    }
+
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest("form[data-log-set] button[type=submit]");
+        if (button) {
+            fillSuggestions(button.form);
+        }
+    }, true);
+
     function logSet(form) {
+        fillSuggestions(form);
         if (!form.reportValidity()) {
             return;
         }
+        form.classList.add("just-done");
 
         const item = {
             clientId: form.querySelector('input[name="clientId"]').value,
@@ -326,24 +349,75 @@
             return;
         }
 
-        const remaining = Math.max(0, Math.ceil((state.end - Date.now()) / 1000));
-        timer.hidden = false;
-        document.getElementById("rest-time").textContent =
-            `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`;
-        timer.querySelector(".rest-fill").style.width = `${Math.min(100, (remaining / state.total) * 100)}%`;
+        const leftMs = Math.max(0, state.end - Date.now());
+        const remaining = Math.ceil(leftMs / 1000);
+        const text = `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`;
+        if (timer.hidden) {
+            timer.hidden = false;
+            showNext();
+        }
+        document.getElementById("rest-time").textContent = text;
+        document.querySelectorAll("[data-rest-time]").forEach((el) => { el.textContent = text; });
+        // The ring empties as the rest runs out (circles use pathLength="1").
+        const left = Math.min(1, leftMs / (state.total * 1000));
+        document.querySelectorAll("[data-rest-ring]").forEach((ring) => {
+            ring.style.strokeDasharray = "1 1";
+            ring.style.strokeDashoffset = String(1 - left);
+        });
         timer.classList.toggle("done", remaining === 0);
+        const sheet = document.querySelector(".rest-sheet");
+        if (sheet) {
+            sheet.classList.toggle("done", remaining === 0);
+        }
 
         if (remaining === 0 && !state.beeped) {
             state.beeped = true;
             write(REST_KEY, state);
             beep();
+            const live = document.getElementById("rest-live");
+            if (live) {
+                live.textContent = t("Rest over");
+            }
         }
 
         // Clear a finished timer after a few seconds so it doesn't linger.
         if (remaining === 0 && Date.now() - state.end > 4000) {
             write(REST_KEY, null);
             timer.hidden = true;
+            if (window.gymSheet) {
+                window.gymSheet.hide();
+            }
         }
+    }
+
+    // What comes after the rest: the first set not yet logged, with its suggested weight and reps.
+    function showNext() {
+        const next = document.querySelector("form[data-log-set]:not(.pending)");
+        const card = next && next.closest(".exercise");
+        const name = card ? card.dataset.name : "";
+        const kg = next ? next.querySelector('input[name="weightKg"]') : null;
+        const reps = next ? next.querySelector('input[name="reps"]') : null;
+        const kgValue = kg && (kg.value || kg.dataset.suggested);
+        const repsValue = reps && (reps.value || reps.dataset.suggested);
+        const short = document.querySelector("[data-rest-next-short]");
+        if (short) {
+            short.textContent = name ? t("Next: {0}", name) : t("Rest");
+        }
+        const long = document.querySelector("[data-rest-next]");
+        if (long) {
+            long.textContent = !name ? "" : kgValue && repsValue
+                ? t("Next: {0}", name) + " · " + t("{0} kg × {1}", kgValue, repsValue)
+                : t("Next: {0}", name);
+        }
+    }
+
+    // Smooth ring while the timer is on screen; the 250 ms interval keeps logic running otherwise.
+    function frame() {
+        const timer = document.getElementById("rest-timer");
+        if (timer && !timer.hidden && document.visibilityState === "visible") {
+            tick();
+        }
+        requestAnimationFrame(frame);
     }
 
     function adjustRest(byMs) {
@@ -359,12 +433,15 @@
     }
 
     document.addEventListener("click", (event) => {
-        if (event.target.closest("#rest-add")) {
+        if (event.target.closest("#rest-add, [data-rest-add]")) {
             unlockAudio();
             adjustRest(30000);
-        } else if (event.target.closest("#rest-skip")) {
+        } else if (event.target.closest("#rest-skip, [data-rest-skip]")) {
             write(REST_KEY, null);
             tick();
+            if (window.gymSheet) {
+                window.gymSheet.hide();
+            }
         }
     });
 
@@ -394,4 +471,7 @@
     keepAwake();
     tick();
     setInterval(tick, 250);
+    if (document.getElementById("rest-timer")) {
+        requestAnimationFrame(frame);
+    }
 })();

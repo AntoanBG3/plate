@@ -4,42 +4,47 @@
     var warmups = Ex.Sets.Where(s => s.IsWarmup).OrderBy(s => s.SetNumber).ToList();
     var working = Ex.Sets.Where(s => !s.IsWarmup).OrderBy(s => s.SetNumber).ToList();
     var blanks = Math.Max(0, Ex.WorkingSets - working.Count);
+    var name = L.Exercise(Ex.Exercise);
 }
-<section class="card exercise" id="ex-@Ex.Id" data-rest="@Ex.RestSeconds">
-    <header class="row-between">
+<section class="exercise" id="ex-@Ex.Id" data-rest="@Ex.RestSeconds" data-name="@name">
+    <div class="ex-head">
         <div>
-            <h2>@Ex.Exercise.Name</h2>
-            <p class="muted">@Ex.RepMin–@Ex.RepMax reps · @Ex.WorkingSets sets · rest @Format.Rest(Ex.RestSeconds)</p>
+            <h2 class="ex-name">@name</h2>
+            <p class="ex-meta">@L["{0}–{1} reps · {2} · rest {3}", Ex.RepMin, Ex.RepMax, L.Count(Ex.WorkingSets, "1 set", "{0} sets"), Format.Rest(Ex.RestSeconds)]</p>
         </div>
-        <div class="icon-buttons">
-            <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="-1" /><button type="submit" aria-label="Move up">↑</button></form>
-            <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" aria-label="Move down">↓</button></form>
-            <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/remove" onsubmit="return confirm('Remove this exercise and its sets from the session?')"><button type="submit" aria-label="Remove exercise">✕</button></form>
+        <div class="menu-wrap">
+            <button type="button" class="icon-btn" data-menu-trigger aria-expanded="false" aria-label="@L["Actions for {0}", name]">@Ui.Icon("more")</button>
+            <div class="menu" role="menu">
+                <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="-1" /><button type="submit" role="menuitem">@L["Move up"]@Ui.Icon("up")</button></form>
+                <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" role="menuitem">@L["Move down"]@Ui.Icon("down")</button></form>
+                <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/remove" onsubmit="return confirm(this.dataset.confirm)" data-confirm="@L["Remove this exercise and its sets from the workout?"]"><button type="submit" role="menuitem" class="danger">@L["Remove exercise"]@Ui.Icon("trash")</button></form>
+            </div>
         </div>
-    </header>
-    @if (Model.Suggestion is { } suggestion)
-    {
-        <p class="suggestion @suggestion.Kind.ToString().ToLowerInvariant()">@suggestion.Reason</p>
-    }
-    <div class="set-head"><span></span><span>kg</span><span>reps</span><span></span></div>
-    <div class="rows warmups" id="warmups-@Ex.Id">
-        @foreach (var set in warmups)
-        {
-            <partial name="_SetRow" model="SetRowViewModel.For(set)" />
-        }
     </div>
-    <div class="rows working" id="rows-@Ex.Id">
-        @foreach (var set in working)
+    <div class="ex-body">
+        @if (Model.Suggestion is { } suggestion)
         {
-            <partial name="_SetRow" model="SetRowViewModel.For(set)" />
+            <p class="suggestion @suggestion.Kind.ToString().ToLowerInvariant()">@Ui.Icon(suggestion.Kind == GymTracker.Core.Training.ProgressionKind.Deload ? "deload" : "trend")<span>@L[suggestion.Reason]</span></p>
         }
-        @for (var i = 0; i < blanks; i++)
-        {
-            <partial name="_SetRow" model="SetRowViewModel.Blank(Ex.Id, false, Model.TargetFor(working.Count + i))" />
-        }
-    </div>
-    <div class="card-actions">
-        <button type="button" hx-get="/train/session-exercises/@Ex.Id/row?warmup=true" hx-target="#warmups-@Ex.Id" hx-swap="beforeend">+ Warmup</button>
-        <button type="button" hx-get="/train/session-exercises/@Ex.Id/row?warmup=false" hx-target="#rows-@Ex.Id" hx-swap="beforeend">+ Set</button>
+        <div class="rows warmups" id="warmups-@Ex.Id">
+            @foreach (var set in warmups)
+            {
+                <partial name="_SetRow" model="SetRowViewModel.For(set)" />
+            }
+        </div>
+        <div class="rows working" id="rows-@Ex.Id">
+            @foreach (var set in working)
+            {
+                <partial name="_SetRow" model="SetRowViewModel.For(set)" />
+            }
+            @for (var i = 0; i < blanks; i++)
+            {
+                <partial name="_SetRow" model="SetRowViewModel.Blank(Ex.Id, false, Model.TargetFor(working.Count + i))" />
+            }
+        </div>
+        <div class="ex-actions">
+            <button type="button" hx-get="/train/session-exercises/@Ex.Id/row?warmup=false" hx-target="#rows-@Ex.Id" hx-swap="beforeend">@Ui.Icon("plus")@L["Add set"]</button>
+            <button type="button" hx-get="/train/session-exercises/@Ex.Id/row?warmup=true" hx-target="#warmups-@Ex.Id" hx-swap="beforeend">@Ui.Icon("plus")@L["Warm-up"]</button>
+        </div>
     </div>
 </section>

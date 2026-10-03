@@ -1,57 +1,105 @@
 @model SessionViewModel
 @inject UserTime Time
 @{
-    ViewData["Title"] = Model.Session.Template?.Name ?? "Freestyle";
-    var started = await Time.LocalAsync(Model.Session.StartedAt);
+    var session = Model.Session;
+    var name = session.Template?.Name ?? L["Freestyle"];
+    ViewData["Title"] = name;
+    ViewData["BackUrl"] = session.IsActive ? "/train" : "/train/history";
+    ViewData["BackLabel"] = session.IsActive ? L["Train"] : L["History"];
+    var started = await Time.LocalAsync(session.StartedAt);
 }
-<header class="row-between">
-    <div>
-        <p class="muted" style="margin: 0 0 4px;">
-            @started.ToString("ddd d MMM, HH:mm", System.Globalization.CultureInfo.InvariantCulture)
-            @(Model.Session.IsActive ? "· in progress" : "· finished")
-        </p>
-        <h1>@(Model.Session.Template?.Name ?? "Freestyle")</h1>
-    </div>
-    @if (Model.Session.IsActive)
+@section TopbarTrailing {
+    @if (session.IsActive)
     {
-        <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Session.Id/finish" onsubmit="return confirm('Finish this workout?')">
-            <button type="submit" class="primary">Finish</button>
+        <form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/finish" onsubmit="return confirm(this.dataset.confirm)" data-confirm="@L["Finish this workout?"]">
+            <button type="submit" class="topbar-action">@L["Finish"]</button>
         </form>
     }
+}
+<header class="page-head">
+    <p class="eyebrow">@Ui.ShortDate(started.DateTime), @Ui.Time(started.DateTime) · @(session.IsActive ? L["in progress"] : L["finished"])</p>
+    <h1 class="large-title">@name</h1>
 </header>
-<p id="queue-status" class="queue-status" role="status" hidden></p>
 
-@foreach (var exercise in Model.Session.Exercises)
+<div id="queue-status" class="banner is-pending" role="status" hidden></div>
+
+@foreach (var exercise in session.Exercises)
 {
     <partial name="_ExerciseCard" model="new ExerciseCardViewModel(exercise, Model.Suggestions.GetValueOrDefault(exercise.Id))" />
 }
-
-<a class="button" href="/train/sessions/@Model.Session.Id/add-exercise">Add exercise</a>
-
-<form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Session.Id/notes" class="stack card">
-    <label>Notes
-        <textarea name="notes" rows="2" maxlength="2000">@Model.Session.Notes</textarea>
-    </label>
-    <button type="submit">Save notes</button>
-</form>
-
-@* session.js reads these: which session pending sets belong to, and where the rest timer and queue state show. *@
-<div id="session" data-session-id="@Model.Session.Id" data-active="@(Model.Session.IsActive ? "true" : "false")" hidden></div>
-@if (Model.Session.IsActive)
+@if (session.Exercises.Count == 0)
 {
-    <div id="rest-timer" class="rest-timer" hidden>
-        <div class="rest-fill" aria-hidden="true"></div>
-        <span class="rest-label">Rest</span>
-        <span class="rest-time" id="rest-time" role="timer">0:00</span>
-        <button type="button" id="rest-add">+30s</button>
-        <button type="button" id="rest-skip" class="rest-skip">Skip</button>
+    <div class="card empty" style="margin-top: var(--s-6)">
+        <div class="empty-icon">@Ui.Icon("train")</div>
+        <h2>@L["No exercises yet"]</h2>
+        <p>@L["Add the first exercise to start logging sets."]</p>
     </div>
 }
 
-@if (!Model.Session.IsActive)
+<div class="btn-stack" style="margin-top: var(--s-6)">
+    <a class="btn btn-secondary" href="/train/sessions/@session.Id/add-exercise">@Ui.Icon("plus")@L["Add exercise"]</a>
+</div>
+
+<form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/notes" class="section">
+    <h2 class="section-title">@L["Notes"]</h2>
+    <div class="list">
+        <div class="field-row stacked">
+            <label for="notes" class="sr-only">@L["Notes"]</label>
+            <textarea id="notes" name="notes" rows="3" maxlength="2000" class="textarea" style="background: none; padding: 0; box-shadow: none" placeholder="@L["How it went, what to change next time"]">@session.Notes</textarea>
+        </div>
+        <div class="row" style="padding-top: 0; padding-bottom: 0"><button type="submit" class="btn btn-plain" style="padding: 0">@L["Save notes"]</button></div>
+    </div>
+</form>
+
+@if (!session.IsActive)
 {
-    <p><a href="/train/sessions/@Model.Session.Id/summary">Summary</a> · <a href="/train/history">History</a></p>
-    <form method="post" asp-antiforgery="true" action="/train/sessions/@Model.Session.Id/delete" onsubmit="return confirm('Delete this session and all its sets? This cannot be undone.')">
-        <button type="submit" class="danger">Delete session</button>
-    </form>
+    <div class="section">
+        <div class="list">
+            <a class="row row-link" href="/train/sessions/@session.Id/summary">
+                <span class="row-icon neutral">@Ui.Icon("medal")</span>
+                <span class="row-main">@L["Summary"]</span>
+                @Ui.Icon("chevron", "row-chevron")
+            </a>
+        </div>
+        <form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/delete" onsubmit="return confirm(this.dataset.confirm)" data-confirm="@L["Delete this workout and all its sets? This can't be undone."]" style="margin-top: var(--s-4)">
+            <button type="submit" class="btn btn-destructive btn-block">@L["Delete workout"]</button>
+        </form>
+    </div>
+}
+
+@* session.js reads these: which session pending sets belong to, and where the rest timer and queue state show. *@
+<div id="session" data-session-id="@session.Id" data-active="@(session.IsActive ? "true" : "false")" hidden></div>
+
+@section Overlays {
+    @if (session.IsActive)
+    {
+        <div id="rest-timer" class="rest-timer" hidden>
+            <button type="button" class="rest-open" data-sheet-open="rest-sheet" aria-label="@L["Open the rest timer"]">
+                <svg class="rest-ring" viewBox="0 0 38 38" aria-hidden="true"><circle class="track" cx="19" cy="19" r="15" stroke-width="4"/><circle class="bar" cx="19" cy="19" r="15" stroke-width="4" pathLength="1" data-rest-ring/></svg>
+                <span class="rest-text">
+                    <span class="rest-label" data-rest-next-short>@L["Rest"]</span>
+                    <span class="rest-time num" id="rest-time" role="timer">0:00</span>
+                </span>
+            </button>
+            <button type="button" id="rest-add" class="rest-btn num">+30</button>
+            <button type="button" id="rest-skip" class="rest-btn">@L["Skip"]</button>
+        </div>
+        <div class="sheet" id="rest-sheet" hidden>
+            <div class="sheet-scrim"></div>
+            <div class="sheet-panel rest-sheet" role="dialog" aria-modal="true" aria-labelledby="rest-sheet-title">
+                <div class="sheet-grabber" aria-hidden="true"></div>
+                <div class="sheet-head"><span></span><span class="sheet-title" id="rest-sheet-title">@L["Rest"]</span><button type="button" class="sheet-close" data-sheet-close>@L["Done"]</button></div>
+                <div class="rest-big-wrap sheet-drag">
+                    <svg class="rest-big" viewBox="0 0 256 256" aria-hidden="true"><circle class="track" cx="128" cy="128" r="116" stroke-width="12"/><circle class="bar" cx="128" cy="128" r="116" stroke-width="12" pathLength="1" data-rest-ring/></svg>
+                    <div class="rest-big-time num" data-rest-time>0:00</div>
+                </div>
+                <p class="rest-next footnote" data-rest-next></p>
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary num" data-rest-add>+30 s</button>
+                    <button type="button" class="btn btn-primary" data-rest-skip>@L["Skip rest"]</button>
+                </div>
+            </div>
+        </div>
+        <div id="rest-live" class="sr-only" aria-live="assertive"></div>
+    }
 }
