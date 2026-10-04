@@ -24,7 +24,7 @@ Seven small features, built and committed one at a time in this order: duplicate
 
 - Core: `PlateMath.PerSide(targetKg, barKg, platesKg)` returns the plates for one side (heaviest first) and the loaded total. Plates are available in any number of pairs. It finds the heaviest total at or below the target, using the fewest plates among equal totals; this is an exact search over 0.05 kg units, not greedy, so plates {15, 10} make 20 per side as 10 + 10.
 - Edge cases with tests: target below the bar (no plates, total = bar, flagged), target equal to the bar, target not reachable exactly (nearest lower total, flagged), empty plate list, plates that don't divide evenly (1.25 with 2.5), large targets (300 kg).
-- UI: on the session card, exercises with an effective bar weight get a small plates button beside each set's weight input. It opens a sheet loaded with htmx from `GET /train/plates?exerciseId=&weight=`, listing the plates per side and the total, with "Closest you can load: X kg" when not exact. The weight comes from the input's current value.
+- UI: on the session card, exercises with an effective bar weight get a "Plates" button in the card's action bar (a button per set row would crowd the row at 390 px). It opens a sheet loaded with htmx from `GET /train/session-exercises/{id}/plates`, starting from the last logged working set's weight, else the suggestion's weight. The sheet has its own weight field that updates the result as you type, and lists the plates per side and the total, with "Closest you can load: X kg" when not exact.
 
 ## 4. Swap an exercise in a session
 
