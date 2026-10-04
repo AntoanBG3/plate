@@ -54,6 +54,7 @@ public static class ScriptText
         // passkey.js
         "Couldn't add the passkey. Try again.",
         "That passkey didn't work. Try again or use your password.",
+        "That passkey didn't work. Try again.",
     ];
 
     public static Dictionary<string, string> For(Localizer localizer) =>

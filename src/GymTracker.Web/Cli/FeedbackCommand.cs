@@ -29,6 +29,8 @@ public static class FeedbackCommand
           errors [--since 7d]
           digest [--since 7d|<date>]
           changelog add --en "..." --bg "..." [--feedback <id>] [--version <sha>]
+          changelog list
+          changelog remove <id>
         Add --json to any command for JSON output.
         """;
 
@@ -148,7 +150,7 @@ public static class FeedbackCommand
                     return 0;
 
                 case "eval":
-                    return await ParseEvaluation.RunAsync(scope.ServiceProvider, admin, rest, o, json, ct);
+                    return await ParseEvaluation.RunAsync(scope.ServiceProvider, rest, o, json, ct);
 
                 case "errors":
                     var errors = await admin.ErrorsAsync(Since(Option(rest, "--since"), TimeSpan.FromDays(7))!.Value, ct);
@@ -188,6 +190,39 @@ public static class FeedbackCommand
                     var feedbackId = Option(rest, "--feedback") is { } f ? int.Parse(f, CultureInfo.InvariantCulture) : (int?)null;
                     var entry = await admin.AddChangelogAsync(en, bg, feedbackId, Option(rest, "--version"), ct);
                     o.WriteLine($"Added What's new #{entry.Id}.");
+                    return 0;
+
+                case "changelog" when rest.Length > 1 && rest[1] == "list":
+                    var entries = await admin.ChangelogAsync(100, ct);
+                    if (json)
+                    {
+                        WriteJson(o, entries);
+                    }
+                    else
+                    {
+                        foreach (var c in entries)
+                        {
+                            o.WriteLine($"#{c.Id}  {When(c.CreatedAt)}{(c.FeedbackId is { } fid ? $"  feedback #{fid}" : "")}{(c.Version is { } v ? $"  {v}" : "")}");
+                            o.WriteLine($"    en: {c.TextEn}");
+                            o.WriteLine($"    bg: {c.TextBg}");
+                        }
+
+                        o.WriteLine($"{entries.Count} entries.");
+                    }
+
+                    return 0;
+
+                case "changelog" when rest.Length > 2 && rest[1] == "remove":
+                    var changelogId = int.TryParse(rest[2].TrimStart('#'), NumberStyles.None, CultureInfo.InvariantCulture, out var cid)
+                        ? cid
+                        : throw new FormatException("Give a What's new id, e.g. feedback changelog remove 3.");
+                    if (!await admin.RemoveChangelogAsync(changelogId, ct))
+                    {
+                        Console.Error.WriteLine($"There is no What's new #{changelogId}.");
+                        return 1;
+                    }
+
+                    o.WriteLine($"Removed What's new #{changelogId}.");
                     return 0;
 
                 default:
@@ -420,6 +455,24 @@ public static class FeedbackCommand
         o.WriteLine("Errors:");
         WriteErrors(o, d.Errors, withStack: false);
     }
+
+    /// <summary>A parse run as the CLI prints it, for the admin area's report and parse pages.</summary>
+    internal static string RunText(ParseRunDetail run, int? item)
+    {
+        using var w = new StringWriter();
+        WriteRun(w, run, brief: false, item);
+        return w.ToString();
+    }
+
+    /// <summary>An error group with its stack, as the CLI prints it.</summary>
+    internal static string ErrorText(ErrorEvent error)
+    {
+        using var w = new StringWriter();
+        WriteErrors(w, [error], withStack: true);
+        return w.ToString();
+    }
+
+    internal static string ContextText(JsonNode? context) => context?.ToJsonString(Pretty) ?? "{}";
 
     private static string Indent(string text) => string.Join('\n', text.Split('\n').Select(l => "    " + l));
 }

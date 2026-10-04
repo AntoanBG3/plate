@@ -120,30 +120,8 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable
         AppFactory.IsRedirectTo(response, "/today").Should().BeTrue();
         (await client.GetStringAsync("/today")).Should().Contain("Logged today: 82.4 kg, trend 82.4 kg");
 
-        (await client.GetStringAsync("/settings")).Should().Contain("AI models").And.Contain("No OpenRouter key").And.Contain(OpenRouterOptions.DefaultModel).And.Contain("Off: database ranking only");
-
-        // The test app can't reach OpenRouter, so there is no model list and no model can be picked.
-        (await client.GetStringAsync("/settings/model/parser")).Should().Contain("be loaded right now");
-        var settingsToken = await AppFactory.TokenAsync(client, "/settings");
-        var pick = await AppFactory.PostAsync(client, "/settings/model/parser", settingsToken, new() { ["modelId"] = "openai/gpt-x" });
-        pick.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await pick.Content.ReadAsStringAsync()).Should().Contain("model list can't be loaded");
-
-        // The matcher's models are a fixed list, so one can be picked without OpenRouter; no key means no test call.
-        (await client.GetStringAsync("/settings/model/matcher")).Should().Contain("Jev 1.13").And.Contain("Off: database ranking only");
-        try
-        {
-            var matcher = await AppFactory.PostAsync(client, "/settings/model/matcher", settingsToken, new() { ["modelId"] = JevFoodMatchDecider.Jev113 });
-            AppFactory.IsRedirectTo(matcher, "/settings").Should().BeTrue();
-            (await client.GetStringAsync("/settings")).Should().Contain("Jev 1.13");
-        }
-        finally
-        {
-            using var scope = app.Services.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<GymTracker.Web.Data.AppDbContext>().AppSettings.Where(x => x.Name == AiTasks.SettingName(AiTask.Matcher)).ExecuteDeleteAsync();
-        }
-
-        (await client.GetAsync("/settings/model/nonsense")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        // Without a key the parser is the simple built-in one; the key and models themselves are in the admin area (AdminTests).
+        (await client.GetStringAsync("/settings")).Should().Contain("AI models").And.Contain("Simple built-in parser").And.Contain("Off: database ranking only");
 
         var progress = await client.GetStringAsync("/progress?range=4w");
         progress.Should().Contain("id=\"weight-data\"").And.Contain("Trend now: <strong>82.4 kg</strong>");

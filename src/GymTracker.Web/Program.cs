@@ -6,6 +6,7 @@ using GymTracker.Web.Cli;
 using GymTracker.Web.Data;
 using GymTracker.Web.Data.Seed;
 using GymTracker.Web.Features;
+using GymTracker.Web.Features.Admin;
 using GymTracker.Web.Features.Analytics;
 using GymTracker.Web.Features.Diagnostics;
 using GymTracker.Web.Features.Food;
@@ -32,8 +33,8 @@ CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
-// The feedback CLI prints to stdout for piping over SSH (attachments are raw bytes), so its logs go to stderr.
-if (args.Length > 0 && args[0] == FeedbackCommand.Name)
+// The CLI commands print to stdout for piping over SSH (feedback attachments are raw bytes), so their logs go to stderr.
+if (args.Length > 0 && args[0] is FeedbackCommand.Name or RoleCommand.Name or AiCommand.Name or AdminCommand.Name)
 {
     builder.Logging.ClearProviders();
     builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
@@ -76,6 +77,7 @@ builder.Services.AddScoped<GymTracker.Web.Features.Feedback.FeedbackSnapshots>()
 builder.Services.AddScoped<GymTracker.Web.Features.Feedback.FeedbackAdmin>();
 builder.Services.AddScoped<GymTracker.Web.Features.Feedback.Changelog>();
 builder.Services.AddScoped<GymTracker.Web.Features.Feedback.ModelAccuracyReport>();
+builder.Services.AddScoped<GymTracker.Web.Features.Feedback.IParseEvaluator, GymTracker.Web.Features.Feedback.ParseEvaluator>();
 builder.Services.Configure<GymTracker.Web.Features.Feedback.TelegramOptions>(config.GetSection("Telegram"));
 builder.Services.AddSingleton<GymTracker.Web.Features.Feedback.FeedbackNotifier>();
 builder.Services.AddSingleton<GymTracker.Web.Features.Feedback.IFeedbackNotifier>(sp => sp.GetRequiredService<GymTracker.Web.Features.Feedback.FeedbackNotifier>());
@@ -88,6 +90,16 @@ builder.Services.AddScoped<GymTracker.Web.Features.Undo.UndoService>();
 builder.Services.AddHostedService<GymTracker.Web.Features.Undo.SoftDeletePurge>();
 builder.Services.AddScoped<NutritionTargets>();
 builder.Services.AddScoped<GymTracker.Web.Features.Export.DataExport>();
+
+// The admin area (SPEC 12).
+builder.Services.AddScoped<AdminAuditLog>();
+builder.Services.AddScoped<AiAdmin>();
+builder.Services.AddSingleton<EvalJobs>();
+builder.Services.Configure<CloudflareAccessOptions>(config.GetSection("Admin:CloudflareAccess"));
+builder.Services.AddSingleton<CloudflareAccess>();
+builder.Services.AddHttpClient(CloudflareAccess.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(5));
+builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, AdminHandler>();
+builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationMiddlewareResultHandler, AdminResultHandler>();
 
 builder.Services.Configure<OpenRouterOptions>(config.GetSection("OpenRouter"));
 var openRouterUrl = new Uri(config["OpenRouter:BaseUrl"] ?? new OpenRouterOptions().BaseUrl);
@@ -166,6 +178,9 @@ builder.Services.Configure<IdentityPasskeyOptions>(o =>
     {
         o.ServerDomain = domain;
     }
+
+    // Face ID / Touch ID every time, not just possession of the device: the admin unlock relies on it (SPEC 12).
+    o.UserVerificationRequirement = "required";
 });
 
 builder.Services.ConfigureApplicationCookie(o =>
@@ -202,6 +217,9 @@ builder.Services.ConfigureApplicationCookie(o =>
         return Task.CompletedTask;
     };
 });
+
+// The admin unlock: a second, short-lived cookie (SPEC 12).
+builder.Services.AddAuthentication().AddCookie(AdminUnlock.Scheme, o => AdminUnlock.Configure(o, hostCookies));
 
 // "Log out everywhere" changes the security stamp; other devices notice within this interval.
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(5));
@@ -264,9 +282,16 @@ builder.Services.AddRateLimiter(o =>
     // Reports and parse ratings, and browser error reports (SPEC 11).
     o.AddPolicy(RateLimits.Feedback, http => PerUser(http, config.GetValue("RateLimits:FeedbackPerWindow", 30), TimeSpan.FromMinutes(10)));
     o.AddPolicy(RateLimits.ClientError, http => PerUser(http, config.GetValue("RateLimits:ClientErrorPerWindow", 20), TimeSpan.FromMinutes(10)));
+    o.AddPolicy(RateLimits.Admin, http => PerUser(http, config.GetValue("RateLimits:AdminPerWindow", 60), TimeSpan.FromMinutes(10)));
+    // An unlock takes two requests (options, then the assertion), so 10 allow five attempts.
+    o.AddPolicy(RateLimits.AdminUnlock, http => PerUser(http, config.GetValue("RateLimits:AdminUnlockPerWindow", 10), TimeSpan.FromMinutes(15)));
 });
 
-builder.Services.AddAuthorization(o => o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+builder.Services.AddAuthorization(o =>
+{
+    o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+    AdminPolicy.Add(o);
+});
 
 builder.Services.AddControllersWithViews(o =>
 {
@@ -303,6 +328,26 @@ if (args.Length > 0 && args[0] == CreateUserCommand.Name)
 if (args.Length > 0 && args[0] == FeedbackCommand.Name)
 {
     return await FeedbackCommand.RunAsync(app.Services, args);
+}
+
+if (args.Length > 0 && args[0] == RoleCommand.Name)
+{
+    return await RoleCommand.RunAsync(app.Services, args);
+}
+
+if (args.Length > 0 && args[0] == AiCommand.Name)
+{
+    return await AiCommand.RunAsync(app.Services, args);
+}
+
+if (args.Length > 0 && args[0] == AdminCommand.Name)
+{
+    return await AdminCommand.RunAsync(app.Services, args);
+}
+
+if (!app.Services.GetRequiredService<CloudflareAccess>().Available)
+{
+    app.Logger.LogWarning("The admin area is off: Admin:CloudflareAccess:TeamDomain and Audience are not set (SPEC 12).");
 }
 
 app.UseForwardedHeaders();

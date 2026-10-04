@@ -1,0 +1,29 @@
+@model GymTracker.Web.Features.Admin.EvalJob?
+@using GymTracker.Web.Features.Feedback
+@* Polled every 3 s while a run is going; a failed poll (an expired Access session) reloads the page. *@
+@{
+    var running = Model is { Running: true };
+}
+<section class="section" id="eval-status" hx-get="@(running ? "/admin/ai/eval/status" : null)" hx-trigger="@(running ? "every 3s" : null)" hx-swap="@(running ? "outerHTML" : null)" data-reload-on-error="@(running ? "" : null)">
+    @if (Model is null)
+    {
+        <p class="section-footer">No run since the last restart.</p>
+    }
+    else
+    {
+        <h2 class="section-title">@(Model.Running ? "Running" : Model.Error is not null ? "Failed" : "Last run")</h2>
+        <div class="list">
+            <div class="row">
+                <span class="row-main">
+                    <span class="row-title">@(Model.Running ? $"{Model.Done} of {(Model.Total == 0 ? "?" : Model.Total.ToString())} parses" : Model.Report is { } done ? ParseEvaluation.TotalLine(done) : Model.Error)</span>
+                    <span class="row-sub" style="display: block">Started @Model.StartedAt.ToUniversalTime().ToString("d MMM HH:mm") UTC, latest @Model.Request.Limit@(Model.Request.FlaggedOnly ? " flagged" : "")@(Model.Report is { } r ? $", parser {r.ParserModel}, matcher {r.MatcherModel}" : "")</span>
+                </span>
+            </div>
+        </div>
+        @if (Model.Report is { Cases.Count: > 0 } report)
+        {
+            <pre class="admin-pre">@string.Join("\n", report.Cases.Select(ParseEvaluation.CaseLine))</pre>
+            <p class="section-footer">Cost is not reported here; check the OpenRouter activity page.</p>
+        }
+    }
+</section>

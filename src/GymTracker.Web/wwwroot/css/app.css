@@ -697,3 +697,20 @@ html.is-navigating #main { opacity: 0.72; transition: opacity 160ms var(--ease-o
 .shot-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .whats-new { display: grid; gap: var(--s-2); }
 .whats-new ul { margin: 0; padding-left: var(--s-5); display: grid; gap: var(--s-1); }
+
+/* ---------- admin (SPEC 12) ---------- */
+.admin-nav { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0 0 var(--s-5); }
+.admin-nav .chip { min-height: 32px; padding: 6px var(--s-3); font-size: var(--text-footnote); }
+.admin-pre {
+    margin: 0; padding: var(--s-3) var(--s-4); background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow-card);
+    font: 12px/1.45 ui-monospace, "SF Mono", Menlo, monospace; color: var(--label); white-space: pre; overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+details > .admin-pre { margin-top: var(--s-2); }
+.admin-text { overflow-wrap: anywhere; white-space: pre-line; }
+.admin-shot { display: block; }
+.admin-shot img { display: block; width: 100%; height: auto; }
+details.feedback-item > summary { list-style: none; cursor: pointer; display: grid; gap: var(--s-2); }
+details.feedback-item > summary::-webkit-details-marker { display: none; }
+details > summary.section-title { cursor: pointer; }
+a.feedback-item { color: var(--label); text-decoration: none; }
+.field-row input.check-input { flex: none; width: 24px; height: 24px; min-height: 0; margin: 0; padding: 0; }

@@ -60,6 +60,7 @@ public class AccountController(
     public async Task<IActionResult> Logout()
     {
         await signIn.SignOutAsync();
+        await GymTracker.Web.Features.Admin.AdminUnlock.LockAsync(HttpContext);
         return Redirect("/account/login");
     }
 }

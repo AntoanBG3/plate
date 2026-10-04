@@ -18,9 +18,9 @@ namespace GymTracker.Web.Tests;
 public partial class FeedbackTests(PostgresFixture fixture)
 {
     // A 1x1 PNG.
-    private static readonly byte[] Png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+    internal static readonly byte[] Png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
 
-    private static Task<HttpResponseMessage> QueuePost(HttpClient client, string path, string token, IEnumerable<KeyValuePair<string, string>> fields)
+    internal static Task<HttpResponseMessage> QueuePost(HttpClient client, string path, string token, IEnumerable<KeyValuePair<string, string>> fields)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new FormUrlEncodedContent(fields) };
         request.Headers.Add("RequestVerificationToken", token);
@@ -29,7 +29,7 @@ public partial class FeedbackTests(PostgresFixture fixture)
         return client.SendAsync(request);
     }
 
-    private static async Task<int> IdOf(HttpResponseMessage response)
+    internal static async Task<int> IdOf(HttpResponseMessage response)
     {
         response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
         return JsonNode.Parse(await response.Content.ReadAsStringAsync())!["id"]!.GetValue<int>();
@@ -42,7 +42,7 @@ public partial class FeedbackTests(PostgresFixture fixture)
         return int.Parse(RunIdField().Match(html).Groups[1].Value);
     }
 
-    private static Dictionary<string, string> Report(string message, Guid? clientId = null, string area = "Speed") => new()
+    internal static Dictionary<string, string> Report(string message, Guid? clientId = null, string area = "Speed") => new()
     {
         ["clientId"] = (clientId ?? Guid.NewGuid()).ToString(),
         ["kind"] = "Problem",

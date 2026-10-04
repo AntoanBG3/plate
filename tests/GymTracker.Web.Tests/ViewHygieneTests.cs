@@ -22,4 +22,12 @@ public class ViewHygieneTests
     [Fact]
     public void Pages_have_no_inline_scripts() =>
         Offenders(@"<script(?![^>]*(\bsrc=|type=""application/json""))[^>]*>").Should().BeEmpty();
+
+    // The admin area shows what users typed and what the parser made of it; all of it must go through Razor's encoding.
+    [Fact]
+    public void Admin_views_never_write_raw_html() =>
+        Directory.EnumerateFiles(Path.Combine(RepoPaths.Web, "Views"), "*.cshtml", SearchOption.AllDirectories)
+            .Where(f => Path.GetFileName(Path.GetDirectoryName(f))!.StartsWith("Admin", StringComparison.Ordinal) || Path.GetFileName(f).Contains("Admin") || Path.GetFileName(f) == "_ReportRows.cshtml")
+            .Where(f => File.ReadAllText(f).Contains("Html.Raw"))
+            .Should().BeEmpty();
 }

@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using GymTracker.Core.Domain;
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Data;
+using GymTracker.Web.Features.Admin;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Features.Feedback;
@@ -42,10 +43,11 @@ public record Digest(DateTimeOffset Since, IReadOnlyList<FeedbackRow> Reports, I
     int RatedUp, int RatedDown);
 
 /// <summary>
-/// The CLI's view of feedback across both accounts (SPEC 11). Reads ignore the user filters, so this is never
-/// reachable from a web request; only the status, reply and changelog are written.
+/// Feedback across both accounts, for the CLI and the admin area (SPEC 11, 12). Reads ignore the user filters, so
+/// this must only be reachable from the CLI and from controllers under the admin policy (AdminGuardTests checks it).
+/// Only the status, reply and changelog are written, and each write is audited.
 /// </summary>
-public class FeedbackAdmin(AppDbContext db, TimeProvider time)
+public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog audit)
 {
     private IQueryable<Core.Domain.Feedback> AllFeedback => db.Feedback.IgnoreQueryFilters();
 
@@ -120,7 +122,20 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time)
 
         f.StatusChangedAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
+        await audit.WriteAsync(AuditActions.Status, $"feedback #{id}",
+            string.Join(", ", new[] { status.ToString(), string.IsNullOrWhiteSpace(reply) ? null : "reply", string.IsNullOrWhiteSpace(version) ? null : "version " + version.Trim() }.OfType<string>()), ct);
         return true;
+    }
+
+    /// <summary>Marks a new report Seen without touching its reply, as opening it in the admin area does.</summary>
+    public async Task MarkSeenAsync(int id, CancellationToken ct)
+    {
+        var changed = await AllFeedback.Where(f => f.Id == id && f.Status == FeedbackStatus.New)
+            .ExecuteUpdateAsync(u => u.SetProperty(f => f.Status, FeedbackStatus.Seen), ct);
+        if (changed > 0)
+        {
+            await audit.WriteAsync(AuditActions.Status, $"feedback #{id}", "Seen (opened)", ct);
+        }
     }
 
     public async Task<ParseRunDetail?> ParseRunAsync(int id, CancellationToken ct)
@@ -243,9 +258,28 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time)
         };
         db.Changelog.Add(entry);
         await db.SaveChangesAsync(ct);
+        await audit.WriteAsync(AuditActions.ChangelogAdd, $"changelog #{entry.Id}", entry.TextEn, ct);
         return entry;
 
         static string Clip(string text) => text.Trim().Length > ChangelogEntry.MaxTextLength ? text.Trim()[..ChangelogEntry.MaxTextLength] : text.Trim();
+    }
+
+    public Task<List<ChangelogEntry>> ChangelogAsync(int limit, CancellationToken ct) =>
+        db.Changelog.AsNoTracking().OrderByDescending(c => c.CreatedAt).Take(limit).ToListAsync(ct);
+
+    /// <summary>Removes a What's new line, e.g. one with a typo. Returns false when there is no such line.</summary>
+    public async Task<bool> RemoveChangelogAsync(int id, CancellationToken ct)
+    {
+        var entry = await db.Changelog.FirstOrDefaultAsync(c => c.Id == id, ct);
+        if (entry is null)
+        {
+            return false;
+        }
+
+        db.Changelog.Remove(entry);
+        await db.SaveChangesAsync(ct);
+        await audit.WriteAsync(AuditActions.ChangelogRemove, $"changelog #{id}", entry.TextEn, ct);
+        return true;
     }
 
     private async Task<List<FeedbackRow>> Rows(IQueryable<Core.Domain.Feedback> query, CancellationToken ct)

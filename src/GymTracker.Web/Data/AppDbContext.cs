@@ -34,6 +34,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<FeedbackAttachment> FeedbackAttachments => Set<FeedbackAttachment>();
     public DbSet<ErrorEvent> ErrorEvents => Set<ErrorEvent>();
     public DbSet<ChangelogEntry> Changelog => Set<ChangelogEntry>();
+    public DbSet<AdminAudit> AdminAudit => Set<AdminAudit>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -287,6 +288,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.Version).HasMaxLength(40);
             e.HasOne<Feedback>().WithMany().HasForeignKey(x => x.FeedbackId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => x.CreatedAt);
+        });
+
+        // Admin actions (SPEC 12): read only in the admin area and the CLI. No foreign key, so the trail outlives an account.
+        builder.Entity<AdminAudit>(e =>
+        {
+            e.Property(x => x.UserId).HasMaxLength(450);
+            e.Property(x => x.Via).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Action).HasMaxLength(40);
+            e.Property(x => x.Target).HasMaxLength(100);
+            e.Property(x => x.Ip).HasMaxLength(64);
+            e.Property(x => x.Detail).HasMaxLength(Data.AdminAudit.MaxDetailLength);
+            e.HasIndex(x => x.At);
         });
     }
 }

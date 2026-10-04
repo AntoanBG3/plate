@@ -6,13 +6,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Features.Feedback;
 
-/// <summary>Tells Antoan about new reports and new errors, without making the request wait (SPEC 11).</summary>
+/// <summary>Tells Antoan about new reports, new errors and admin unlocks, without making the request wait (SPEC 11, 12).</summary>
 public interface IFeedbackNotifier
 {
     void Enqueue(int feedbackId);
 
     void EnqueueError(int errorEventId);
+
+    /// <summary>A short line of the app's own making, such as an admin unlock (SPEC 12). Never a secret or user data.</summary>
+    void EnqueueText(string text);
 }
+
+internal enum NoticeKind
+{
+    Feedback,
+    Error,
+    Text,
+}
+
+internal readonly record struct Notice(NoticeKind Kind, int Id, string? Text = null);
 
 public class TelegramOptions
 {
@@ -26,14 +38,14 @@ public class TelegramOptions
 /// <summary>Queues notices for <see cref="FeedbackNotifierWorker"/>; does nothing when Telegram isn't configured.</summary>
 public sealed class FeedbackNotifier(Microsoft.Extensions.Options.IOptions<TelegramOptions> options) : IFeedbackNotifier
 {
-    internal readonly Channel<(bool IsError, int Id)> Queue = Channel.CreateBounded<(bool, int)>(
+    internal readonly Channel<Notice> Queue = Channel.CreateBounded<Notice>(
         new BoundedChannelOptions(100) { FullMode = BoundedChannelFullMode.DropOldest, SingleReader = true });
 
     public void Enqueue(int feedbackId)
     {
         if (options.Value.Enabled)
         {
-            Queue.Writer.TryWrite((false, feedbackId));
+            Queue.Writer.TryWrite(new Notice(NoticeKind.Feedback, feedbackId));
         }
     }
 
@@ -41,7 +53,15 @@ public sealed class FeedbackNotifier(Microsoft.Extensions.Options.IOptions<Teleg
     {
         if (options.Value.Enabled)
         {
-            Queue.Writer.TryWrite((true, errorEventId));
+            Queue.Writer.TryWrite(new Notice(NoticeKind.Error, errorEventId));
+        }
+    }
+
+    public void EnqueueText(string text)
+    {
+        if (options.Value.Enabled)
+        {
+            Queue.Writer.TryWrite(new Notice(NoticeKind.Text, 0, text));
         }
     }
 }
@@ -58,11 +78,11 @@ public sealed class FeedbackNotifierWorker(FeedbackNotifier notifier, IServiceSc
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await foreach (var (isError, id) in notifier.Queue.Reader.ReadAllAsync(stoppingToken))
+        await foreach (var notice in notifier.Queue.Reader.ReadAllAsync(stoppingToken))
         {
             try
             {
-                var text = await TextAsync(isError, id, stoppingToken);
+                var text = notice.Kind == NoticeKind.Text ? notice.Text : await TextAsync(notice.Kind == NoticeKind.Error, notice.Id, stoppingToken);
                 if (text is not null)
                 {
                     await SendAsync(text, stoppingToken);
@@ -70,7 +90,7 @@ public sealed class FeedbackNotifierWorker(FeedbackNotifier notifier, IServiceSc
             }
             catch (Exception ex) when (ex is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
             {
-                log.LogWarning(ex, "Telegram notice for {Kind} {Id} failed.", isError ? "error" : "feedback", id);
+                log.LogWarning(ex, "Telegram notice for {Kind} {Id} failed.", notice.Kind, notice.Id);
             }
         }
     }

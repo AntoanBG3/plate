@@ -1,0 +1,13 @@
+@model GymTracker.Web.Features.Feedback.ParseRunDetail
+@{
+    ViewData["Title"] = $"Parse {Model.Id}";
+    ViewData["BackUrl"] = "/admin/parses";
+    ViewData["BackLabel"] = "Parses";
+}
+<header class="page-head">
+    <h1 class="large-title">Parse @Model.Id</h1>
+    <p class="subhead">@Model.Reporter · @Model.CreatedAt.ToUniversalTime().ToString("d MMM yyyy HH:mm") UTC</p>
+</header>
+<section class="section">
+    <pre class="admin-pre">@GymTracker.Web.Cli.FeedbackCommand.RunText(Model, null)</pre>
+</section>

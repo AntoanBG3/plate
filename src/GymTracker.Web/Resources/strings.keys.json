@@ -45,9 +45,6 @@
   "A food with that barcode already exists.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
   ],
-  "A key saved here replaces the one from the server's .env file.": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
   "A template is the list of exercises for one workout, like Upper A or Legs.": [
     "src/GymTracker.Web/Views/Train/Index.cshtml"
   ],
@@ -139,6 +136,9 @@
   ],
   "Added {0} items.": [
     "src/GymTracker.Web/Controllers/SavedMealsController.cs"
+  ],
+  "Admin": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "All": [
     "range"
@@ -555,15 +555,13 @@
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
   "Food matcher": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml",
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Food name, e.g. Кисело мляко 2%": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Food parser": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml",
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Food search": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -683,47 +681,17 @@
   "It's too late to undo that.": [
     "src/GymTracker.Web/Features/Undo/UndoService.cs"
   ],
-  "Jev is a decision model from TypeSafe: it picks between the database foods the search finds, or says none fits. An entry uses a few thousand tokens, a fraction of a cent. Off keeps the database ranking alone.": [
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
-  ],
   "Just the bar": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
   "Keep it under {0} characters.": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
   ],
-  "Key ending {0}": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
-  "Key removed from Settings.": [
-    "src/GymTracker.Web/Controllers/SettingsController.cs"
-  ],
-  "Key saved, but it doesn't work yet: {0}": [
-    "src/GymTracker.Web/Controllers/SettingsController.cs"
-  ],
-  "Key saved: food parsing works.": [
-    "src/GymTracker.Web/Controllers/SettingsController.cs"
-  ],
-  "Key tested, but it doesn't work yet: {0}": [
-    "src/GymTracker.Web/Controllers/SettingsController.cs"
-  ],
-  "Key tested: food parsing works.": [
-    "src/GymTracker.Web/Controllers/SettingsController.cs"
-  ],
   "Kind": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
   "Language": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
-  "Last 90 days: {0} entries, not enough to judge yet": [
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
-  ],
-  "Last 90 days: {0} entries, {1}% corrected before saving, {2}% rated wrong": [
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
-  ],
-  "Last 90 days: {0} entries, {1}% rated wrong": [
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
   ],
   "Last week": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
@@ -862,18 +830,6 @@
   "Missed a food": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
-  "Model saved, but it doesn't work yet: {0}": [
-    "src/GymTracker.Web/Controllers/SettingsController.cs"
-  ],
-  "Model saved.": [
-    "src/GymTracker.Web/Controllers/SettingsController.cs"
-  ],
-  "Model saved: food matching works.": [
-    "src/GymTracker.Web/Controllers/SettingsController.cs"
-  ],
-  "Model saved: food parsing works.": [
-    "src/GymTracker.Web/Controllers/SettingsController.cs"
-  ],
   "Move down": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
@@ -911,9 +867,6 @@
   "New": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "New key": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
   "New records": [
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
@@ -926,11 +879,8 @@
   "Next: {0}": [
     "wwwroot/js"
   ],
-  "No OpenRouter key": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
   "No OpenRouter key is set.": [
-    "src/GymTracker.Web/Controllers/SettingsController.cs"
+    "src/GymTracker.Web/Features/Feedback/ParseEvaluation.cs"
   ],
   "No barcode found in that photo. Try again closer, or type the digits.": [
     "wwwroot/js"
@@ -957,9 +907,6 @@
   ],
   "No food logged in the last 4 weeks.": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
-  ],
-  "No model matches.": [
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
   ],
   "No nutrition data": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
@@ -1046,8 +993,7 @@
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "Off: database ranking only": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml",
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Offline and sending": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -1057,9 +1003,6 @@
   ],
   "Only an exercise with no sets logged can be swapped.": [
     "src/GymTracker.Web/Features/Training/SessionService.cs"
-  ],
-  "Only models that can return structured answers are listed. Prices are OpenRouter's, per million tokens; parsing one entry uses about a thousand.": [
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
   ],
   "Only {0} of {1} sets last time. Hold {2} kg": [
     "src/GymTracker.Core/Training/Progression.cs"
@@ -1089,14 +1032,7 @@
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "OpenRouter's model list can't be loaded right now. Try again later.": [
-    "src/GymTracker.Web/Integrations/OpenRouterSettings.cs",
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
-  ],
-  "OpenRouter, with the key from the server": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
-  "OpenRouter, with the key saved here": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+    "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
   "Optional": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
@@ -1132,9 +1068,6 @@
   ],
   "Password changed. Other devices will be signed out.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
-  ],
-  "Paste a new key": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Per 100 g": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
@@ -1270,9 +1203,6 @@
   "Remove exercise": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
   ],
-  "Remove key": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
   "Remove this passkey? You can still sign in with your password.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -1341,9 +1271,6 @@
   ],
   "Save and add": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
-  ],
-  "Save and test key": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Save as a meal": [
     "src/GymTracker.Web/Views/Food/Index.cshtml",
@@ -1415,9 +1342,6 @@
   "Search foods": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
-  "Search models": [
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
-  ],
   "Seated cable row": [
     "exercise"
   ],
@@ -1458,7 +1382,6 @@
     "src/GymTracker.Web/Views/Feedback/Index.cshtml",
     "src/GymTracker.Web/Views/Feedback/New.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
-    "src/GymTracker.Web/Views/Settings/Model.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
   "Sex": [
@@ -1487,6 +1410,9 @@
   ],
   "Signing in and passkeys": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Simple built-in parser": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Skip": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
@@ -1579,9 +1505,6 @@
     "src/GymTracker.Web/Views/Templates/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml"
   ],
-  "Test key": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
   "Thanks!": [
     "wwwroot/js"
   ],
@@ -1614,6 +1537,9 @@
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
   "That passkey didn't work. Try again or use your password.": [
+    "wwwroot/js"
+  ],
+  "That passkey didn't work. Try again.": [
     "wwwroot/js"
   ],
   "That picture is too large. Try a screenshot instead of a photo.": [
@@ -1656,6 +1582,9 @@
   "The current password is wrong.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
+  "The developer manages the AI models.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "The food matcher answered, but did not pick the banana for \"a banana\".": [
     "src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs"
   ],
@@ -1688,9 +1617,6 @@
   ],
   "The food parser took too long. Try again, or enter the food by hand.": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
-  ],
-  "The key and models are shared by both accounts; the key is stored encrypted.": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "The model returned no food for \"1 banana\".": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
@@ -1880,9 +1806,6 @@
   ],
   "What's new": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
-  ],
-  "Without a key, typed food is split up by a simple built-in parser.": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Won't change": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
