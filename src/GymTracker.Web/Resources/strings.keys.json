@@ -8,6 +8,9 @@
   "1 exercise": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
+  "1 item": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
   "1 set": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
     "src/GymTracker.Web/Views/Train/History.cshtml"
@@ -45,16 +48,21 @@
   "AI estimate": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
+  "AI models": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Abs": [
     "enum"
   ],
   "Actions for {0}": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
   "Add": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml"
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
   ],
   "Add a passkey": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -62,7 +70,8 @@
   "Add a snack": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml"
   ],
   "Add exercise": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
@@ -77,23 +86,32 @@
   "Add to breakfast": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml"
   ],
   "Add to dinner": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml"
   ],
   "Add to lunch": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml"
   ],
   "Add to {0}": [
     "src/GymTracker.Web/Controllers/TemplatesController.cs"
   ],
+  "Added 1 item.": [
+    "src/GymTracker.Web/Controllers/SavedMealsController.cs"
+  ],
   "Added {0}": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Added {0} items.": [
+    "src/GymTracker.Web/Controllers/SavedMealsController.cs"
   ],
   "All": [
     "range"
@@ -124,6 +142,17 @@
   ],
   "Back to today": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "Bar and plates": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Bar weight": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml",
+    "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
+  ],
+  "Bar weight must be between 0 and 50 kg.": [
+    "src/GymTracker.Core/Domain/ProfileRules.cs",
+    "src/GymTracker.Web/Features/Training/ExerciseSettingsService.cs"
   ],
   "Barbell": [
     "enum"
@@ -190,7 +219,12 @@
     "exercise"
   ],
   "Calories": [
+    "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
+  ],
+  "Calories must be between 1 and 5000.": [
+    "src/GymTracker.Core/Nutrition/FoodMath.cs"
   ],
   "Calves": [
     "enum"
@@ -200,14 +234,26 @@
   ],
   "Cancel": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
-    "src/GymTracker.Web/Views/Shared/ExercisePicker.cshtml"
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
+    "src/GymTracker.Web/Views/Shared/ExercisePicker.cshtml",
+    "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
   ],
   "Carbs": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
-    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+    "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Change a quick entry's calories instead of its amount.": [
+    "src/GymTracker.Web/Features/Food/FoodLogService.cs"
   ],
   "Change password": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Change this entry's amount instead.": [
+    "src/GymTracker.Web/Features/Food/FoodLogService.cs"
   ],
   "Changing the amount scales calories and macros with it.": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml"
@@ -229,6 +275,9 @@
   ],
   "Close-grip bench press": [
     "exercise"
+  ],
+  "Closest you can load: {0} kg": [
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
   "Copied 1 item.": [
     "src/GymTracker.Web/Controllers/FoodController.cs"
@@ -300,8 +349,11 @@
   "Delete entry": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml"
   ],
-  "Delete this entry?": [
-    "src/GymTracker.Web/Views/Food/Entry.cshtml"
+  "Delete saved meal": [
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml"
+  ],
+  "Delete this saved meal?": [
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml"
   ],
   "Delete this workout and all its sets? This can't be undone.": [
     "src/GymTracker.Web/Views/Train/Session.cshtml"
@@ -323,6 +375,7 @@
     "exercise"
   ],
   "Done": [
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml",
     "src/GymTracker.Web/Views/Train/Session.cshtml",
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
@@ -337,6 +390,9 @@
   ],
   "Dumbbell row": [
     "exercise"
+  ],
+  "Duplicate": [
+    "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
   "Duration": [
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
@@ -365,8 +421,14 @@
   "Energy": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
+  "Enter a weight.": [
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
   "Enter it by hand instead": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
+  "Entry deleted.": [
+    "extra"
   ],
   "Error": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
@@ -389,6 +451,9 @@
   "Exercise": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
+  "Exercise removed.": [
+    "extra"
+  ],
   "Exercises": [
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
@@ -400,7 +465,9 @@
   ],
   "Fat": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
-    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+    "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
   ],
   "Female": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -423,11 +490,16 @@
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
+  "Food matcher": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml",
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
   "Food name, e.g. Кисело мляко 2%": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
-  "Food text parser": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  "Food parser": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml",
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
   ],
   "Food today": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
@@ -437,6 +509,9 @@
   ],
   "For example: 200 g chicken breast, 150 g cooked rice, a banana. English or Bulgarian. You check every item before anything is saved.": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
+  "For example: seat 4, neutral grip": [
+    "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
   ],
   "Forearms": [
     "enum"
@@ -528,6 +603,15 @@
   "It adapts weekly once you have 2 weeks of weigh-ins on most days and food logged on 80% of days.": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
+  "It's too late to undo that.": [
+    "src/GymTracker.Web/Features/Undo/UndoService.cs"
+  ],
+  "Jev is a decision model from TypeSafe: it picks between the database foods the search finds, or says none fits. An entry uses a few thousand tokens, a fraction of a cent. Off keeps the database ranking alone.": [
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
+  "Just the bar": [
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
   "Key ending {0}": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -570,6 +654,9 @@
   ],
   "Leave starting maintenance empty to estimate it from sex, height, age and weight. It adapts to your logged data later.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Leave the bar empty to use {0} kg for barbell exercises. Set it on any exercise to get the plate calculator, 0 for a plate-loaded machine.": [
+    "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
   ],
   "Leg extension": [
     "exercise"
@@ -671,14 +758,13 @@
   "Minimum reps": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
-  "Model": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml",
-    "src/GymTracker.Web/Views/Settings/Model.cshtml"
-  ],
   "Model saved, but it doesn't work yet: {0}": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
   "Model saved.": [
+    "src/GymTracker.Web/Controllers/SettingsController.cs"
+  ],
+  "Model saved: food matching works.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
   "Model saved: food parsing works.": [
@@ -696,6 +782,9 @@
   ],
   "Name": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
@@ -705,6 +794,9 @@
   ],
   "Name must be 1 to 200 characters.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
+  ],
+  "Name must be 1 to 60 characters.": [
+    "src/GymTracker.Web/Features/Food/SavedMealService.cs"
   ],
   "Name, e.g. Upper A": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
@@ -797,8 +889,18 @@
   "Not set": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Note": [
+    "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
+  ],
   "Notes": [
     "src/GymTracker.Web/Views/Train/Session.cshtml"
+  ],
+  "Notes & bar": [
+    "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+  ],
+  "Notes can be at most 200 characters.": [
+    "src/GymTracker.Web/Features/Training/ExerciseSettingsService.cs"
   ],
   "Notes can be at most 2000 characters.": [
     "src/GymTracker.Web/Features/Training/SessionService.cs"
@@ -824,8 +926,15 @@
   "Oats, skyr, кашкавал…": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "Off: database ranking only": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml",
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
   "One serving": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Only an exercise with no sets logged can be swapped.": [
+    "src/GymTracker.Web/Features/Training/SessionService.cs"
   ],
   "Only models that can return structured answers are listed. Prices are OpenRouter's, per million tokens; parsing one entry uses about a thousand.": [
     "src/GymTracker.Web/Views/Settings/Model.cshtml"
@@ -850,6 +959,9 @@
   ],
   "Open the rest timer": [
     "src/GymTracker.Web/Views/Train/Session.cshtml"
+  ],
+  "OpenRouter rejected the API key ({0}).": [
+    "src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs"
   ],
   "OpenRouter rejected the API key ({0}). Check it in Settings, or enter the food by hand.": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
@@ -910,8 +1022,21 @@
   "Per 100 g, from the label": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
+  "Per side": [
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
   "Plank": [
     "exercise"
+  ],
+  "Plate weights must be from the list.": [
+    "src/GymTracker.Core/Domain/ProfileRules.cs"
+  ],
+  "Plates": [
+    "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Plates you have": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Point the camera at the barcode.": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
@@ -935,11 +1060,16 @@
   ],
   "Protein": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
+    "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Protein must be between 0.8 and 3.5 g per kg.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
+  ],
+  "Protein, carbs and fat must be between 0 and 500 g.": [
+    "src/GymTracker.Core/Nutrition/FoodMath.cs"
   ],
   "Pull-up": [
     "exercise"
@@ -949,6 +1079,10 @@
   ],
   "Quads": [
     "enum"
+  ],
+  "Quick add": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
   ],
   "RPE must be between 5 and 10 in steps of 0.5.": [
     "src/GymTracker.Core/Training/SetRules.cs"
@@ -990,16 +1124,11 @@
   "Remove key": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "Remove this exercise and its sets from the workout?": [
-    "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
-  ],
-  "Remove this exercise from the template?": [
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
-  ],
   "Remove this passkey? You can still sign in with your password.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Rename": [
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
   "Rep range must be between 1 and 100, with the minimum not above the maximum.": [
@@ -1038,7 +1167,9 @@
   ],
   "Save": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
+    "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Save and add": [
@@ -1046,6 +1177,10 @@
   ],
   "Save and test key": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Save as a meal": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml"
   ],
   "Save as a snack": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
@@ -1069,11 +1204,17 @@
   "Save to lunch": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
+  "Saved as a meal.": [
+    "src/GymTracker.Web/Controllers/SavedMealsController.cs"
+  ],
   "Saved foods": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "Saved for your account, so every phone you sign in on looks the same.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Saved meals": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "Scan": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
@@ -1108,6 +1249,9 @@
   ],
   "Seated leg curl": [
     "exercise"
+  ],
+  "Set deleted.": [
+    "wwwroot/js"
   ],
   "Settings": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
@@ -1191,6 +1335,12 @@
     "src/GymTracker.Web/Views/Train/Session.cshtml",
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
+  "Swap exercise": [
+    "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
+  ],
+  "Swap {0}": [
+    "src/GymTracker.Web/Controllers/TrainController.cs"
+  ],
   "Take a photo instead": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
@@ -1215,6 +1365,9 @@
   "That isn't a valid EAN or UPC barcode.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
   ],
+  "That model can't match food.": [
+    "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
+  ],
   "That model can't parse food.": [
     "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
@@ -1230,6 +1383,12 @@
   "That set's exercise no longer exists.": [
     "wwwroot/js"
   ],
+  "That's less than the bar ({0} kg).": [
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "The OpenRouter account is out of credits.": [
+    "src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
   "The OpenRouter account is out of credits. Top it up, or enter the food by hand.": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
@@ -1244,6 +1403,18 @@
   ],
   "The current password is wrong.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
+  ],
+  "The food matcher answered, but did not pick the banana for \"a banana\".": [
+    "src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
+  "The food matcher can't be reached right now ({0}).": [
+    "src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
+  "The food matcher returned something unreadable.": [
+    "src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
+  "The food matcher took too long.": [
+    "src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs"
   ],
   "The food parser could not read that. Enter the food by hand.": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
@@ -1266,7 +1437,7 @@
   "The food parser took too long. Try again, or enter the food by hand.": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
-  "The key and model are shared by both accounts; the key is stored encrypted.": [
+  "The key and models are shared by both accounts; the key is stored encrypted.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "The model returned no food for \"1 banana\".": [
@@ -1281,6 +1452,12 @@
   "The new passwords do not match.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
+  "The parser reads typed food; the matcher picks which database food each item is, or says none fits. The numbers come from the food database.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "The plate calculator uses this bar and these plates. Set a different bar for one exercise under Notes & bar.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "The trend line appears after a few more weigh-ins.": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
@@ -1289,6 +1466,9 @@
   ],
   "This browser can't open the camera. Type the digits or take a photo instead.": [
     "wwwroot/js"
+  ],
+  "This meal has nothing logged yet.": [
+    "src/GymTracker.Web/Features/Food/SavedMealService.cs"
   ],
   "This product isn't in Open Food Facts. Enter it from the label once and it's saved for both of you.": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
@@ -1352,11 +1532,11 @@
   "Type": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
-  "Typed food is read by the model above; the numbers come from the food database.": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
   "Under {0} reps twice at {1} kg, deload to {2} kg": [
     "src/GymTracker.Core/Training/Progression.cs"
+  ],
+  "Undo": [
+    "wwwroot/js"
   ],
   "Unknown time zone.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
@@ -1395,6 +1575,9 @@
   ],
   "Weigh-ins and trend weight": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
+  ],
+  "Weight": [
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
   "Weight can have at most two decimal places.": [
     "src/GymTracker.Core/Training/SetRules.cs"
@@ -1484,6 +1667,8 @@
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "g per kg": [
@@ -1499,6 +1684,7 @@
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -1511,6 +1697,8 @@
   "kg": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
+    "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml",
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml",
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml",
@@ -1542,6 +1730,9 @@
   "s": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
+  "{0} (copy)": [
+    "src/GymTracker.Web/Controllers/TemplatesController.cs"
+  ],
   "{0} exercises": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
@@ -1551,8 +1742,13 @@
   "{0} h {1} min": [
     "src/GymTracker.Web/Features/Localization/Localizer.cs"
   ],
+  "{0} items": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
   "{0} kcal": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
     "wwwroot/js"
   ],
   "{0} kcal eaten": [
@@ -1565,6 +1761,7 @@
     "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
     "wwwroot/js"
   ],
   "{0} kcal, {1} g protein per 100 g": [
@@ -1572,6 +1769,9 @@
   ],
   "{0} kg": [
     "wwwroot/js"
+  ],
+  "{0} kg in total": [
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
   "{0} kg this week": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
