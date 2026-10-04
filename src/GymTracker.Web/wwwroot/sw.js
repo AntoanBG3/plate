@@ -1,6 +1,7 @@
 // Caches static files only (SPEC section 8). Pages and data always come from the server;
-// when a page can't be fetched, the offline page is shown instead.
-const CACHE = "gym-static-v6";
+// when a page can't be fetched, the offline page is shown instead. Static files carry ?v=<hash>,
+// so a cached copy of the exact URL is served without revalidating.
+const CACHE = "gym-static-v7";
 const OFFLINE = "/offline.html";
 const PRECACHE = [
     OFFLINE,
@@ -45,6 +46,29 @@ function isStatic(url) {
     return url.origin === self.location.origin && /^\/(css|js|lib)\//.test(url.pathname);
 }
 
+async function staticResponse(request, url) {
+    const cache = await caches.open(CACHE);
+    // Exact URL first: versioned URLs (?v=hash) never change, so no revalidation is needed.
+    const exact = await cache.match(request);
+    if (exact) {
+        return exact;
+    }
+    try {
+        const response = await fetch(request);
+        if (response.ok) {
+            const keys = await cache.keys();
+            await Promise.all(keys
+                .filter((k) => new URL(k.url).pathname === url.pathname && k.url !== request.url)
+                .map((k) => cache.delete(k)));
+            await cache.put(request, response.clone());
+        }
+        return response;
+    } catch {
+        // Offline and this version was never fetched: any cached copy of the file beats nothing.
+        return (await cache.match(request, { ignoreSearch: true })) || Response.error();
+    }
+}
+
 self.addEventListener("fetch", (event) => {
     const request = event.request;
     if (request.method !== "GET") {
@@ -54,19 +78,7 @@ self.addEventListener("fetch", (event) => {
     const url = new URL(request.url);
 
     if (isStatic(url)) {
-        // Serve from cache straight away (version query strings ignored), refresh in the background.
-        event.respondWith(caches.open(CACHE).then(async (cache) => {
-            const cached = await cache.match(request, { ignoreSearch: true });
-            const network = fetch(request)
-                .then((response) => {
-                    if (response.ok) {
-                        cache.put(url.pathname, response.clone());
-                    }
-                    return response;
-                })
-                .catch(() => cached);
-            return cached || network;
-        }));
+        event.respondWith(staticResponse(request, url));
         return;
     }
 
