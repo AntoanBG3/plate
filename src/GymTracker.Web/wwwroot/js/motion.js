@@ -70,15 +70,28 @@
 
     // ---- large title collapses into the compact bar ----
 
-    const bar = document.querySelector("[data-topbar]");
-    const title = document.querySelector(".large-title");
-    if (bar && title && "IntersectionObserver" in window) {
-        new IntersectionObserver(([entry]) => {
-            bar.classList.toggle("is-compact", !entry.isIntersecting);
-        }, { rootMargin: `-${bar.offsetHeight}px 0px 0px 0px` }).observe(title);
-    } else if (bar && !title) {
-        bar.classList.add("is-compact", "always-title");
+    let titleObserver = null;
+    function bindLargeTitle() {
+        if (titleObserver) {
+            titleObserver.disconnect();
+            titleObserver = null;
+        }
+        const bar = document.querySelector("[data-topbar]");
+        const title = document.querySelector(".large-title");
+        if (!bar) {
+            return;
+        }
+        bar.classList.remove("is-compact", "always-title");
+        if (title && "IntersectionObserver" in window) {
+            titleObserver = new IntersectionObserver(([entry]) => {
+                bar.classList.toggle("is-compact", !entry.isIntersecting);
+            }, { rootMargin: `-${bar.offsetHeight}px 0px 0px 0px` });
+            titleObserver.observe(title);
+        } else if (!title) {
+            bar.classList.add("is-compact", "always-title");
+        }
     }
+    bindLargeTitle();
 
     // ---- numbers count up and rings draw in, the first time they are seen this session ----
 
@@ -143,6 +156,12 @@
         });
     }
     reveal(document);
+
+    // After a soft navigation (nav.js) the new page needs its own title binding and first-sight animations.
+    document.addEventListener("gym:page", () => {
+        bindLargeTitle();
+        reveal(document.getElementById("main"));
+    });
 
     // ---- things that appear or leave: htmx rows, list items ----
 

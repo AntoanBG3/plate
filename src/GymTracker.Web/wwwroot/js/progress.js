@@ -1,9 +1,9 @@
 // Draws the Progress charts from the JSON the page embeds. Colours come from the design tokens, so the charts
 // are redrawn when the theme changes. Series draw in the first time the page is seen in a session only.
-(function () {
+window.gymModule("progress", () => {
     "use strict";
     if (!window.Chart) {
-        return;
+        return undefined;
     }
 
     const root = document.documentElement;
@@ -181,6 +181,15 @@
     draw(animateOnce());
 
     // Redraw with the new colours when the theme or the phone's appearance changes.
-    new MutationObserver(() => draw(false)).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => draw(false));
-})();
+    const themeObserver = new MutationObserver(() => draw(false));
+    themeObserver.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    const scheme = window.matchMedia("(prefers-color-scheme: dark)");
+    const redraw = () => draw(false);
+    scheme.addEventListener("change", redraw);
+
+    return () => {
+        themeObserver.disconnect();
+        scheme.removeEventListener("change", redraw);
+        charts.splice(0).forEach((c) => c.destroy());
+    };
+});

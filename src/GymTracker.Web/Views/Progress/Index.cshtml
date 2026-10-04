@@ -87,11 +87,11 @@
     }
     else
     {
-        <form method="get" action="/progress" class="list" style="margin-bottom: var(--s-3)">
+        <form method="get" action="/progress" class="list" style="margin-bottom: var(--s-3)" data-autosubmit>
             <input type="hidden" name="range" value="@Model.Weight.Range" />
             <div class="field-row">
                 <label for="exerciseId">@L["Exercise"]</label>
-                <select id="exerciseId" name="exerciseId" onchange="this.form.submit()">
+                <select id="exerciseId" name="exerciseId">
                     @foreach (var exercise in Model.Exercises)
                     {
                         <option value="@exercise.Id" selected="@(exercise.Id == Model.Selected.Id)">@L[exercise.Name]</option>
@@ -171,5 +171,6 @@
     </div>
 </section>
 
+<div data-module="progress" hidden></div>
 <script src="~/lib/chartjs/chart.umd.min.js" asp-append-version="true"></script>
 <script src="~/js/progress.js" asp-append-version="true"></script>

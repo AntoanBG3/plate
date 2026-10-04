@@ -37,6 +37,15 @@
         }
     });
 
+    // Destructive forms ask first. Capture phase, so it runs before the busy state and soft navigation.
+    document.addEventListener("submit", (event) => {
+        const form = event.target.closest("form[data-confirm]");
+        if (form && !window.confirm(form.dataset.confirm)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+
     // Forms that take a while (the food text parser): show the busy state and stop a second send.
     document.addEventListener("submit", (event) => {
         const form = event.target.closest("form[data-busy]");

@@ -2,14 +2,13 @@
 // barcode-detector ponyfill (ZXing-C++ in WebAssembly), served from this app rather than a CDN.
 // The camera opens in a full-screen sheet without changing the URL, since a route change can stop the
 // stream or re-prompt on iOS. Closing the sheet stops the camera.
-(function () {
+window.gymModule("scanner", (root) => {
     "use strict";
 
-    const root = document.getElementById("scanner");
     const api = window.BarcodeDetectionAPI;
     const start = document.querySelector("[data-start]");
-    if (!root || !api || !start) {
-        return;
+    if (!api || !start) {
+        return undefined;
     }
 
     api.prepareZXingModule({
@@ -106,4 +105,8 @@
     });
 
     window.addEventListener("pagehide", stop);
-})();
+    return () => {
+        stop();
+        window.removeEventListener("pagehide", stop);
+    };
+});
