@@ -9,24 +9,35 @@ window.gymModule("setup", (root) => {
         requestAnimationFrame(() => last.scrollIntoView({ block: "center" }));
     }
 
+    // Shows the user's message and a typing bubble at once; the server's page replaces both when the reply is in.
     function echo(text) {
         if (!chat || !text.trim()) {
             return;
         }
-        const bubble = document.createElement("p");
-        bubble.className = "bubble";
-        bubble.textContent = text.trim();
-        chat.appendChild(bubble);
-        bubble.scrollIntoView({ block: "center", behavior: "smooth" });
+        const mine = document.createElement("p");
+        mine.className = "msg from-me";
+        mine.textContent = text.trim();
+        const typing = document.createElement("p");
+        typing.className = "msg from-app typing";
+        typing.setAttribute("aria-hidden", "true");
+        typing.innerHTML = "<i></i><i></i><i></i>";
+        chat.append(mine, typing);
+        const chips = root.querySelector(".reply-chips");
+        if (chips) {
+            chips.hidden = true;
+        }
+        typing.scrollIntoView({ block: "center", behavior: "smooth" });
     }
 
     const onSubmit = (event) => {
         const form = event.target;
         if (form.matches("[data-composer]")) {
-            echo(form.querySelector("textarea").value);
+            const textarea = form.querySelector("textarea");
+            echo(textarea.value);
+            // After the navigation handler has read the form.
+            setTimeout(() => { textarea.value = ""; });
         } else if (form.matches("[data-quick-reply]")) {
             echo(form.querySelector("input[name=text]").value);
-            root.querySelectorAll("[data-quick-reply] button").forEach((b) => { b.disabled = true; });
         }
     };
     root.addEventListener("submit", onSubmit);

@@ -103,7 +103,7 @@ public class OnboardingTests(PostgresFixture db) : IDisposable
         progress.Headers.Location!.OriginalString.Should().Be("/welcome?returnUrl=%2Fprogress%3Frange%3D4w");
 
         var splash = await client.GetStringAsync("/welcome");
-        splash.Should().Contain("set you up").And.Contain("sent to an AI model through OpenRouter");
+        splash.Should().Contain("set you up").And.Contain("answers to an AI model through OpenRouter");
     }
 
     [Fact]

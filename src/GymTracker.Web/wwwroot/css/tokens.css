@@ -23,6 +23,11 @@
     --accent-soft: rgb(255 106 43 / 0.18);
     --on-accent: #000000;
 
+    /* Setup chat bubbles, iMessage style: the user's in a deep orange with white text (4.9:1), the app's in grey. */
+    --bubble-me: #c84a12;
+    --on-bubble-me: #ffffff;
+    --bubble-them: #262628;
+
     /* Semantic colours, only where they mean something. */
     --destructive: #ff453a;
     --success: #30d158;
@@ -98,6 +103,7 @@
     --accent-text: #c2410c;
     --accent-soft: rgb(200 74 18 / 0.12);
     --on-accent: #ffffff;
+    --bubble-them: #e9e9eb;
     --destructive: #d70015;
     --success: #248a3d;
     --warning: #a05a00;
@@ -124,6 +130,7 @@
         --accent-text: #c2410c;
         --accent-soft: rgb(200 74 18 / 0.12);
         --on-accent: #ffffff;
+        --bubble-them: #e9e9eb;
         --destructive: #d70015;
         --success: #248a3d;
         --warning: #a05a00;

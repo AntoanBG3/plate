@@ -65,11 +65,19 @@
             {
                 <label class="row choice-row">
                     <input type="radio" name="activityLevel" value="@level" checked="@(Model.ActivityLevel == level)" />
-                    <span class="choice-text"><span class="row-main">@L.Enum(level)</span><span class="row-sub">@L[ActivityLevels.Description(level)]</span></span>
+                    <span class="choice-text"><span class="row-title">@L.Enum(level)</span><span class="row-sub">@L[ActivityLevels.Description(level)]</span></span>
+                    @Ui.Icon("check", "choice-check")
                 </label>
             }
         </div>
-        <p class="section-footer">@L[ActivityLevels.Note] <a href="/welcome?restart=1">@L["Run the setup chat again"]</a></p>
+        <p class="section-footer">@L[ActivityLevels.Note]</p>
+        <div class="list setup-again">
+            <a class="row row-link" href="/welcome?restart=1">
+                <span class="row-icon neutral">@Ui.Icon("feedback")</span>
+                <span class="row-main">@L["Run the setup chat again"]</span>
+                @Ui.Icon("chevron", "row-chevron")
+            </a>
+        </div>
     </section>
 
     <section class="section">

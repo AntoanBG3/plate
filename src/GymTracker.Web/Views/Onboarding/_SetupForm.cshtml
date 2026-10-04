@@ -52,7 +52,8 @@
             {
                 <label class="row choice-row">
                     <input type="radio" name="activityLevel" value="@level" checked="@(d.ActivityLevel == level)" required />
-                    <span class="choice-text"><span class="row-main">@L.Enum(level)</span><span class="row-sub">@L[ActivityLevels.Description(level)]</span></span>
+                    <span class="choice-text"><span class="row-title">@L.Enum(level)</span><span class="row-sub">@L[ActivityLevels.Description(level)]</span></span>
+                    @Ui.Icon("check", "choice-check")
                 </label>
             }
         </div>

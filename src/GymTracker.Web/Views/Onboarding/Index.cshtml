@@ -12,19 +12,24 @@
     @if (!Model.Started && !formOnly)
     {
         <section class="splash">
-            <div class="splash-mark" aria-hidden="true">@Ui.Icon("target")</div>
-            <h1 class="large-title">@(name is null ? L["Welcome"] : L["Welcome, {0}", name])</h1>
-            <p class="splash-lead">@L["A few quick questions and your calorie and protein targets are ready. It takes about two minutes."]</p>
-            <form method="post" asp-antiforgery="true" action="/welcome/start" data-busy>
-                <input type="hidden" name="returnUrl" value="@returnUrl" />
-                <button type="submit" class="btn btn-primary btn-block">@L["Let's set you up"]</button>
-                <p class="thinking" role="status"><i></i><i></i><i></i><span>@L["Starting…"]</span></p>
-            </form>
-            <p class="footnote splash-note">@L["Your answers are sent to an AI model through OpenRouter. Prefer not to?"] <a href="@formUrl">@L["Use the form"]</a></p>
-            <form method="post" asp-antiforgery="true" action="/welcome/skip" class="splash-skip">
-                <input type="hidden" name="returnUrl" value="@returnUrl" />
-                <button type="submit" class="btn btn-plain">@L["Skip for now"]</button>
-            </form>
+            <div class="splash-hero">
+                <div class="splash-mark" aria-hidden="true">@Ui.Icon("target")</div>
+                <h1 class="large-title">@(name is null ? L["Welcome"] : L["Welcome, {0}", name])</h1>
+                <p class="splash-lead">@L["A few quick questions and your calorie and protein targets are ready. It takes about two minutes."]</p>
+            </div>
+            <div class="splash-actions">
+                <form method="post" asp-antiforgery="true" action="/welcome/start" data-busy>
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <button type="submit" class="btn btn-primary btn-block">@L["Let's set you up"]</button>
+                    <p class="thinking" role="status"><i></i><i></i><i></i><span>@L["Starting…"]</span></p>
+                </form>
+                <a class="btn btn-secondary btn-block" href="@formUrl">@L["Use the form instead"]</a>
+                <form method="post" asp-antiforgery="true" action="/welcome/skip">
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <button type="submit" class="btn btn-plain btn-block">@L["Skip for now"]</button>
+                </form>
+            </div>
+            <p class="footnote splash-note">@L["The chat sends your answers to an AI model through OpenRouter. The form doesn't."]</p>
         </section>
     }
     else if (formOnly)
@@ -34,20 +39,24 @@
             <p class="subhead">@L["This sets your starting calorie and protein targets. They adapt as you log food and weight."]</p>
         </header>
         <partial name="_SetupForm" model="new SetupFormModel(Model.Draft, null, Model.CurrentYear, returnUrl, Summary: false)" />
-        <form method="post" asp-antiforgery="true" action="/welcome/skip" class="splash-skip">
+        <form method="post" asp-antiforgery="true" action="/welcome/skip" class="setup-skip">
             <input type="hidden" name="returnUrl" value="@returnUrl" />
-            <button type="submit" class="btn btn-plain">@L["Skip for now"]</button>
+            <button type="submit" class="btn btn-plain btn-block">@L["Skip for now"]</button>
         </form>
     }
     else
     {
-        <header class="page-head">
+        <header class="setup-head">
             <h1 class="large-title">@L["Set up"]</h1>
+            <form method="post" asp-antiforgery="true" action="/welcome/skip">
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <button type="submit" class="btn btn-plain">@L["Skip for now"]</button>
+            </form>
         </header>
         <div class="chat" aria-live="polite" data-chat>
             @foreach (var line in Model.Messages)
             {
-                <p class="bubble @(line.FromUser ? null : "from-app")">@line.Text</p>
+                <p class="msg @(line.FromUser ? "from-me" : "from-app")">@line.Text</p>
             }
         </div>
 
@@ -87,13 +96,12 @@
             <partial name="_SetupForm" model="new SetupFormModel(Model.Draft, Model.Preview, Model.CurrentYear, returnUrl, Summary: true)" />
         }
 
-        <div class="setup-links">
-            <a class="btn btn-plain" href="@formUrl">@L["Use the form instead"]</a>
-            <form method="post" asp-antiforgery="true" action="/welcome/skip">
-                <input type="hidden" name="returnUrl" value="@returnUrl" />
-                <button type="submit" class="btn btn-plain">@L["Skip for now"]</button>
-            </form>
-        </div>
+        @if (!Model.Complete)
+        {
+            <div class="setup-links">
+                <a class="btn btn-plain" href="@formUrl">@L["Use the form instead"]</a>
+            </div>
+        }
     }
 </div>
 <script src="~/js/onboarding.js" asp-append-version="true"></script>

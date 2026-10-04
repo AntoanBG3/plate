@@ -360,24 +360,50 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .bubble { margin-left: auto; max-width: 85%; width: fit-content; padding: 10px var(--s-4); border-radius: 20px 20px 6px 20px; background: var(--fill-strong); font-size: var(--text-body); overflow-wrap: anywhere; }
 /* ---------- setup chat (SPEC 6.4) ---------- */
 
-.splash { display: flex; flex-direction: column; gap: var(--s-4); min-height: calc(100dvh - 160px); justify-content: center; text-align: center; }
+.splash { display: flex; flex-direction: column; justify-content: center; gap: var(--s-7); min-height: calc(100dvh - 160px); text-align: center; }
+.splash-hero { display: flex; flex-direction: column; align-items: center; gap: var(--s-3); }
 .splash .large-title { margin: 0; }
-.splash-mark { width: 72px; height: 72px; margin: 0 auto var(--s-2); border-radius: 22px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); }
+.splash-mark { width: 72px; height: 72px; margin-bottom: var(--s-2); border-radius: 22px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); }
 .splash-mark .icon { width: 40px; height: 40px; stroke-width: 1.8; }
-.splash-lead { margin: 0 auto; max-width: 32ch; color: var(--label-2); font-size: var(--text-body); line-height: 1.4; }
+.splash-lead { margin: 0; max-width: 32ch; color: var(--label-2); font-size: var(--text-body); line-height: 1.4; }
+.splash-actions { display: grid; gap: var(--s-3); }
+.splash-actions .thinking { justify-content: center; margin: var(--s-2) 0 0; }
 .splash-note { margin: 0 auto; max-width: 36ch; }
-.splash-skip, .setup-links form { display: flex; justify-content: center; }
-.setup-links { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-6); }
-.chat { display: flex; flex-direction: column; gap: var(--s-2); }
-.bubble.from-app { margin-left: 0; margin-right: auto; border-radius: 20px 20px 20px 6px; background: var(--surface); box-shadow: var(--shadow-card); animation: appear var(--dur-medium) var(--ease-out) backwards; }
-.chat > .bubble { margin-top: 0; margin-bottom: 0; }
-.reply-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-4); }
-.reply-chip { min-height: var(--tap); padding: 0 var(--s-4); border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-weight: var(--weight-semibold); font-size: var(--text-subhead); }
-.reply-chip:disabled { opacity: 0.5; }
-.setup-composer { margin-top: var(--s-4); }
-.setup-limit { margin: var(--s-4) var(--s-4) 0; }
-.setup-form { margin-top: var(--s-6); }
-.setup-form > .btn { margin-top: var(--s-5); }
+.setup-skip { margin-top: var(--s-3); }
+.setup-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin: var(--s-2) 0 var(--s-6); }
+.setup-head .large-title { margin: 0; }
+.setup-head .btn-plain { margin-right: calc(-1 * var(--s-2)); font-weight: var(--weight-regular); }
+.setup-links { display: flex; justify-content: center; margin-top: var(--s-5); }
+
+/* Messages, iMessage style: runs from one side sit 2px apart, a change of side gets a gap, and the last bubble of a run
+   has a tail. The tail is a bubble-coloured curve masked by a page-coloured one, both behind the bubble. */
+.chat { display: flex; flex-direction: column; gap: 2px; padding: 0 var(--s-2); isolation: isolate; }
+.msg { position: relative; max-width: 78%; width: fit-content; margin: 0; padding: 8px 14px; border-radius: 18px; font-size: var(--text-body); line-height: 1.32; overflow-wrap: anywhere; }
+.msg.from-app { margin-right: auto; background: var(--bubble-them); color: var(--label); }
+.msg.from-me { margin-left: auto; background: var(--bubble-me); color: var(--on-bubble-me); }
+.msg.from-app + .msg.from-me, .msg.from-me + .msg.from-app { margin-top: var(--s-3); }
+.msg::before, .msg::after { position: absolute; bottom: 0; height: 20px; z-index: -1; }
+.msg.from-me:not(:has(+ .from-me))::before { content: ""; right: -7px; width: 20px; background: var(--bubble-me); border-bottom-left-radius: 16px 14px; }
+.msg.from-me:not(:has(+ .from-me))::after { content: ""; right: -26px; width: 26px; background: var(--bg); border-bottom-left-radius: 10px; }
+.msg.from-app:not(:has(+ .from-app))::before { content: ""; left: -7px; width: 20px; background: var(--bubble-them); border-bottom-right-radius: 16px 14px; }
+.msg.from-app:not(:has(+ .from-app))::after { content: ""; left: -26px; width: 26px; background: var(--bg); border-bottom-right-radius: 10px; }
+/* Only the newest reply animates in; the page is redrawn on every turn. */
+.msg.from-app:last-child { animation: appear var(--dur-medium) var(--ease-out) backwards; }
+.msg.typing { display: flex; gap: 5px; align-items: center; height: 38px; padding: 0 16px; }
+.msg.typing i { width: 8px; height: 8px; border-radius: 50%; background: var(--label-3); animation: think 1.2s var(--ease-in-out) infinite; }
+.msg.typing i:nth-child(2) { animation-delay: 0.15s; }
+.msg.typing i:nth-child(3) { animation-delay: 0.3s; }
+
+/* Suggested answers are things the user would say, so they sit on the user's side. */
+.reply-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--s-2); margin: var(--s-4) var(--s-2) 0; }
+.reply-chip { min-height: var(--tap); padding: 0 var(--s-4); border-radius: 999px; background: none; color: var(--accent-text); box-shadow: inset 0 0 0 1.5px var(--accent-text); font-weight: var(--weight-semibold); font-size: var(--text-subhead); text-align: left; }
+.reply-chip:disabled { opacity: 0.4; }
+.setup-composer { margin-top: var(--s-5); }
+/* The typing bubble shows progress; the status line stays for screen readers only. */
+.setup-composer .thinking { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.setup-limit { margin: var(--s-5) var(--s-4) 0; }
+.setup-form { margin-top: var(--s-7); }
+.setup-form > .btn { margin-top: var(--s-6); }
 .setup-preview-main { margin: 0 0 var(--s-1); font-size: var(--text-title-1); font-weight: var(--weight-semibold); }
 .setup-preview-main small { font-size: var(--text-subhead); font-weight: var(--weight-regular); color: var(--label-2); }
 .setup-preview .footnote { margin: 0; }
@@ -422,10 +448,15 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .ex-head > div:first-child { flex: 1; min-width: 0; }
 .ex-name { font-size: var(--text-title-2); line-height: 1.27; font-weight: var(--weight-bold); letter-spacing: 0.016em; overflow-wrap: anywhere; }
 .ex-note { margin-top: 2px; font-size: var(--text-footnote); color: var(--label-2); overflow-wrap: anywhere; }
-/* A radio list with a description per choice (activity level). */
-.choice-row { align-items: flex-start; cursor: pointer; }
-.choice-row input { flex: none; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--accent); }
-.choice-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+/* A pick-one list with a description per choice (activity level), iOS style: a checkmark marks the choice. */
+.choice-row { align-items: center; padding-top: var(--s-3); padding-bottom: var(--s-3); cursor: pointer; }
+.choice-row input { position: absolute; opacity: 0; pointer-events: none; }
+.choice-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.choice-text .row-sub { margin-top: 0; }
+.choice-check { width: 22px; height: 22px; flex: none; color: var(--accent-text); stroke-width: 2.6; opacity: 0; transition: opacity var(--dur-small) var(--ease-out); }
+.choice-row:has(:checked) .choice-check { opacity: 1; }
+.choice-row:has(:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+.setup-again { margin-top: var(--s-5); }
 .plate-choices { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-2); }
 .plate-choice { position: relative; display: inline-flex; }
 .plate-choice input { position: absolute; opacity: 0; inset: 0; margin: 0; }

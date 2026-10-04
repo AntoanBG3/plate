@@ -1701,6 +1701,9 @@
   "The chart appears after a few more sessions.": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
+  "The chat sends your answers to an AI model through OpenRouter. The form doesn't.": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
   "The current password is wrong.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
@@ -1868,9 +1871,6 @@
   "Update": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
-  "Use the form": [
-    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
-  ],
   "Use the form instead": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
@@ -2016,9 +2016,6 @@
     "src/GymTracker.Web/Controllers/OnboardingController.cs"
   ],
   "Your answer": [
-    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
-  ],
-  "Your answers are sent to an AI model through OpenRouter. Prefer not to?": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
   "Your data": [
