@@ -210,6 +210,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasPrecision(7, 1)
                         .HasColumnType("numeric(7,1)");
 
+                    b.Property<string>("MatchModel")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("Meal")
                         .IsRequired()
                         .HasMaxLength(20)

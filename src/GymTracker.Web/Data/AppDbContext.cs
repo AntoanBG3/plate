@@ -157,6 +157,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.Meal).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Source).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.AiModel).HasMaxLength(100);
+            e.Property(x => x.MatchModel).HasMaxLength(100);
             e.Property(x => x.Grams).HasPrecision(7, 1);
             e.Property(x => x.Kcal).HasPrecision(7, 1);
             e.Property(x => x.ProteinG).HasPrecision(6, 1);

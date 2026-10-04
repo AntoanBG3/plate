@@ -74,7 +74,7 @@ public class FoodController(
     {
         var entries = items
             .Where(i => i.Include)
-            .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, new Per100g(i.Kcal, i.Protein, i.Carbs, i.Fat), i.FoodItemId, EntrySource.Ai, aiModel))
+            .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, new Per100g(i.Kcal, i.Protein, i.Carbs, i.Fat), i.FoodItemId, EntrySource.Ai, aiModel, string.IsNullOrWhiteSpace(i.MatchModel) ? null : i.MatchModel.Trim()))
             .ToList();
         if (entries.Count == 0)
         {
@@ -199,5 +199,6 @@ public class FoodController(
         public decimal Carbs { get; set; }
         public decimal Fat { get; set; }
         public int? FoodItemId { get; set; }
+        public string? MatchModel { get; set; }
     }
 }

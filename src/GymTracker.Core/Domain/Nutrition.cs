@@ -65,6 +65,9 @@ public class FoodLogEntry
     public FoodItem? FoodItem { get; set; }
     public EntrySource Source { get; set; }
     public string? AiModel { get; set; }
+
+    /// <summary>The decision model version that chose the matched food, or decided there is none; null when the ranking did.</summary>
+    public string? MatchModel { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>Set when deleted; the row is hidden and can be restored for a while (undo), then purged.</summary>

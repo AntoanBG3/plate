@@ -2,6 +2,7 @@ using System.Net;
 using FluentAssertions;
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Features.Food;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GymTracker.Web.Tests;
@@ -108,6 +109,51 @@ public class FoodMatchingTests(PostgresFixture fixture)
         var response = await AppFactory.PostAsync(client, "/food/parse", token, new() { ["date"] = "2026-10-04", ["meal"] = "Lunch", ["text"] = "200g chicken breast" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await response.Content.ReadAsStringAsync()).Should().Contain(WebUtility.HtmlEncode(picked!));
+        var page = await response.Content.ReadAsStringAsync();
+        page.Should().Contain(WebUtility.HtmlEncode(picked!));
+        page.Should().Contain($"name=\"items[0].MatchModel\" value=\"{StubMatchDecider.Model}\"");
+    }
+
+    [Fact]
+    public async Task Confirmed_rows_keep_the_match_model()
+    {
+        using var app = new AppFactory(fixture);
+        var (client, email) = await app.SignedInClientAsync();
+        var token = await AppFactory.TokenAsync(client, "/food/add");
+        var tag = Guid.NewGuid().ToString("N")[..8];
+        var fields = new Dictionary<string, string> { ["date"] = "2026-10-04", ["meal"] = "Lunch", ["aiModel"] = "openai/gpt-6-luna" };
+        void Row(int n, string name, string? foodItemId, string? matchModel)
+        {
+            fields[$"items[{n}].Include"] = "true";
+            fields[$"items[{n}].Description"] = $"{name} {tag}";
+            fields[$"items[{n}].Grams"] = "100";
+            fields[$"items[{n}].Kcal"] = "100";
+            fields[$"items[{n}].Protein"] = "5";
+            fields[$"items[{n}].Carbs"] = "10";
+            fields[$"items[{n}].Fat"] = "3";
+            fields[$"items[{n}].FoodItemId"] = foodItemId ?? "";
+            if (matchModel is not null)
+            {
+                fields[$"items[{n}].MatchModel"] = matchModel;
+            }
+        }
+
+        await using var db = fixture.CreateContext(null);
+        var anyFood = await db.FoodItems.Where(f => f.OwnerUserId == null).Select(f => f.Id).FirstAsync();
+        Row(0, "matched", anyFood.ToString(), StubMatchDecider.Model);
+        Row(1, "estimate", null, StubMatchDecider.Model);
+        Row(2, "ranked", anyFood.ToString(), null);
+        Row(3, "long", null, new string('x', 150));
+
+        AppFactory.IsRedirectTo(await AppFactory.PostAsync(client, "/food/confirm", token, fields), "/food?date=2026-10-04").Should().BeTrue();
+
+        var saved = await db.FoodLog.IgnoreQueryFilters().Where(e => e.Description.EndsWith(tag)).ToDictionaryAsync(e => e.Description.Split(' ')[0], e => e.MatchModel);
+        saved.Should().BeEquivalentTo(new Dictionary<string, string?>
+        {
+            ["matched"] = StubMatchDecider.Model,
+            ["estimate"] = StubMatchDecider.Model,
+            ["ranked"] = null,
+            ["long"] = new string('x', 100),
+        });
     }
 }
