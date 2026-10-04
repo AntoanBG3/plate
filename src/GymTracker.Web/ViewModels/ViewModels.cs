@@ -29,11 +29,33 @@ public record SetRowViewModel(int SessionExerciseId, bool IsWarmup, SetEntry? Lo
         new(sessionExerciseId, isWarmup, null, Guid.NewGuid(), target);
 
     public static SetRowViewModel For(SetEntry set) => new(set.SessionExerciseId, set.IsWarmup, set, set.ClientId);
+
+    /// <summary>
+    /// The row for a set the phone sent. Blank when that set was deleted meanwhile, or its exercise removed, so a retry
+    /// from the offline queue doesn't put it back on screen.
+    /// </summary>
+    public static SetRowViewModel AfterLog(SetEntry set) =>
+        set.DeletedAt is null && set.SessionExercise?.DeletedAt is null ? For(set) : Blank(set.SessionExerciseId, set.IsWarmup);
 }
 
-public record SessionViewModel(WorkoutSession Session, IReadOnlyDictionary<int, ProgressionSuggestion?> Suggestions);
+public record SessionViewModel(
+    WorkoutSession Session,
+    IReadOnlyDictionary<int, ProgressionSuggestion?> Suggestions,
+    IReadOnlyDictionary<int, UserExerciseSettings> Settings,
+    decimal ProfileBarKg)
+{
+    public ExerciseCardViewModel CardFor(SessionExercise exercise)
+    {
+        var settings = Settings.GetValueOrDefault(exercise.ExerciseId);
+        return new ExerciseCardViewModel(
+            exercise,
+            Suggestions.GetValueOrDefault(exercise.Id),
+            settings?.Note,
+            PlateMath.BarFor(exercise.Exercise.Equipment, settings?.BarWeightKg, ProfileBarKg));
+    }
+}
 
-public record ExerciseCardViewModel(SessionExercise Exercise, ProgressionSuggestion? Suggestion)
+public record ExerciseCardViewModel(SessionExercise Exercise, ProgressionSuggestion? Suggestion, string? Note = null, decimal? BarKg = null)
 {
     /// <summary>The target for the n-th working set (0-based), repeating the last one past the planned count.</summary>
     public SetTarget? TargetFor(int index) =>
@@ -50,7 +72,19 @@ public record ProgressViewModel(
     GymTracker.Web.Features.Body.WeightChart Weight,
     IReadOnlyList<GymTracker.Web.Features.Body.CalorieDay> Calories);
 
+public record PlatesViewModel(int SessionExerciseId, decimal BarKg, decimal? TargetKg, PlateLoad? Load);
+
+public record TemplateEditViewModel(WorkoutTemplate Template, IReadOnlyDictionary<int, UserExerciseSettings> Settings);
+
+public record ExerciseSettingsFormViewModel(Exercise Exercise, UserExerciseSettings? Settings, decimal ProfileBarKg, string ReturnUrl);
+
 public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises);
+
+public record QuickAddViewModel(DateOnly Date, Meal Meal);
+
+public record SaveMealFormViewModel(DateOnly Date, Meal Meal, string DefaultName);
+
+public record SavedMealViewModel(SavedMeal Meal, DateOnly Date, Meal LogTo);
 
 public record FoodDayViewModel(GymTracker.Web.Features.Food.DayLog Day, DateOnly Today, GymTracker.Web.Features.Food.DailyTargets Targets);
 
@@ -63,7 +97,8 @@ public record FoodAddViewModel(
     string? Query,
     IReadOnlyList<GymTracker.Web.Features.Food.FoodMatch> Local,
     GymTracker.Core.Nutrition.ProductSearch? OpenFoodFacts,
-    IReadOnlyList<GymTracker.Web.Features.Food.RecentFood> Recents);
+    IReadOnlyList<GymTracker.Web.Features.Food.RecentFood> Recents,
+    IReadOnlyList<SavedMeal> SavedMeals);
 
 public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, GymTracker.Core.Text.LocalText? Warning);
 

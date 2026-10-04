@@ -73,10 +73,61 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
         await db.SaveChangesAsync(ct);
     }
 
+    /// <summary>Logs calories and macros typed directly, with no food item and no grams.</summary>
+    public async Task AddQuickAsync(DateOnly date, Meal meal, string description, decimal kcal, decimal protein, decimal carbs, decimal fat, CancellationToken ct)
+    {
+        var userId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.");
+        if (FoodMath.ValidateQuick(kcal, protein, carbs, fat) is { } error)
+        {
+            throw new ValidationException(error);
+        }
+
+        db.FoodLog.Add(new FoodLogEntry
+        {
+            UserId = userId,
+            Date = date,
+            Meal = meal,
+            Description = CleanDescription(description),
+            Grams = 0,
+            Kcal = Math.Round(kcal, 1),
+            ProteinG = Math.Round(protein, 1),
+            CarbsG = Math.Round(carbs, 1),
+            FatG = Math.Round(fat, 1),
+            Source = EntrySource.Quick,
+            CreatedAt = time.GetUtcNow(),
+        });
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Changes a quick entry's name, meal and numbers. Quick entries have no amount to scale.</summary>
+    public async Task UpdateQuickAsync(int id, string description, Meal meal, decimal kcal, decimal protein, decimal carbs, decimal fat, CancellationToken ct)
+    {
+        var entry = await GetAsync(id, ct);
+        if (entry.Source != EntrySource.Quick)
+        {
+            throw new ValidationException("Change this entry's amount instead.");
+        }
+
+        if (FoodMath.ValidateQuick(kcal, protein, carbs, fat) is { } error)
+        {
+            throw new ValidationException(error);
+        }
+
+        entry.Description = CleanDescription(description);
+        entry.Meal = meal;
+        (entry.Kcal, entry.ProteinG, entry.CarbsG, entry.FatG) = (Math.Round(kcal, 1), Math.Round(protein, 1), Math.Round(carbs, 1), Math.Round(fat, 1));
+        await db.SaveChangesAsync(ct);
+    }
+
     /// <summary>Changes an entry's name, meal or amount; nutrition scales with the new amount.</summary>
     public async Task UpdateAsync(int id, string description, decimal grams, Meal meal, CancellationToken ct)
     {
         var entry = await GetAsync(id, ct);
+        if (entry.Source == EntrySource.Quick)
+        {
+            throw new ValidationException("Change a quick entry's calories instead of its amount.");
+        }
+
         var per100 = PerHundred(entry);
         if (FoodMath.Validate(grams, per100) is { } error)
         {
@@ -94,7 +145,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
     public async Task<DateOnly> DeleteAsync(int id, CancellationToken ct)
     {
         var entry = await GetAsync(id, ct);
-        db.FoodLog.Remove(entry);
+        entry.DeletedAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
         return entry.Date;
     }
@@ -143,7 +194,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 CarbsG = e.CarbsG,
                 FatG = e.FatG,
                 FoodItemId = e.FoodItemId,
-                Source = EntrySource.Recent,
+                Source = e.Source == EntrySource.Quick ? EntrySource.Quick : EntrySource.Recent,
                 CreatedAt = now,
             });
         }

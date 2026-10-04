@@ -152,10 +152,18 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
     public async Task<SetEntry> DeleteSetAsync(int setId, CancellationToken ct)
     {
         var set = await db.Sets.SingleOrDefaultAsync(s => s.Id == setId, ct) ?? throw new NotFoundException();
-        db.Sets.Remove(set);
+        set.DeletedAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
         return set;
     }
+
+    /// <summary>The weight of the last working set logged on this session exercise, or null.</summary>
+    public Task<decimal?> LastWorkingWeightAsync(int sessionExerciseId, CancellationToken ct) =>
+        db.Sets
+            .Where(s => s.SessionExerciseId == sessionExerciseId && !s.IsWarmup)
+            .OrderByDescending(s => s.SetNumber)
+            .Select(s => (decimal?)s.WeightKg)
+            .FirstOrDefaultAsync(ct);
 
     public async Task<SessionExercise> GetExerciseAsync(int sessionExerciseId, CancellationToken ct) =>
         await db.SessionExercises
@@ -183,6 +191,30 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         await db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Replaces the exercise in a session slot, keeping its sets, rep range, increment and rest. Only before any set
+    /// is logged on it, so history never mixes two exercises. A set deleted recently enough to be undone counts too,
+    /// since undoing it after a swap would put it under the new exercise. The template is not changed.
+    /// </summary>
+    public async Task<int> SwapExerciseAsync(int sessionExerciseId, int exerciseId, CancellationToken ct)
+    {
+        var item = await db.SessionExercises.SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct)
+            ?? throw new NotFoundException();
+        var undoableSince = time.GetUtcNow() - GymTracker.Web.Features.Undo.UndoService.Window;
+        var hasSets = await db.Sets.IgnoreQueryFilters([AppDbContext.SoftDeleteFilter])
+            .AnyAsync(x => x.SessionExerciseId == item.Id && (x.DeletedAt == null || x.DeletedAt > undoableSince), ct);
+        if (hasSets)
+        {
+            throw new ValidationException("Only an exercise with no sets logged can be swapped.");
+        }
+
+        var exercise = await db.Exercises.SingleOrDefaultAsync(e => e.Id == exerciseId && !e.IsArchived, ct)
+            ?? throw new NotFoundException("Exercise not found.");
+        item.ExerciseId = exercise.Id;
+        await db.SaveChangesAsync(ct);
+        return item.SessionId;
+    }
+
     public async Task<int> MoveExerciseAsync(int sessionExerciseId, int direction, CancellationToken ct)
     {
         var item = await db.SessionExercises.SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct) ?? throw new NotFoundException();
@@ -195,11 +227,11 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         return item.SessionId;
     }
 
-    /// <summary>Removes an exercise and its logged sets from the session.</summary>
+    /// <summary>Removes an exercise from the session and hides its sets; undo can restore both.</summary>
     public async Task<int> RemoveExerciseAsync(int sessionExerciseId, CancellationToken ct)
     {
         var item = await db.SessionExercises.SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct) ?? throw new NotFoundException();
-        db.SessionExercises.Remove(item);
+        item.DeletedAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
         return item.SessionId;
     }

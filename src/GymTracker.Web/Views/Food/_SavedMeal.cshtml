@@ -1,0 +1,47 @@
+@model SavedMealViewModel
+@{
+    var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+}
+<div class="sheet-head"><span></span><span class="sheet-title" id="food-sheet-title">@Model.Meal.Name</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
+<form method="post" asp-antiforgery="true" action="/food/saved-meals/@Model.Meal.Id/log">
+    <input type="hidden" name="date" value="@date" />
+    <input type="hidden" name="meal" value="@Model.LogTo" />
+    <div class="list">
+        @foreach (var item in Model.Meal.Items)
+        {
+            @if (item.Grams > 0)
+            {
+                <div class="field-row"><label for="g-@item.Id">@item.Description</label><input id="g-@item.Id" class="num" type="number" name="grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" required /><span class="unit">@L["g"]</span></div>
+            }
+            else
+            {
+                <input type="hidden" name="grams" value="" />
+                <div class="row"><span class="row-main">@item.Description</span><span class="row-value num">@L["{0} kcal", Math.Round(item.Kcal)]</span></div>
+            }
+        }
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-4)">@L[AddTo[Model.LogTo]]</button>
+</form>
+<form method="post" asp-antiforgery="true" action="/food/saved-meals/@Model.Meal.Id/rename" class="section">
+    <input type="hidden" name="date" value="@date" />
+    <input type="hidden" name="meal" value="@Model.LogTo" />
+    <div class="list">
+        <div class="field-row"><label for="rename-meal">@L["Name"]</label><input id="rename-meal" type="text" name="name" value="@Model.Meal.Name" maxlength="60" required /><button type="submit" class="btn btn-plain">@L["Rename"]</button></div>
+    </div>
+</form>
+<form method="post" asp-antiforgery="true" action="/food/saved-meals/@Model.Meal.Id/delete" data-confirm="@L["Delete this saved meal?"]" style="margin-top: var(--s-3)">
+    <input type="hidden" name="date" value="@date" />
+    <input type="hidden" name="meal" value="@Model.LogTo" />
+    <button type="submit" class="btn btn-destructive btn-block">@L["Delete saved meal"]</button>
+</form>
+
+@functions {
+    // Whole phrases per meal: Bulgarian meal names change form inside a sentence.
+    private static readonly Dictionary<Meal, string> AddTo = new()
+    {
+        [Meal.Breakfast] = "Add to breakfast",
+        [Meal.Lunch] = "Add to lunch",
+        [Meal.Dinner] = "Add to dinner",
+        [Meal.Snack] = "Add a snack",
+    };
+}

@@ -16,6 +16,23 @@ public static class Notices
 
     public static void Error(this ITempDataDictionary temp, LocalText text) => temp[FeatureExceptionFilter.ErrorKey] = Pack(text);
 
+    public const string UndoKey = "Undo";
+
+    /// <summary>Shows text with an Undo button on the next page; url is the POST that restores the row.</summary>
+    public static void Undo(this ITempDataDictionary temp, LocalText text, string url) =>
+        temp[UndoKey] = Pack(text) + Separator + Separator + url;
+
+    public static (LocalText Text, string Url)? ReadUndo(ITempDataDictionary temp)
+    {
+        if (temp[UndoKey] is not string s)
+        {
+            return null;
+        }
+
+        var at = s.LastIndexOf($"{Separator}{Separator}", StringComparison.Ordinal);
+        return at < 0 ? null : (Read(s[..at])!, s[(at + 2)..]);
+    }
+
     public static LocalText? Read(object? value) => value is string s
         ? s.Split(Separator) is var parts && parts.Length > 1 ? new LocalText(parts[0], parts[1..]) : new LocalText(s)
         : null;

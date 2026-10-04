@@ -93,6 +93,7 @@ Units: weights in kilograms (`decimal(6,2)`), energy in kcal, macros in grams. D
 - `TargetRatePercentPerWeek` (decimal, e.g. 0.5 means 0.5% of bodyweight per week; ignored for Maintain)
 - `ProteinGramsPerKg` (default 2.0)
 - `DefaultWeightIncrementKg` (default 2.5)
+- `BarWeightKg` (default 20) and `PlatesKg` (the plates the gym has; default 25, 20, 15, 10, 5, 2.5, 1.25), used by the plate calculator
 
 ### Training
 
@@ -104,6 +105,11 @@ Units: weights in kilograms (`decimal(6,2)`), energy in kcal, macros in grams. D
 Muscle enum: Chest, Back, Shoulders, Biceps, Triceps, Forearms, Quads, Hamstrings, Glutes, Calves, Abs.
 
 Seed about 40 common exercises (bench press, incline dumbbell press, squat, Romanian deadlift, deadlift, pull-up, lat pulldown, barbell row, cable row, overhead press, lateral raise, leg press, leg curl, leg extension, calf raise, curls, triceps pushdown, etc.).
+
+**UserExerciseSettings**
+- `UserId`, `ExerciseId` (composite key)
+- `Note` (up to 200 characters, e.g. "seat 4, neutral grip"), `BarWeightKg` (nullable; overrides the profile's bar, and turns the plate calculator on for non-barbell exercises)
+- Exercises are shared seed rows, so per-user notes live here.
 
 **WorkoutTemplate**
 - `Id`, `UserId`, `Name` (e.g. "Upper A"), `SortOrder`, `IsArchived`
@@ -130,6 +136,8 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `CompletedAt` (sent by the client, so a set retried later keeps the time it was actually done)
 - `ClientId` (Guid generated in the browser, unique index) so retried requests are idempotent.
 
+**Soft delete.** `SetEntry`, `SessionExercise`, `TemplateExercise` and `FoodLogEntry` have `DeletedAt` (nullable). Deleting sets it; named EF query filters (`Owner`, `SoftDelete`) hide deleted rows everywhere, and a removed session exercise hides its sets too. Undo clears it within 10 minutes; an hourly job removes rows deleted more than 24 hours ago.
+
 ### Body
 
 **BodyweightEntry**
@@ -145,12 +153,19 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Source` (OpenFoodFacts, Usda, Manual, Ai)
 - Manual items created from a barcode scan are shared (`OwnerUserId` null) so the other user doesn't re-enter the same product; Open Food Facts coverage of Bulgarian products is thin, so this path will be common. Manual items without a barcode stay private.
 
+**SavedMeal**
+- `Id`, `UserId`, `Name` (up to 60 characters), `CreatedAt`
+
+**SavedMealItem**
+- `Id`, `SavedMealId`, `SortOrder`, `Description`, `Grams` (0 for a quick entry), stored `Kcal`, `ProteinG`, `CarbsG`, `FatG`, `FoodItemId` (nullable), `Source`
+- A snapshot of a logged entry, so later food edits don't change the saved meal.
+
 **FoodLogEntry**
 - `Id`, `UserId`, `Date`, `Meal` (Breakfast, Lunch, Dinner, Snack)
 - `Description` (what is shown in the log, e.g. "Chicken breast, grilled")
 - `Grams`
 - `Kcal`, `ProteinG`, `CarbsG`, `FatG` (stored totals, so the entry is stable even if the FoodItem changes)
-- `FoodItemId` (nullable), `Source` (Barcode, Search, Ai, Manual, Recent)
+- `FoodItemId` (nullable), `Source` (Barcode, Search, Ai, Manual, Recent, Quick). A Quick entry is calories and macros typed directly: no food, `Grams` 0, edited by its numbers and never scaled.
 - `AiModel` (nullable; the OpenRouter model id for AI-parsed entries, so a shift in estimates after a model change can be traced)
 - `CreatedAt`
 
@@ -289,6 +304,9 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - List of templates with Start buttons; option to start an empty freestyle session.
 - **Active session view:**
   - One card per exercise in order. Each card shows the progression suggestion and its reason, then a row per working set with weight and reps inputs pre-filled from the suggestion, and a check button.
+  - Each exercise's menu has Notes & bar (a note shown under the exercise name, and an optional bar weight); the same item is on the template edit page.
+  - Barbell exercises (or any with a bar weight set) have a Plates button: the plates per side for a weight, from the bar and plates in Settings. It finds the closest load at or below the weight with the fewest plates, starting from the last working set or the suggestion.
+  - Swap an exercise for another one in this session only, while it has no sets logged (warmups included); same-muscle exercises are listed first, and the slot keeps its sets, rep range, increment and rest.
   - Tapping the check button saves the set immediately via htmx and starts the rest timer.
   - Add warmup set, add extra set, add exercise, reorder, and remove exercise.
   - Rest timer pinned to the bottom of the screen: counts down from the exercise's rest time and plays a short sound at zero, with +30 s and skip buttons. iOS has no `navigator.vibrate`, so there is no vibration. To make the sound reliable on iPhone:
@@ -297,7 +315,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
     - Always compute the remaining time from the stored end timestamp, never by counting ticks, because iOS suspends timers in the background.
   - Finish button ends the session and shows a summary: duration, total working sets, new e1RM records.
 - **History:** sessions list, newest first; tap to view or edit a past session.
-- **Templates:** create, edit, reorder exercises, set rep ranges, sets, increment and rest per exercise.
+- **Templates:** create, edit, duplicate (the copy goes to the end of the list as "Name (copy)"), reorder exercises, set rep ranges, sets, increment and rest per exercise.
 
 ### Food
 - Date selector (defaults to today), entries grouped by meal, daily totals at the top.
@@ -307,6 +325,9 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
   3. **Search:** searches the user's own FoodItems and recent entries first, then shared items (including the USDA subset), then Open Food Facts on explicit submit.
   4. **Recent / favourites:** one-tap re-log of the 20 most frequent entries from the last 30 days, with editable grams.
 - Edit or delete any entry. Copy yesterday's meal into today.
+- Quick add per meal: a name (optional), calories, and optional protein, carbs and fat, for restaurant meals and labels not worth saving. Quick entries stay out of Recent.
+- Saved meals: a meal's menu on the Food day saves its entries under a name. Saved meals are listed first on the Recent tab; tapping one opens a sheet with editable grams per item (quick items keep their numbers) and logs them all into the chosen meal. Rename or delete from the same sheet.
+- Deleting a food entry or a set, and removing an exercise from a session or a template, happen at once with an Undo toast for 6 seconds (no confirm). Archiving a template, finishing or deleting a workout, removing a passkey, signing out everywhere and deleting a saved meal still ask first.
 
 ### Progress
 - Bodyweight chart: raw weigh-ins as dots, trend weight as a line, selectable range (4 weeks, 12 weeks, all).
@@ -317,6 +338,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 ### Settings
 - Profile fields from section 4, with validation including the safety limits in 5.6.
 - Custom exercises.
+- Bar and plates: the profile bar weight and which plates the gym has.
 - Export all of the user's data as CSV files in a zip.
 - Change password, log out.
 

@@ -14,13 +14,15 @@ namespace GymTracker.Web.Controllers;
 [Route("food")]
 public class FoodController(
     FoodLogService log,
+    SavedMealService savedMeals,
     FoodItemService foods,
     FoodMatcher matcher,
     IFoodParser parser,
     NutritionTargets targets,
     ProfileService profiles,
     UserTime userTime,
-    TimeProvider time) : Controller
+    TimeProvider time,
+    Localizer localizer) : Controller
 {
     private static readonly string[] Tabs = ["text", "barcode", "search", "recent", "manual"];
 
@@ -42,7 +44,8 @@ public class FoodController(
         var local = tab == "search" && !string.IsNullOrWhiteSpace(q) ? await foods.SearchAsync(q, 20, 0.3, ct) : [];
         var offResults = tab == "search" && off && !string.IsNullOrWhiteSpace(q) ? await foods.SearchOpenFoodFactsAsync(q, ct) : null;
         var recents = tab == "recent" ? await log.RecentsAsync(await profiles.TodayAsync(ct), ct) : [];
-        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents));
+        var saved = tab == "recent" ? await savedMeals.ListAsync(ct) : [];
+        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved));
     }
 
     [HttpPost("parse")]
@@ -52,14 +55,14 @@ public class FoodController(
         text = text?.Trim() ?? "";
         if (text.Length is 0 or > 1000)
         {
-            return View("Add", new FoodAddViewModel(date, meal, "text", text, "Write what you ate, up to 1000 characters.", null, [], null, []));
+            return View("Add", new FoodAddViewModel(date, meal, "text", text, "Write what you ate, up to 1000 characters.", null, [], null, [], []));
         }
 
         var result = await parser.ParseAsync(text, ct);
         if (result.Items.Count == 0)
         {
             // Keep the text so nothing typed is lost, and offer manual entry.
-            return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? new LocalText("Couldn't read that."), null, [], null, []));
+            return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? new LocalText("Couldn't read that."), null, [], null, [], []));
         }
 
         var items = await matcher.ResolveAsync(result.Items, ct);
@@ -133,6 +136,24 @@ public class FoodController(
         [Meal.Snack] = "No snacks were logged the day before.",
     };
 
+    [HttpGet("quick")]
+    public IActionResult QuickForm(DateOnly date, Meal meal) => PartialView("_QuickAddForm", new QuickAddViewModel(date, meal));
+
+    [HttpPost("quick")]
+    public async Task<IActionResult> Quick(DateOnly date, Meal meal, string? description, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, CancellationToken ct)
+    {
+        await log.AddQuickAsync(date, meal, string.IsNullOrWhiteSpace(description) ? localizer["Quick add"] : description, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, ct);
+        return Redirect($"/food?date={date:yyyy-MM-dd}");
+    }
+
+    [HttpPost("entries/{id:int}/quick")]
+    public async Task<IActionResult> UpdateQuick(int id, string description, Meal meal, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, CancellationToken ct)
+    {
+        await log.UpdateQuickAsync(id, description, meal, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, ct);
+        var entry = await log.GetAsync(id, ct);
+        return Redirect($"/food?date={entry.Date:yyyy-MM-dd}");
+    }
+
     [HttpGet("entries/{id:int}")]
     public async Task<IActionResult> Entry(int id, CancellationToken ct) => View(await log.GetAsync(id, ct));
 
@@ -148,6 +169,7 @@ public class FoodController(
     public async Task<IActionResult> DeleteEntry(int id, CancellationToken ct)
     {
         var date = await log.DeleteAsync(id, ct);
+        TempData.Undo("Entry deleted.", $"/undo/entry/{id}");
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 

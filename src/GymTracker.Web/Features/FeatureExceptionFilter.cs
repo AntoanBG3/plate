@@ -40,8 +40,10 @@ public class FeatureExceptionFilter(ITempDataDictionaryFactory tempDataFactory, 
                 break;
 
             case ValidationException ex:
-                // Plain form post: go back to the page with the message shown by the layout.
-                tempDataFactory.GetTempData(context.HttpContext).Error(ex.Text);
+                // Plain form post: go back to the page with the message shown by the layout. TempData keeps arguments as
+                // plain text, so a message holding another message ("Oats: grams must be…") is translated here, now.
+                tempDataFactory.GetTempData(context.HttpContext).Error(
+                    ex.Text.Args.Any(a => a is GymTracker.Core.Text.LocalText) ? new GymTracker.Core.Text.LocalText(localizer[ex.Text]) : ex.Text);
                 var referer = context.HttpContext.Request.Headers.Referer.ToString();
                 context.Result = new RedirectResult(IsLocal(referer, context.HttpContext.Request) ? referer : "/today");
                 context.ExceptionHandled = true;

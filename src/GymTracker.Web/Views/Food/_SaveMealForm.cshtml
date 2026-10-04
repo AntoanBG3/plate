@@ -1,0 +1,10 @@
+@model SaveMealFormViewModel
+<div class="sheet-head"><span></span><span class="sheet-title" id="food-sheet-title">@L["Save as a meal"]</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
+<form method="post" asp-antiforgery="true" action="/food/saved-meals">
+    <input type="hidden" name="date" value="@Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" />
+    <input type="hidden" name="meal" value="@Model.Meal" />
+    <div class="list">
+        <div class="field-row"><label for="meal-name">@L["Name"]</label><input id="meal-name" type="text" name="name" value="@Model.DefaultName" maxlength="60" required /></div>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-4)">@L["Save"]</button>
+</form>

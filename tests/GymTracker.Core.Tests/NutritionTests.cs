@@ -39,6 +39,29 @@ public class FoodMathTests
         FoodMath.Validate(100, new Per100g(400, 60, 60, 0)).Should().NotBeNull();
         FoodMath.Validate(3000, new Per100g(884, 0, 0, 100)).Should().BeNull("pure oil is real");
     }
+
+    [Theory]
+    [InlineData(650, 40, 0, 0, true)]
+    [InlineData(1, 0, 0, 0, true)]
+    [InlineData(5000, 500, 500, 500, true)]
+    [InlineData(0, 10, 0, 0, false)]
+    [InlineData(5001, 0, 0, 0, false)]
+    [InlineData(500, -1, 0, 0, false)]
+    [InlineData(500, 0, 501, 0, false)]
+    public void Quick_entries_need_calories_and_sane_macros(decimal kcal, decimal p, decimal c, decimal f, bool ok) =>
+        (FoodMath.ValidateQuick(kcal, p, c, f) is null).Should().Be(ok);
+
+    [Fact]
+    public void Scales_stored_totals_to_new_grams()
+    {
+        var totals = new Totals(240, 45, 0, 5.2m);
+        FoodMath.Scale(totals, 200, 300).Should().Be(new Totals(360, 67.5m, 0, 7.8m));
+        FoodMath.Scale(totals, 200, 200).Should().Be(totals);
+    }
+
+    [Fact]
+    public void Quick_items_with_no_grams_keep_their_totals() =>
+        FoodMath.Scale(new Totals(650, 40, 60, 25), 0, 150).Should().Be(new Totals(650, 40, 60, 25));
 }
 
 public class MaintenanceTests
@@ -115,6 +138,29 @@ public class ProfileRulesTests
 
         p = Valid();
         p.ProteinGramsPerKg = 5;
+        ProfileRules.Validate(p, 2026).Should().NotBeNull();
+    }
+
+    [Theory]
+    [InlineData(-0.5, false)]
+    [InlineData(0, true)]
+    [InlineData(50, true)]
+    [InlineData(50.5, false)]
+    public void Bar_weight_must_be_0_to_50_kg(double bar, bool valid)
+    {
+        var p = Valid();
+        p.BarWeightKg = (decimal)bar;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Fact]
+    public void Plates_must_come_from_the_list()
+    {
+        var p = Valid();
+        p.PlatesKg = [20m, 0.5m];
+        ProfileRules.Validate(p, 2026).Should().BeNull();
+
+        p.PlatesKg = [20m, 7m];
         ProfileRules.Validate(p, 2026).Should().NotBeNull();
     }
 }

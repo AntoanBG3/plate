@@ -1,3 +1,5 @@
+using GymTracker.Core.Text;
+using GymTracker.Web.Features.Localization;
 using GymTracker.Web.Features.Training;
 using GymTracker.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -5,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymTracker.Web.Controllers;
 
 [Route("train/templates")]
-public class TemplatesController(TemplateService templates, ExerciseService exercises) : Controller
+public class TemplatesController(TemplateService templates, ExerciseService exercises, ExerciseSettingsService settings, Localizer localizer) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct) => View(await templates.ListAsync(ct));
@@ -18,7 +20,11 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> Edit(int id, CancellationToken ct) => View(await templates.GetAsync(id, ct));
+    public async Task<IActionResult> Edit(int id, CancellationToken ct)
+    {
+        var template = await templates.GetAsync(id, ct);
+        return View(new TemplateEditViewModel(template, await settings.ForAsync(template.Exercises.Select(e => e.ExerciseId), ct)));
+    }
 
     [HttpPost("{id:int}/rename")]
     public async Task<IActionResult> Rename(int id, string name, CancellationToken ct)
@@ -39,6 +45,13 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     {
         await templates.MoveAsync(id, direction, ct);
         return Redirect("/train/templates");
+    }
+
+    [HttpPost("{id:int}/duplicate")]
+    public async Task<IActionResult> Duplicate(int id, CancellationToken ct)
+    {
+        var copy = await templates.DuplicateAsync(id, name => localizer[new LocalText("{0} (copy)", name)], ct);
+        return Redirect($"/train/templates/{copy.Id}");
     }
 
     [HttpGet("{id:int}/add-exercise")]
@@ -75,6 +88,7 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     {
         var templateId = await templates.TemplateIdOfExerciseAsync(id, ct);
         await templates.RemoveExerciseAsync(id, ct);
+        TempData.Undo("Exercise removed.", $"/undo/template-exercise/{id}");
         return Redirect($"/train/templates/{templateId}");
     }
 }

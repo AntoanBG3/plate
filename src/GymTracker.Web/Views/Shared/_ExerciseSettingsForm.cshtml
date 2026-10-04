@@ -1,0 +1,14 @@
+@model ExerciseSettingsFormViewModel
+<div class="sheet-head"><span></span><span class="sheet-title" id="exercise-sheet-title">@L.Exercise(Model.Exercise)</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
+<form method="post" asp-antiforgery="true" action="/train/exercises/@Model.Exercise.Id/settings">
+    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+    <div class="list">
+        <div class="field-row stacked">
+            <label for="ex-note">@L["Note"]</label>
+            <textarea id="ex-note" name="note" rows="2" maxlength="200" class="textarea" style="background: none; padding: 0; box-shadow: none" placeholder="@L["For example: seat 4, neutral grip"]">@Model.Settings?.Note</textarea>
+        </div>
+        <div class="field-row"><label for="ex-bar">@L["Bar weight"]</label><input id="ex-bar" class="num" type="number" name="barWeightKg" value="@(Model.Settings?.BarWeightKg?.Kg())" min="0" max="50" step="any" inputmode="decimal" placeholder="@Model.ProfileBarKg.Kg()" /><span class="unit">@L["kg"]</span></div>
+    </div>
+    <p class="section-footer">@L["Leave the bar empty to use {0} kg for barbell exercises. Set it on any exercise to get the plate calculator, 0 for a plate-loaded machine.", Model.ProfileBarKg.Kg()]</p>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-4)">@L["Save"]</button>
+</form>

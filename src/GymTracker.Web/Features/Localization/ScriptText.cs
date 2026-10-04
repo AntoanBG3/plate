@@ -22,6 +22,9 @@ public static class ScriptText
         "Rest",
         "Next: {0}",
         "{0} kg × {1}",
+        // motion.js
+        "Undo",
+        "Set deleted.",
         // scanner.js
         "This browser can't open the camera. Type the digits or take a photo instead.",
         "Camera access was refused. Type the digits or take a photo instead.",

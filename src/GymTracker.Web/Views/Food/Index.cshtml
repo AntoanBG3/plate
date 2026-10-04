@@ -63,14 +63,27 @@
     var entries = day.For(meal).ToList();
     var mealTotals = day.TotalsFor(meal);
     <section class="section">
-        <h2 class="section-title">@L.Enum(meal)<span class="section-aside num">@(entries.Count > 0 ? L["{0} kcal", Math.Round(mealTotals.Kcal)] : "")</span></h2>
+        <div class="meal-head">
+            <h2 class="section-title">@L.Enum(meal)<span class="section-aside num">@(entries.Count > 0 ? L["{0} kcal", Math.Round(mealTotals.Kcal)] : "")</span></h2>
+            @if (entries.Count > 0)
+            {
+                <div class="menu-wrap">
+                    <button type="button" class="icon-btn" data-menu-trigger aria-expanded="false" aria-label="@L["Actions for {0}", L.Enum(meal)]">@Ui.Icon("more")</button>
+                    <div class="menu" role="menu">
+                        <button type="button" role="menuitem" hx-get="/food/saved-meals/new?date=@Iso(day.Date)&amp;meal=@meal" hx-target="#food-sheet-body" hx-swap="innerHTML" data-sheet-open="food-sheet">@L["Save as a meal"]@Ui.Icon("list")</button>
+                    </div>
+                </div>
+            }
+        </div>
         <div class="list">
             @foreach (var e in entries)
             {
                 <a href="/food/entries/@e.Id" class="row row-link">
                     <span class="row-main">
                         <span class="row-title" style="display: block">@e.Description</span>
-                        <span class="row-sub num" style="display: block">@L["{0} g · {1} kcal · {2} g protein", e.Grams.Kg(), Math.Round(e.Kcal), e.ProteinG.Kg(1)]</span>
+                        <span class="row-sub num" style="display: block">@(e.Source == EntrySource.Quick
+                            ? L["{0} kcal · {1} g protein", Math.Round(e.Kcal), e.ProteinG.Kg(1)]
+                            : L["{0} g · {1} kcal · {2} g protein", e.Grams.Kg(), Math.Round(e.Kcal), e.ProteinG.Kg(1)])</span>
                     </span>
                     @Ui.Icon("chevron", "row-chevron")
                 </a>
@@ -78,6 +91,9 @@
             <a class="row row-link" href="/food/add?date=@Iso(day.Date)&amp;meal=@meal" style="color: var(--accent-text)">
                 @Ui.Icon("plus", "icon-sm")<span class="row-main">@L[AddTo[meal]]</span>
             </a>
+            <button type="button" class="row row-link" hx-get="/food/quick?date=@Iso(day.Date)&amp;meal=@meal" hx-target="#quick-body" hx-swap="innerHTML" data-sheet-open="quick-sheet" style="width: 100%; color: var(--accent-text); text-align: left">
+                @Ui.Icon("plus", "icon-sm")<span class="row-main">@L["Quick add"]</span>
+            </button>
             @if (entries.Count == 0)
             {
                 <form method="post" asp-antiforgery="true" action="/food/copy" class="row" style="padding-top: 0; padding-bottom: 0">
@@ -88,6 +104,23 @@
             }
         </div>
     </section>
+}
+
+@section Overlays {
+    <div class="sheet" id="food-sheet" hidden>
+        <div class="sheet-scrim"></div>
+        <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="food-sheet-title">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <div id="food-sheet-body"></div>
+        </div>
+    </div>
+    <div class="sheet" id="quick-sheet" hidden>
+        <div class="sheet-scrim"></div>
+        <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="quick-title">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <div id="quick-body"></div>
+        </div>
+    </div>
 }
 
 @functions {

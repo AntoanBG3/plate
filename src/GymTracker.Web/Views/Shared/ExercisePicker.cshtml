@@ -14,6 +14,7 @@
 </div>
 
 <div id="exercise-groups">
+    @* Groups appear in the order the controller listed the exercises (ForSwap puts the same muscle first). *@
     @foreach (var group in Model.Exercises.GroupBy(e => e.PrimaryMuscle))
     {
         <section class="section" data-filter-group style="margin-top: var(--s-5)">

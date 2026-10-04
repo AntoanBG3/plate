@@ -1,19 +1,20 @@
-@model WorkoutTemplate
+@model TemplateEditViewModel
 @{
-    ViewData["Title"] = Model.Name;
+    var template = Model.Template;
+    ViewData["Title"] = template.Name;
     ViewData["BackUrl"] = "/train/templates";
     ViewData["BackLabel"] = L["Templates"];
-    var items = Model.Exercises.OrderBy(e => e.SortOrder).ToList();
+    var items = template.Exercises.OrderBy(e => e.SortOrder).ToList();
 }
 <header class="page-head">
-    <h1 class="large-title">@Model.Name</h1>
+    <h1 class="large-title">@template.Name</h1>
 </header>
 
-<form method="post" asp-antiforgery="true" action="/train/templates/@Model.Id/rename">
+<form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/rename">
     <div class="list">
         <div class="field-row">
             <label for="name">@L["Name"]</label>
-            <input id="name" type="text" name="name" value="@Model.Name" maxlength="100" required />
+            <input id="name" type="text" name="name" value="@template.Name" maxlength="100" required />
             <button type="submit" class="btn btn-plain">@L["Rename"]</button>
         </div>
     </div>
@@ -24,7 +25,13 @@
     var item = items[i];
     <section class="exercise">
         <div class="ex-head">
-            <div><h2 class="ex-name">@L.Exercise(item.Exercise)</h2></div>
+            <div>
+                <h2 class="ex-name">@L.Exercise(item.Exercise)</h2>
+                @if (Model.Settings.GetValueOrDefault(item.ExerciseId)?.Note is { } note)
+                {
+                    <p class="ex-note">@note</p>
+                }
+            </div>
             <div class="menu-wrap">
                 <button type="button" class="icon-btn" data-menu-trigger aria-expanded="false" aria-label="@L["Actions for {0}", L.Exercise(item.Exercise)]">@Ui.Icon("more")</button>
                 <div class="menu" role="menu">
@@ -36,7 +43,8 @@
                     {
                         <form method="post" asp-antiforgery="true" action="/train/templates/exercises/@item.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" role="menuitem">@L["Move down"]@Ui.Icon("down")</button></form>
                     }
-                    <form method="post" asp-antiforgery="true" action="/train/templates/exercises/@item.Id/remove" data-confirm="@L["Remove this exercise from the template?"]"><button type="submit" role="menuitem" class="danger">@L["Remove"]@Ui.Icon("trash")</button></form>
+                    <button type="button" role="menuitem" hx-get="/train/exercises/@item.ExerciseId/settings?returnUrl=@Uri.EscapeDataString($"/train/templates/{template.Id}")" hx-target="#exercise-sheet-body" hx-swap="innerHTML" data-sheet-open="exercise-sheet">@L["Notes & bar"]@Ui.Icon("pencil")</button>
+                    <form method="post" asp-antiforgery="true" action="/train/templates/exercises/@item.Id/remove"><button type="submit" role="menuitem" class="danger">@L["Remove"]@Ui.Icon("trash")</button></form>
                 </div>
             </div>
         </div>
@@ -51,8 +59,12 @@
 }
 
 <div class="btn-stack" style="margin-top: var(--s-6)">
-    <a class="btn btn-secondary" href="/train/templates/@Model.Id/add-exercise">@Ui.Icon("plus")@L["Add exercise"]</a>
-    <form method="post" asp-antiforgery="true" action="/train/templates/@Model.Id/archive" data-confirm="@L["Archive this template? Past workouts keep their history."]">
+    <a class="btn btn-secondary" href="/train/templates/@template.Id/add-exercise">@Ui.Icon("plus")@L["Add exercise"]</a>
+    <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/archive" data-confirm="@L["Archive this template? Past workouts keep their history."]">
         <button type="submit" class="btn btn-destructive btn-block">@L["Archive template"]</button>
     </form>
 </div>
+
+@section Overlays {
+    <partial name="_ExerciseSheet" />
+}

@@ -48,6 +48,8 @@ public class SettingsController(
             p.TargetRatePercentPerWeek = form.TargetRatePercentPerWeek ?? 0;
             p.ProteinGramsPerKg = form.ProteinGramsPerKg ?? 2.0m;
             p.DefaultWeightIncrementKg = form.DefaultWeightIncrementKg ?? 2.5m;
+            p.BarWeightKg = form.BarWeightKg ?? 20m;
+            p.PlatesKg = (form.PlatesKg ?? []).Distinct().OrderDescending().ToList();
         }, ct);
         TempData.Notice("Profile saved.");
         return Redirect("/settings");
@@ -63,7 +65,9 @@ public class SettingsController(
         GymTracker.Core.Domain.Goal Goal,
         decimal? TargetRatePercentPerWeek,
         decimal? ProteinGramsPerKg,
-        decimal? DefaultWeightIncrementKg);
+        decimal? DefaultWeightIncrementKg,
+        decimal? BarWeightKg,
+        List<decimal>? PlatesKg);
 
     [HttpPost("appearance")]
     public async Task<IActionResult> Appearance(GymTracker.Core.Domain.Theme theme, GymTracker.Core.Domain.Language language, CancellationToken ct)

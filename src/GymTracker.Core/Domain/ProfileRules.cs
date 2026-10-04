@@ -64,6 +64,16 @@ public static class ProfileRules
             return "Unknown time zone.";
         }
 
+        if (p.BarWeightKg is < 0 or > 50)
+        {
+            return "Bar weight must be between 0 and 50 kg.";
+        }
+
+        if (p.PlatesKg.Any(w => !UserProfile.PlateChoicesKg.Contains(w)))
+        {
+            return "Plate weights must be from the list.";
+        }
+
         return null;
     }
 }

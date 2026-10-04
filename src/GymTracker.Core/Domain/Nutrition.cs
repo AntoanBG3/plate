@@ -26,6 +26,9 @@ public enum EntrySource
     Ai,
     Manual,
     Recent,
+
+    /// <summary>Calories and macros typed directly, with no food and no grams.</summary>
+    Quick,
 }
 
 /// <summary>A reusable food definition. Shared (no owner) for the USDA subset, the Open Food Facts cache and manual barcode items.</summary>
@@ -63,6 +66,41 @@ public class FoodLogEntry
     public EntrySource Source { get; set; }
     public string? AiModel { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>Set when deleted; the row is hidden and can be restored for a while (undo), then purged.</summary>
+    public DateTimeOffset? DeletedAt { get; set; }
+}
+
+/// <summary>A named group of foods logged together often, copied from a logged meal.</summary>
+public class SavedMeal
+{
+    public const int MaxNameLength = 60;
+
+    public int Id { get; set; }
+    public string UserId { get; set; } = "";
+    public string Name { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; }
+    public List<SavedMealItem> Items { get; set; } = [];
+}
+
+/// <summary>A snapshot of one logged entry, with its stored totals, so later food edits don't change it.</summary>
+public class SavedMealItem
+{
+    public int Id { get; set; }
+    public int SavedMealId { get; set; }
+    public SavedMeal SavedMeal { get; set; } = null!;
+    public int SortOrder { get; set; }
+    public string Description { get; set; } = "";
+
+    /// <summary>0 for a quick entry, which has no amount.</summary>
+    public decimal Grams { get; set; }
+
+    public decimal Kcal { get; set; }
+    public decimal ProteinG { get; set; }
+    public decimal CarbsG { get; set; }
+    public decimal FatG { get; set; }
+    public int? FoodItemId { get; set; }
+    public EntrySource Source { get; set; }
 }
 
 public enum MaintenanceMethod
