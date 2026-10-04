@@ -1,6 +1,12 @@
+using System.Diagnostics;
 using System.Globalization;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using GymTracker.Core.Nutrition;
+using GymTracker.Core.Text;
 
 namespace GymTracker.Web.Integrations;
 
@@ -9,9 +15,82 @@ namespace GymTracker.Web.Integrations;
 /// parsed item is (SPEC 6.1). One request per parse, one Choice question per item. The wording below is the one
 /// measured in the Phase 0 evaluation; changing it means measuring again.
 /// </summary>
-public class JevFoodMatchDecider
+public class JevFoodMatchDecider(HttpClient http, ILogger<JevFoodMatchDecider> log)
 {
     public const string Jev113 = "typesafe/jev-1.13";
+
+    /// <summary>Per call; Phase 0 measured at most about 1 s. No retry: Rank's pick is the fallback.</summary>
+    internal TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(3);
+
+    private static readonly MatchQuestion TestQuestion = new(
+        new ParsedFoodItem("banana", "banana", 120, FoodState.NotApplicable, null, null, new Per100g(89, 1.1m, 23, 0.3m)),
+        [new MatchCandidate(1, "Bananas, raw", null, null, new Per100g(89, 1.1m, 23, 0.3m)), new MatchCandidate(2, "Pepper, banana, raw", null, null, new Per100g(27, 1.7m, 5.4m, 0.5m))]);
+
+    /// <summary>One decision per question, or null on any failure; logging food never waits on or fails because of Jev.</summary>
+    public async Task<MatchDecisions?> DecideAsync(string text, IReadOnlyList<MatchQuestion> questions, string apiKey, string model, CancellationToken ct) =>
+        (await CallAsync(text, questions, apiKey, model, ct)).Decisions;
+
+    /// <summary>Checks a key and model with one question ("a banana"). Null when it works, otherwise what went wrong.</summary>
+    public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct)
+    {
+        var (decisions, error) = await CallAsync("a banana", [TestQuestion], apiKey, model, ct);
+        return error ?? (decisions?.Items[0]?.FoodItemId == 1 ? null : new LocalText("The food matcher answered, but did not pick the banana for \"a banana\"."));
+    }
+
+    private async Task<(MatchDecisions? Decisions, LocalText? Error)> CallAsync(string text, IReadOnlyList<MatchQuestion> questions, string apiKey, string model, CancellationToken ct)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(Timeout);
+        var clock = Stopwatch.StartNew();
+        try
+        {
+            // Relative to the OpenRouter base URL (…/api/v1/), so tests can point it at a stub.
+            using var request = new HttpRequestMessage(HttpMethod.Post, "../alpha/decisions") { Content = JsonContent.Create(Body(model, text, questions)) };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            using var response = await http.SendAsync(request, timeout.Token);
+            var json = await response.Content.ReadAsStringAsync(timeout.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                log.LogWarning("Jev returned {Status} for {Model}: {Body}", (int)response.StatusCode, model, json.Length > 500 ? json[..500] : json);
+                return (null, response.StatusCode switch
+                {
+                    HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => new LocalText("OpenRouter rejected the API key ({0}).", (int)response.StatusCode),
+                    HttpStatusCode.PaymentRequired => new LocalText("The OpenRouter account is out of credits."),
+                    _ => new LocalText("The food matcher can't be reached right now ({0}).", (int)response.StatusCode),
+                });
+            }
+
+            JsonNode? node;
+            try
+            {
+                node = JsonNode.Parse(json);
+            }
+            catch (JsonException)
+            {
+                node = null;
+            }
+
+            if (Read(node, questions) is not { } decisions)
+            {
+                log.LogWarning("Jev returned no answers for {Model}", model);
+                return (null, new LocalText("The food matcher returned something unreadable."));
+            }
+
+            log.LogInformation("Jev {Model} decided {Count} items in {Ms} ms, {Tokens} input tokens, ${Cost}",
+                decisions.Model, questions.Count, clock.ElapsedMilliseconds, node?["usage"]?["input_tokens"]?.ToString(), node?["usage"]?["cost"]?.ToString());
+            return (decisions, null);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning("Jev took longer than {Timeout} for {Model}", Timeout, model);
+            return (null, new LocalText("The food matcher took too long."));
+        }
+        catch (HttpRequestException ex)
+        {
+            log.LogWarning(ex, "Jev request failed");
+            return (null, new LocalText("The food matcher can't be reached right now ({0}).", ex.StatusCode is { } s ? (int)s : 0));
+        }
+    }
 
     private const string Instructions =
         "Which database entry is the food described in foods.{0}? The diary_entry is what the user typed. " +

@@ -1,7 +1,9 @@
+using System.Net;
 using System.Text.Json.Nodes;
 using FluentAssertions;
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Integrations;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GymTracker.Web.Tests;
 
@@ -74,5 +76,101 @@ public class JevRequestTests
 
         result.Items.Should().HaveCount(2).And.OnlyContain(d => d == null);
         JevFoodMatchDecider.Read(JsonNode.Parse("""{"error":{"code":500}}"""), [Chicken, Rice]).Should().BeNull();
+    }
+}
+
+/// <summary>A fake Decisions API: answers every request with a fixed status and body, optionally after a delay.</summary>
+internal sealed class StubJev(HttpStatusCode status = HttpStatusCode.OK, string? body = null, TimeSpan? delay = null) : HttpMessageHandler
+{
+    public const string BananaPick = """
+        {"model":"typesafe/jev-1.13-20260917","answers":{"i0":{"type":"choice","choice":"f1","confidence":0.97,"probabilities":{"f1":0.98,"f2":0.01,"none":0.01}}},"usage":{"input_tokens":300,"cost":0.0000126}}
+        """;
+
+    public int Calls { get; private set; }
+    public Uri? SentUri { get; private set; }
+    public string? SentKey { get; private set; }
+    public JsonNode? SentBody { get; private set; }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        Calls++;
+        SentUri = request.RequestUri;
+        SentKey = request.Headers.Authorization?.Parameter;
+        SentBody = JsonNode.Parse(await request.Content!.ReadAsStringAsync(ct));
+        if (delay is { } d)
+        {
+            await Task.Delay(d, ct);
+        }
+
+        return new HttpResponseMessage(status) { Content = new StringContent(body ?? BananaPick, System.Text.Encoding.UTF8, "application/json") };
+    }
+
+    public JevFoodMatchDecider Decider() =>
+        new(new HttpClient(this, disposeHandler: false) { BaseAddress = new Uri("https://openrouter.test/api/v1/") }, NullLogger<JevFoodMatchDecider>.Instance);
+}
+
+public class JevCallTests
+{
+    private static readonly MatchQuestion Banana = new(
+        new ParsedFoodItem("banana", "банан", 120, FoodState.NotApplicable, null, null, new Per100g(89, 1.1m, 23, 0.3m)),
+        [new MatchCandidate(1, "Bananas, raw", "Банани", null, new Per100g(89, 1.1m, 23, 0.3m)), new MatchCandidate(2, "Pepper, banana, raw", null, null, new Per100g(27, 1.7m, 5.4m, 0.5m))]);
+
+    [Fact]
+    public async Task Posts_to_the_decisions_endpoint_with_the_key()
+    {
+        var stub = new StubJev();
+
+        var result = await stub.Decider().DecideAsync("a banana", [Banana], "sk-or-v1-key", JevFoodMatchDecider.Jev113, default);
+
+        stub.SentUri!.AbsolutePath.Should().Be("/api/alpha/decisions");
+        stub.SentKey.Should().Be("sk-or-v1-key");
+        stub.SentBody!["model"]!.GetValue<string>().Should().Be(JevFoodMatchDecider.Jev113);
+        result!.Items.Should().Equal(new MatchDecision(1, 0.97m));
+        result.Model.Should().Be("typesafe/jev-1.13-20260917");
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.TooManyRequests)]
+    [InlineData(HttpStatusCode.BadGateway)]
+    public async Task Http_errors_return_null_without_retrying(HttpStatusCode status)
+    {
+        var stub = new StubJev(status, """{"error":{"code":500,"message":"nope"}}""");
+
+        (await stub.Decider().DecideAsync("a banana", [Banana], "sk-or-v1-key", JevFoodMatchDecider.Jev113, default)).Should().BeNull();
+        stub.Calls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task A_slow_answer_returns_null_after_the_timeout()
+    {
+        var stub = new StubJev(delay: TimeSpan.FromSeconds(2));
+        var decider = stub.Decider();
+        decider.Timeout = TimeSpan.FromMilliseconds(200);
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        (await decider.DecideAsync("a banana", [Banana], "sk-or-v1-key", JevFoodMatchDecider.Jev113, default)).Should().BeNull();
+        clock.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public async Task Malformed_json_returns_null()
+    {
+        var stub = new StubJev(body: "<html>Bad gateway</html>");
+
+        (await stub.Decider().DecideAsync("a banana", [Banana], "sk-or-v1-key", JevFoodMatchDecider.Jev113, default)).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task The_test_decision_reports_what_went_wrong()
+    {
+        (await new StubJev().Decider().TestAsync("sk-or-v1-key", JevFoodMatchDecider.Jev113, default)).Should().BeNull();
+
+        var rejected = await new StubJev(HttpStatusCode.Unauthorized, """{"error":{"code":401}}""").Decider().TestAsync("sk-or-v1-key", JevFoodMatchDecider.Jev113, default);
+        rejected!.ToString().Should().Contain("rejected the API key (401)");
+
+        var wrong = await new StubJev(body: StubJev.BananaPick.Replace("\"f1\",\"confidence\"", "\"f2\",\"confidence\"")).Decider().TestAsync("sk-or-v1-key", JevFoodMatchDecider.Jev113, default);
+        wrong.Should().NotBeNull("the matcher picked the banana pepper for a banana");
     }
 }
