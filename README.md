@@ -118,7 +118,7 @@ In the zone settings for `peychev.uk`, for this host:
 - Speed → Optimization: turn off Rocket Loader. Scrape Shield: turn off Email Address Obfuscation. Web Analytics: no automatic injection for `gym.peychev.uk`. Each one injects scripts the Content Security Policy blocks.
 - Caching → Configuration: set Browser Cache TTL to "Respect Existing Headers".
 
-The app only answers requests addressed to `gym.peychev.uk` or `localhost` (`AllowedHosts` in the compose file). After the first deploy, `curl -sI https://gym.peychev.uk/account/login | head -1` must print `HTTP/2 200`; a 400 means the tunnel sends another Host header, which then needs adding to `AllowedHosts`.
+The app only answers requests addressed to `gym.peychev.uk` or `localhost` (`AllowedHosts` in the compose file). After the first deploy, `curl -s -o /dev/null -w "%{http_code}\n" https://gym.peychev.uk/account/login` must print `200`; a 400 means the tunnel sends another Host header, which then needs adding to `AllowedHosts`.
 
 ### Content Security Policy
 
