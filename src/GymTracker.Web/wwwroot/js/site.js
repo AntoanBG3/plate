@@ -54,13 +54,22 @@
             form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = true; });
         }
     });
-    function release(form) {
-        form.classList.remove("is-busy");
-        form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = false; });
-    }
-    window.addEventListener("pageshow", () => document.querySelectorAll("form.is-busy").forEach(release));
-    // A soft-navigation post that failed (nav.js): the form stays on screen, so make it usable again.
-    document.addEventListener("gym:formfail", (event) => release(event.target));
+    window.addEventListener("pageshow", () => {
+        document.querySelectorAll("form.is-busy").forEach((form) => {
+            form.classList.remove("is-busy");
+            form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = false; });
+        });
+    });
+
+    // The anti-forgery token for fetch requests: the layout puts it in <body hx-headers>, and nav.js keeps it
+    // current across page swaps. Read it at send time, never store it.
+    window.gymToken = () => {
+        try {
+            return JSON.parse(document.body.getAttribute("hx-headers") || "{}").RequestVerificationToken || "";
+        } catch {
+            return "";
+        }
+    };
 
     if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(() => {});

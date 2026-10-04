@@ -17,24 +17,24 @@
     var message = Notices.Read(TempData[Notices.MessageKey]);
 }
 <!DOCTYPE html>
-<html lang="@prefs.LangAttribute" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth">
+<html lang="@prefs.LangAttribute" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth" data-shell="@prefs.LangAttribute-@(Context.User.Identity?.IsAuthenticated == true ? "in" : "out")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     @switch (prefs.Theme)
     {
         case Theme.Light:
-            <meta name="theme-color" content="#f5f5f7" />
-            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+            <meta data-page-head name="theme-color" content="#f5f5f7" />
+            <meta data-page-head name="apple-mobile-web-app-status-bar-style" content="default" />
             break;
         case Theme.System:
-            <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
-            <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
-            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+            <meta data-page-head name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
+            <meta data-page-head name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+            <meta data-page-head name="apple-mobile-web-app-status-bar-style" content="default" />
             break;
         default:
-            <meta name="theme-color" content="#000000" />
-            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+            <meta data-page-head name="theme-color" content="#000000" />
+            <meta data-page-head name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
             break;
     }
     <meta name="apple-mobile-web-app-capable" content="yes" />

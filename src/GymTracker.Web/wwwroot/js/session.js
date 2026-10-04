@@ -41,15 +41,6 @@
     const loadQueue = () => read(QUEUE_KEY, []);
     const saveQueue = (queue) => write(QUEUE_KEY, queue.length ? queue : null);
 
-    function antiforgeryToken() {
-        // Read at send time: a set queued before a reload must use the current page's token.
-        try {
-            return JSON.parse(document.body.getAttribute("hx-headers") || "{}").RequestVerificationToken || "";
-        } catch {
-            return "";
-        }
-    }
-
     // ---- queue ----
 
     function rowFor(clientId) {
@@ -132,7 +123,7 @@
                 credentials: "same-origin",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
-                    "RequestVerificationToken": antiforgeryToken(),
+                    "RequestVerificationToken": window.gymToken(),
                     "HX-Request": "true",
                 },
                 body,
@@ -337,36 +328,48 @@
         ensureTicking();
     }
 
-    // The logic tick runs every 250 ms only while a rest timer is stored and the session page is shown.
+    // Two loops run only while a rest timer is set on the session page: animation frames for a smooth ring while
+    // the page is visible, and a 250 ms interval that keeps the logic (the beep) going while it is not.
     let tickTimer = null;
+    let frameId = 0;
 
     function ensureTicking() {
-        tick();
-        if (!tickTimer && sessionId && read(REST_KEY, null)) {
-            tickTimer = setInterval(() => {
-                tick();
-                if (!read(REST_KEY, null)) {
-                    stopTicking();
-                }
-            }, 250);
+        if (!tick() || tickTimer) {
+            return;
         }
+        tickTimer = setInterval(() => {
+            if (document.visibilityState !== "visible" && !tick()) {
+                stopTicking();
+            }
+        }, 250);
+        frameId = requestAnimationFrame(frame);
+    }
+
+    function frame() {
+        if (document.visibilityState === "visible" && !tick()) {
+            stopTicking();
+            return;
+        }
+        frameId = requestAnimationFrame(frame);
     }
 
     function stopTicking() {
         clearInterval(tickTimer);
         tickTimer = null;
+        cancelAnimationFrame(frameId);
     }
 
+    // Updates the timer on screen; returns whether a rest is still running.
     function tick() {
         const timer = document.getElementById("rest-timer");
         if (!timer) {
-            return;
+            return false;
         }
 
         const state = read(REST_KEY, null);
         if (!state || state.sessionId !== sessionId) {
             timer.hidden = true;
-            return;
+            return false;
         }
 
         const leftMs = Math.max(0, state.end - Date.now());
@@ -407,7 +410,10 @@
             if (window.gymSheet) {
                 window.gymSheet.hide();
             }
+            return false;
         }
+
+        return true;
     }
 
     // What comes after the rest: the first set not yet logged, with its suggested weight and reps.
@@ -429,16 +435,6 @@
                 ? t("Next: {0}", name) + " · " + t("{0} kg × {1}", kgValue, repsValue)
                 : t("Next: {0}", name);
         }
-    }
-
-    // Smooth ring while the timer is on screen; the 250 ms interval keeps logic running otherwise.
-    let frameId = 0;
-    function frame() {
-        const timer = document.getElementById("rest-timer");
-        if (timer && !timer.hidden && document.visibilityState === "visible") {
-            tick();
-        }
-        frameId = requestAnimationFrame(frame);
     }
 
     function adjustRest(byMs) {
@@ -499,14 +495,10 @@
         flush();
         keepAwake();
         ensureTicking();
-        if (document.getElementById("rest-timer")) {
-            frameId = requestAnimationFrame(frame);
-        }
         return () => {
             sessionId = null;
             sessionActive = false;
             stopTicking();
-            cancelAnimationFrame(frameId);
             if (wakeLock) {
                 wakeLock.release().catch(() => {});
                 wakeLock = null;

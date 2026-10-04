@@ -64,20 +64,8 @@
         });
     }
 
-    function token() {
-        const field = document.querySelector('input[name="__RequestVerificationToken"]');
-        if (field) {
-            return field.value;
-        }
-        try {
-            return JSON.parse(document.body.getAttribute("hx-headers") || "{}").RequestVerificationToken || "";
-        } catch {
-            return "";
-        }
-    }
-
     async function post(url, body) {
-        const headers = { RequestVerificationToken: token() };
+        const headers = { RequestVerificationToken: window.gymToken() };
         if (body) {
             headers["Content-Type"] = "application/json";
         }
@@ -137,9 +125,7 @@
 
     window.gymModule("passkey-add", (button) => {
         button.hidden = false;
-        const onClick = () => register(button);
-        button.addEventListener("click", onClick);
-        return () => button.removeEventListener("click", onClick);
+        button.addEventListener("click", () => register(button));
     });
 
     window.gymModule("passkey-login", (button) => {

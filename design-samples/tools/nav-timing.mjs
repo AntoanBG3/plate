@@ -2,8 +2,9 @@
 // and settled (no animation running). --mpa blocks nav.js to measure full page loads on the same build.
 // Usage: node design-samples/tools/nav-timing.mjs [baseUrl] [--rtt 150] [--mpa]
 import { chromium } from "playwright-core";
+import { appUrl, signIn } from "./app.mjs";
 
-const base = process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : "http://localhost:5130";
+const base = appUrl(process.argv[2]);
 const rttArg = process.argv.indexOf("--rtt");
 const rtt = rttArg > 0 ? Number(process.argv[rttArg + 1]) : 150;
 
@@ -14,10 +15,7 @@ if (mpa) {
     await context.route(/\/js\/nav\.js/, (route) => route.abort());
 }
 const page = await context.newPage();
-await page.goto(`${base}/account/login`);
-await page.fill('input[name="email"]', "demo@example.test");
-await page.fill('input[name="password"]', "demo-password-123");
-await Promise.all([page.waitForURL(/\/today/), page.click('button[type="submit"]')]);
+await signIn(page, base);
 
 const cdp = await context.newCDPSession(page);
 await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: rtt, downloadThroughput: 1.5e6, uploadThroughput: 750e3 });

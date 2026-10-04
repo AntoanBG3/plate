@@ -2,8 +2,9 @@
 // Usage: node design-samples/tools/nav-check.mjs [baseUrl]   (needs the demo account from seed-demo.sql)
 import { chromium } from "playwright-core";
 import assert from "node:assert/strict";
+import { appUrl, collectErrors, signIn } from "./app.mjs";
 
-const base = process.argv[2] || "http://localhost:5130";
+const base = appUrl(process.argv[2]);
 const browser = await chromium.launch({ channel: "chrome" });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, serviceWorkers: "allow" });
 const errors = [];
@@ -27,13 +28,10 @@ await context.addInitScript(() => {
 
 async function signedInPage() {
     const page = await context.newPage();
-    page.on("pageerror", (e) => errors.push(e.message));
-    page.on("console", (m) => m.type() === "error" && !m.text().includes("net::ERR_INTERNET_DISCONNECTED") && errors.push(m.text()));
-    await page.goto(`${base}/account/login`);
+    collectErrors(page, errors, (text) => text.includes("net::ERR_INTERNET_DISCONNECTED"));
+    await page.goto(`${base}/today`);
     if (page.url().includes("/account/login")) {
-        await page.fill('input[name="email"]', "demo@example.test");
-        await page.fill('input[name="password"]', "demo-password-123");
-        await Promise.all([page.waitForURL(/\/today/), page.click('button[type="submit"]')]);
+        await signIn(page, base);
     }
     await page.evaluate(() => { window.__doc = 1; });
     return page;

@@ -1,14 +1,15 @@
 // Registers a passkey in Settings with Chrome's virtual authenticator, signs out, signs in with it, removes it.
-// Usage: node design-samples/tools/passkey-check.mjs [screenshotDir]   (demo account, no passkeys yet)
+// Usage: node design-samples/tools/passkey-check.mjs [baseUrl] [screenshotDir]   (demo account, no passkeys yet)
 import { chromium } from "playwright-core";
+import { appUrl, collectErrors, signIn } from "./app.mjs";
 import assert from "node:assert/strict";
-const SP = process.argv[2] || ".", base = "http://localhost:5130";
+const base = appUrl(process.argv[2]);
+const SP = process.argv.slice(2).find((a) => !/^https?:/.test(a)) || ".";
 const browser = await chromium.launch({ channel: "chrome" });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: "dark" });
 const page = await context.newPage();
 const errors = [];
-page.on("pageerror", (e) => errors.push(e.message));
-page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+collectErrors(page, errors);
 // Chrome's virtual authenticator answers the autofill (conditional) request by itself, racing the button.
 // A phone only completes it when the user picks the passkey, so test the button path alone.
 await context.addInitScript(() => {
@@ -22,9 +23,7 @@ await cdp.send("WebAuthn.addVirtualAuthenticator", { options: { protocol: "ctap2
 
 await page.goto(`${base}/account/login`);
 await page.screenshot({ path: `${SP}/login-passkey.png` });
-await page.fill('input[name="email"]', "demo@example.test");
-await page.fill('input[name="password"]', "demo-password-123");
-await Promise.all([page.waitForURL(/\/today/), page.click('button[type="submit"]')]);
+await signIn(page, base);
 
 await page.goto(`${base}/settings`);
 await page.click("[data-passkey-add], [data-module=passkey-add]");

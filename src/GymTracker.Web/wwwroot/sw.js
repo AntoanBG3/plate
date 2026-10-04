@@ -1,7 +1,7 @@
 // Caches static files only (SPEC section 8). Pages and data always come from the server;
 // when a page can't be fetched, the offline page is shown instead. Static files carry ?v=<hash>,
 // so a cached copy of the exact URL is served without revalidating.
-const CACHE = "gym-static-v14";
+const CACHE = "gym-static-v15";
 const OFFLINE = "/offline.html";
 const PRECACHE = [
     OFFLINE,
@@ -50,7 +50,17 @@ function isStatic(url) {
     return url.origin === self.location.origin && /^\/(css|js|lib)\//.test(url.pathname);
 }
 
-async function staticResponse(request, url) {
+// Stores a newly fetched version and drops older versions of the same file.
+async function store(request, url, response) {
+    const cache = await caches.open(CACHE);
+    const keys = await cache.keys();
+    await Promise.all(keys
+        .filter((k) => new URL(k.url).pathname === url.pathname && k.url !== request.url)
+        .map((k) => cache.delete(k)));
+    await cache.put(request, response);
+}
+
+async function staticResponse(event, request, url) {
     const cache = await caches.open(CACHE);
     // Exact URL first: versioned URLs (?v=hash) never change, so no revalidation is needed.
     const exact = await cache.match(request);
@@ -60,11 +70,8 @@ async function staticResponse(request, url) {
     try {
         const response = await fetch(request);
         if (response.ok) {
-            const keys = await cache.keys();
-            await Promise.all(keys
-                .filter((k) => new URL(k.url).pathname === url.pathname && k.url !== request.url)
-                .map((k) => cache.delete(k)));
-            await cache.put(request, response.clone());
+            // The page gets the response now; storing it finishes in the background.
+            event.waitUntil(store(request, url, response.clone()));
         }
         return response;
     } catch {
@@ -82,7 +89,7 @@ self.addEventListener("fetch", (event) => {
     const url = new URL(request.url);
 
     if (isStatic(url)) {
-        event.respondWith(staticResponse(request, url));
+        event.respondWith(staticResponse(event, request, url));
         return;
     }
 

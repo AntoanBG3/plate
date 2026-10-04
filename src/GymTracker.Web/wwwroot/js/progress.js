@@ -181,10 +181,10 @@ window.gymModule("progress", () => {
     draw(animateOnce());
 
     // Redraw with the new colours when the theme or the phone's appearance changes.
-    const themeObserver = new MutationObserver(() => draw(false));
+    const redraw = () => draw(false);
+    const themeObserver = new MutationObserver(redraw);
     themeObserver.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
     const scheme = window.matchMedia("(prefers-color-scheme: dark)");
-    const redraw = () => draw(false);
     scheme.addEventListener("change", redraw);
 
     return () => {
