@@ -71,7 +71,7 @@ public record TemplateEditViewModel(WorkoutTemplate Template, IReadOnlyDictionar
 
 public record ExerciseSettingsFormViewModel(Exercise Exercise, UserExerciseSettings? Settings, decimal ProfileBarKg, string ReturnUrl);
 
-public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises);
+public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises, Muscle? FirstMuscle = null);
 
 public record FoodDayViewModel(GymTracker.Web.Features.Food.DayLog Day, DateOnly Today, GymTracker.Web.Features.Food.DailyTargets Targets);
 

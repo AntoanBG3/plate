@@ -191,6 +191,26 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         await db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Replaces the exercise in a session slot, keeping its sets, rep range, increment and rest. Only before any set
+    /// is logged on it, so history never mixes two exercises. The template is not changed.
+    /// </summary>
+    public async Task<int> SwapExerciseAsync(int sessionExerciseId, int exerciseId, CancellationToken ct)
+    {
+        var item = await db.SessionExercises.Include(e => e.Sets).SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct)
+            ?? throw new NotFoundException();
+        if (item.Sets.Count > 0)
+        {
+            throw new ValidationException("Only an exercise with no sets logged can be swapped.");
+        }
+
+        var exercise = await db.Exercises.SingleOrDefaultAsync(e => e.Id == exerciseId && !e.IsArchived, ct)
+            ?? throw new NotFoundException("Exercise not found.");
+        item.ExerciseId = exercise.Id;
+        await db.SaveChangesAsync(ct);
+        return item.SessionId;
+    }
+
     public async Task<int> MoveExerciseAsync(int sessionExerciseId, int direction, CancellationToken ct)
     {
         var item = await db.SessionExercises.SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct) ?? throw new NotFoundException();

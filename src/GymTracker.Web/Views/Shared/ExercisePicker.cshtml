@@ -14,7 +14,7 @@
 </div>
 
 <div id="exercise-groups">
-    @foreach (var group in Model.Exercises.GroupBy(e => e.PrimaryMuscle))
+    @foreach (var group in Model.Exercises.GroupBy(e => e.PrimaryMuscle).OrderBy(g => g.Key == Model.FirstMuscle ? 0 : 1))
     {
         <section class="section" data-filter-group style="margin-top: var(--s-5)">
             <h2 class="section-header">@L.Enum(group.Key)</h2>

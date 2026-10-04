@@ -297,6 +297,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
   - One card per exercise in order. Each card shows the progression suggestion and its reason, then a row per working set with weight and reps inputs pre-filled from the suggestion, and a check button.
   - Each exercise's menu has Notes & bar (a note shown under the exercise name, and an optional bar weight); the same item is on the template edit page.
   - Barbell exercises (or any with a bar weight set) have a Plates button: the plates per side for a weight, from the bar and plates in Settings. It finds the closest load at or below the weight with the fewest plates, starting from the last working set or the suggestion.
+  - Swap an exercise for another one in this session only, while it has no sets logged (warmups included); same-muscle exercises are listed first, and the slot keeps its sets, rep range, increment and rest.
   - Tapping the check button saves the set immediately via htmx and starts the rest timer.
   - Add warmup set, add extra set, add exercise, reorder, and remove exercise.
   - Rest timer pinned to the bottom of the screen: counts down from the exercise's rest time and plays a short sound at zero, with +30 s and skip buttons. iOS has no `navigator.vibrate`, so there is no vibration. To make the sound reliable on iPhone:

@@ -1,6 +1,8 @@
 using GymTracker.Core.Training;
 using GymTracker.Web.Features;
+using GymTracker.Core.Text;
 using GymTracker.Web.Features.Analytics;
+using GymTracker.Web.Features.Localization;
 using GymTracker.Web.Features.Profile;
 using GymTracker.Web.Features.Training;
 using GymTracker.Web.ViewModels;
@@ -15,7 +17,8 @@ public class TrainController(
     ExerciseService exercises,
     TrainingAnalytics analytics,
     ExerciseSettingsService settings,
-    ProfileService profiles) : Controller
+    ProfileService profiles,
+    Localizer localizer) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct) =>
@@ -85,6 +88,22 @@ public class TrainController(
         await sessions.AddExerciseAsync(id, exerciseId, ct);
         return Redirect($"/train/sessions/{id}");
     }
+
+    [HttpGet("session-exercises/{id:int}/swap")]
+    public async Task<IActionResult> Swap(int id, CancellationToken ct)
+    {
+        var item = await sessions.GetExerciseAsync(id, ct);
+        return View("ExercisePicker", new ExercisePickerViewModel(
+            new LocalText("Swap {0}", localizer.Exercise(item.Exercise)),
+            $"/train/session-exercises/{id}/swap",
+            $"/train/sessions/{item.SessionId}",
+            ExerciseOrder.ForSwap(await exercises.ListAsync(ct), item.Exercise),
+            item.Exercise.PrimaryMuscle));
+    }
+
+    [HttpPost("session-exercises/{id:int}/swap")]
+    public async Task<IActionResult> Swap(int id, int exerciseId, CancellationToken ct) =>
+        Redirect($"/train/sessions/{await sessions.SwapExerciseAsync(id, exerciseId, ct)}");
 
     [HttpPost("session-exercises/{id:int}/move")]
     public async Task<IActionResult> MoveExercise(int id, int direction, CancellationToken ct) =>
