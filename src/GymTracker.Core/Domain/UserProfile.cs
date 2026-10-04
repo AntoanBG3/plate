@@ -17,4 +17,13 @@ public class UserProfile
     public decimal DefaultWeightIncrementKg { get; set; } = 2.5m;
     public Theme Theme { get; set; } = Theme.Dark;
     public Language Language { get; set; } = Language.English;
+
+    /// <summary>The plates the calculator offers by default: a common gym set.</summary>
+    public static readonly decimal[] DefaultPlatesKg = [25m, 20m, 15m, 10m, 5m, 2.5m, 1.25m];
+
+    /// <summary>Every plate Settings lets you tick.</summary>
+    public static readonly decimal[] PlateChoicesKg = [25m, 20m, 15m, 10m, 5m, 2.5m, 2m, 1.25m, 1m, 0.5m];
+
+    public decimal BarWeightKg { get; set; } = 20m;
+    public List<decimal> PlatesKg { get; set; } = [.. DefaultPlatesKg];
 }

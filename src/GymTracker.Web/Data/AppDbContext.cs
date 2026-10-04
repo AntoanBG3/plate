@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<WorkoutSession> Sessions => Set<WorkoutSession>();
     public DbSet<SessionExercise> SessionExercises => Set<SessionExercise>();
     public DbSet<SetEntry> Sets => Set<SetEntry>();
+    public DbSet<UserExerciseSettings> ExerciseSettings => Set<UserExerciseSettings>();
     public DbSet<BodyweightEntry> Bodyweights => Set<BodyweightEntry>();
     public DbSet<FoodItem> FoodItems => Set<FoodItem>();
     public DbSet<FoodLogEntry> FoodLog => Set<FoodLogEntry>();
@@ -41,6 +42,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(p => p.TargetRatePercentPerWeek).HasPrecision(4, 2);
             e.Property(p => p.ProteinGramsPerKg).HasPrecision(4, 2);
             e.Property(p => p.DefaultWeightIncrementKg).HasPrecision(6, 2);
+            e.Property(p => p.BarWeightKg).HasPrecision(5, 2);
             e.Property(p => p.Theme).HasConversion<string>().HasMaxLength(10);
             e.Property(p => p.Language).HasConversion<string>().HasMaxLength(12);
             e.HasQueryFilter(p => p.UserId == CurrentUserId);
@@ -99,6 +101,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.Rpe).HasPrecision(3, 1);
             e.HasIndex(x => x.ClientId).IsUnique();
             e.HasQueryFilter(x => x.SessionExercise.Session.UserId == CurrentUserId);
+        });
+
+        builder.Entity<UserExerciseSettings>(e =>
+        {
+            e.HasKey(x => new { x.UserId, x.ExerciseId });
+            e.Property(x => x.Note).HasMaxLength(UserExerciseSettings.MaxNoteLength);
+            e.Property(x => x.BarWeightKg).HasPrecision(5, 2);
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Exercise>().WithMany().HasForeignKey(x => x.ExerciseId).OnDelete(DeleteBehavior.Cascade);
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
         });
 
         builder.Entity<BodyweightEntry>(e =>

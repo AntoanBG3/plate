@@ -25,7 +25,7 @@
 
 @foreach (var exercise in session.Exercises)
 {
-    <partial name="_ExerciseCard" model="new ExerciseCardViewModel(exercise, Model.Suggestions.GetValueOrDefault(exercise.Id))" />
+    <partial name="_ExerciseCard" model="Model.CardFor(exercise)" />
 }
 @if (session.Exercises.Count == 0)
 {
@@ -71,6 +71,7 @@
 <div id="session" data-module="session" data-session-id="@session.Id" data-active="@(session.IsActive ? "true" : "false")" hidden></div>
 
 @section Overlays {
+    <partial name="_ExerciseSheet" />
     @if (session.IsActive)
     {
         <div id="rest-timer" class="rest-timer" hidden>

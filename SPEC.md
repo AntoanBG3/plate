@@ -93,6 +93,7 @@ Units: weights in kilograms (`decimal(6,2)`), energy in kcal, macros in grams. D
 - `TargetRatePercentPerWeek` (decimal, e.g. 0.5 means 0.5% of bodyweight per week; ignored for Maintain)
 - `ProteinGramsPerKg` (default 2.0)
 - `DefaultWeightIncrementKg` (default 2.5)
+- `BarWeightKg` (default 20) and `PlatesKg` (the plates the gym has; default 25, 20, 15, 10, 5, 2.5, 1.25), used by the plate calculator
 
 ### Training
 
@@ -104,6 +105,11 @@ Units: weights in kilograms (`decimal(6,2)`), energy in kcal, macros in grams. D
 Muscle enum: Chest, Back, Shoulders, Biceps, Triceps, Forearms, Quads, Hamstrings, Glutes, Calves, Abs.
 
 Seed about 40 common exercises (bench press, incline dumbbell press, squat, Romanian deadlift, deadlift, pull-up, lat pulldown, barbell row, cable row, overhead press, lateral raise, leg press, leg curl, leg extension, calf raise, curls, triceps pushdown, etc.).
+
+**UserExerciseSettings**
+- `UserId`, `ExerciseId` (composite key)
+- `Note` (up to 200 characters, e.g. "seat 4, neutral grip"), `BarWeightKg` (nullable; overrides the profile's bar, and turns the plate calculator on for non-barbell exercises)
+- Exercises are shared seed rows, so per-user notes live here.
 
 **WorkoutTemplate**
 - `Id`, `UserId`, `Name` (e.g. "Upper A"), `SortOrder`, `IsArchived`
@@ -289,6 +295,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - List of templates with Start buttons; option to start an empty freestyle session.
 - **Active session view:**
   - One card per exercise in order. Each card shows the progression suggestion and its reason, then a row per working set with weight and reps inputs pre-filled from the suggestion, and a check button.
+  - Each exercise's menu has Notes & bar (a note shown under the exercise name, and an optional bar weight); the same item is on the template edit page.
   - Tapping the check button saves the set immediately via htmx and starts the rest timer.
   - Add warmup set, add extra set, add exercise, reorder, and remove exercise.
   - Rest timer pinned to the bottom of the screen: counts down from the exercise's rest time and plays a short sound at zero, with +30 s and skip buttons. iOS has no `navigator.vibrate`, so there is no vibration. To make the sound reliable on iPhone:
@@ -317,6 +324,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 ### Settings
 - Profile fields from section 4, with validation including the safety limits in 5.6.
 - Custom exercises.
+- Bar and plates: the profile bar weight and which plates the gym has.
 - Export all of the user's data as CSV files in a zip.
 - Change password, log out.
 

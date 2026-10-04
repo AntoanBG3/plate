@@ -1,4 +1,5 @@
 using GymTracker.Web.Features.Analytics;
+using GymTracker.Web.Features.Profile;
 using GymTracker.Web.Features.Training;
 using GymTracker.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymTracker.Web.Controllers;
 
 [Route("train")]
-public class TrainController(SessionService sessions, TemplateService templates, ExerciseService exercises, TrainingAnalytics analytics) : Controller
+public class TrainController(
+    SessionService sessions,
+    TemplateService templates,
+    ExerciseService exercises,
+    TrainingAnalytics analytics,
+    ExerciseSettingsService settings,
+    ProfileService profiles) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct) =>
@@ -27,7 +34,11 @@ public class TrainController(SessionService sessions, TemplateService templates,
     public async Task<IActionResult> Session(int id, CancellationToken ct)
     {
         var session = await sessions.GetAsync(id, ct);
-        return View(new SessionViewModel(session, await analytics.SuggestionsAsync(session, ct)));
+        return View(new SessionViewModel(
+            session,
+            await analytics.SuggestionsAsync(session, ct),
+            await settings.ForAsync(session.Exercises.Select(e => e.ExerciseId), ct),
+            (await profiles.GetAsync(ct)).BarWeightKg));
     }
 
     [HttpGet("sessions/{id:int}/summary")]

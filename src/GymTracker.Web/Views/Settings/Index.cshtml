@@ -73,6 +73,24 @@
             <div class="field-row"><label for="timeZoneId">@L["Time zone"]</label><input id="timeZoneId" type="text" name="timeZoneId" value="@Model.TimeZoneId" maxlength="64" autocapitalize="off" spellcheck="false" /></div>
         </div>
         <p class="section-footer">@L["Cuts are capped at 1% and bulks at 0.5% of bodyweight per week. The weight jump is how much is added when every set reaches the top of its range."]</p>
+    </section>
+
+    <section class="section">
+        <h2 class="section-title">@L["Bar and plates"]</h2>
+        <div class="list">
+            <div class="field-row"><label for="bar">@L["Bar weight"]</label><input id="bar" class="num" type="number" name="barWeightKg" value="@Model.BarWeightKg.Kg()" min="0" max="50" step="any" inputmode="decimal" /><span class="unit">@L["kg"]</span></div>
+            <fieldset class="field-row stacked" style="border: 0; margin: 0">
+                <legend class="sr-only">@L["Plates you have"]</legend>
+                <span aria-hidden="true">@L["Plates you have"]</span>
+                <div class="plate-choices">
+                    @foreach (var plate in UserProfile.PlateChoicesKg)
+                    {
+                        <label class="plate-choice"><input type="checkbox" name="platesKg" value="@plate.Kg()" checked="@Model.PlatesKg.Contains(plate)" /><span class="num">@plate.Kg()</span></label>
+                    }
+                </div>
+            </fieldset>
+        </div>
+        <p class="section-footer">@L["The plate calculator uses this bar and these plates. Set a different bar for one exercise under Notes & bar."]</p>
         <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-4)">@L["Save profile"]</button>
     </section>
 </form>

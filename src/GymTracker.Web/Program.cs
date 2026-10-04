@@ -55,6 +55,7 @@ builder.Services.AddScoped<BodyAnalytics>();
 builder.Services.AddScoped<TemplateService>();
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<ExerciseService>();
+builder.Services.AddScoped<ExerciseSettingsService>();
 builder.Services.AddScoped<TrainingAnalytics>();
 builder.Services.AddScoped<FoodItemService>();
 builder.Services.AddScoped<FoodMatcher>();

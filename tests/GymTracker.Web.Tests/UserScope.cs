@@ -17,6 +17,7 @@ public sealed class UserScope : IAsyncDisposable
         Sessions = new SessionService(Db, currentUser, new ProfileLookup(Db), TimeProvider.System);
         Bodyweights = new BodyweightService(Db, currentUser);
         Exercises = new ExerciseService(Db);
+        ExerciseSettings = new ExerciseSettingsService(Db, currentUser);
         FoodDatabase = new FakeFoodDatabase();
         Foods = new GymTracker.Web.Features.Food.FoodItemService(Db, currentUser, FoodDatabase);
         Matcher = new GymTracker.Web.Features.Food.FoodMatcher(Foods);
@@ -34,6 +35,7 @@ public sealed class UserScope : IAsyncDisposable
     public SessionService Sessions { get; }
     public BodyweightService Bodyweights { get; }
     public ExerciseService Exercises { get; }
+    public ExerciseSettingsService ExerciseSettings { get; }
 
     public ValueTask DisposeAsync() => Db.DisposeAsync();
 }

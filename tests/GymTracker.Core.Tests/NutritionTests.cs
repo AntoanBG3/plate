@@ -117,6 +117,29 @@ public class ProfileRulesTests
         p.ProteinGramsPerKg = 5;
         ProfileRules.Validate(p, 2026).Should().NotBeNull();
     }
+
+    [Theory]
+    [InlineData(-0.5, false)]
+    [InlineData(0, true)]
+    [InlineData(50, true)]
+    [InlineData(50.5, false)]
+    public void Bar_weight_must_be_0_to_50_kg(double bar, bool valid)
+    {
+        var p = Valid();
+        p.BarWeightKg = (decimal)bar;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Fact]
+    public void Plates_must_come_from_the_list()
+    {
+        var p = Valid();
+        p.PlatesKg = [20m, 0.5m];
+        ProfileRules.Validate(p, 2026).Should().BeNull();
+
+        p.PlatesKg = [20m, 7m];
+        ProfileRules.Validate(p, 2026).Should().NotBeNull();
+    }
 }
 
 public class BarcodeTests

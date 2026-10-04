@@ -31,9 +31,24 @@ public record SetRowViewModel(int SessionExerciseId, bool IsWarmup, SetEntry? Lo
     public static SetRowViewModel For(SetEntry set) => new(set.SessionExerciseId, set.IsWarmup, set, set.ClientId);
 }
 
-public record SessionViewModel(WorkoutSession Session, IReadOnlyDictionary<int, ProgressionSuggestion?> Suggestions);
+public record SessionViewModel(
+    WorkoutSession Session,
+    IReadOnlyDictionary<int, ProgressionSuggestion?> Suggestions,
+    IReadOnlyDictionary<int, UserExerciseSettings> Settings,
+    decimal ProfileBarKg)
+{
+    public ExerciseCardViewModel CardFor(SessionExercise exercise)
+    {
+        var settings = Settings.GetValueOrDefault(exercise.ExerciseId);
+        return new ExerciseCardViewModel(
+            exercise,
+            Suggestions.GetValueOrDefault(exercise.Id),
+            settings?.Note,
+            PlateMath.BarFor(exercise.Exercise.Equipment, settings?.BarWeightKg, ProfileBarKg));
+    }
+}
 
-public record ExerciseCardViewModel(SessionExercise Exercise, ProgressionSuggestion? Suggestion)
+public record ExerciseCardViewModel(SessionExercise Exercise, ProgressionSuggestion? Suggestion, string? Note = null, decimal? BarKg = null)
 {
     /// <summary>The target for the n-th working set (0-based), repeating the last one past the planned count.</summary>
     public SetTarget? TargetFor(int index) =>
@@ -49,6 +64,10 @@ public record ProgressViewModel(
     VolumeComparison Volume,
     GymTracker.Web.Features.Body.WeightChart Weight,
     IReadOnlyList<GymTracker.Web.Features.Body.CalorieDay> Calories);
+
+public record TemplateEditViewModel(WorkoutTemplate Template, IReadOnlyDictionary<int, UserExerciseSettings> Settings);
+
+public record ExerciseSettingsFormViewModel(Exercise Exercise, UserExerciseSettings? Settings, decimal ProfileBarKg, string ReturnUrl);
 
 public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises);
 

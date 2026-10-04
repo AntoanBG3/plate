@@ -391,6 +391,13 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .ex-head { display: flex; align-items: flex-end; gap: var(--s-2); padding: 0 0 var(--s-2) var(--s-1); }
 .ex-head > div:first-child { flex: 1; min-width: 0; }
 .ex-name { font-size: var(--text-title-2); line-height: 1.27; font-weight: var(--weight-bold); letter-spacing: 0.016em; overflow-wrap: anywhere; }
+.ex-note { margin-top: 2px; font-size: var(--text-footnote); color: var(--label-2); overflow-wrap: anywhere; }
+.plate-choices { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-2); }
+.plate-choice { position: relative; display: inline-flex; }
+.plate-choice input { position: absolute; opacity: 0; inset: 0; margin: 0; }
+.plate-choice span { display: inline-grid; place-items: center; min-width: 52px; min-height: var(--tap); padding: 0 var(--s-3); border-radius: var(--r-md); background: var(--fill); color: var(--label); font-weight: var(--weight-semibold); }
+.plate-choice input:checked + span { background: var(--accent); color: var(--on-accent); }
+.plate-choice input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ex-meta { font-size: var(--text-subhead); color: var(--label-2); margin-top: 2px; }
 .icon-btn { width: var(--tap); height: var(--tap); display: grid; place-items: center; border-radius: 50%; color: var(--accent-text); flex: none; }
 .icon-btn .icon { width: 22px; height: 22px; }

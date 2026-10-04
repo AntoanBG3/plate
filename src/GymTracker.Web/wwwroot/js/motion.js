@@ -265,6 +265,7 @@
         const opener = event.target.closest("[data-sheet-open]");
         if (opener) {
             event.preventDefault();
+            closeMenus();
             showSheet(document.getElementById(opener.dataset.sheetOpen));
             return;
         }
