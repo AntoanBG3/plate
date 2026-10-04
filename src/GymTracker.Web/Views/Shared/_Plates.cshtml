@@ -1,0 +1,39 @@
+@model PlatesViewModel
+<div class="sheet-head"><span></span><span class="sheet-title" id="plates-title">@L["Plates"]</span><button type="button" class="sheet-close" data-sheet-close>@L["Done"]</button></div>
+<div class="list">
+    <div class="field-row">
+        <label for="plates-weight">@L["Weight"]</label>
+        <input id="plates-weight" class="num" type="number" name="weight" value="@(Model.TargetKg?.Kg())" min="0" max="500" step="any" inputmode="decimal"
+               hx-get="/train/session-exercises/@Model.SessionExerciseId/plates" hx-trigger="input changed delay:300ms" hx-target="#plates-result" hx-select="#plates-result" hx-swap="outerHTML" />
+        <span class="unit">@L["kg"]</span>
+    </div>
+</div>
+<div id="plates-result" class="plates-result" aria-live="polite">
+    @if (Model.Load is not { } load)
+    {
+        <p class="empty" data-plates-empty>@L["Enter a weight."]</p>
+    }
+    else if (load.BelowBar)
+    {
+        <p class="empty">@L["That's less than the bar ({0} kg).", Model.BarKg.Kg()]</p>
+    }
+    else
+    {
+        <p class="footnote">@L["Per side"]</p>
+        <div class="plate-stack">
+            @if (load.PerSide.Count == 0)
+            {
+                <span class="subhead">@L["Just the bar"]</span>
+            }
+            @foreach (var plate in load.PerSide)
+            {
+                <span class="plate num" data-plate="@plate.Kg()">@plate.Kg()</span>
+            }
+        </div>
+        <p class="headline num" data-total="@load.TotalKg.Kg()">@L["{0} kg in total", load.TotalKg.Kg()]</p>
+        @if (!load.Exact)
+        {
+            <p class="footnote">@L["Closest you can load: {0} kg", load.TotalKg.Kg()]</p>
+        }
+    }
+</div>

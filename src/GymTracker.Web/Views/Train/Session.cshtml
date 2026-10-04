@@ -72,6 +72,13 @@
 
 @section Overlays {
     <partial name="_ExerciseSheet" />
+    <div class="sheet" id="plates-sheet" hidden>
+        <div class="sheet-scrim"></div>
+        <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="plates-title">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <div id="plates-body"></div>
+        </div>
+    </div>
     @if (session.IsActive)
     {
         <div id="rest-timer" class="rest-timer" hidden>

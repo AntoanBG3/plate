@@ -1,3 +1,5 @@
+using GymTracker.Core.Training;
+using GymTracker.Web.Features;
 using GymTracker.Web.Features.Analytics;
 using GymTracker.Web.Features.Profile;
 using GymTracker.Web.Features.Training;
@@ -91,6 +93,19 @@ public class TrainController(
     [HttpPost("session-exercises/{id:int}/remove")]
     public async Task<IActionResult> RemoveExercise(int id, CancellationToken ct) =>
         Redirect($"/train/sessions/{await sessions.RemoveExerciseAsync(id, ct)}");
+
+    /// <summary>The plate calculator sheet: the typed weight, else the last working set, else the suggestion.</summary>
+    [HttpGet("session-exercises/{id:int}/plates")]
+    public async Task<IActionResult> Plates(int id, decimal? weight, decimal? suggested, CancellationToken ct)
+    {
+        var exercise = await sessions.GetExerciseAsync(id, ct);
+        var profile = await profiles.GetAsync(ct);
+        var bar = PlateMath.BarFor(exercise.Exercise.Equipment, (await settings.GetAsync(exercise.ExerciseId, ct))?.BarWeightKg, profile.BarWeightKg)
+            ?? throw new NotFoundException();
+        var target = weight ?? await sessions.LastWorkingWeightAsync(id, ct) ?? suggested;
+        var load = target is > 0 ? PlateMath.PerSide(target.Value, bar, profile.PlatesKg) : null;
+        return PartialView("_Plates", new PlatesViewModel(id, bar, target, load));
+    }
 
     /// <summary>An empty row for an extra working set or a warmup, appended by htmx.</summary>
     [HttpGet("session-exercises/{id:int}/row")]

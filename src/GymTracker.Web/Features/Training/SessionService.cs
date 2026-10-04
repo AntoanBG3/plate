@@ -157,6 +157,14 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         return set;
     }
 
+    /// <summary>The weight of the last working set logged on this session exercise, or null.</summary>
+    public Task<decimal?> LastWorkingWeightAsync(int sessionExerciseId, CancellationToken ct) =>
+        db.Sets
+            .Where(s => s.SessionExerciseId == sessionExerciseId && !s.IsWarmup)
+            .OrderByDescending(s => s.SetNumber)
+            .Select(s => (decimal?)s.WeightKg)
+            .FirstOrDefaultAsync(ct);
+
     public async Task<SessionExercise> GetExerciseAsync(int sessionExerciseId, CancellationToken ct) =>
         await db.SessionExercises
             .Include(e => e.Exercise)

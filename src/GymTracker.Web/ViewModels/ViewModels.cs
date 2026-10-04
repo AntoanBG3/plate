@@ -65,6 +65,8 @@ public record ProgressViewModel(
     GymTracker.Web.Features.Body.WeightChart Weight,
     IReadOnlyList<GymTracker.Web.Features.Body.CalorieDay> Calories);
 
+public record PlatesViewModel(int SessionExerciseId, decimal BarKg, decimal? TargetKg, PlateLoad? Load);
+
 public record TemplateEditViewModel(WorkoutTemplate Template, IReadOnlyDictionary<int, UserExerciseSettings> Settings);
 
 public record ExerciseSettingsFormViewModel(Exercise Exercise, UserExerciseSettings? Settings, decimal ProfileBarKg, string ReturnUrl);

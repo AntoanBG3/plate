@@ -50,6 +50,10 @@
         <div class="ex-actions">
             <button type="button" hx-get="/train/session-exercises/@Ex.Id/row?warmup=false" hx-target="#rows-@Ex.Id" hx-swap="beforeend">@Ui.Icon("plus")@L["Add set"]</button>
             <button type="button" hx-get="/train/session-exercises/@Ex.Id/row?warmup=true" hx-target="#warmups-@Ex.Id" hx-swap="beforeend">@Ui.Icon("plus")@L["Warm-up"]</button>
+            @if (Model.BarKg is not null)
+            {
+                <button type="button" hx-get="/train/session-exercises/@Ex.Id/plates?suggested=@(Model.TargetFor(0)?.WeightKg.Kg())" hx-target="#plates-body" hx-swap="innerHTML" data-sheet-open="plates-sheet">@Ui.Icon("list")@L["Plates"]</button>
+            }
         </div>
     </div>
 </section>
