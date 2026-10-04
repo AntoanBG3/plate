@@ -6,7 +6,7 @@ All five build phases are in place:
 
 - Workouts: templates, sessions with double-progression suggestions, a rest timer, and an offline queue so sets logged on bad signal are never lost.
 - Training charts: estimated 1RM per exercise and weekly sets per muscle.
-- Food: logging by text (parsed by an LLM through OpenRouter, numbers taken from the food database), barcode, search and recents.
+- Food: logging by text (parsed by an LLM through OpenRouter, numbers taken from the food database, optionally with a decision model choosing the database food), barcode, search and recents.
 - Targets: trend weight, a weekly adaptive maintenance estimate, and calorie and protein targets for a cut, maintenance or bulk, with weight and calorie charts.
 - Settings: profile, CSV export of all your data, password change and logging out everywhere.
 
@@ -84,7 +84,12 @@ docker compose -f docker/docker-compose.yml up -d --build
 docker builder prune -f                      # the SDK build cache sits on the boot SSD
 ```
 
-For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the app under Settings → Food text parser (stored encrypted with the Data Protection keys, shared by both accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The model is picked from OpenRouter's catalog on the same Settings page (default `openai/gpt-6-luna`, or `OPENROUTER_MODEL`). Add an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
+For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the app under Settings → AI models (stored encrypted with the Data Protection keys, shared by both accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The same page has one model per AI task:
+
+- Food parser: picked from OpenRouter's catalog (default `openai/gpt-6-luna`, or `OPENROUTER_MODEL`).
+- Food matcher: Off (the database ranking picks the food, the default) or TypeSafe's Jev 1.13, a decision model that chooses which database food each item is, or says none fits. It uses the same key and costs about $0.0002 per entry. Picking it runs a test decision. Entries record which Jev version chose their match (`match_model` in the export); `docker logs gymtracker-app | grep "Jev "` shows each call's latency and cost.
+
+Add an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
 
 The app joins the external `tunnel` network and publishes no host port. Memory limits are 256 MB per container; replace them with values from Beszel after a week of use.
 

@@ -17,8 +17,8 @@ public class SettingsController(
     ProfileService profiles,
     DataExport export,
     OpenRouterSettings openRouter,
-    OpenRouterModels models,
     OpenRouterFoodParser parser,
+    JevFoodMatchDecider matcher,
     UserManager<AppUser> users,
     SignInManager<AppUser> signIn,
     Localizer localizer) : Controller
@@ -29,7 +29,7 @@ public class SettingsController(
         var user = await users.GetUserAsync(User);
         ViewData["Email"] = user?.Email;
         ViewData["Passkeys"] = user is null ? [] : await users.GetPasskeysAsync(user);
-        ViewData["Parser"] = await ParserStatusAsync(ct);
+        ViewData["OpenRouter"] = await OpenRouterStatusAsync(ct);
         return View(await profiles.GetAsync(ct));
     }
 
@@ -80,10 +80,16 @@ public class SettingsController(
         return Redirect("/settings");
     }
 
-    private async Task<ParserStatus> ParserStatusAsync(CancellationToken ct)
+    private async Task<OpenRouterStatus> OpenRouterStatusAsync(CancellationToken ct)
     {
-        var model = await openRouter.GetModelAsync(ct);
-        return new ParserStatus(await openRouter.KeyStatusAsync(ct), model, await models.FindAsync(model, ct));
+        var tasks = new List<AiTaskStatus>();
+        foreach (var task in Enum.GetValues<AiTask>())
+        {
+            var model = await openRouter.GetModelAsync(task, ct);
+            tasks.Add(new AiTaskStatus(task, model, await openRouter.FindModelAsync(task, model, ct)));
+        }
+
+        return new OpenRouterStatus(await openRouter.KeyStatusAsync(ct), tasks);
     }
 
     [HttpPost("openrouter-key")]
@@ -112,21 +118,32 @@ public class SettingsController(
         return Redirect("/settings");
     }
 
-    [HttpGet("model")]
-    public async Task<IActionResult> Model(CancellationToken ct) =>
-        View(new ModelPickerViewModel(await models.ListAsync(ct), await openRouter.GetModelAsync(ct)));
+    [HttpGet("model/{task}")]
+    public async Task<IActionResult> Model(string task, CancellationToken ct) =>
+        AiTasks.FromSlug(task) is { } t
+            ? View(new ModelPickerViewModel(t, await openRouter.ListModelsAsync(t, ct), await openRouter.GetModelAsync(t, ct)))
+            : NotFound();
 
-    [HttpPost("model")]
-    public async Task<IActionResult> SetModel(string? modelId, CancellationToken ct)
+    [HttpPost("model/{task}")]
+    public async Task<IActionResult> SetModel(string task, string? modelId, CancellationToken ct)
     {
-        await openRouter.SetModelAsync(modelId ?? "", ct);
-        if (await openRouter.GetKeyAsync(ct) is null)
+        if (AiTasks.FromSlug(task) is not { } t)
+        {
+            return NotFound();
+        }
+
+        await openRouter.SetModelAsync(t, modelId ?? "", ct);
+        if (await openRouter.GetKeyAsync(ct) is not { } key || (t == AiTask.Matcher && modelId == AiTasks.Off))
         {
             TempData.Notice("Model saved.");
         }
-        else
+        else if (t == AiTask.Parser)
         {
             await ReportTestAsync(new LocalText("Model saved: food parsing works."), new LocalText("Model saved, but it doesn't work yet: {0}"), ct);
+        }
+        else
+        {
+            Report(await matcher.TestAsync(key, modelId!, ct), new LocalText("Model saved: food matching works."), new LocalText("Model saved, but it doesn't work yet: {0}"));
         }
 
         return Redirect("/settings");
@@ -141,9 +158,14 @@ public class SettingsController(
             return;
         }
 
-        if (await parser.TestAsync(key, await openRouter.GetModelAsync(ct), ct) is { } error)
+        Report(await parser.TestAsync(key, await openRouter.GetModelAsync(AiTask.Parser, ct), ct), works, fails);
+    }
+
+    private void Report(LocalText? error, LocalText works, LocalText fails)
+    {
+        if (error is not null)
         {
-            // The parser's error is a whole sentence, translated here because TempData carries plain text.
+            // The error is a whole sentence, translated here because TempData carries plain text.
             TempData.Error(fails with { Args = [localizer[error]] });
         }
         else

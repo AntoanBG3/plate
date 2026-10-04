@@ -40,7 +40,8 @@ const screens = [
     ["food-barcode-found", `/food/barcode?date=${day(0)}&meal=Snack&code=3801234567898`],
     ["food-entry", `/food/entries/${ids.entry}`],
     ["settings", "/settings"],
-    ["settings-model", "/settings/model"],
+    ["settings-model-parser", "/settings/model/parser"],
+    ["settings-model-matcher", "/settings/model/matcher"],
     ["not-found", "/train/sessions/999999"],
 ];
 

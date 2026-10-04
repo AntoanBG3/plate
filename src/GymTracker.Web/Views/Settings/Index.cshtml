@@ -2,7 +2,7 @@
 @using GymTracker.Web.Integrations
 @{
     ViewData["Title"] = L["Settings"];
-    var parser = (ParserStatus)ViewData["Parser"]!;
+    var openRouter = (OpenRouterStatus)ViewData["OpenRouter"]!;
 }
 <header class="page-head">
     <h1 class="large-title">@L["Settings"]</h1>
@@ -96,13 +96,13 @@
 </form>
 
 <section class="section">
-    <h2 class="section-title">@L["Food text parser"]</h2>
+    <h2 class="section-title">@L["AI models"]</h2>
     <div class="list">
         <div class="row">
             <span class="row-icon neutral">@Ui.Icon("key")</span>
             <span class="row-main">
                 <span class="row-title">
-                    @switch (parser.Key.Source)
+                    @switch (openRouter.Key.Source)
                     {
                         case KeySource.Settings:
                             @L["OpenRouter, with the key saved here"]
@@ -115,20 +115,23 @@
                             break;
                     }
                 </span>
-                @if (parser.Key.Last4 is not null)
+                @if (openRouter.Key.Last4 is not null)
                 {
-                    <span class="row-sub" style="display: block">@L["Key ending {0}", parser.Key.Last4]</span>
+                    <span class="row-sub" style="display: block">@L["Key ending {0}", openRouter.Key.Last4]</span>
                 }
             </span>
         </div>
-        <a class="row row-link" href="/settings/model">
-            <span class="row-icon neutral">@Ui.Icon("text")</span>
-            <span class="row-main">
-                <span class="row-title">@(parser.ModelInfo?.Name ?? parser.Model)</span>
-                <span class="row-sub" style="display: block">@(parser.ModelInfo is { } info ? L[info.Price] : L["Model"])</span>
-            </span>
-            @Ui.Icon("chevron", "row-chevron")
-        </a>
+        @foreach (var task in openRouter.Tasks)
+        {
+            <a class="row row-link" href="/settings/model/@AiTasks.Slug(task.Task)">
+                <span class="row-icon neutral">@Ui.Icon(task.Task == AiTask.Parser ? "text" : "search")</span>
+                <span class="row-main">
+                    <span class="row-title">@(task.Task == AiTask.Parser ? L["Food parser"] : L["Food matcher"])</span>
+                    <span class="row-sub" style="display: block">@(task.Model == AiTasks.Off ? L["Off: database ranking only"] : task.ModelInfo?.Name ?? task.Model)@(task.ModelInfo is { } info && task.Model != AiTasks.Off ? " · " + L[info.Price] : "")</span>
+                </span>
+                @Ui.Icon("chevron", "row-chevron")
+            </a>
+        }
         <form method="post" asp-antiforgery="true" action="/settings/openrouter-key">
             <div class="field-row stacked">
                 <label for="apiKey" class="sr-only">@L["New key"]</label>
@@ -136,12 +139,12 @@
             </div>
             <div class="row" style="padding-top: 0; padding-bottom: 0"><button type="submit" class="btn btn-plain" style="padding: 0">@L["Save and test key"]</button></div>
         </form>
-        @if (parser.Key.Source != KeySource.None)
+        @if (openRouter.Key.Source != KeySource.None)
         {
             <form method="post" asp-antiforgery="true" action="/settings/openrouter-key/test" class="row" style="padding-top: 0; padding-bottom: 0">
                 <button type="submit" class="btn btn-plain" style="padding: 0">@L["Test key"]</button>
             </form>
-            @if (parser.Key.Source == KeySource.Settings)
+            @if (openRouter.Key.Source == KeySource.Settings)
             {
                 <form method="post" asp-antiforgery="true" action="/settings/openrouter-key/remove" class="row" style="padding-top: 0; padding-bottom: 0">
                     <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--destructive)">@L["Remove key"]</button>
@@ -150,13 +153,13 @@
         }
     </div>
     <p class="section-footer">
-        @(parser.Key.Source switch
+        @(openRouter.Key.Source switch
         {
             KeySource.Environment => L["A key saved here replaces the one from the server's .env file."],
             KeySource.None => L["Without a key, typed food is split up by a simple built-in parser."],
-            _ => L["Typed food is read by the model above; the numbers come from the food database."],
+            _ => L["The parser reads typed food; the matcher picks which database food each item is, or says none fits. The numbers come from the food database."],
         })
-        @L["The key and model are shared by both accounts; the key is stored encrypted."]
+        @L["The key and models are shared by both accounts; the key is stored encrypted."]
     </p>
 </section>
 

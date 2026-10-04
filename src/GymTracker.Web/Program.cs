@@ -86,10 +86,18 @@ builder.Services.AddHttpClient<OpenRouterFoodParser>(c =>
     OpenRouterClient(c);
     c.Timeout = TimeSpan.FromSeconds(40);
 });
+builder.Services.AddHttpClient<JevFoodMatchDecider>(c =>
+{
+    OpenRouterClient(c);
+    // The decider cancels each call after 3 s itself; this is only a backstop.
+    c.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddScoped<OpenRouterSettings>();
 
 // OpenRouter when a key is set (in Settings or OPENROUTER_API_KEY), otherwise a simple built-in parser.
 builder.Services.AddScoped<IFoodParser, SwitchingFoodParser>();
+// The matcher model picked in Settings when a key is set; otherwise the database ranking alone.
+builder.Services.AddScoped<IFoodMatchDecider, SwitchingMatchDecider>();
 
 builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>
 {

@@ -34,7 +34,7 @@ public class NutritionTests(PostgresFixture fixture)
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
 
-        var items = await s.Matcher.ResolveAsync(
+        var items = await s.Matcher.ResolveAsync("",
         [
             Parsed("chicken breast", 200, FoodState.Raw),
             Parsed("white rice", 150, FoodState.Cooked),
@@ -48,7 +48,7 @@ public class NutritionTests(PostgresFixture fixture)
         items[2].MatchedName.Should().StartWith("Bananas, raw");
         items.Should().OnlyContain(i => i.Confidence != Confidence.Low, "all three are in the USDA data");
 
-        var potatoes = (await s.Matcher.ResolveAsync([Parsed("potatoes, boiled", 200, FoodState.Cooked)], default)).Single();
+        var potatoes = (await s.Matcher.ResolveAsync("", [Parsed("potatoes, boiled", 200, FoodState.Cooked)], default)).Single();
         potatoes.MatchedName.Should().Contain("Potatoes").And.NotContain(", skin,", "the skin on its own is not what \"potatoes\" means");
     }
 
@@ -70,7 +70,7 @@ public class NutritionTests(PostgresFixture fixture)
         }
 
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
-        var items = await s.Matcher.ResolveAsync(
+        var items = await s.Matcher.ResolveAsync("",
         [
             new ParsedFoodItem("bean soup", $"боб чорба {tag}", 400, FoodState.NotApplicable, null, null, new Per100g(60, 4, 8, 1)),
             new ParsedFoodItem("chicken breast, skinless", $"пилешко месо {tag}", 150, FoodState.Cooked, null, null, new Per100g(165, 31, 0, 3.6m)),
@@ -85,7 +85,7 @@ public class NutritionTests(PostgresFixture fixture)
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
 
-        var item = (await s.Matcher.ResolveAsync([new ParsedFoodItem("zzqx florp", "zzqx florp", 50, FoodState.NotApplicable, null, null, new Per100g(300, 10, 10, 1))], default)).Single();
+        var item = (await s.Matcher.ResolveAsync("", [new ParsedFoodItem("zzqx florp", "zzqx florp", 50, FoodState.NotApplicable, null, null, new Per100g(300, 10, 10, 1))], default)).Single();
 
         item.FoodItemId.Should().BeNull();
         item.Confidence.Should().Be(Confidence.Low);
