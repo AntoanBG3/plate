@@ -411,7 +411,7 @@ public static class FeedbackCommand
 
     private static void WriteDigest(TextWriter o, Digest d)
     {
-        o.WriteLine($"Since {When(d.Since)}:");
+        o.WriteLine($"Server version {Features.Diagnostics.AppVersion.Current}. Since {When(d.Since)}:");
         o.WriteLine($"  {d.Reports.Count} reports, {d.Errors.Count} errors seen, {d.Parses} parses ({d.Confirmed} saved, {d.Corrected} corrected), ratings {d.RatedUp} up / {d.RatedDown} down");
         o.WriteLine();
         o.WriteLine("Reports:");
