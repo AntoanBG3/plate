@@ -105,7 +105,10 @@ public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? Ai
 public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result);
 
 /// <param name="ModelInfo">The current model's catalog entry, or null when the catalog can't be loaded or no longer lists it.</param>
-public record ParserStatus(GymTracker.Web.Integrations.OpenRouterKeyStatus Key, string Model, GymTracker.Web.Integrations.OpenRouterModel? ModelInfo);
+/// <param name="ModelInfo">Null when the model isn't in the task's list (e.g. OpenRouter's list can't be loaded).</param>
+public record AiTaskStatus(GymTracker.Web.Integrations.AiTask Task, string Model, GymTracker.Web.Integrations.OpenRouterModel? ModelInfo);
+
+public record OpenRouterStatus(GymTracker.Web.Integrations.OpenRouterKeyStatus Key, IReadOnlyList<AiTaskStatus> Tasks);
 
 /// <param name="Models">Null when OpenRouter's model list can't be loaded.</param>
-public record ModelPickerViewModel(IReadOnlyList<GymTracker.Web.Integrations.OpenRouterModel>? Models, string Current);
+public record ModelPickerViewModel(GymTracker.Web.Integrations.AiTask Task, IReadOnlyList<GymTracker.Web.Integrations.OpenRouterModel>? Models, string Current);

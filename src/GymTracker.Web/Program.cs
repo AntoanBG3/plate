@@ -96,6 +96,8 @@ builder.Services.AddScoped<OpenRouterSettings>();
 
 // OpenRouter when a key is set (in Settings or OPENROUTER_API_KEY), otherwise a simple built-in parser.
 builder.Services.AddScoped<IFoodParser, SwitchingFoodParser>();
+// The matcher model picked in Settings when a key is set; otherwise the database ranking alone.
+builder.Services.AddScoped<IFoodMatchDecider, SwitchingMatchDecider>();
 
 builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>
 {

@@ -3,6 +3,7 @@ using FluentAssertions;
 using GymTracker.Web.Features.Training;
 using GymTracker.Web.Integrations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GymTracker.Web.Tests;
 
@@ -119,14 +120,30 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable
         AppFactory.IsRedirectTo(response, "/today").Should().BeTrue();
         (await client.GetStringAsync("/today")).Should().Contain("Logged today: 82.4 kg, trend 82.4 kg");
 
-        (await client.GetStringAsync("/settings")).Should().Contain("Food text parser").And.Contain("No OpenRouter key").And.Contain(OpenRouterOptions.DefaultModel);
+        (await client.GetStringAsync("/settings")).Should().Contain("AI models").And.Contain("No OpenRouter key").And.Contain(OpenRouterOptions.DefaultModel).And.Contain("Off: database ranking only");
 
         // The test app can't reach OpenRouter, so there is no model list and no model can be picked.
-        (await client.GetStringAsync("/settings/model")).Should().Contain("be loaded right now");
+        (await client.GetStringAsync("/settings/model/parser")).Should().Contain("be loaded right now");
         var settingsToken = await AppFactory.TokenAsync(client, "/settings");
-        var pick = await AppFactory.PostAsync(client, "/settings/model", settingsToken, new() { ["modelId"] = "openai/gpt-x" });
+        var pick = await AppFactory.PostAsync(client, "/settings/model/parser", settingsToken, new() { ["modelId"] = "openai/gpt-x" });
         pick.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await pick.Content.ReadAsStringAsync()).Should().Contain("model list can't be loaded");
+
+        // The matcher's models are a fixed list, so one can be picked without OpenRouter; no key means no test call.
+        (await client.GetStringAsync("/settings/model/matcher")).Should().Contain("Jev 1.13").And.Contain("Off: database ranking only");
+        try
+        {
+            var matcher = await AppFactory.PostAsync(client, "/settings/model/matcher", settingsToken, new() { ["modelId"] = JevFoodMatchDecider.Jev113 });
+            AppFactory.IsRedirectTo(matcher, "/settings").Should().BeTrue();
+            (await client.GetStringAsync("/settings")).Should().Contain("Jev 1.13");
+        }
+        finally
+        {
+            using var scope = app.Services.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<GymTracker.Web.Data.AppDbContext>().AppSettings.Where(x => x.Name == AiTasks.SettingName(AiTask.Matcher)).ExecuteDeleteAsync();
+        }
+
+        (await client.GetAsync("/settings/model/nonsense")).StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         var progress = await client.GetStringAsync("/progress?range=4w");
         progress.Should().Contain("id=\"weight-data\"").And.Contain("Trend now: <strong>82.4 kg</strong>");

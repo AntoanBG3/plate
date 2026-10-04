@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
 using FluentAssertions;
+using GymTracker.Core.Nutrition;
 using GymTracker.Web.Data;
 using GymTracker.Web.Features;
 using GymTracker.Web.Integrations;
@@ -169,16 +170,23 @@ public class OpenRouterSettingsTests(PostgresFixture fixture)
     }
 
     [Fact]
-    public async Task The_model_comes_from_settings_then_the_environment_then_the_default()
+    public async Task Each_task_has_its_own_model()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
         try
         {
-            (await Store(s).GetModelAsync(default)).Should().Be(OpenRouterOptions.DefaultModel);
-            (await Store(s, model: "openai/gpt-x").GetModelAsync(default)).Should().Be("openai/gpt-x");
+            (await Store(s).GetModelAsync(AiTask.Parser, default)).Should().Be(OpenRouterOptions.DefaultModel);
+            (await Store(s, model: "openai/gpt-x").GetModelAsync(AiTask.Parser, default)).Should().Be("openai/gpt-x");
+            (await Store(s).GetModelAsync(AiTask.Matcher, default)).Should().Be(AiTasks.Off);
 
-            await Store(s).SetModelAsync("openai/gpt-x", default);
-            (await Store(s, model: "google/gemini-3.5-flash-lite").GetModelAsync(default)).Should().Be("openai/gpt-x");
+            await Store(s).SetModelAsync(AiTask.Matcher, JevFoodMatchDecider.Jev113, default);
+            (await Store(s).GetModelAsync(AiTask.Matcher, default)).Should().Be(JevFoodMatchDecider.Jev113);
+            (await Store(s).GetModelAsync(AiTask.Parser, default)).Should().Be(OpenRouterOptions.DefaultModel, "the parser keeps its own model");
+
+            // A model picked before the split is stored under the old name and keeps working for the parser.
+            s.Db.AppSettings.Add(new AppSetting { Name = "OpenRouter:Model", Value = "openai/gpt-x", UpdatedAt = DateTimeOffset.UtcNow });
+            await s.Db.SaveChangesAsync();
+            (await Store(s, model: "google/gemini-3.5-flash-lite").GetModelAsync(AiTask.Parser, default)).Should().Be("openai/gpt-x");
         }
         finally
         {
@@ -187,15 +195,48 @@ public class OpenRouterSettingsTests(PostgresFixture fixture)
     }
 
     [Theory]
-    [InlineData("openai/gpt-x:batch")]
-    [InlineData("meta/plain")]
-    [InlineData("made/up")]
-    public async Task Only_listed_models_can_be_picked(string id)
+    [InlineData(AiTask.Parser, "openai/gpt-x:batch")]
+    [InlineData(AiTask.Parser, "meta/plain")]
+    [InlineData(AiTask.Parser, "made/up")]
+    [InlineData(AiTask.Parser, JevFoodMatchDecider.Jev113)]
+    [InlineData(AiTask.Matcher, "openai/gpt-x")]
+    [InlineData(AiTask.Matcher, "~typesafe/jev-latest")]
+    public async Task Only_listed_models_can_be_picked_per_task(AiTask task, string id)
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
 
-        await Store(s).Invoking(x => x.SetModelAsync(id, default)).Should().ThrowAsync<ValidationException>();
-        (await s.Db.AppSettings.AnyAsync(x => x.Name == OpenRouterSettings.ModelSettingName && x.Value == id)).Should().BeFalse();
+        await Store(s).Invoking(x => x.SetModelAsync(task, id, default)).Should().ThrowAsync<ValidationException>();
+        (await s.Db.AppSettings.AnyAsync(x => x.Name == AiTasks.SettingName(task) && x.Value == id)).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task The_matcher_runs_only_with_a_key_and_a_model()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var jev = new StubJev();
+        var services = new ServiceCollection().AddSingleton(jev.Decider()).BuildServiceProvider();
+        MatchQuestion[] banana = [new(new GymTracker.Core.Nutrition.ParsedFoodItem("banana", "banana", 120, GymTracker.Core.Nutrition.FoodState.NotApplicable, null, null, new GymTracker.Core.Nutrition.Per100g(89, 1, 23, 0)),
+            [new MatchCandidate(1, "Bananas, raw", null, null, new GymTracker.Core.Nutrition.Per100g(89, 1, 23, 0))])];
+        try
+        {
+            await Store(s).SetModelAsync(AiTask.Matcher, JevFoodMatchDecider.Jev113, default);
+            (await new SwitchingMatchDecider(Store(s), services).DecideAsync("a banana", banana, default)).Should().BeNull("there is no key");
+            jev.Calls.Should().Be(0);
+
+            await Store(s).SetModelAsync(AiTask.Matcher, AiTasks.Off, default);
+            (await new SwitchingMatchDecider(Store(s, EnvironmentKey), services).DecideAsync("a banana", banana, default)).Should().BeNull("the matcher is off");
+            jev.Calls.Should().Be(0);
+
+            await Store(s).SetModelAsync(AiTask.Matcher, JevFoodMatchDecider.Jev113, default);
+            var decided = await new SwitchingMatchDecider(Store(s, EnvironmentKey), services).DecideAsync("a banana", banana, default);
+            decided!.Items.Should().Equal(new MatchDecision(1, 0.97m));
+            jev.Calls.Should().Be(1);
+            jev.SentKey.Should().Be(EnvironmentKey);
+        }
+        finally
+        {
+            await ClearAsync(s);
+        }
     }
 
     [Fact]
@@ -203,7 +244,7 @@ public class OpenRouterSettingsTests(PostgresFixture fixture)
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
 
-        await Store(s, stub: new StubOpenRouter { ModelsDown = true }).Invoking(x => x.SetModelAsync("openai/gpt-x", default))
+        await Store(s, stub: new StubOpenRouter { ModelsDown = true }).Invoking(x => x.SetModelAsync(AiTask.Parser, "openai/gpt-x", default))
             .Should().ThrowAsync<ValidationException>();
     }
 

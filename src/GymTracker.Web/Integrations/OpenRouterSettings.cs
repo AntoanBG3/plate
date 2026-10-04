@@ -31,7 +31,6 @@ public class OpenRouterSettings(
     ILogger<OpenRouterSettings> log)
 {
     public const string KeySettingName = "OpenRouter:ApiKey";
-    public const string ModelSettingName = "OpenRouter:Model";
     public const int MaxLength = 200;
 
     private readonly IDataProtector protector = protection.CreateProtector("GymTracker.Settings.OpenRouterApiKey");
@@ -58,21 +57,32 @@ public class OpenRouterSettings(
     public async Task ClearKeyAsync(CancellationToken ct) =>
         await db.AppSettings.Where(s => s.Name == KeySettingName).ExecuteDeleteAsync(ct);
 
-    public async Task<string> GetModelAsync(CancellationToken ct) =>
-        await StoredAsync(ModelSettingName, ct)
-        ?? (string.IsNullOrWhiteSpace(options.Value.Model) ? OpenRouterOptions.DefaultModel : options.Value.Model.Trim());
+    /// <summary>The model picked for a task in Settings, else its default (the parser's from configuration).</summary>
+    public async Task<string> GetModelAsync(AiTask task, CancellationToken ct) =>
+        await StoredAsync(AiTasks.SettingName(task), ct) ?? task switch
+        {
+            AiTask.Parser => string.IsNullOrWhiteSpace(options.Value.Model) ? OpenRouterOptions.DefaultModel : options.Value.Model.Trim(),
+            _ => AiTasks.Off,
+        };
 
-    /// <summary>Only models in OpenRouter's current catalog that can return structured JSON are accepted.</summary>
-    public async Task SetModelAsync(string id, CancellationToken ct)
+    /// <summary>The models a task can use; null when the parser's list can't be loaded from OpenRouter.</summary>
+    public async Task<IReadOnlyList<OpenRouterModel>?> ListModelsAsync(AiTask task, CancellationToken ct) =>
+        task == AiTask.Parser ? await catalog.ListAsync(ct) : AiTasks.MatcherModels;
+
+    public async Task<OpenRouterModel?> FindModelAsync(AiTask task, string id, CancellationToken ct) =>
+        (await ListModelsAsync(task, ct))?.FirstOrDefault(m => m.Id == id);
+
+    /// <summary>Only listed models are accepted: for the parser, catalog models that can return structured JSON.</summary>
+    public async Task SetModelAsync(AiTask task, string id, CancellationToken ct)
     {
-        var models = await catalog.ListAsync(ct)
+        var models = await ListModelsAsync(task, ct)
             ?? throw new Features.ValidationException("OpenRouter's model list can't be loaded right now. Try again later.");
         if (models.All(m => m.Id != id))
         {
-            throw new Features.ValidationException("That model can't parse food.");
+            throw new Features.ValidationException(task == AiTask.Parser ? "That model can't parse food." : "That model can't match food.");
         }
 
-        await SaveAsync(ModelSettingName, id, ct);
+        await SaveAsync(AiTasks.SettingName(task), id, ct);
     }
 
     private async Task SaveAsync(string name, string value, CancellationToken ct)
@@ -118,6 +128,21 @@ public class SwitchingFoodParser(OpenRouterSettings settings, IServiceProvider s
 {
     public async Task<GymTracker.Core.Nutrition.FoodParseResult> ParseAsync(string text, CancellationToken ct) =>
         await settings.GetKeyAsync(ct) is { } key
-            ? await services.GetRequiredService<OpenRouterFoodParser>().ParseAsync(text, key, await settings.GetModelAsync(ct), ct)
+            ? await services.GetRequiredService<OpenRouterFoodParser>().ParseAsync(text, key, await settings.GetModelAsync(AiTask.Parser, ct), ct)
             : await new FakeFoodParser().ParseAsync(text, ct);
+}
+
+/// <summary>Asks the matcher model picked in Settings when there is a key; otherwise no decision, so the ranking decides.</summary>
+public class SwitchingMatchDecider(OpenRouterSettings settings, IServiceProvider services) : GymTracker.Core.Nutrition.IFoodMatchDecider
+{
+    public async Task<GymTracker.Core.Nutrition.MatchDecisions?> DecideAsync(string text, IReadOnlyList<GymTracker.Core.Nutrition.MatchQuestion> questions, CancellationToken ct)
+    {
+        var model = await settings.GetModelAsync(AiTask.Matcher, ct);
+        if (model == AiTasks.Off || await settings.GetKeyAsync(ct) is not { } key)
+        {
+            return null;
+        }
+
+        return await services.GetRequiredService<JevFoodMatchDecider>().DecideAsync(text, questions, key, model, ct);
+    }
 }
