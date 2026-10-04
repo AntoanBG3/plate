@@ -10,7 +10,7 @@ namespace GymTracker.Web.Integrations;
 
 public class OpenRouterOptions
 {
-    public const string DefaultModel = "google/gemini-3.5-flash-lite";
+    public const string DefaultModel = "openai/gpt-6-luna";
 
     public string ApiKey { get; set; } = "";
 

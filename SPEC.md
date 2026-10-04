@@ -34,7 +34,7 @@ Build in the phases at the end of this document. Each phase must be usable on it
 | Front-end delivery | No CDNs. Pinned copies of every library (htmx, Alpine, Chart.js, the barcode scanner and its `.wasm`) are vendored into `wwwroot/lib` and precached by the service worker |
 | Database | PostgreSQL 18, EF Core with Npgsql provider |
 | Auth | ASP.NET Core Identity, cookie auth, sliding 30-day persistent login, lockout and login rate limiting on (section 9). No Cloudflare Access in front of the app. Passkeys (WebAuthn, built into Identity in .NET 10) alongside passwords |
-| LLM | OpenRouter chat completions API (`google/gemini-3.5-flash-lite` by default, model picked in Settings) via typed HttpClient, behind an interface. It extracts foods and grams; nutrition values come from the food database (section 6.1) |
+| LLM | OpenRouter chat completions API (`openai/gpt-6-luna` by default, model picked in Settings) via typed HttpClient, behind an interface. It extracts foods and grams; nutrition values come from the food database (section 6.1) |
 | Food database | Users' own and shared `FoodItem`s, a locally imported subset of USDA FoodData Central for generic foods, and Open Food Facts API v3 for barcodes |
 | Barcode scanning | `barcode-detector` ponyfill (ZXing-C++ compiled to WASM), self-hosted. Safari on iOS ships the native `BarcodeDetector` API disabled, and `@zxing/browser` sits on a library in maintenance mode |
 | Tests | xUnit, FluentAssertions; Testcontainers (`postgres:18`) for PostgreSQL integration tests |
@@ -241,7 +241,7 @@ LLM nutrition estimates are unreliable on their own (published studies show ener
 
 Implementation `OpenRouterFoodParser`:
 - Typed `HttpClient` calling OpenRouter's `POST /api/v1/chat/completions`.
-- Model: picked in Settings from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `google/gemini-3.5-flash-lite`. The model is one setting shared by both accounts, like the key, and a saved id must be in the catalog.
+- Model: picked in Settings from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `openai/gpt-6-luna`. The model is one setting shared by both accounts, like the key, and a saved id must be in the catalog.
 - API key from Settings (encrypted with Data Protection) or configuration `OpenRouter:ApiKey` (environment variable `OPENROUTER_API_KEY` in Docker). Never commit it.
 - Request structured output: `response_format: {type: "json_schema", json_schema: {name, strict: true, schema}}` with a strict-compatible schema (`additionalProperties: false`, every property required, nullable ones typed `["string","null"]`) matching `ParsedFoodItem[]`, and `provider: {require_parameters: true}`. Because that excludes providers lacking any sent parameter, `temperature` and `reasoning.effort` (the model's lowest supported effort) are sent only when the catalog lists them for the model.
 - System prompt: the user writes foods in English or Bulgarian; return one item per food; estimate grams for vague quantities ("a banana", "a plate of rice") and state the assumption; assume raw weight for meat and cooked weight for rice and pasta unless stated; always fill `NameEn`.

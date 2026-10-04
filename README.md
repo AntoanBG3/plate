@@ -84,7 +84,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 docker builder prune -f                      # the SDK build cache sits on the boot SSD
 ```
 
-For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the app under Settings → Food text parser (stored encrypted with the Data Protection keys, shared by both accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The model is picked from OpenRouter's catalog on the same Settings page (default `google/gemini-3.5-flash-lite`, or `OPENROUTER_MODEL`). Add an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
+For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the app under Settings → Food text parser (stored encrypted with the Data Protection keys, shared by both accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The model is picked from OpenRouter's catalog on the same Settings page (default `openai/gpt-6-luna`, or `OPENROUTER_MODEL`). Add an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
 
 The app joins the external `tunnel` network and publishes no host port. Memory limits are 256 MB per container; replace them with values from Beszel after a week of use.
 
