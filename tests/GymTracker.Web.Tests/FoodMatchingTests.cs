@@ -41,6 +41,24 @@ public class FoodMatchingTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task The_users_own_food_at_the_top_of_the_ranking_stands()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var own = await s.Foods.CreateManualAsync("Chicken breast", null, new Per100g(110, 23, 0, 1.5m), null, default);
+        var ranked = (await s.Matcher.ResolveAsync("200g chicken breast", [Parsed("chicken breast", 200, FoodState.Raw)], default)).Single();
+        ranked.FoodItemId.Should().Be(own.Id, "precondition: Rank puts the user's own food first");
+        s.MatchDecider.Calls.Clear();
+        s.MatchDecider.Answer = q => new MatchDecisions([new MatchDecision(null, 0.99m), new MatchDecision(q[1].Candidates[0].Id, 0.97m)], StubMatchDecider.Model);
+
+        var items = await s.Matcher.ResolveAsync("200g chicken breast and a banana", [Parsed("chicken breast", 200, FoodState.Raw), Parsed("banana", 120, FoodState.NotApplicable)], default);
+
+        items[0].FoodItemId.Should().Be(own.Id);
+        items[0].MatchModel.Should().BeNull("Rank decided");
+        s.MatchDecider.Calls.Single()[0].Candidates.Should().BeEmpty("the own food's item is context only, not a question");
+        items[1].MatchModel.Should().Be(StubMatchDecider.Model);
+    }
+
+    [Fact]
     public async Task Picks_below_the_high_cut_are_medium()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

@@ -68,6 +68,18 @@ public class JevRequestTests
     }
 
     [Fact]
+    public void An_answer_to_a_question_that_was_not_asked_is_ignored()
+    {
+        var result = JevFoodMatchDecider.Read(Answers("""
+            "i0":{"type":"choice","choice":"f11","confidence":0.97,"probabilities":{}},
+            "i1":{"type":"choice","choice":"none","confidence":0.99,"probabilities":{}}
+            """), [Chicken, Rice with { Candidates = [] }])!;
+
+        result.Items[0].Should().Be(new MatchDecision(11, 0.97m));
+        result.Items[1].Should().BeNull("the item had no candidates, so it was never a question");
+    }
+
+    [Fact]
     public void Unknown_or_missing_answers_leave_that_item_undecided()
     {
         var result = JevFoodMatchDecider.Read(Answers("""
@@ -154,12 +166,27 @@ public class JevCallTests
         clock.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(1));
     }
 
-    [Fact]
-    public async Task Malformed_json_returns_null()
+    [Theory]
+    [InlineData("<html>Bad gateway</html>")]
+    [InlineData("[]")]
+    [InlineData("\"answers\"")]
+    [InlineData("""{"answers":[]}""")]
+    [InlineData("""{"answers":{"i0":"f1"}}""")]
+    public async Task Unreadable_or_wrongly_shaped_answers_return_null(string body)
     {
-        var stub = new StubJev(body: "<html>Bad gateway</html>");
+        var stub = new StubJev(body: body);
 
-        (await stub.Decider().DecideAsync("a banana", [Banana], "sk-or-v1-key", JevFoodMatchDecider.Jev113, default)).Should().BeNull();
+        (await stub.Decider().DecideAsync("a banana", [Banana], "sk-or-v1-key", JevFoodMatchDecider.Jev113, default))
+            .Should().Match<MatchDecisions?>(d => d == null || d.Items.All(i => i == null));
+    }
+
+    [Fact]
+    public async Task A_strange_usage_block_does_not_lose_the_answer()
+    {
+        var stub = new StubJev(body: StubJev.BananaPick.Replace("\"usage\":{\"input_tokens\":300,\"cost\":0.0000126}", "\"usage\":\"n/a\""));
+
+        (await stub.Decider().DecideAsync("a banana", [Banana], "sk-or-v1-key", JevFoodMatchDecider.Jev113, default))!
+            .Items.Should().Equal(new MatchDecision(1, 0.97m));
     }
 
     [Fact]

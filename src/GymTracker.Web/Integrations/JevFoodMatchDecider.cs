@@ -76,8 +76,9 @@ public class JevFoodMatchDecider(HttpClient http, ILogger<JevFoodMatchDecider> l
                 return (null, new LocalText("The food matcher returned something unreadable."));
             }
 
+            var usage = (node as JsonObject)?["usage"] as JsonObject;
             log.LogInformation("Jev {Model} decided {Count} items in {Ms} ms, {Tokens} input tokens, ${Cost}",
-                decisions.Model, questions.Count, clock.ElapsedMilliseconds, node?["usage"]?["input_tokens"]?.ToString(), node?["usage"]?["cost"]?.ToString());
+                decisions.Model, questions.Count, clock.ElapsedMilliseconds, usage?["input_tokens"]?.ToString(), usage?["cost"]?.ToString());
             return (decisions, null);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
@@ -151,7 +152,8 @@ public class JevFoodMatchDecider(HttpClient http, ILogger<JevFoodMatchDecider> l
     /// </summary>
     internal static MatchDecisions? Read(JsonNode? response, IReadOnlyList<MatchQuestion> questions)
     {
-        if (response?["answers"] is not JsonObject answers)
+        // Shapes are checked before indexing: indexing a JSON array or value by name throws.
+        if (response is not JsonObject root || root["answers"] is not JsonObject answers)
         {
             return null;
         }
@@ -159,15 +161,16 @@ public class JevFoodMatchDecider(HttpClient http, ILogger<JevFoodMatchDecider> l
         var items = new List<MatchDecision?>();
         for (var n = 0; n < questions.Count; n++)
         {
-            items.Add(answers[$"i{n}"] is { } answer ? Decision(answer, questions[n]) : null);
+            items.Add(answers[$"i{n}"] is JsonObject answer ? Decision(answer, questions[n]) : null);
         }
 
-        return new MatchDecisions(items, response["model"] is JsonValue m && m.TryGetValue<string>(out var model) ? model : "");
+        return new MatchDecisions(items, root["model"] is JsonValue m && m.TryGetValue<string>(out var model) ? model : "");
     }
 
-    private static MatchDecision? Decision(JsonNode answer, MatchQuestion question)
+    /// <summary>An item without candidates was never asked, so any answer for it is ignored.</summary>
+    private static MatchDecision? Decision(JsonObject answer, MatchQuestion question)
     {
-        if (answer["choice"] is not JsonValue c || !c.TryGetValue<string>(out var choice)
+        if (question.Candidates.Count == 0 || answer["choice"] is not JsonValue c || !c.TryGetValue<string>(out var choice)
             || answer["confidence"] is not JsonValue v || !v.TryGetValue<decimal>(out var confidence))
         {
             return null;

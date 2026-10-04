@@ -68,6 +68,16 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             shortlists.Add(Shortlist(found));
         }
 
+        // A food the user saved, at the top of the ranking, stands: saving it is how they say "this is what I eat".
+        // That item still goes in as context, but not as a question.
+        for (var n = 0; n < items.Count; n++)
+        {
+            if (ranked[n] is { Food.Own: true })
+            {
+                shortlists[n] = [];
+            }
+        }
+
         // Every item goes in, so the others are context; only items with candidates become questions.
         var decisions = shortlists.Any(l => l.Count > 0)
             ? await decider.DecideAsync(text, items.Select((item, n) => new MatchQuestion(item, shortlists[n].Select(Candidate).ToList())).ToList(), ct)
@@ -83,7 +93,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
                 notes.Add(new LocalText(item.Assumption));
             }
 
-            var decision = decisions?.Items.ElementAtOrDefault(n);
+            var decision = shortlists[n].Count == 0 ? null : decisions?.Items.ElementAtOrDefault(n);
             if (decision is { FoodItemId: { } id } && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
             {
                 var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
