@@ -77,15 +77,15 @@
 
     <section class="section">
         <div class="list">
-            <div class="shot-preview" data-shot-preview hidden>
-                <img alt="@L["Screenshot to send"]" />
-                <span class="row-main footnote" data-shot-size></span>
-                <button type="button" class="btn btn-plain" data-shot-remove>@L["Remove"]</button>
-            </div>
             <div class="row shot-pick" data-shot-pick>
                 <span class="row-icon neutral">@Ui.Icon("photo")</span>
                 <span class="row-main">@L["Add a screenshot"]</span>
                 <input type="file" name="screenshot" accept="image/jpeg,image/png,image/webp,image/*" aria-label="@L["Add a screenshot"]" />
+            </div>
+            <div class="shot-preview" data-shot-preview hidden>
+                <img alt="@L["Screenshot to send"]" />
+                <span class="row-main footnote" data-shot-size></span>
+                <button type="button" class="btn btn-plain" data-shot-remove>@L["Remove"]</button>
             </div>
         </div>
         <p class="section-footer" data-shot-offline hidden>@L["Screenshots need a connection. The message alone can wait on this phone."]</p>

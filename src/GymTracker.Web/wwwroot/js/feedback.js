@@ -11,6 +11,7 @@
     const RETRY_MS = 15000;
     const MAX_SIDE = 1600;
     const JPEG_QUALITY = 0.8;
+    const MAX_BYTES = 850 * 1024; // under the server's 900 KB, with room for the rest of the form
 
     // ---- storage ----
 
@@ -110,6 +111,9 @@
             return sending || Promise.resolve();
         }
         sending = (async () => {
+            // Yield first: with an empty queue the body would otherwise finish, and clear `sending`, before this
+            // assignment, leaving a settled promise that blocks every later drain.
+            await null;
             try {
                 for (;;) {
                     const next = loadQueue()[0];
@@ -247,6 +251,7 @@
     // ---- the Send feedback form ----
 
     // Draws the picked image no larger than MAX_SIDE and as JPEG, so it stays far under the 1 MB request limit.
+    // A busy photo can still be large, so quality and then size step down until it fits the server's cap.
     // An <img> decodes whatever Safari can show, HEIC included.
     async function shrink(file) {
         const url = URL.createObjectURL(file);
@@ -254,13 +259,21 @@
             const img = new Image();
             img.src = url;
             await img.decode();
-            const scale = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
-            const canvas = document.createElement("canvas");
-            canvas.width = Math.round(img.naturalWidth * scale);
-            canvas.height = Math.round(img.naturalHeight * scale);
-            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-            const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY));
-            return blob ? { blob, width: canvas.width, height: canvas.height } : null;
+            for (const [side, quality] of [[MAX_SIDE, JPEG_QUALITY], [MAX_SIDE, 0.6], [1200, 0.6], [900, 0.5]]) {
+                const scale = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight));
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.round(img.naturalWidth * scale);
+                canvas.height = Math.round(img.naturalHeight * scale);
+                canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+                const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+                if (!blob) {
+                    return null;
+                }
+                if (blob.size <= MAX_BYTES) {
+                    return { blob, width: canvas.width, height: canvas.height };
+                }
+            }
+            throw new Error("too large");
         } finally {
             URL.revokeObjectURL(url);
         }
