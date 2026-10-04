@@ -14,7 +14,7 @@
         <div class="list">
             <div class="field-row stacked">
                 <span class="field-label">@L["Theme"]</span>
-                <div class="segmented tall" role="radiogroup" aria-label="@L["Theme"]">
+                <div class="segmented tall" data-thumb role="radiogroup" aria-label="@L["Theme"]">
                     @foreach (var theme in new[] { Theme.Dark, Theme.Light, Theme.System })
                     {
                         <label class="segment"><input type="radio" name="theme" value="@theme" checked="@(Model.Theme == theme)" data-theme-preview="@theme.ToString().ToLowerInvariant()" />@L[theme == Theme.System ? "Match phone" : theme.ToString()]</label>
@@ -168,10 +168,10 @@
 
 <section class="section">
     <div class="list">
-        <form method="post" asp-antiforgery="true" action="/account/logout" class="row" style="padding-top: 0; padding-bottom: 0">
+        <form method="post" asp-antiforgery="true" action="/account/logout" class="row" data-full-nav style="padding-top: 0; padding-bottom: 0">
             <button type="submit" class="btn btn-plain" style="padding: 0">@Ui.Icon("logout")@L["Log out"]</button>
         </form>
-        <form method="post" asp-antiforgery="true" action="/settings/logout-everywhere" class="row" style="padding-top: 0; padding-bottom: 0" data-confirm="@L["Sign out on every device, including this one?"]">
+        <form method="post" asp-antiforgery="true" action="/settings/logout-everywhere" class="row" data-full-nav style="padding-top: 0; padding-bottom: 0" data-confirm="@L["Sign out on every device, including this one?"]">
             <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--destructive)">@L["Log out everywhere"]</button>
         </form>
     </div>

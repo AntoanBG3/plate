@@ -38,7 +38,7 @@
 
 <section class="section">
     <h2 class="section-title">@L["Bodyweight"]</h2>
-    <nav class="segmented" aria-label="@L["Range"]" style="margin-bottom: var(--s-3)">
+    <nav class="segmented" data-thumb aria-label="@L["Range"]" style="margin-bottom: var(--s-3)">
         @foreach (var (key, label) in GymTracker.Web.Features.Body.BodyAnalytics.Ranges)
         {
             <a class="segment@(key == Model.Weight.Range ? " is-active" : "")" aria-current="@(key == Model.Weight.Range ? "page" : null)" href="/progress?range=@key@(Model.Selected is null ? "" : $"&exerciseId={Model.Selected.Id}")">@L[label]</a>

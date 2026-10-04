@@ -1,5 +1,6 @@
-// Measures tap-to-feedback and tap-to-settled for tab navigations, with emulated latency.
-// Usage: node design-samples/tools/nav-timing.mjs [baseUrl] [--rtt 150]
+// Measures, per tab tap with emulated latency: feedback (tapped tab shows active), content (new page in the DOM)
+// and settled (no animation running). --mpa blocks nav.js to measure full page loads on the same build.
+// Usage: node design-samples/tools/nav-timing.mjs [baseUrl] [--rtt 150] [--mpa]
 import { chromium } from "playwright-core";
 
 const base = process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : "http://localhost:5130";
@@ -7,7 +8,11 @@ const rttArg = process.argv.indexOf("--rtt");
 const rtt = rttArg > 0 ? Number(process.argv[rttArg + 1]) : 150;
 
 const browser = await chromium.launch({ channel: "chrome" });
-const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, hasTouch: true, isMobile: true });
+const mpa = process.argv.includes("--mpa");
+const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, hasTouch: true, isMobile: true, serviceWorkers: "block" });
+if (mpa) {
+    await context.route(/\/js\/nav\.js/, (route) => route.abort());
+}
 const page = await context.newPage();
 await page.goto(`${base}/account/login`);
 await page.fill('input[name="email"]', "demo@example.test");
@@ -22,10 +27,14 @@ async function measure(label, href, tab) {
     await page.tap(`.tabbar a[href="${href}"]`);
     await page.waitForSelector(`.tabbar a[href="/${tab}"].is-active`);
     const feedback = Date.now() - t0;
-    await page.waitForFunction((t) => document.documentElement.dataset.tab === t && !document.documentElement.dataset.nav, tab);
+    await page.waitForFunction((t) => document.documentElement.dataset.tab === t, tab, { polling: "raf" });
+    const content = Date.now() - t0;
+    await page.waitForTimeout(50); // let a cross-document transition start before checking for animations
+    await page.waitForFunction(() => !document.documentElement.dataset.nav
+        && document.getAnimations().every((a) => a.playState !== "running" || !String(a.effect?.pseudoElement || "").includes("view-transition")), null, { polling: "raf" });
     const settled = Date.now() - t0;
-    console.log(`${label.padEnd(20)} feedback ${String(feedback).padStart(4)} ms   settled ${String(settled).padStart(4)} ms`);
-    return settled;
+    console.log(`${label.padEnd(20)} feedback ${String(feedback).padStart(4)}   content ${String(content).padStart(4)}   settled ${String(settled).padStart(4)} ms`);
+    return [feedback, content, settled];
 }
 
 const runs = [];
@@ -35,6 +44,6 @@ for (let i = 0; i < 3; i++) {
     runs.push(await measure("food -> progress", "/progress", "progress"));
     runs.push(await measure("progress -> today", "/today", "today"));
 }
-runs.sort((a, b) => a - b);
-console.log(`median settled ${runs[Math.floor(runs.length / 2)]} ms at ${rtt} ms RTT`);
+const median = (i) => runs.map((r) => r[i]).sort((a, b) => a - b)[Math.floor(runs.length / 2)];
+console.log(`${mpa ? "full page loads" : "soft navigation"} at ${rtt} ms RTT, medians: feedback ${median(0)}, content ${median(1)}, settled ${median(2)} ms`);
 await browser.close();

@@ -55,6 +55,7 @@
     <script src="~/js/motion.js" asp-append-version="true" defer></script>
     <script src="~/js/site.js" asp-append-version="true" defer></script>
     <script src="~/js/session.js" asp-append-version="true" defer></script>
+    <script src="~/js/nav.js" asp-append-version="true" defer></script>
 </head>
 <body class="@(showTabs ? null : "no-tabs")" hx-headers='{"RequestVerificationToken": "@token"}'>
     <partial name="_Icons" />
@@ -69,7 +70,7 @@
             <span class="topbar-title" aria-hidden="true">@title</span>
             <div class="topbar-trailing">@await RenderSectionAsync("TopbarTrailing", required: false)</div>
         </header>
-        <main class="page" id="main">
+        <main class="page" id="main" tabindex="-1">
             @if (error is not null)
             {
                 <div class="banner is-error" role="alert">@Ui.Icon("alert")<span>@L[error]</span></div>
@@ -92,6 +93,6 @@
         }
     </div>
     <div id="toast" class="toast" role="alert" hidden></div>
-    @await RenderSectionAsync("Overlays", required: false)
+    <div id="overlays">@await RenderSectionAsync("Overlays", required: false)</div>
 </body>
 </html>

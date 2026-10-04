@@ -221,7 +221,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
     position: relative; flex: 1; min-height: 40px; display: grid; place-items: center; padding: 0 var(--s-2);
     border-radius: 7px; color: var(--label); font-size: var(--text-footnote); font-weight: var(--weight-semibold); text-align: center; line-height: 1.15;
 }
-.segment.is-active, .segment:has(:checked) { background: var(--surface-2); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); view-transition-name: segment-thumb; }
+.segment.is-active, .segment:has(:checked) { background: var(--surface-2); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); }
+/* One sliding thumb per page: a view-transition-name must be unique, or the whole transition is skipped. */
+.segmented[data-thumb] .segment.is-active, .segmented[data-thumb] .segment:has(:checked) { view-transition-name: segment-thumb; }
 :root[data-theme="light"] .segment.is-active, :root[data-theme="light"] .segment:has(:checked) { background: var(--surface); }
 @media (prefers-color-scheme: light) { :root[data-theme="system"] .segment.is-active, :root[data-theme="system"] .segment:has(:checked) { background: var(--surface); } }
 .segment input { position: absolute; opacity: 0; pointer-events: none; }
@@ -598,3 +600,14 @@ html[data-nav="back"]::view-transition-new(large-title) { animation-name: vt-fad
 .set-row.warmup .set-field::before, .result-amount .grams::before, .portion-line .grams::before { content: ""; position: absolute; inset: -4px 0; }
 .send-btn::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 .section-title .section-aside { padding: 12px 10px; margin: 0 -10px; }
+
+/* Soft navigation (nav.js): a hairline at the top when a page takes longer than 120 ms. */
+html.is-navigating::before {
+    content: ""; position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 1000;
+    background: var(--accent); transform-origin: 0 50%;
+    animation: nav-progress 1.2s var(--ease-out) forwards;
+}
+html.is-navigating #main { opacity: 0.72; transition: opacity 160ms var(--ease-out) 60ms; }
+@keyframes nav-progress { from { transform: scaleX(0); } to { transform: scaleX(0.85); } }
+#main:focus { outline: none; }
+@media (prefers-reduced-motion: reduce) { html.is-navigating::before { animation: none; transform: scaleX(1); opacity: 0.6; } }
