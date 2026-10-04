@@ -157,7 +157,7 @@
         Array.from(from.attributes).forEach((a) => to.setAttribute(a.name, a.value));
     }
 
-    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side }) {
+    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant }) {
         const next = doc.documentElement;
         const nextShell = doc.querySelector(".app-scale");
         const shell = document.querySelector(".app-scale");
@@ -206,7 +206,7 @@
         if (current) {
             current.skipTransition();
         }
-        if (!document.startViewTransition) {
+        if (!document.startViewTransition || instant) {
             apply();
             return;
         }
@@ -222,7 +222,7 @@
         await transition.updateCallbackDone;
     }
 
-    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, side = null, fallback = () => { location.href = url.href; } } = {}) {
+    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, side = null, instant = false, fallback = () => { location.href = url.href; } } = {}) {
         // Remember where we were, for Back.
         history.replaceState(Object.assign({}, history.state, { gym: true, scrollY: window.scrollY }), "");
         const slow = setTimeout(() => root.classList.add("is-navigating"), SLOW_MS);
@@ -240,7 +240,7 @@
             }
             const doc = new DOMParser().parseFromString(await response.text(), "text/html");
             const samePage = finalUrl.href === location.href;
-            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side });
+            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant });
         } catch (error) {
             if (error instanceof FullLoad) {
                 location.href = error.url;
@@ -300,6 +300,7 @@
 
     window.addEventListener("popstate", (event) => {
         const state = event.state || {};
-        go(new URL(location.href), { push: false, isBack: true, scrollY: state.scrollY || 0, fallback: () => location.reload() });
+        // After an iOS edge swipe the browser has already animated the page away; a second slide would replay it.
+        go(new URL(location.href), { push: false, isBack: true, scrollY: state.scrollY || 0, instant: !!event.hasUAVisualTransition, fallback: () => location.reload() });
     });
 })();
