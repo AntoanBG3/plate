@@ -158,7 +158,7 @@ public class JevEvalTests(ITestOutputHelper output)
 
         await using var db = Db();
         var foods = Foods(db);
-        var matcher = new FoodMatcher(foods);
+        var matcher = new FoodMatcher(foods, new StubMatchDecider());
         var jev = OpenRouterHttp("alpha/");
         var approaches = Env("GYM_JEV_EVAL_APPROACHES", "b,c").Split(',');
         var runs = int.Parse(Env("GYM_JEV_EVAL_RUNS", "1"), CultureInfo.InvariantCulture);
@@ -196,7 +196,7 @@ public class JevEvalTests(ITestOutputHelper output)
             {
                 var item = items[n];
                 var expected = await ResolveLabelAsync(db, item.Expected!);
-                var today = (await matcher.ResolveAsync([item.Parsed], default)).Single().FoodItemId;
+                var today = (await matcher.ResolveAsync(entry.Text, [item.Parsed], default)).Single().FoodItemId;
                 rows.Add(new Row(
                     $"{entry.Id}.{n}", entry.Bulgarian, item, expected, today,
                     rankLists[n].FirstOrDefault()?.Id,

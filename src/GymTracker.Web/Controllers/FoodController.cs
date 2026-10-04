@@ -65,7 +65,7 @@ public class FoodController(
             return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? new LocalText("Couldn't read that."), null, [], null, [], []));
         }
 
-        var items = await matcher.ResolveAsync(result.Items, ct);
+        var items = await matcher.ResolveAsync(text, result.Items, ct);
         return View("Confirm", new ConfirmViewModel(date, meal, text, result.Model, items, result.Error));
     }
 

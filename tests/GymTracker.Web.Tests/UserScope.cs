@@ -20,13 +20,16 @@ public sealed class UserScope : IAsyncDisposable
         ExerciseSettings = new ExerciseSettingsService(Db, currentUser);
         FoodDatabase = new FakeFoodDatabase();
         Foods = new GymTracker.Web.Features.Food.FoodItemService(Db, currentUser, FoodDatabase);
-        Matcher = new GymTracker.Web.Features.Food.FoodMatcher(Foods);
+        Matcher = new GymTracker.Web.Features.Food.FoodMatcher(Foods, MatchDecider);
         FoodLog = new GymTracker.Web.Features.Food.FoodLogService(Db, currentUser, TimeProvider.System);
         SavedMeals = new GymTracker.Web.Features.Food.SavedMealService(Db, currentUser, TimeProvider.System);
         Undo = new GymTracker.Web.Features.Undo.UndoService(Db, TimeProvider.System);
     }
 
     public FakeFoodDatabase FoodDatabase { get; }
+
+    /// <summary>Makes no decision unless a test scripts one, so the matcher behaves as without Jev.</summary>
+    public StubMatchDecider MatchDecider { get; } = new();
     public GymTracker.Web.Features.Food.FoodItemService Foods { get; }
     public GymTracker.Web.Features.Food.FoodMatcher Matcher { get; }
     public GymTracker.Web.Features.Food.FoodLogService FoodLog { get; }

@@ -3,12 +3,14 @@ using System.Text.RegularExpressions;
 using GymTracker.Web.Features.Users;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GymTracker.Web.Tests;
 
 /// <summary>The real app on the test Postgres, in a non-Development environment like production.</summary>
-public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDictionary<string, string?>? settings = null) : WebApplicationFactory<Program>
+public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDictionary<string, string?>? settings = null, Action<IServiceCollection>? services = null)
+    : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -20,6 +22,11 @@ public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDicti
         foreach (var (key, value) in settings ?? new Dictionary<string, string?>())
         {
             builder.UseSetting(key, value);
+        }
+
+        if (services is not null)
+        {
+            builder.ConfigureTestServices(services);
         }
     }
 

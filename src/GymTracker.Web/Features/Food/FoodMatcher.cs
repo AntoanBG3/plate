@@ -18,13 +18,26 @@ public record ConfirmItem(
     int? FoodItemId,
     string? MatchedName,
     Confidence Confidence,
-    IReadOnlyList<LocalText> Notes);
+    IReadOnlyList<LocalText> Notes,
+    string? MatchModel = null);
 
-/// <summary>Turns parsed foods into database foods: the model reads the text, the database supplies the numbers (SPEC 6.1).</summary>
-public class FoodMatcher(FoodItemService foods)
+/// <summary>
+/// Turns parsed foods into database foods: the model reads the text, the database supplies the numbers (SPEC 6.1).
+/// A decider (Jev) chooses from a trigram shortlist when one is set up; its "none" counts only when it is sure.
+/// Anything it doesn't decide falls back to Rank's top pick.
+/// </summary>
+public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
 {
     private const double MatchThreshold = 0.5;
     private const double HighConfidence = 0.8;
+    private const int ShortlistSize = 50;
+    private const double ShortlistThreshold = 0.3;
+
+    /// <summary>A "none" below this falls back to Rank (pre-registered in the Phase 0b evaluation).</summary>
+    internal const decimal NoneGate = 0.9m;
+
+    /// <summary>The lowest Jev confidence at which every food pick in both evaluation rounds was correct.</summary>
+    internal const decimal JevHighConfidence = 0.95m;
 
     private static readonly string[] CookedWords = ["cooked", "boiled", "roasted", "grilled", "baked", "fried", "broiled", "steamed", "stewed", "braised"];
 
@@ -38,57 +51,105 @@ public class FoodMatcher(FoodItemService foods)
 
     private static readonly string[] CookedWordsBg = ["варен", "печен", "на скара", "пържен", "задушен", "сготвен", "на фурна", "запечен"];
 
-    public async Task<List<ConfirmItem>> ResolveAsync(IEnumerable<ParsedFoodItem> parsed, CancellationToken ct)
+    public async Task<List<ConfirmItem>> ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct)
     {
-        var result = new List<ConfirmItem>();
-        foreach (var item in parsed)
+        var items = parsed.ToList();
+        var ranked = new List<(FoodMatch Food, double Score)?>();
+        var shortlists = new List<List<FoodMatch>>();
+        foreach (var item in items)
         {
-            var ranked = (await foods.SearchAsync(item.NameEn, 120, MatchThreshold, ct))
-                .Select(c => (Food: c, Score: Rank(c, item.NameEn, item.State)))
-                .ToList();
+            ranked.Add(await RankTopAsync(item, ct));
+            var found = await foods.SearchAsync(item.NameEn, ShortlistSize, ShortlistThreshold, ct);
             if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
             {
-                // Typed in Bulgarian: Bulgarian dishes and products, and USDA foods by their Bulgarian names, are
-                // ranked by how well their Bulgarian name fits what the user wrote.
-                ranked.AddRange((await foods.SearchAsync(item.NameOriginal, 120, MatchThreshold, ct))
-                    .Where(c => !string.IsNullOrEmpty(c.NameBg))
-                    .Select(c => (Food: c, Score: Rank(c, item.NameOriginal, item.State, bulgarian: true))));
+                found.AddRange(await foods.SearchAsync(item.NameOriginal, ShortlistSize, ShortlistThreshold, ct));
             }
 
-            var best = ranked
-                .OrderByDescending(x => x.Score)
-                .Select(x => x.Food)
-                .FirstOrDefault();
+            shortlists.Add(Shortlist(found));
+        }
 
+        // Every item goes in, so the others are context; only items with candidates become questions.
+        var decisions = shortlists.Any(l => l.Count > 0)
+            ? await decider.DecideAsync(text, items.Select((item, n) => new MatchQuestion(item, shortlists[n].Select(Candidate).ToList())).ToList(), ct)
+            : null;
+
+        var result = new List<ConfirmItem>();
+        for (var n = 0; n < items.Count; n++)
+        {
+            var item = items[n];
             var notes = new List<LocalText>();
             if (!string.IsNullOrEmpty(item.Assumption))
             {
                 notes.Add(new LocalText(item.Assumption));
             }
 
-            if (best is not null)
+            var decision = decisions?.Items.ElementAtOrDefault(n);
+            if (decision is { FoodItemId: { } id } && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
             {
-                result.Add(new ConfirmItem(
-                    Description(item),
-                    item.Grams,
-                    best.Per100,
-                    best.Id,
-                    best.DisplayName,
-                    best.Score >= HighConfidence ? Confidence.High : Confidence.Medium,
-                    notes));
-                continue;
+                var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
+                result.Add(new ConfirmItem(Description(item), item.Grams, pick.Per100, pick.Id, pick.DisplayName, confidence, notes, decisions!.Model));
             }
-
-            notes.Add(new LocalText("No database match, so these numbers are the AI's estimate."));
-            if (FoodMath.MacrosDisagree(item.Estimated))
+            else if (decision is { FoodItemId: null } && decision.Confidence >= NoneGate)
             {
-                notes.Add(new LocalText("The calories don't add up from the macros."));
+                result.Add(Estimate(item, notes, decisions!.Model));
             }
-
-            result.Add(new ConfirmItem(Description(item), item.Grams, item.Estimated, null, null, Confidence.Low, notes));
+            else if (ranked[n] is { } best)
+            {
+                var confidence = best.Score >= HighConfidence ? Confidence.High : Confidence.Medium;
+                result.Add(new ConfirmItem(Description(item), item.Grams, best.Food.Per100, best.Food.Id, best.Food.DisplayName, confidence, notes));
+            }
+            else
+            {
+                result.Add(Estimate(item, notes, null));
+            }
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// The decider's options: the plain trigram matches of the English and the original name, merged by food with
+    /// the better similarity, best first. This order is the one measured in the evaluation; Jev leans to the first.
+    /// </summary>
+    internal static List<FoodMatch> Shortlist(IEnumerable<FoodMatch> found) =>
+        found
+            .GroupBy(c => c.Id)
+            .Select(g => g.MaxBy(c => c.Score)!)
+            .OrderByDescending(c => c.Score)
+            .ThenBy(c => c.Name.Length)
+            .Take(ShortlistSize)
+            .ToList();
+
+    private static MatchCandidate Candidate(FoodMatch f) => new(f.Id, f.Name, f.NameBg, f.Brand, f.Per100);
+
+    /// <summary>Rank's best candidate across the English search and, for text in another language, the original-name search.</summary>
+    private async Task<(FoodMatch Food, double Score)?> RankTopAsync(ParsedFoodItem item, CancellationToken ct)
+    {
+        var ranked = (await foods.SearchAsync(item.NameEn, 120, MatchThreshold, ct))
+            .Select(c => (Food: c, Score: Rank(c, item.NameEn, item.State)))
+            .ToList();
+        if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
+        {
+            // Typed in Bulgarian: Bulgarian dishes and products, and USDA foods by their Bulgarian names, are
+            // ranked by how well their Bulgarian name fits what the user wrote.
+            ranked.AddRange((await foods.SearchAsync(item.NameOriginal, 120, MatchThreshold, ct))
+                .Where(c => !string.IsNullOrEmpty(c.NameBg))
+                .Select(c => (Food: c, Score: Rank(c, item.NameOriginal, item.State, bulgarian: true))));
+        }
+
+        return ranked.Count == 0 ? null : ranked.MaxBy(x => x.Score);
+    }
+
+    /// <summary>No database food: the parser's own numbers, marked Low.</summary>
+    private static ConfirmItem Estimate(ParsedFoodItem item, List<LocalText> notes, string? matchModel)
+    {
+        notes.Add(new LocalText("No database match, so these numbers are the AI's estimate."));
+        if (FoodMath.MacrosDisagree(item.Estimated))
+        {
+            notes.Add(new LocalText("The calories don't add up from the macros."));
+        }
+
+        return new ConfirmItem(Description(item), item.Grams, item.Estimated, null, null, Confidence.Low, notes, matchModel);
     }
 
     /// <summary>
