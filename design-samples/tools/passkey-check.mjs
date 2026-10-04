@@ -8,8 +8,14 @@ const context = await browser.newContext({ viewport: { width: 390, height: 844 }
 const page = await context.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
-// Chrome's virtual authenticator can answer the autofill request and the button at once; the loser gets a 400.
-page.on("console", (m) => m.type() === "error" && !m.text().includes("status of 400") && errors.push(m.text()));
+page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+// Chrome's virtual authenticator answers the autofill (conditional) request by itself, racing the button.
+// A phone only completes it when the user picks the passkey, so test the button path alone.
+await context.addInitScript(() => {
+    if (window.PublicKeyCredential) {
+        PublicKeyCredential.isConditionalMediationAvailable = async () => false;
+    }
+});
 const cdp = await context.newCDPSession(page);
 await cdp.send("WebAuthn.enable");
 await cdp.send("WebAuthn.addVirtualAuthenticator", { options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
@@ -32,9 +38,7 @@ await page.screenshot({ path: `${SP}/settings-passkey.png` });
 await context.clearCookies();
 await page.goto(`${base}/account/login`);
 await page.waitForSelector("[data-module=passkey-login]:not([hidden])");
-// Chrome's virtual authenticator may answer the autofill (conditional) request on its own; either path signs in.
-page.click("[data-module=passkey-login]", { timeout: 3000 }).catch(() => {});
-await page.waitForURL(/\/today/, { timeout: 10000 });
+await Promise.all([page.waitForURL(/\/today/, { timeout: 10000 }), page.click("[data-module=passkey-login]")]);
 console.log("signed in with passkey:", page.url());
 const auth = (await context.cookies()).find((c) => /gym\.auth$/.test(c.name));
 console.log("auth cookie expires:", auth.expires === -1 ? "session only" : new Date(auth.expires * 1000).toISOString());
