@@ -18,7 +18,13 @@ window.gymModule("scanner", (root) => {
     });
 
     const detector = new api.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
-    const video = root.querySelector("video");
+    // After a soft navigation (nav.js) the sheet's markup was parsed by DOMParser, and iOS keeps a <video> made
+    // there black even while the camera runs. A video created in this document plays, however the page loaded.
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.hidden = true;
+    root.querySelector("video").replaceWith(video);
     const status = root.querySelector("[data-status]");
     const form = document.getElementById("barcode-form");
     const codeInput = form.querySelector('input[name="code"]');
