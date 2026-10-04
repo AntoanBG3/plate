@@ -124,6 +124,16 @@ Measured, overall and for Bulgarian and English entries separately:
 
 `dotnet build` and `dotnet test` must stay green with the harness present (it reports as skipped).
 
+### Phase 0 outcome (2026-10-04)
+
+Results: `2026-10-04-jev-food-matching-results.md` (jev-1.13-20260917, 41 items, labels confirmed before scoring). Neither Jev approach passes the go/no-go above, so Phase 1 is not started.
+
+- (c) beats (b) on every measure; (b) is not worth pursuing.
+- (c) against Rank: 36/41 against 31/41; it fixes 8 items (all four wrong "none" cases, scrambled and hard-boiled eggs, white cheese, dry pasta) and breaks 3 (кисело мляко, лютеница, cooked rice: correct candidates rejected as "none").
+- Bars failed by (c): Bulgarian +2 items (bar: +3); 4/33 matchable items rejected (bar: 1 in 20); 85% agreement under reordering (bar: 90%). Passed: none caught 8/8, max latency 564 ms. Cost $0.0002 per parse.
+- Label gap found after scoring: en05.1 omits one acceptable 2% USDA milk that (c) picked; correcting it gives (c) 21/22 English and changes no pass/fail. The confirmed labels were left as they are.
+- The one variant worth testing, if anything: (c) with Jev's "none" trusted only at confidence 0.9 or more, otherwise Rank's top pick. That cut-off was chosen after seeing these results, so it needs a fresh held-out set and repeat runs (to separate run-to-run noise from order bias) before it counts as evidence.
+
 ---
 
 ## Phase 1: build it (only after the go decision)
