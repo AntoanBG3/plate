@@ -73,7 +73,7 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable
         var response = await AppFactory.LoginAsync(client, email, password, returnUrl: "https://evil.example/");
 
         AppFactory.IsRedirectTo(response, "/today").Should().BeTrue();
-        response.Headers.GetValues("Set-Cookie").Should().Contain(c => c.StartsWith("gym.auth=") && c.Contains("secure") && c.Contains("httponly") && c.Contains("expires="));
+        response.Headers.GetValues("Set-Cookie").Should().Contain(c => c.StartsWith("__Host-gym.auth=") && c.Contains("secure") && c.Contains("httponly") && c.Contains("path=/") && c.Contains("expires="));
         (await client.GetAsync("/today")).StatusCode.Should().Be(HttpStatusCode.OK);
     }
 

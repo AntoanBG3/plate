@@ -8,6 +8,7 @@ using GymTracker.Web.Integrations;
 using GymTracker.Web.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GymTracker.Web.Controllers;
 
@@ -80,6 +81,7 @@ public class SettingsController(
     }
 
     [HttpPost("openrouter-key")]
+    [EnableRateLimiting(RateLimits.Sensitive)]
     public async Task<IActionResult> SetOpenRouterKey(string? apiKey, CancellationToken ct)
     {
         await openRouter.SetKeyAsync(apiKey ?? "", ct);
@@ -88,6 +90,7 @@ public class SettingsController(
     }
 
     [HttpPost("openrouter-key/test")]
+    [EnableRateLimiting(RateLimits.Sensitive)]
     public async Task<IActionResult> TestOpenRouterKey(CancellationToken ct)
     {
         await ReportTestAsync(new LocalText("Key tested: food parsing works."), new LocalText("Key tested, but it doesn't work yet: {0}"), ct);
@@ -95,6 +98,7 @@ public class SettingsController(
     }
 
     [HttpPost("openrouter-key/remove")]
+    [EnableRateLimiting(RateLimits.Sensitive)]
     public async Task<IActionResult> RemoveOpenRouterKey(CancellationToken ct)
     {
         await openRouter.ClearKeyAsync(ct);
@@ -150,6 +154,7 @@ public class SettingsController(
     }
 
     [HttpPost("password")]
+    [EnableRateLimiting(RateLimits.Sensitive)]
     public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
     {
         if (newPassword != confirmPassword)

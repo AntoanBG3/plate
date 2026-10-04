@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using GymTracker.Web.Cli;
 using GymTracker.Web.Data;
@@ -118,9 +119,12 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+// __Host- cookies must be Secure with Path=/ and no Domain; local development runs over plain http.
+var hostCookies = !builder.Environment.IsDevelopment();
 builder.Services.ConfigureApplicationCookie(o =>
 {
-    o.Cookie.Name = "gym.auth";
+    o.Cookie.Name = hostCookies ? "__Host-gym.auth" : "gym.auth";
+    o.Cookie.Path = "/";
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Lax;
     o.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
@@ -182,6 +186,28 @@ builder.Services.AddRateLimiter(o =>
             Window = TimeSpan.FromMinutes(5),
             QueueLimit = 0,
         }));
+
+    // Distributed guessing: all sign-in attempts together, whatever the source address.
+    o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(http =>
+        HttpMethods.IsPost(http.Request.Method) && http.Request.Path.StartsWithSegments("/account/login")
+            ? RateLimitPartition.GetSlidingWindowLimiter("login-all", _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = config.GetValue("RateLimits:LoginGlobalPerWindow", 30),
+                Window = TimeSpan.FromMinutes(15),
+                SegmentsPerWindow = 3,
+                QueueLimit = 0,
+            })
+            : RateLimitPartition.GetNoLimiter("other"));
+
+    // Password and API key changes, per signed-in user.
+    o.AddPolicy(RateLimits.Sensitive, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = config.GetValue("RateLimits:SensitivePerWindow", 5),
+            Window = TimeSpan.FromMinutes(15),
+            QueueLimit = 0,
+        }));
     o.AddPolicy(RateLimits.CspReport, http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -198,6 +224,8 @@ builder.Services.AddAntiforgery(o =>
 {
     o.HeaderName = "RequestVerificationToken";
     o.SuppressXFrameOptionsHeader = true; // SecurityHeadersMiddleware sends DENY
+    o.Cookie.Name = hostCookies ? "__Host-gym.af" : "gym.af";
+    o.Cookie.SecurePolicy = hostCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
 });
 
 var app = builder.Build();
@@ -230,9 +258,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStatusCodePagesWithReExecute("/error/{0}");
 app.UseRouting();
-app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+// After authentication, so per-user limits see the signed-in user.
+app.UseRateLimiter();
 app.UseMiddleware<UserPreferencesMiddleware>();
 
 app.MapStaticAssets().AllowAnonymous();
