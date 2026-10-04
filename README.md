@@ -181,16 +181,33 @@ Both containers start with `mem_limit: 256m`. The app uses workstation garbage c
 
 ### Updating
 
-Run the same rsync from the Mac, then on wizard:
+Run the same rsync from the Mac, then build on wizard from the Mac so the image carries the commit it was built from (feedback reports and errors record it):
 
 ```sh
-cd ~/docker/gymtracker
-docker compose -f docker/docker-compose.yml up -d --build && docker builder prune -f
+ssh wizard "cd ~/docker/gymtracker && APP_VERSION=$(git -C ~/Projects/homeserver-gym rev-parse --short HEAD) docker compose -f docker/docker-compose.yml up -d --build && docker builder prune -f"
 ```
+
+`$(...)` is expanded on the Mac before the command is sent. Building on wizard directly works too; the version then shows as `unknown`.
 
 Migrations run automatically when the app starts.
 
 Deleted food entries, sets and exercises are kept for 24 hours so Undo can bring them back, then purged. Rolling back the `AddSoftDelete` migration drops that column, so anything deleted in the last 24 hours would reappear; restore from the pre-deploy dump instead.
+
+### Feedback
+
+Both accounts can report problems and ideas in Settings → Send feedback (with a screenshot), rate how typed food was read on the Check foods screen, and use the "Report" links on barcode results, weight suggestions, the maintenance estimate and AI food entries. Errors in the app and the browser are recorded on their own. Everything stays in the database; the CLI reads it and answers it (SPEC section 11):
+
+```sh
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll feedback digest       # what came in this week
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll feedback show 12
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll feedback status 12 fixed --reply "Fixed, thanks." --version abc1234
+```
+
+`feedback help` lists every command. In the coding agent, `/feedback` runs the same commands and the triage workflow in `docs/feedback-triage.md`. Replies show under Settings → Your feedback with a badge, and `feedback changelog add` puts a What's new note on both users' Today page.
+
+For a Telegram message on each new report and each new kind of error, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `docker/.env` (the backup script's bot works) and restart the app. Only a report's number, the reporter's name, kind, area and first 80 characters are sent.
+
+The feedback CLI starts a second .NET process in the app container. If `docker stats gymtracker-app` shows the 256 MB limit being approached while it runs, use `docker compose -f docker/docker-compose.yml run --rm --no-deps app feedback ...` from `~/docker/gymtracker` instead.
 
 ### Updating base images
 

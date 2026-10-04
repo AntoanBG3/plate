@@ -21,6 +21,12 @@ public record ConfirmItem(
     IReadOnlyList<LocalText> Notes,
     string? MatchModel = null);
 
+/// <summary>How one item was matched, kept with the parse run for feedback (SPEC 11): the ranking's top candidates and the decider's answer.</summary>
+/// <param name="DeciderModel">The decision model that answered for this parse, even where its answer was not used.</param>
+public record MatchTrace(IReadOnlyList<TraceCandidate> Top, bool Asked, int? DeciderPick, decimal? DeciderConfidence, string? DeciderModel = null);
+
+public record TraceCandidate(int Id, string Name, double Score, bool Own);
+
 /// <summary>
 /// Turns parsed foods into database foods: the model reads the text, the database supplies the numbers (SPEC 6.1).
 /// A decider (Jev) chooses from a trigram shortlist when one is set up; its "none" counts only when it is sure.
@@ -32,6 +38,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
     private const double HighConfidence = 0.8;
     private const int ShortlistSize = 50;
     private const double ShortlistThreshold = 0.3;
+    private const int TraceSize = 5;
 
     /// <summary>A "none" below this falls back to Rank (pre-registered in the Phase 0b evaluation).</summary>
     internal const decimal NoneGate = 0.9m;
@@ -51,14 +58,18 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
 
     private static readonly string[] CookedWordsBg = ["варен", "печен", "на скара", "пържен", "задушен", "сготвен", "на фурна", "запечен"];
 
-    public async Task<List<ConfirmItem>> ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct)
+    /// <param name="trace">When given, receives one <see cref="MatchTrace"/> per item.</param>
+    public async Task<List<ConfirmItem>> ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct, List<MatchTrace>? trace = null)
     {
         var items = parsed.ToList();
         var ranked = new List<(FoodMatch Food, double Score)?>();
+        var tops = new List<List<(FoodMatch Food, double Score)>>();
         var shortlists = new List<List<FoodMatch>>();
         foreach (var item in items)
         {
-            ranked.Add(await RankTopAsync(item, ct));
+            var all = await RankAsync(item, ct);
+            ranked.Add(all.Count == 0 ? null : all[0]);
+            tops.Add(all.Take(TraceSize).ToList());
             var found = await foods.SearchAsync(item.NameEn, ShortlistSize, ShortlistThreshold, ct);
             if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
             {
@@ -94,6 +105,9 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             }
 
             var decision = shortlists[n].Count == 0 ? null : decisions?.Items.ElementAtOrDefault(n);
+            trace?.Add(new MatchTrace(
+                tops[n].Select(t => new TraceCandidate(t.Food.Id, t.Food.DisplayName, Math.Round(t.Score, 3), t.Food.Own)).ToList(),
+                shortlists[n].Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence, decisions?.Model));
             if (decision is { FoodItemId: { } id } && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
             {
                 var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
@@ -132,8 +146,8 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
 
     private static MatchCandidate Candidate(FoodMatch f) => new(f.Id, f.Name, f.NameBg, f.Brand, f.Per100);
 
-    /// <summary>Rank's best candidate across the English search and, for text in another language, the original-name search.</summary>
-    private async Task<(FoodMatch Food, double Score)?> RankTopAsync(ParsedFoodItem item, CancellationToken ct)
+    /// <summary>Rank's candidates, best first, across the English search and, for text in another language, the original-name search.</summary>
+    private async Task<List<(FoodMatch Food, double Score)>> RankAsync(ParsedFoodItem item, CancellationToken ct)
     {
         var ranked = (await foods.SearchAsync(item.NameEn, 120, MatchThreshold, ct))
             .Select(c => (Food: c, Score: Rank(c, item.NameEn, item.State)))
@@ -147,7 +161,8 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
                 .Select(c => (Food: c, Score: Rank(c, item.NameOriginal, item.State, bulgarian: true))));
         }
 
-        return ranked.Count == 0 ? null : ranked.MaxBy(x => x.Score);
+        // A stable sort keeps the first of equal scores first, as MaxBy did.
+        return ranked.OrderByDescending(x => x.Score).ToList();
     }
 
     /// <summary>No database food: the parser's own numbers, marked Low.</summary>

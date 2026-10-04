@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Features.Food;
 
-public record NewEntry(DateOnly Date, Meal Meal, string Description, decimal Grams, Per100g Per100, int? FoodItemId, EntrySource Source, string? AiModel = null, string? MatchModel = null);
+public record NewEntry(DateOnly Date, Meal Meal, string Description, decimal Grams, Per100g Per100, int? FoodItemId, EntrySource Source, string? AiModel = null, string? MatchModel = null, int? ParseRunId = null);
 
 /// <summary>A frequently logged food for one-tap re-logging.</summary>
 public record RecentFood(string Description, int? FoodItemId, decimal LastGrams, Per100g Per100, int Times);
@@ -67,6 +67,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 Source = e.Source,
                 AiModel = e.AiModel,
                 MatchModel = e.MatchModel is { Length: > 100 } m ? m[..100] : e.MatchModel,
+                ParseRunId = e.ParseRunId,
                 CreatedAt = time.GetUtcNow(),
             });
         }

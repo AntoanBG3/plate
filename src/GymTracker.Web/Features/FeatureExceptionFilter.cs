@@ -12,6 +12,8 @@ public static class RateLimits
     public const string Sensitive = "sensitive";
     public const string AiParse = "ai-parse";
     public const string PasskeyOptions = "passkey-options";
+    public const string Feedback = "feedback";
+    public const string ClientError = "client-error";
 }
 
 /// <summary>Maps service exceptions to HTTP responses so controllers stay thin.</summary>

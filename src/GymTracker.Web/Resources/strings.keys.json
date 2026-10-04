@@ -11,6 +11,9 @@
   "1 item": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "1 new reply": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "1 set": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
     "src/GymTracker.Web/Views/Train/History.cshtml"
@@ -36,6 +39,9 @@
   "A cut can't be faster than {0}% of bodyweight per week.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
+  "A food reading rated wrong.": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
+  ],
   "A food with that barcode already exists.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
   ],
@@ -50,6 +56,21 @@
   ],
   "AI models": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "About": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
+  "About the error on the previous page ({0}).": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
+  "About: the suggestion for {0}": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackSnapshots.cs"
+  ],
+  "About: your maintenance estimate of {0} kcal": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackSnapshots.cs"
+  ],
+  "About: {0}": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackSnapshots.cs"
   ],
   "Abs": [
     "enum"
@@ -66,6 +87,9 @@
   ],
   "Add a passkey": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Add a screenshot": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
   "Add a snack": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
@@ -107,6 +131,9 @@
   "Added 1 item.": [
     "src/GymTracker.Web/Controllers/SavedMealsController.cs"
   ],
+  "Added something I didn't eat": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "Added {0}": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -122,6 +149,15 @@
   "Amount": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml"
   ],
+  "Anything else?": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Anything else? What should it have been?": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
+  "App": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "Appearance": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -130,6 +166,9 @@
   ],
   "Archive this template? Past workouts keep their history.": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+  ],
+  "Attach a screenshot or photo (JPEG, PNG or WebP).": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
   ],
   "Average on logged days, last 4 weeks": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
@@ -169,6 +208,9 @@
   "Barcode digits": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "Barcode scanning": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "Barcode {0}": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
@@ -200,6 +242,9 @@
   "Bulgarian split squat": [
     "exercise"
   ],
+  "Bulgarian wording": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "Bulk": [
     "enum"
   ],
@@ -217,6 +262,9 @@
   ],
   "Cable lateral raise": [
     "exercise"
+  ],
+  "Calorie target and maintenance": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Calories": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
@@ -303,6 +351,9 @@
   "Couldn't read that photo. Type the digits instead.": [
     "wwwroot/js"
   ],
+  "Couldn't read that picture. Try a screenshot.": [
+    "wwwroot/js"
+  ],
   "Couldn't read that.": [
     "src/GymTracker.Web/Controllers/FoodController.cs"
   ],
@@ -367,6 +418,12 @@
   ],
   "Description must be 1 to 200 characters.": [
     "src/GymTracker.Web/Features/Food/FoodLogService.cs"
+  ],
+  "Did this read your food right?": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Didn't understand my wording": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Dinner": [
     "enum"
@@ -469,6 +526,9 @@
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
   ],
+  "Feedback": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Female": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -484,7 +544,11 @@
   "Finished workouts show up here, newest first.": [
     "src/GymTracker.Web/Views/Train/History.cshtml"
   ],
+  "Fixed": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "Food": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs",
     "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/Index.cshtml",
@@ -500,6 +564,9 @@
   "Food parser": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
+  "Food search": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Food today": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
@@ -537,10 +604,14 @@
     "enum"
   ],
   "Go back": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
   "Goal": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Got it": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Grams": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
@@ -584,6 +655,9 @@
   "How to add": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "Idea": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "In progress · {0}": [
     "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml"
@@ -603,6 +677,9 @@
   "It adapts weekly once you have 2 weeks of weigh-ins on most days and food logged on 80% of days.": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
+  "It goes straight to the developer. The answer shows under Your feedback in Settings.": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
   "It's too late to undo that.": [
     "src/GymTracker.Web/Features/Undo/UndoService.cs"
   ],
@@ -611,6 +688,9 @@
   ],
   "Just the bar": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Keep it under {0} characters.": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
   ],
   "Key ending {0}": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -630,8 +710,20 @@
   "Key tested: food parsing works.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
+  "Kind": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
   "Language": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Last 90 days: {0} entries, not enough to judge yet": [
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
+  "Last 90 days: {0} entries, {1}% corrected before saving, {2}% rated wrong": [
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
+  "Last 90 days: {0} entries, {1}% rated wrong": [
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
   ],
   "Last week": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
@@ -651,6 +743,9 @@
   ],
   "Latest, best set of the session (Epley)": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
+  ],
+  "Layout and design": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Leave starting maintenance empty to estimate it from sex, height, age and weight. It adapts to your logged data later.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -696,6 +791,9 @@
   ],
   "Logged today: {0} kg, trend {1} kg": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "Logging workouts": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Look up": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
@@ -755,8 +853,14 @@
   "Meal": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml"
   ],
+  "Message": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
   "Minimum reps": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+  ],
+  "Missed a food": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Model saved, but it doesn't work yet: {0}": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
@@ -801,6 +905,9 @@
   "Name, e.g. Upper A": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
+  "Needs more detail": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "New": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -826,6 +933,9 @@
     "src/GymTracker.Web/Controllers/SettingsController.cs"
   ],
   "No barcode found in that photo. Try again closer, or type the digits.": [
+    "wwwroot/js"
+  ],
+  "No connection. Remove the screenshot to keep the message on this phone, or try again with signal.": [
     "wwwroot/js"
   ],
   "No connection. That change was not saved; try again when you have signal.": [
@@ -882,6 +992,9 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/History.cshtml"
   ],
+  "No, something is wrong": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
   "Not found": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
     "src/GymTracker.Web/Views/Home/Error.cshtml"
@@ -911,6 +1024,9 @@
   "Nothing saved matches.": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "Nothing sent yet": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
+  ],
   "Nothing was logged for breakfast the day before.": [
     "src/GymTracker.Web/Controllers/FoodController.cs"
   ],
@@ -919,6 +1035,9 @@
   ],
   "Nothing was logged for lunch the day before.": [
     "src/GymTracker.Web/Controllers/FoodController.cs"
+  ],
+  "Nutrition values": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Nutrition values can't be negative.": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
@@ -929,6 +1048,9 @@
   "Off: database ranking only": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
+  "Offline and sending": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "One serving": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
@@ -983,7 +1105,8 @@
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "Other": [
-    "enum"
+    "enum",
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Overhead cable triceps extension": [
     "exercise"
@@ -1025,8 +1148,21 @@
   "Per side": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
+  "Pick what this is about.": [
+    "src/GymTracker.Web/Controllers/FeedbackController.cs",
+    "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "Picking the right food": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "Plank": [
     "exercise"
+  ],
+  "Planned": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Plate calculator": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Plate weights must be from the list.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
@@ -1048,6 +1184,9 @@
   "Previous day": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
+  "Problems, ideas and wrong food matches you report show here, with the answer.": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
+  ],
   "Profile": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -1057,6 +1196,9 @@
   "Progress": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
+  ],
+  "Progress charts": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Protein": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
@@ -1105,6 +1247,9 @@
   "Reading the photo…": [
     "wwwroot/js"
   ],
+  "Reading typed food": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "Reading…": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
@@ -1114,7 +1259,11 @@
   "Recent": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "Reference {0}": [
+    "src/GymTracker.Web/Views/Home/Error.cshtml"
+  ],
   "Remove": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
@@ -1137,6 +1286,21 @@
   "Repeat new": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Report": [
+    "wwwroot/js"
+  ],
+  "Report a problem or suggest an idea. Answers show under Your feedback.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Report a reading problem": [
+    "src/GymTracker.Web/Views/Food/Entry.cshtml"
+  ],
+  "Report this": [
+    "src/GymTracker.Web/Views/Home/Error.cshtml"
+  ],
+  "Report this suggestion": [
+    "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
+  ],
   "Reps": [
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
@@ -1157,6 +1321,9 @@
   ],
   "Rest over": [
     "wwwroot/js"
+  ],
+  "Rest timer": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Resume workout": [
     "src/GymTracker.Web/Views/Today/Index.cshtml",
@@ -1214,7 +1381,11 @@
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Saved meals": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs",
     "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
+  "Saved on this phone. It will send when you're back online.": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
   "Scan": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
@@ -1222,6 +1393,15 @@
   ],
   "Scan a barcode": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
+  "Screenshot": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Screenshot to send": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
+  "Screenshots need a connection. The message alone can wait on this phone.": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
   "Search": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
@@ -1250,16 +1430,42 @@
   "Seated leg curl": [
     "exercise"
   ],
+  "Seems off?": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "Seen": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Send": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml",
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Send feedback": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml",
+    "src/GymTracker.Web/Views/Feedback/New.cshtml",
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Sent": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Sent with it: this page, the app version, your phone's screen size and browser, and any recent errors on this phone.": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
   "Set deleted.": [
     "wwwroot/js"
   ],
   "Settings": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml",
+    "src/GymTracker.Web/Views/Feedback/New.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Model.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
   "Sex": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Should be split or joined": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Shoulders": [
     "enum"
@@ -1279,7 +1485,11 @@
   "Sign out on every device, including this one?": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Signing in and passkeys": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "Skip": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml",
     "src/GymTracker.Web/Views/Train/Session.cshtml"
   ],
   "Skip rest": [
@@ -1297,11 +1507,20 @@
   "Snack": [
     "enum"
   ],
+  "Something else": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "Something went wrong": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
   "Something went wrong ({0}). Try again.": [
     "wwwroot/js"
+  ],
+  "Something's wrong": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Speed": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Squat": [
     "exercise"
@@ -1348,10 +1567,14 @@
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "wwwroot/js"
   ],
+  "Targets and progress": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
   "Template name": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
   "Templates": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
     "src/GymTracker.Web/Views/Templates/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml"
@@ -1359,8 +1582,24 @@
   "Test key": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Thanks!": [
+    "wwwroot/js"
+  ],
+  "Thanks. The answer will show here.": [
+    "src/GymTracker.Web/Controllers/FeedbackController.cs",
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Thanks. This helps it read food better.": [
+    "wwwroot/js"
+  ],
+  "Thanks. What was wrong?": [
+    "wwwroot/js"
+  ],
   "That doesn't look like an API key.": [
     "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
+  ],
+  "That food isn't in this list.": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
   ],
   "That isn't a valid EAN or UPC barcode.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
@@ -1377,11 +1616,24 @@
   "That passkey didn't work. Try again or use your password.": [
     "wwwroot/js"
   ],
+  "That picture is too large. Try a screenshot instead of a photo.": [
+    "src/GymTracker.Web/Controllers/FeedbackController.cs",
+    "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "That rating wasn't valid.": [
+    "src/GymTracker.Web/Controllers/FeedbackController.cs"
+  ],
+  "That report can't be saved. Send it again from the form.": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
+  ],
   "That set was not valid.": [
     "wwwroot/js"
   ],
   "That set's exercise no longer exists.": [
     "wwwroot/js"
+  ],
+  "That was more than the app accepts. For a screenshot, attach it from the Send feedback page, which shrinks it first.": [
+    "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
   "That's less than the bar ({0} kg).": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
@@ -1494,6 +1746,9 @@
   "Today's weight": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
+  "Too large": [
+    "src/GymTracker.Web/Views/Home/Error.cshtml"
+  ],
   "Too many attempts": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
@@ -1506,6 +1761,9 @@
     "src/GymTracker.Web/Views/Train/History.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Session.cshtml"
+  ],
+  "Training": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Trend": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
@@ -1563,6 +1821,9 @@
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
     "wwwroot/js"
   ],
+  "Waiting to send": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
+  ],
   "Warm-up": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
   ],
@@ -1578,6 +1839,9 @@
   ],
   "Weight": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Weight and rep suggestions": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Weight can have at most two decimal places.": [
     "src/GymTracker.Core/Training/SetRules.cs"
@@ -1604,8 +1868,24 @@
   "What did you eat?": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "What happened, and what did you expect?": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
+  "What was wrong?": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml",
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
+  "What would you like it to do?": [
+    "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
+  "What's new": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "Without a key, typed food is split up by a simple built-in parser.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Won't change": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Working sets": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
@@ -1632,14 +1912,42 @@
   "Workouts, sets, templates, weigh-ins, food log and targets as CSV files in a zip.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Write a few words about it.": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "Wrong amount": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Wrong calories or macros": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Wrong food": [
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Wrong product or values?": [
+    "src/GymTracker.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Yes, it read it right": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
   "Yesterday": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "You ate": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
+  "You reported this": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "Your data": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Your feedback": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml",
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Your food is still not saved; you can fix it and save as usual.": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
   "assumed 100 g": [
     "extra"
@@ -1742,6 +2050,9 @@
   "{0} h {1} min": [
     "src/GymTracker.Web/Features/Localization/Localizer.cs"
   ],
+  "{0} is wrong": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
   "{0} items": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
@@ -1781,6 +2092,9 @@
   ],
   "{0} min": [
     "src/GymTracker.Web/Features/Localization/Localizer.cs"
+  ],
+  "{0} new replies": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "{0} of {1} kcal": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"

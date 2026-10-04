@@ -39,6 +39,14 @@ else
                                 <span style="min-width: 0">
                                     <span class="row-title" style="display: block">@(m.Id == AiTasks.Off ? L["Off: database ranking only"] : m.Name)</span>
                                     <span class="row-sub" style="display: block">@L[m.Price]</span>
+                                    @if (Model.Accuracy?.GetValueOrDefault(m.Id) is { } stats)
+                                    {
+                                        <span class="row-sub" style="display: block">@(stats.Enough
+                                            ? (stats.CorrectionRate is { } corrected
+                                                ? L["Last 90 days: {0} entries, {1}% corrected before saving, {2}% rated wrong", stats.Runs, Percent(corrected), Percent(stats.DownRate)]
+                                                : L["Last 90 days: {0} entries, {1}% rated wrong", stats.Runs, Percent(stats.DownRate)])
+                                            : L["Last 90 days: {0} entries, not enough to judge yet", stats.Runs])</span>
+                                    }
                                 </span>
                                 @if (current)
                                 {
@@ -55,4 +63,8 @@ else
     <p class="section-footer">@(Model.Task == AiTask.Parser
         ? L["Only models that can return structured answers are listed. Prices are OpenRouter's, per million tokens; parsing one entry uses about a thousand."]
         : L["Jev is a decision model from TypeSafe: it picks between the database foods the search finds, or says none fits. An entry uses a few thousand tokens, a fraction of a cent. Off keeps the database ranking alone."])</p>
+}
+
+@functions {
+    private static int Percent(decimal share) => (int)Math.Round(share * 100);
 }

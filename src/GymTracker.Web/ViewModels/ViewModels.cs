@@ -100,7 +100,7 @@ public record FoodAddViewModel(
     IReadOnlyList<GymTracker.Web.Features.Food.RecentFood> Recents,
     IReadOnlyList<SavedMeal> SavedMeals);
 
-public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, GymTracker.Core.Text.LocalText? Warning);
+public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, GymTracker.Core.Text.LocalText? Warning, int? ParseRunId = null);
 
 public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result);
 
@@ -111,4 +111,7 @@ public record AiTaskStatus(GymTracker.Web.Integrations.AiTask Task, string Model
 public record OpenRouterStatus(GymTracker.Web.Integrations.OpenRouterKeyStatus Key, IReadOnlyList<AiTaskStatus> Tasks);
 
 /// <param name="Models">Null when OpenRouter's model list can't be loaded.</param>
-public record ModelPickerViewModel(GymTracker.Web.Integrations.AiTask Task, IReadOnlyList<GymTracker.Web.Integrations.OpenRouterModel>? Models, string Current);
+public record ModelPickerViewModel(GymTracker.Web.Integrations.AiTask Task, IReadOnlyList<GymTracker.Web.Integrations.OpenRouterModel>? Models, string Current,
+    IReadOnlyDictionary<string, GymTracker.Core.Nutrition.ModelStats>? Accuracy = null);
+
+public record FeedbackFormViewModel(GymTracker.Web.Features.Feedback.ReportDraft Draft, Guid ClientId, string? TraceId, string? Page);

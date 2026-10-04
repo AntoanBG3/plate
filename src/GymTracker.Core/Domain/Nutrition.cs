@@ -68,6 +68,10 @@ public class FoodLogEntry
 
     /// <summary>The decision model version that chose the matched food, or decided there is none; null when the ranking did.</summary>
     public string? MatchModel { get; set; }
+
+    /// <summary>The text parse this entry came from, so it can be reported later (SPEC 11).</summary>
+    public int? ParseRunId { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>Set when deleted; the row is hidden and can be restored for a while (undo), then purged.</summary>

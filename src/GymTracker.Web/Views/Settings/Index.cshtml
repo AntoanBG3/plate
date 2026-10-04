@@ -163,6 +163,30 @@
     </p>
 </section>
 
+@{
+    var unreadFeedback = ViewData["UnreadFeedback"] as int? ?? 0;
+}
+<section class="section">
+    <h2 class="section-title">@L["Feedback"]</h2>
+    <div class="list">
+        <a class="row row-link" href="/feedback/new">
+            <span class="row-icon neutral">@Ui.Icon("feedback")</span>
+            <span class="row-main">@L["Send feedback"]</span>
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+        <a class="row row-link" href="/feedback">
+            <span class="row-icon neutral">@Ui.Icon("list")</span>
+            <span class="row-main">@L["Your feedback"]</span>
+            @if (unreadFeedback > 0)
+            {
+                <span class="count-badge" aria-label="@L.Count(unreadFeedback, "1 new reply", "{0} new replies")">@unreadFeedback</span>
+            }
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+    </div>
+    <p class="section-footer">@L["Report a problem or suggest an idea. Answers show under Your feedback."]</p>
+</section>
+
 <section class="section">
     <h2 class="section-title">@L["Your data"]</h2>
     <div class="list">

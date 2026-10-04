@@ -6,7 +6,10 @@ COPY src/GymTracker.Core/GymTracker.Core.csproj src/GymTracker.Core/
 COPY src/GymTracker.Web/GymTracker.Web.csproj src/GymTracker.Web/
 RUN dotnet restore src/GymTracker.Web/GymTracker.Web.csproj -r linux-x64
 COPY src/ src/
-RUN dotnet publish src/GymTracker.Web/GymTracker.Web.csproj -c Release -o /app --no-restore -r linux-x64 --self-contained false -p:UseAppHost=false
+# The Git commit, passed from the Mac at deploy time (rsync sends no .git); reports and errors carry it.
+ARG APP_VERSION=unknown
+RUN dotnet publish src/GymTracker.Web/GymTracker.Web.csproj -c Release -o /app --no-restore -r linux-x64 --self-contained false -p:UseAppHost=false \
+    -p:InformationalVersion=$APP_VERSION -p:IncludeSourceRevisionInInformationalVersion=false
 
 # chiseled-extra includes ICU and time zone data (Europe/Sofia, Bulgarian text). No shell, no package manager.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra@sha256:00e0ad6a7ef8c0c1391b87f05c7ac757a15740455688f2bfcd146a3f4b987efd

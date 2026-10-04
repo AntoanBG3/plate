@@ -30,6 +30,9 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      args:
+        # Set by the deploy command from the Mac: APP_VERSION=$(git rev-parse --short HEAD)
+        APP_VERSION: ${APP_VERSION:-unknown}
     image: gymtracker-app:latest
     container_name: gymtracker-app
     # antoan, so the bind-mounted keys directory is writable without sudo.
@@ -48,6 +51,8 @@ services:
       # Passkeys are bound to this host name; changing it makes existing passkeys stop working.
       Passkeys__ServerDomain: gym.peychev.uk
       Security__CspEnforce: "${CSP_ENFORCE:-false}"
+      Telegram__BotToken: "${TELEGRAM_BOT_TOKEN:-}"
+      Telegram__ChatId: "${TELEGRAM_CHAT_ID:-}"
     volumes:
       - ../keys:/keys
     # No published ports: cloudflared reaches http://gymtracker-app:8080 over the tunnel network.

@@ -51,6 +51,114 @@ namespace GymTracker.Web.Data.Migrations
                     b.ToTable("Bodyweights");
                 });
 
+            modelBuilder.Entity("GymTracker.Core.Domain.ChangelogEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("FeedbackId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TextBg")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("TextEn")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Version")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("FeedbackId");
+
+                    b.ToTable("Changelog");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.ErrorEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Count")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTimeOffset>("FirstSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FirstVersion")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTimeOffset>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastTraceId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LastVersion")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Path")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Stack")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fingerprint")
+                        .IsUnique();
+
+                    b.HasIndex("LastSeenAt");
+
+                    b.ToTable("ErrorEvents");
+                });
+
             modelBuilder.Entity("GymTracker.Core.Domain.Exercise", b =>
                 {
                     b.Property<int>("Id")
@@ -89,6 +197,132 @@ namespace GymTracker.Web.Data.Migrations
                     b.HasIndex("OwnerUserId");
 
                     b.ToTable("Exercises");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.Feedback", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Context")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ErrorEventId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FixedInVersion")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int?>("ParseItemIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ParseRunId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Rating")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("Reasons")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reply")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset?>("ReplySeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("StatusChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId")
+                        .IsUnique();
+
+                    b.HasIndex("ErrorEventId");
+
+                    b.HasIndex("ParseRunId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("Feedback");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.FeedbackAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<byte[]>("Bytes")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("FeedbackId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeedbackId")
+                        .IsUnique();
+
+                    b.ToTable("FeedbackAttachments");
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.FoodItem", b =>
@@ -219,6 +453,9 @@ namespace GymTracker.Web.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<int?>("ParseRunId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("ProteinG")
                         .HasPrecision(6, 1)
                         .HasColumnType("numeric(6,1)");
@@ -235,6 +472,8 @@ namespace GymTracker.Web.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FoodItemId");
+
+                    b.HasIndex("ParseRunId");
 
                     b.HasIndex("UserId", "Date");
 
@@ -290,6 +529,70 @@ namespace GymTracker.Web.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("MaintenanceEstimates");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.ParseRun", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AiModel")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Corrections")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MatchModel")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("MatchMs")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Parsed")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ParserError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("ParserMs")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Resolved")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Saved")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("ParseRuns");
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.SavedMeal", b =>
@@ -546,6 +849,9 @@ namespace GymTracker.Web.Data.Migrations
 
                     b.Property<int?>("BirthYear")
                         .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("ChangelogSeenAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("DefaultWeightIncrementKg")
                         .HasPrecision(6, 2)
@@ -922,12 +1228,52 @@ namespace GymTracker.Web.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("GymTracker.Core.Domain.ChangelogEntry", b =>
+                {
+                    b.HasOne("GymTracker.Core.Domain.Feedback", null)
+                        .WithMany()
+                        .HasForeignKey("FeedbackId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
             modelBuilder.Entity("GymTracker.Core.Domain.Exercise", b =>
                 {
                     b.HasOne("GymTracker.Web.Data.AppUser", null)
                         .WithMany()
                         .HasForeignKey("OwnerUserId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.Feedback", b =>
+                {
+                    b.HasOne("GymTracker.Core.Domain.ErrorEvent", null)
+                        .WithMany()
+                        .HasForeignKey("ErrorEventId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("GymTracker.Core.Domain.ParseRun", "ParseRun")
+                        .WithMany()
+                        .HasForeignKey("ParseRunId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("GymTracker.Web.Data.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParseRun");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.FeedbackAttachment", b =>
+                {
+                    b.HasOne("GymTracker.Core.Domain.Feedback", "Feedback")
+                        .WithOne("Attachment")
+                        .HasForeignKey("GymTracker.Core.Domain.FeedbackAttachment", "FeedbackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Feedback");
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.FoodItem", b =>
@@ -945,6 +1291,11 @@ namespace GymTracker.Web.Data.Migrations
                         .HasForeignKey("FoodItemId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("GymTracker.Core.Domain.ParseRun", null)
+                        .WithMany()
+                        .HasForeignKey("ParseRunId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("GymTracker.Web.Data.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -955,6 +1306,15 @@ namespace GymTracker.Web.Data.Migrations
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.MaintenanceEstimate", b =>
+                {
+                    b.HasOne("GymTracker.Web.Data.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.ParseRun", b =>
                 {
                     b.HasOne("GymTracker.Web.Data.AppUser", null)
                         .WithMany()
@@ -1186,6 +1546,11 @@ namespace GymTracker.Web.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.Feedback", b =>
+                {
+                    b.Navigation("Attachment");
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.SavedMeal", b =>

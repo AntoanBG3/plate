@@ -3,6 +3,7 @@ using GymTracker.Web.Features.Localization;
 using GymTracker.Core.Domain;
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Features;
+using GymTracker.Web.Features.Feedback;
 using GymTracker.Web.Features.Food;
 using GymTracker.Web.Features.Profile;
 using GymTracker.Web.ViewModels;
@@ -16,8 +17,7 @@ public class FoodController(
     FoodLogService log,
     SavedMealService savedMeals,
     FoodItemService foods,
-    FoodMatcher matcher,
-    IFoodParser parser,
+    ParseRunService parseRuns,
     NutritionTargets targets,
     ProfileService profiles,
     UserTime userTime,
@@ -58,29 +58,30 @@ public class FoodController(
             return View("Add", new FoodAddViewModel(date, meal, "text", text, "Write what you ate, up to 1000 characters.", null, [], null, [], []));
         }
 
-        var result = await parser.ParseAsync(text, ct);
-        if (result.Items.Count == 0)
+        var (result, items, runId) = await parseRuns.ParseAsync(text, ct);
+        if (items.Count == 0)
         {
             // Keep the text so nothing typed is lost, and offer manual entry.
             return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? new LocalText("Couldn't read that."), null, [], null, [], []));
         }
 
-        var items = await matcher.ResolveAsync(text, result.Items, ct);
-        return View("Confirm", new ConfirmViewModel(date, meal, text, result.Model, items, result.Error));
+        return View("Confirm", new ConfirmViewModel(date, meal, text, result.Model, items, result.Error, runId));
     }
 
     [HttpPost("confirm")]
-    public async Task<IActionResult> Confirm(DateOnly date, Meal meal, string? aiModel, List<ConfirmRow> items, CancellationToken ct)
+    public async Task<IActionResult> Confirm(DateOnly date, Meal meal, string? aiModel, int? parseRunId, List<ConfirmRow> items, CancellationToken ct)
     {
-        var entries = items
-            .Where(i => i.Include)
-            .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, new Per100g(i.Kcal, i.Protein, i.Carbs, i.Fat), i.FoodItemId, EntrySource.Ai, aiModel, string.IsNullOrWhiteSpace(i.MatchModel) ? null : i.MatchModel.Trim()))
-            .ToList();
-        if (entries.Count == 0)
+        if (!items.Any(i => i.Include))
         {
             throw new ValidationException("Tick at least one food to save.");
         }
 
+        var runId = await parseRuns.ConfirmAsync(parseRunId,
+            items.Select(i => new SavedItem(i.Include, i.Description ?? "", i.Grams, new Per100g(i.Kcal, i.Protein, i.Carbs, i.Fat), i.FoodItemId)).ToList(), ct);
+        var entries = items
+            .Where(i => i.Include)
+            .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, new Per100g(i.Kcal, i.Protein, i.Carbs, i.Fat), i.FoodItemId, EntrySource.Ai, aiModel, string.IsNullOrWhiteSpace(i.MatchModel) ? null : i.MatchModel.Trim(), runId))
+            .ToList();
         await log.AddAsync(entries, ct);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }

@@ -18,10 +18,20 @@
     <div class="banner is-error" role="alert" style="margin-top: var(--s-4)">@Ui.Icon("alert")<span>@L[Model.Warning]</span></div>
 }
 
-<form method="post" asp-antiforgery="true" action="/food/confirm" style="margin-top: var(--s-5)">
+<form method="post" asp-antiforgery="true" action="/food/confirm" style="margin-top: var(--s-5)" data-module="@(Model.ParseRunId is null ? null : "parse-rating")" data-run="@Model.ParseRunId">
+    @if (Model.ParseRunId is not null)
+    {
+        @* Shown by feedback.js: a rating is sent on its own, without saving the form. *@
+        <div class="rate-row" data-rating hidden>
+            <span class="footnote" data-rating-question>@L["Did this read your food right?"]</span>
+            <button type="button" class="rate-btn" data-rate="Up" aria-pressed="false" aria-label="@L["Yes, it read it right"]">@Ui.Icon("thumb-up")</button>
+            <button type="button" class="rate-btn" data-rate="Down" aria-pressed="false" aria-label="@L["No, something is wrong"]">@Ui.Icon("thumb-down")</button>
+        </div>
+    }
     <input type="hidden" name="date" value="@date" />
     <input type="hidden" name="meal" value="@Model.Meal" />
     <input type="hidden" name="aiModel" value="@Model.AiModel" />
+    <input type="hidden" name="parseRunId" value="@Model.ParseRunId" />
     <div class="list">
         @for (var i = 0; i < Model.Items.Count; i++)
         {
@@ -37,6 +47,10 @@
                     <input type="checkbox" class="check-input" name="items[@i].Include" value="true" checked aria-label="@L["Include {0}", item.Description]" />
                     <input type="text" class="input" name="items[@i].Description" value="@item.Description" maxlength="200" aria-label="@L["Description"]" required />
                     <span class="chip @chip">@label</span>
+                    @if (Model.ParseRunId is not null)
+                    {
+                        <button type="button" class="rate-btn" data-rate="Down" data-item="@i" aria-pressed="false" aria-label="@L["{0} is wrong", item.Description]" hidden>@Ui.Icon("thumb-down")</button>
+                    }
                 </div>
                 <div class="result-amount">
                     <label class="grams"><input type="number" name="items[@i].Grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
@@ -72,6 +86,32 @@
     <p class="section-footer">@L["Database values come from USDA or foods you saved. AI estimates are the model's own numbers; check them against the label if you can."]</p>
     <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L[SaveTo[Model.Meal]]</button>
 </form>
+
+@if (Model.ParseRunId is not null)
+{
+    @section Overlays {
+        <div class="sheet" id="parse-sheet" hidden>
+            <div class="sheet-scrim"></div>
+            <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="parse-sheet-title">
+                <div class="sheet-grabber" aria-hidden="true"></div>
+                <div class="sheet-head"><span></span><span class="sheet-title" id="parse-sheet-title">@L["What was wrong?"]</span><button type="button" class="sheet-close" data-sheet-close>@L["Skip"]</button></div>
+                <div class="sheet-stack">
+                    <p class="footnote" data-sheet-item hidden></p>
+                    <div class="choice-chips" role="group" aria-labelledby="parse-sheet-title">
+                        @foreach (var (reason, text) in GymTracker.Web.Features.Feedback.FeedbackText.Reasons)
+                        {
+                            <label class="plate-choice"><input type="checkbox" name="reasons" value="@reason" /><span>@L[text]</span></label>
+                        }
+                    </div>
+                    <label for="parse-sheet-message" class="sr-only">@L["Anything else?"]</label>
+                    <textarea id="parse-sheet-message" class="textarea" name="message" rows="3" maxlength="2000" placeholder="@L["Anything else? What should it have been?"]"></textarea>
+                    <button type="button" class="btn btn-primary btn-block" data-send-details>@L["Send"]</button>
+                    <p class="footnote">@L["Your food is still not saved; you can fix it and save as usual."]</p>
+                </div>
+            </div>
+        </div>
+    }
+}
 
 @functions {
     private static readonly Dictionary<Meal, string> SaveTo = new()

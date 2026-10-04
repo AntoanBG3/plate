@@ -1,0 +1,77 @@
+@model List<GymTracker.Core.Domain.Feedback>
+@using GymTracker.Core.Domain
+@using GymTracker.Web.Features.Feedback
+@{
+    ViewData["Title"] = L["Your feedback"];
+    ViewData["BackUrl"] = "/settings";
+    ViewData["BackLabel"] = L["Settings"];
+    var sent = Context.Request.Query["sent"] == "1";
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Your feedback"]</h1>
+</header>
+
+@if (sent)
+{
+    <div class="banner is-success" role="status">@Ui.Icon("done")<span>@L["Thanks. The answer will show here."]</span></div>
+}
+
+<a class="btn btn-tinted btn-block" href="/feedback/new">@Ui.Icon("feedback")@L["Send feedback"]</a>
+
+@* Reports still waiting on this phone; filled by feedback.js. *@
+<section class="section" data-module="feedback-pending" hidden>
+    <h2 class="section-title">@L["Waiting to send"]</h2>
+    <div class="list" data-pending-list></div>
+</section>
+
+@if (Model.Count == 0)
+{
+    <div class="empty">
+        <div class="empty-icon">@Ui.Icon("feedback")</div>
+        <h2>@L["Nothing sent yet"]</h2>
+        <p>@L["Problems, ideas and wrong food matches you report show here, with the answer."]</p>
+    </div>
+}
+else
+{
+    <section class="section">
+        <div class="list">
+            @foreach (var f in Model)
+            {
+                var chip = f.Status switch
+                {
+                    FeedbackStatus.Fixed => "good",
+                    FeedbackStatus.Planned => "ai",
+                    FeedbackStatus.NeedsInfo => "check",
+                    _ => "muted",
+                };
+                <article class="feedback-item">
+                    <div class="feedback-head">
+                        <span class="footnote">@Ui.DayMonth(f.CreatedAt.UtcDateTime) · @L[FeedbackText.Areas[f.Area]]</span>
+                        <span class="chip @chip">@L[FeedbackText.Statuses[f.Status]]</span>
+                    </div>
+                    @if (f.Message is not null)
+                    {
+                        <p class="feedback-message">@f.Message</p>
+                    }
+                    else if (f.Rating == FeedbackRating.Down)
+                    {
+                        <p class="feedback-message footnote">@L["A food reading rated wrong."]</p>
+                    }
+                    @if (f.Reasons != ParseReason.None)
+                    {
+                        <p class="footnote">@string.Join(" · ", FeedbackText.Reasons.Where(r => f.Reasons.HasFlag(r.Reason)).Select(r => L[r.Label]))</p>
+                    }
+                    @if (f.Attachment is not null)
+                    {
+                        <a href="/feedback/@f.Id/screenshot" target="_blank"><img class="feedback-thumb" src="/feedback/@f.Id/screenshot" alt="@L["Screenshot"]" loading="lazy" /></a>
+                    }
+                    @if (f.Reply is not null)
+                    {
+                        <div class="feedback-reply@(f.HasUnreadReply ? " is-unread" : "")">@f.Reply</div>
+                    }
+                </article>
+            }
+        </div>
+    </section>
+}

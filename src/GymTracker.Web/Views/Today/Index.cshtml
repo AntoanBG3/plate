@@ -18,6 +18,27 @@
     <h1 class="large-title">@L["Today"]</h1>
 </header>
 
+@if (ViewData["WhatsNew"] is List<GymTracker.Web.Features.Feedback.WhatsNewItem> { Count: > 0 } news)
+{
+    <section class="card card-pad whats-new" id="whats-new" style="margin-bottom: var(--s-5)">
+        <div class="feedback-head">
+            <h2 class="section-title" style="margin: 0">@L["What's new"]</h2>
+            <form method="post" asp-antiforgery="true" action="/today/whats-new/dismiss" hx-post="/today/whats-new/dismiss" hx-target="#whats-new" hx-swap="outerHTML">
+                <button type="submit" class="btn btn-plain">@L["Got it"]</button>
+            </form>
+        </div>
+        <ul>
+            @foreach (var item in news)
+            {
+                <li>@item.Text@if (item.Yours)
+                    {
+                        <span class="chip good" style="margin-left: var(--s-2)">@L["You reported this"]</span>
+                    }</li>
+            }
+        </ul>
+    </section>
+}
+
 <a class="card tap" href="/food" aria-label="@L["Food today"]">
     @if (t.Kcal is { } kcal && t.ProteinG is { } protein)
     {
@@ -170,4 +191,5 @@
             <span class="warn"> @L["Raised to the {0} kcal minimum. Consider a slower rate in Settings.", t.FloorKcal]</span>
         }
     </p>
+    <a class="btn btn-plain" style="margin-left: var(--s-2); font-size: var(--text-footnote)" href="/feedback/new?about=Maintenance&id=@estimate.Id">@L["Seems off?"]</a>
 }

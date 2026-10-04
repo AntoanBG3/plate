@@ -26,6 +26,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         await db.Database.MigrateAsync();
         await ExerciseSeed.SeedAsync(db, CancellationToken.None);
         await UsdaSeed.SeedAsync(db, UsdaSeed.DefaultPath, CancellationToken.None);
+        // As at app startup, so matching sees the same shared foods as on the server (parse regression cases).
+        await BgFoodSeed.SeedAsync(db, BgFoodSeed.DefaultPath, CancellationToken.None);
     }
 
     public Task DisposeAsync() => container.DisposeAsync().AsTask();
