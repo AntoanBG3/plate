@@ -186,6 +186,9 @@ builder.Services.AddControllersWithViews(o =>
 builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");
 
 var app = builder.Build();
+app.Logger.LogInformation("GC: server={Server}, latency={Latency}, heap limit={Limit} MiB",
+    System.Runtime.GCSettings.IsServerGC, System.Runtime.GCSettings.LatencyMode,
+    GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / 1024 / 1024);
 
 await using (var scope = app.Services.CreateAsyncScope())
 {

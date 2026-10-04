@@ -11,7 +11,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=25"]
+    # jit=off: Postgres JIT only pays off for large analytic queries and costs CPU when it kicks in.
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=15", "-c", "jit=off"]
     volumes:
       # The postgres 18 image keeps data under /var/lib/postgresql/18/docker; mount the parent.
       - ../db:/var/lib/postgresql
@@ -35,7 +36,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      ConnectionStrings__Default: "Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__Default: "Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Maximum Pool Size=8"
       DataProtection__KeysPath: /keys
       ReverseProxy__KnownProxies: 172.30.0.10
       OpenRouter__ApiKey: "${OPENROUTER_API_KEY:-}"
@@ -48,6 +49,7 @@ services:
       - default
       - tunnel
     mem_limit: 256m
+    cpus: "1.0"
     restart: unless-stopped
 
 networks:

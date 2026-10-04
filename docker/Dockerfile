@@ -3,9 +3,9 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY src/GymTracker.Core/GymTracker.Core.csproj src/GymTracker.Core/
 COPY src/GymTracker.Web/GymTracker.Web.csproj src/GymTracker.Web/
-RUN dotnet restore src/GymTracker.Web/GymTracker.Web.csproj
+RUN dotnet restore src/GymTracker.Web/GymTracker.Web.csproj -r linux-x64
 COPY src/ src/
-RUN dotnet publish src/GymTracker.Web/GymTracker.Web.csproj -c Release -o /app --no-restore -p:UseAppHost=false
+RUN dotnet publish src/GymTracker.Web/GymTracker.Web.csproj -c Release -o /app --no-restore -r linux-x64 --self-contained false -p:UseAppHost=false
 
 # chiseled-extra includes ICU and time zone data (Europe/Sofia, Bulgarian text). No shell, no package manager.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra
