@@ -7,6 +7,23 @@ const base = process.argv[2] || "http://localhost:5130";
 const browser = await chromium.launch({ channel: "chrome" });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, serviceWorkers: "allow" });
 const errors = [];
+// Track 250 ms intervals (the rest timer tick) so the check can see when they run.
+await context.addInitScript(() => {
+    const set = window.setInterval;
+    const clear = window.clearInterval;
+    window.__ticks = new Set();
+    window.setInterval = (fn, ms, ...args) => {
+        const id = set(fn, ms, ...args);
+        if (ms === 250) {
+            window.__ticks.add(id);
+        }
+        return id;
+    };
+    window.clearInterval = (id) => {
+        window.__ticks.delete(id);
+        clear(id);
+    };
+});
 
 async function signedInPage() {
     const page = await context.newPage();
@@ -58,6 +75,41 @@ assert.ok(await sameDoc(), "weight POST was soft");
 await page.goBack();
 await page.waitForFunction(() => !document.documentElement.dataset.nav);
 assert.ok(!page.url().includes("/today/weight"), "Back never lands on the POST url");
+
+// Session page reached by soft navigation: logging a set starts the rest timer, leaving stops the tick.
+const workout = await signedInPage();
+assert.equal(await workout.evaluate(() => window.__ticks.size), 0, "no rest-timer tick on Today");
+const resume = await workout.$('a[href^="/train/sessions/"]');
+if (resume) {
+    await resume.tap();
+    await workout.waitForFunction(() => location.pathname.startsWith("/train/sessions/") && !document.documentElement.dataset.nav);
+    assert.ok(await workout.evaluate(() => window.__doc === 1), "session page was a soft navigation");
+    const clientId = await workout.evaluate(() => {
+        const form = document.querySelector("form[data-log-set]:not(.pending)");
+        if (!form) {
+            return null;
+        }
+        form.querySelectorAll('input[name="weightKg"], input[name="reps"]').forEach((i) => { i.value = i.value || i.dataset.suggested || "5"; });
+        form.querySelector('button[type="submit"]').click();
+        return form.dataset.clientId;
+    });
+    if (clientId) {
+        await workout.waitForSelector("#rest-timer:not([hidden])", { timeout: 5000 });
+        await workout.waitForSelector(`form.set-row.done[data-client-id="${clientId}"]`, { timeout: 10000 });
+        assert.equal(await workout.evaluate(() => window.__ticks.size), 1, "rest timer ticks while it runs");
+        await workout.evaluate((id) => document.querySelector(`form.set-row.done[data-client-id="${id}"] .set-delete`).click(), clientId);
+        await workout.waitForSelector(`form.set-row.done[data-client-id="${clientId}"]`, { state: "detached", timeout: 10000 });
+        await workout.click("#rest-skip").catch(() => workout.evaluate(() => document.querySelector("[data-rest-skip]").click()));
+    } else {
+        console.log("no blank set on the active session; skipped the set check");
+    }
+    await workout.goBack();
+    await workout.waitForFunction(() => location.pathname === "/today" && !document.documentElement.dataset.nav);
+    assert.equal(await workout.evaluate(() => window.__ticks.size), 0, "tick stops after leaving the session");
+} else {
+    console.log("demo account has no active session; skipped the session check");
+}
+await workout.close();
 
 const offline = await signedInPage();
 await context.setOffline(true);

@@ -68,7 +68,7 @@
 }
 
 @* session.js reads these: which session pending sets belong to, and where the rest timer and queue state show. *@
-<div id="session" data-session-id="@session.Id" data-active="@(session.IsActive ? "true" : "false")" hidden></div>
+<div id="session" data-module="session" data-session-id="@session.Id" data-active="@(session.IsActive ? "true" : "false")" hidden></div>
 
 @section Overlays {
     @if (session.IsActive)
