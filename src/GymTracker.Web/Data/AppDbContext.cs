@@ -7,6 +7,10 @@ namespace GymTracker.Web.Data;
 public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser currentUser)
     : IdentityDbContext<AppUser>(options)
 {
+    /// <summary>Query filter names on the soft-deleted entities. Undo ignores only SoftDelete, never Owner.</summary>
+    public const string OwnerFilter = "Owner";
+    public const string SoftDeleteFilter = "SoftDelete";
+
     // Read by the query filters on every query, so each request only sees its own user's rows.
     private string? CurrentUserId => currentUser.UserId;
 
@@ -72,7 +76,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasOne(x => x.Template).WithMany(t => t.Exercises).HasForeignKey(x => x.TemplateId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Exercise).WithMany().HasForeignKey(x => x.ExerciseId).OnDelete(DeleteBehavior.Restrict);
             e.Property(x => x.WeightIncrementKg).HasPrecision(6, 2);
-            e.HasQueryFilter(x => x.Template.UserId == CurrentUserId);
+            e.HasQueryFilter(OwnerFilter, x => x.Template.UserId == CurrentUserId);
+            e.HasQueryFilter(SoftDeleteFilter, x => x.DeletedAt == null);
         });
 
         builder.Entity<WorkoutSession>(e =>
@@ -93,7 +98,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasOne(x => x.Session).WithMany(s => s.Exercises).HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Exercise).WithMany().HasForeignKey(x => x.ExerciseId).OnDelete(DeleteBehavior.Restrict);
             e.Property(x => x.WeightIncrementKg).HasPrecision(6, 2);
-            e.HasQueryFilter(x => x.Session.UserId == CurrentUserId);
+            e.HasQueryFilter(OwnerFilter, x => x.Session.UserId == CurrentUserId);
+            e.HasQueryFilter(SoftDeleteFilter, x => x.DeletedAt == null);
         });
 
         builder.Entity<SetEntry>(e =>
@@ -102,7 +108,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.WeightKg).HasPrecision(6, 2);
             e.Property(x => x.Rpe).HasPrecision(3, 1);
             e.HasIndex(x => x.ClientId).IsUnique();
-            e.HasQueryFilter(x => x.SessionExercise.Session.UserId == CurrentUserId);
+            e.HasQueryFilter(OwnerFilter, x => x.SessionExercise.Session.UserId == CurrentUserId);
+
+            // Also hidden while its exercise is removed, so history, volume and export skip it.
+            e.HasQueryFilter(SoftDeleteFilter, x => x.DeletedAt == null && x.SessionExercise.DeletedAt == null);
         });
 
         builder.Entity<UserExerciseSettings>(e =>
@@ -156,7 +165,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.FoodItem).WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => new { x.UserId, x.Date });
-            e.HasQueryFilter(x => x.UserId == CurrentUserId);
+            e.HasQueryFilter(OwnerFilter, x => x.UserId == CurrentUserId);
+            e.HasQueryFilter(SoftDeleteFilter, x => x.DeletedAt == null);
         });
 
         builder.Entity<SavedMeal>(e =>

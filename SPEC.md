@@ -136,6 +136,8 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `CompletedAt` (sent by the client, so a set retried later keeps the time it was actually done)
 - `ClientId` (Guid generated in the browser, unique index) so retried requests are idempotent.
 
+**Soft delete.** `SetEntry`, `SessionExercise`, `TemplateExercise` and `FoodLogEntry` have `DeletedAt` (nullable). Deleting sets it; named EF query filters (`Owner`, `SoftDelete`) hide deleted rows everywhere, and a removed session exercise hides its sets too. Undo clears it within 10 minutes; an hourly job removes rows deleted more than 24 hours ago.
+
 ### Body
 
 **BodyweightEntry**

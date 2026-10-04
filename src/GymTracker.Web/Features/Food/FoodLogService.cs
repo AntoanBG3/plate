@@ -145,7 +145,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
     public async Task<DateOnly> DeleteAsync(int id, CancellationToken ct)
     {
         var entry = await GetAsync(id, ct);
-        db.FoodLog.Remove(entry);
+        entry.DeletedAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
         return entry.Date;
     }

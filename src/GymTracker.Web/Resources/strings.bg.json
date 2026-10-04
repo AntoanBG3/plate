@@ -179,6 +179,7 @@
   "Include {0}": "Включи {0}",
   "Increment must be above 0 and at most 50 kg.": "Стъпката трябва да е над 0 и максимум 50 кг.",
   "It adapts weekly once you have 2 weeks of weigh-ins on most days and food logged on 80% of days.": "Адаптира се всяка седмица, след като имаш 2 седмици с измервания през повечето дни и записана храна в 80% от дните.",
+  "It's too late to undo that.": "Вече е късно това да се отмени.",
   "Just the bar": "Само лостът",
   "Key ending {0}": "Ключ, завършващ на {0}",
   "Key removed from Settings.": "Ключът е премахнат от настройките.",

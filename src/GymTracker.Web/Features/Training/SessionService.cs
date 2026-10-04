@@ -152,7 +152,7 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
     public async Task<SetEntry> DeleteSetAsync(int setId, CancellationToken ct)
     {
         var set = await db.Sets.SingleOrDefaultAsync(s => s.Id == setId, ct) ?? throw new NotFoundException();
-        db.Sets.Remove(set);
+        set.DeletedAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
         return set;
     }
@@ -223,11 +223,11 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         return item.SessionId;
     }
 
-    /// <summary>Removes an exercise and its logged sets from the session.</summary>
+    /// <summary>Removes an exercise from the session and hides its sets; undo can restore both.</summary>
     public async Task<int> RemoveExerciseAsync(int sessionExerciseId, CancellationToken ct)
     {
         var item = await db.SessionExercises.SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct) ?? throw new NotFoundException();
-        db.SessionExercises.Remove(item);
+        item.DeletedAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
         return item.SessionId;
     }

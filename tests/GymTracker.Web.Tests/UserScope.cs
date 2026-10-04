@@ -13,7 +13,7 @@ public sealed class UserScope : IAsyncDisposable
         UserId = userId;
         Db = fixture.CreateContext(userId);
         var currentUser = new FixedCurrentUser(userId);
-        Templates = new TemplateService(Db, currentUser);
+        Templates = new TemplateService(Db, currentUser, TimeProvider.System);
         Sessions = new SessionService(Db, currentUser, new ProfileLookup(Db), TimeProvider.System);
         Bodyweights = new BodyweightService(Db, currentUser);
         Exercises = new ExerciseService(Db);
@@ -23,6 +23,7 @@ public sealed class UserScope : IAsyncDisposable
         Matcher = new GymTracker.Web.Features.Food.FoodMatcher(Foods);
         FoodLog = new GymTracker.Web.Features.Food.FoodLogService(Db, currentUser, TimeProvider.System);
         SavedMeals = new GymTracker.Web.Features.Food.SavedMealService(Db, currentUser, TimeProvider.System);
+        Undo = new GymTracker.Web.Features.Undo.UndoService(Db, TimeProvider.System);
     }
 
     public FakeFoodDatabase FoodDatabase { get; }
@@ -30,6 +31,7 @@ public sealed class UserScope : IAsyncDisposable
     public GymTracker.Web.Features.Food.FoodMatcher Matcher { get; }
     public GymTracker.Web.Features.Food.FoodLogService FoodLog { get; }
     public GymTracker.Web.Features.Food.SavedMealService SavedMeals { get; }
+    public GymTracker.Web.Features.Undo.UndoService Undo { get; }
 
     public string UserId { get; }
     public AppDbContext Db { get; }

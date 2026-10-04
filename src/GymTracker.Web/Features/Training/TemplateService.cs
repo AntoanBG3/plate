@@ -6,7 +6,7 @@ namespace GymTracker.Web.Features.Training;
 
 public record TemplateExerciseInput(int WorkingSets, int RepMin, int RepMax, decimal? WeightIncrementKg, int RestSeconds);
 
-public class TemplateService(AppDbContext db, ICurrentUser currentUser)
+public class TemplateService(AppDbContext db, ICurrentUser currentUser, TimeProvider time)
 {
     public Task<List<WorkoutTemplate>> ListAsync(CancellationToken ct) =>
         db.Templates
@@ -130,7 +130,7 @@ public class TemplateService(AppDbContext db, ICurrentUser currentUser)
     public async Task RemoveExerciseAsync(int templateExerciseId, CancellationToken ct)
     {
         var item = await FindExerciseAsync(templateExerciseId, ct);
-        db.TemplateExercises.Remove(item);
+        item.DeletedAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
     }
 

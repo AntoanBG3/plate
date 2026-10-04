@@ -66,6 +66,9 @@ public class FoodLogEntry
     public EntrySource Source { get; set; }
     public string? AiModel { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>Set when deleted; the row is hidden and can be restored for a while (undo), then purged.</summary>
+    public DateTimeOffset? DeletedAt { get; set; }
 }
 
 /// <summary>A named group of foods logged together often, copied from a logged meal.</summary>
