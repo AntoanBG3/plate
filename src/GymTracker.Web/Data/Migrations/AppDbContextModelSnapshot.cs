@@ -843,6 +843,10 @@ namespace GymTracker.Web.Data.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("text");
 
+                    b.Property<string>("ActivityLevel")
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
                     b.Property<decimal>("BarWeightKg")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
@@ -877,6 +881,9 @@ namespace GymTracker.Web.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(12)
                         .HasColumnType("character varying(12)");
+
+                    b.Property<DateTimeOffset?>("OnboardedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.PrimitiveCollection<List<decimal>>("PlatesKg")
                         .IsRequired()

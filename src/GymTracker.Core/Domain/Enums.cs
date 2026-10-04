@@ -31,6 +31,15 @@ public enum Sex
     Female,
 }
 
+/// <summary>NASEM 2023 physical activity categories (SPEC 5.5). The order matters: each is more active than the last.</summary>
+public enum ActivityLevel
+{
+    Inactive,
+    LowActive,
+    Active,
+    VeryActive,
+}
+
 public enum Goal
 {
     Cut,

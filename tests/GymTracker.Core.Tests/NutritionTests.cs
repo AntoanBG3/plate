@@ -66,21 +66,54 @@ public class FoodMathTests
 
 public class MaintenanceTests
 {
-    private static UserProfile Profile(Sex? sex = Sex.Male, int? height = 180, int? born = 1996) =>
-        new() { Sex = sex, HeightCm = height, BirthYear = born, ProteinGramsPerKg = 2.0m };
+    private static UserProfile Profile(Sex? sex = Sex.Male, int? height = 180, int? born = 1996, ActivityLevel? activity = null) =>
+        new() { Sex = sex, HeightCm = height, BirthYear = born, ActivityLevel = activity, ProteinGramsPerKg = 2.0m };
+
+    [Theory]
+    // Male, 30 years, 180 cm, 80 kg
+    [InlineData(Sex.Male, ActivityLevel.Inactive, 180, 80, 2726.17)]
+    [InlineData(Sex.Male, ActivityLevel.LowActive, 180, 80, 2945.77)]
+    [InlineData(Sex.Male, ActivityLevel.Active, 180, 80, 3126.32)]
+    [InlineData(Sex.Male, ActivityLevel.VeryActive, 180, 80, 3495.82)]
+    // Female, 30 years, 165 cm, 60 kg
+    [InlineData(Sex.Female, ActivityLevel.Inactive, 165, 60, 2021.00)]
+    [InlineData(Sex.Female, ActivityLevel.LowActive, 165, 60, 2182.87)]
+    [InlineData(Sex.Female, ActivityLevel.Active, 165, 60, 2319.45)]
+    [InlineData(Sex.Female, ActivityLevel.VeryActive, 165, 60, 2551.68)]
+    public void Nasem_2023_matches_the_published_equations(Sex sex, ActivityLevel level, int height, double weight, double expected) =>
+        Maintenance.Nasem2023(sex, level, 30, height, (decimal)weight).Should().Be((decimal)expected);
 
     [Fact]
-    public void Mifflin_st_jeor_matches_the_published_formula()
+    public void A_higher_level_never_gives_less_where_the_equations_cross()
     {
-        // Male, 80 kg, 180 cm, 30 years: 800 + 1125 - 150 + 5 = 1780
-        Maintenance.MifflinStJeor(Sex.Male, 80, 180, 30).Should().Be(1780m);
-        // Female, 60 kg, 165 cm, 55 years: 600 + 1031.25 - 275 - 161 = 1195.25
-        Maintenance.MifflinStJeor(Sex.Female, 60, 165, 55).Should().Be(1195.25m);
+        // Male, 30 years, 150 cm, 45 kg: the very active equation alone gives 2358.67, below active's 2373.87.
+        Maintenance.Nasem2023(Sex.Male, ActivityLevel.VeryActive, 30, 150, 45).Should().Be(2373.87m);
+        Maintenance.Nasem2023(Sex.Male, ActivityLevel.Active, 30, 150, 45).Should().Be(2373.87m);
     }
 
     [Fact]
-    public void Prior_is_bmr_times_1_55_using_age_from_birth_year() =>
-        Maintenance.Prior(Profile(), 80, currentYear: 2026).Should().Be(2759); // 1780 * 1.55 = 2759
+    public void Levels_are_in_order_across_the_profile_limits()
+    {
+        foreach (var sex in new[] { Sex.Male, Sex.Female })
+        foreach (var age in new[] { ProfileLimits.MinAgeYears, 40, 70, ProfileLimits.MaxAgeYears })
+        foreach (var height in new[] { ProfileLimits.MinHeightCm, 160, 190, ProfileLimits.MaxHeightCm })
+        foreach (var weight in new[] { ProfileLimits.MinWeightKg, 60m, 120m, ProfileLimits.MaxWeightKg })
+        {
+            var values = Enum.GetValues<ActivityLevel>().Select(l => Maintenance.Nasem2023(sex, l, age, height, weight)).ToList();
+            values.Should().BeInAscendingOrder($"{sex}, {age} y, {height} cm, {weight} kg");
+        }
+    }
+
+    [Fact]
+    public void Prior_uses_the_activity_level_and_age_from_birth_year()
+    {
+        Maintenance.Prior(Profile(activity: ActivityLevel.LowActive), 80, currentYear: 2026).Should().Be(2946);
+        Maintenance.Prior(Profile(activity: ActivityLevel.VeryActive), 80, currentYear: 2026).Should().Be(3496);
+    }
+
+    [Fact]
+    public void Prior_without_an_activity_level_is_inactive() =>
+        Maintenance.Prior(Profile(activity: null), 80, 2026).Should().Be(2726);
 
     [Fact]
     public void A_stated_maintenance_wins() =>

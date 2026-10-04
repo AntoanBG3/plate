@@ -3,7 +3,7 @@ using GymTracker.Core.Domain;
 namespace GymTracker.Core.Nutrition;
 
 /// <param name="Today">The user's current day. The window ends the day before, because today's log is incomplete.</param>
-/// <param name="PriorKcal">The starting estimate (stated maintenance or Mifflin-St Jeor x 1.55), if it can be computed.</param>
+/// <param name="PriorKcal">The starting estimate (stated maintenance or the NASEM 2023 estimate), if it can be computed.</param>
 /// <param name="LastAdaptiveKcal">The most recent estimate that was calculated from logged data, if any.</param>
 /// <param name="WeighIns">All of the user's weigh-ins; the trend is seeded with the first one.</param>
 /// <param name="IntakeByDay">Total kcal logged per day; days with nothing logged can be left out.</param>

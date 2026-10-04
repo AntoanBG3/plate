@@ -51,6 +51,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(p => p.TimeZoneId).HasMaxLength(64);
             e.Property(p => p.Sex).HasConversion<string>().HasMaxLength(10);
             e.Property(p => p.Goal).HasConversion<string>().HasMaxLength(10);
+            e.Property(p => p.ActivityLevel).HasConversion<string>().HasMaxLength(12);
             e.Property(p => p.TargetRatePercentPerWeek).HasPrecision(4, 2);
             e.Property(p => p.ProteinGramsPerKg).HasPrecision(4, 2);
             e.Property(p => p.DefaultWeightIncrementKg).HasPrecision(6, 2);
