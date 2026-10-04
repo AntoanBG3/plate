@@ -181,12 +181,13 @@ Both containers start with `mem_limit: 256m`. The app uses workstation garbage c
 
 ### Updating
 
-Run the same rsync from the Mac, then on wizard:
+Run the same rsync from the Mac, then build on wizard from the Mac so the image carries the commit it was built from (feedback reports and errors record it):
 
 ```sh
-cd ~/docker/gymtracker
-docker compose -f docker/docker-compose.yml up -d --build && docker builder prune -f
+ssh wizard "cd ~/docker/gymtracker && APP_VERSION=$(git -C ~/Projects/homeserver-gym rev-parse --short HEAD) docker compose -f docker/docker-compose.yml up -d --build && docker builder prune -f"
 ```
+
+`$(...)` is expanded on the Mac before the command is sent. Building on wizard directly works too; the version then shows as `unknown`.
 
 Migrations run automatically when the app starts.
 

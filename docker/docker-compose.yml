@@ -30,6 +30,9 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      args:
+        # Set by the deploy command from the Mac: APP_VERSION=$(git rev-parse --short HEAD)
+        APP_VERSION: ${APP_VERSION:-unknown}
     image: gymtracker-app:latest
     container_name: gymtracker-app
     # antoan, so the bind-mounted keys directory is writable without sudo.
