@@ -111,6 +111,17 @@ if (resume) {
 }
 await workout.close();
 
+// A slow form (the food text parser) that fails must not stay disabled.
+const busy = await signedInPage();
+await busy.route("**/food/parse", (route) => route.fulfill({ status: 500, contentType: "text/plain", body: "boom" }));
+await busy.goto(`${base}/food/add?tab=text`);
+await busy.fill('textarea[name="text"]', "a banana");
+await busy.click('form[data-busy] button[type="submit"]');
+await busy.waitForSelector("#toast:not([hidden])", { timeout: 5000 });
+assert.ok(await busy.$eval('form[data-busy] button[type="submit"]', (b) => !b.disabled), "parse button usable again after a failed post");
+await busy.close();
+errors.splice(0, errors.length, ...errors.filter((e) => !e.includes("500")));
+
 const offline = await signedInPage();
 await context.setOffline(true);
 await offline.tap('.tabbar a[href="/food"]');

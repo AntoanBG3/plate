@@ -54,12 +54,13 @@
             form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = true; });
         }
     });
-    window.addEventListener("pageshow", () => {
-        document.querySelectorAll("form.is-busy").forEach((form) => {
-            form.classList.remove("is-busy");
-            form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = false; });
-        });
-    });
+    function release(form) {
+        form.classList.remove("is-busy");
+        form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = false; });
+    }
+    window.addEventListener("pageshow", () => document.querySelectorAll("form.is-busy").forEach(release));
+    // A soft-navigation post that failed (nav.js): the form stays on screen, so make it usable again.
+    document.addEventListener("gym:formfail", (event) => release(event.target));
 
     if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(() => {});

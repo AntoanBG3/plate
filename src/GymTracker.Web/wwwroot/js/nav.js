@@ -172,7 +172,12 @@
         await transition.updateCallbackDone;
     }
 
-    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, fallback }) {
+    async function go(url, { push = true, init = null, form = null, isBack = false, scrollY = 0, fallback }) {
+        const failed = () => {
+            if (form) {
+                form.dispatchEvent(new CustomEvent("gym:formfail", { bubbles: true }));
+            }
+        };
         // Remember where we were, for Back.
         history.replaceState(Object.assign({}, history.state, { gym: true, scrollY: window.scrollY }), "");
         const slow = setTimeout(() => root.classList.add("is-navigating"), SLOW_MS);
@@ -187,6 +192,7 @@
                 if (init) {
                     // The form reached the server and failed there; sending it again could do it twice.
                     window.gymToast(t("Something went wrong ({0}). Try again.", response.status));
+                    failed();
                     return;
                 }
                 throw new Error("not a page");
@@ -198,6 +204,7 @@
             if (error instanceof FullLoad) {
                 location.href = error.url;
             } else {
+                failed();
                 fallback();
             }
         } finally {
@@ -242,6 +249,7 @@
         const submitter = event.submitter;
         go(action, {
             init: { method: "POST", body: new URLSearchParams(new FormData(form, submitter)) },
+            form,
             // No answer: the change may or may not have been saved, so say so instead of sending it again.
             fallback: () => window.gymToast(t("No connection. That change was not saved; try again when you have signal.")),
         });
