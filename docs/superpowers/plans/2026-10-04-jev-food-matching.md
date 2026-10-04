@@ -4,11 +4,11 @@
 
 **Goal:** Let TypeSafe's Jev decision model pick which database food each parsed item is, from a shortlist, or say none fits, instead of trusting the top of `FoodMatcher.Rank`.
 
-**Architecture:** The LLM parser is unchanged. `FoodMatcher` still searches and ranks, but only to build a shortlist per item; one Jev Decisions API call per parse answers one Choice question per item (shortlist plus a `none` option). Any Jev failure falls back silently to today's Rank top-1, so logging food never depends on Jev.
+**Architecture:** The LLM parser is unchanged. `FoodMatcher` builds a plain trigram shortlist per item; one Jev Decisions API call per parse answers one Choice question per item (shortlist plus `none`). Jev's food pick is used; its `none` only at confidence 0.9 or more; anything else, and any failure, falls back to today's Rank top pick, so logging food never depends on Jev. The AI model setting is split per task (parser, matcher).
 
 **Tech Stack:** .NET 10, ASP.NET Core MVC, EF Core + PostgreSQL 18 (`pg_trgm`), typed `HttpClient`, `System.Text.Json`, xUnit + FluentAssertions + Testcontainers. No new packages.
 
-**Spec:** `SPEC.md` sections 2, 4 and 6.1 (updated in Task 6). The design decisions are in this document, in "Design" below, because the request that started this work is the design brief.
+**Spec:** `SPEC.md` sections 2, 3, 4, 6.1 and 7 (updated in Task 6). The design decisions are in this document, in "Design" below, because the request that started this work is the design brief.
 
 ## Global Constraints
 
@@ -36,57 +36,65 @@ Checked against the OpenRouter Jev hub, tutorial and Decisions API reference, an
 
 ## Design
 
-**Where things live.** `IFoodMatchDecider` and its records go in `GymTracker.Core/Nutrition/FoodMatchDecider.cs`, next to `IFoodParser`; they use only `ParsedFoodItem` and `Per100g`. The Jev implementation is `GymTracker.Web/Integrations/JevFoodMatchDecider.cs` (typed `HttpClient`). Shortlisting and the confidence mapping stay in `FoodMatcher`, a Web feature service, as today.
+Decided after Phase 0b (2026-10-04): gated (c). Antoan chose to proceed with it and to split the AI model setting per task.
+
+**Where things live.** `IFoodMatchDecider` and its records go in `GymTracker.Core/Nutrition/FoodMatchDecider.cs`, next to `IFoodParser`; they use only `ParsedFoodItem` and `Per100g`. The Jev implementation is `GymTracker.Web/Integrations/JevFoodMatchDecider.cs` (typed `HttpClient`). Shortlisting, the gate and the confidence mapping stay in `FoodMatcher`, a Web feature service, as today.
 
 ```csharp
-public record MatchCandidate(int Id, string Name, string? NameBg, Per100g Per100);
+public record MatchCandidate(int Id, string Name, string? NameBg, string? Brand, Per100g Per100);
 public record MatchQuestion(ParsedFoodItem Item, IReadOnlyList<MatchCandidate> Candidates);
 /// FoodItemId null means the decider said none of the candidates is this food.
 public record MatchDecision(int? FoodItemId, decimal Confidence);
-/// Decisions in the same order as the questions; Model is the version that answered.
+/// Decisions in the same order as the questions (null: that item was not decided); Model is the version that answered.
 public record MatchDecisions(IReadOnlyList<MatchDecision?> Items, string Model);
 
 public interface IFoodMatchDecider
 {
-    /// Null when no decision could be made (off, no key, timeout, error); the caller uses Rank's top-1.
+    /// Null when no decision could be made (matcher off, no key, timeout, error); the caller uses Rank's top pick.
     Task<MatchDecisions?> DecideAsync(string text, IReadOnlyList<MatchQuestion> questions, CancellationToken ct);
 }
 ```
 
-A null entry in `Items` means that one item could not be decided (missing answer, unknown option key) and falls back to Rank on its own.
+**Request** (as measured in Phase 0). One request per parse to `POST ../alpha/decisions` (relative to the OpenRouter base URL). State: `{ "diary_entry": <text>, "foods": { "i0": { "as_written", "english", "state": "raw"|"cooked"|"not applicable", "preparation", "grams" }, ... } }`. One Choice question per item that has candidates, id `i<n>`. Criteria keys `f<FoodItemId>` in shortlist order, then `none`. Copied verbatim from the evaluation:
+- Instructions: `Which database entry is the food described in foods.{n}? The diary_entry is what the user typed. Pick the entry that is the same food in the same form: raw or cooked as the food's state says, and the preparation if one is given. Pick none if no entry is this food, for example when the entries are only a different food, a different form of it, or a dish that merely contains it.`
+- Candidate description: `{Name}{" / " + NameBg when present and different}{" (" + Brand + ")" when present}: {kcal:0} kcal, {protein:0.#} g protein per 100 g` (invariant culture).
+- `none`: `None of these entries is this food.`
 
-**Request.** One request per parse. State: `{ "diary_entry": <the user's text>, "foods": { "i0": { "as_written": NameOriginal, "english": NameEn, "state": "raw"|"cooked"|"not applicable", "preparation": Preparation, "grams": Grams }, ... } }`. One Choice question per item, id `i0`, `i1`, ...; instructions name the item by path (`foods.i0`), per the indirection advice. Criteria keys are `f<FoodItemId>`, values `"<Name> | <NameBg> | <kcal> kcal, <protein> g protein per 100 g"` (NameBg part omitted when null), plus `"none": "None of these entries is this food, or only a different food or form of it is listed."` The exact instruction wording comes from Phase 0 (Task 0), copied verbatim.
+**Shortlist.** Plain trigram top 50: `SearchAsync(NameEn, 50, 0.3)` plus `SearchAsync(NameOriginal, 50, 0.3)` when the two differ, merged by id keeping the higher similarity, ordered by similarity then shorter name, first 50. Rank is not used for the shortlist. Items with no candidates are not sent.
 
-**Shortlist.** Written for approach (b): Rank's top 5, merged across the English and Bulgarian searches exactly as `ResolveAsync` does today, deduplicated by id keeping the higher Rank score, in Rank order. If Phase 0 picks (c), only `FoodMatcher.Shortlist` changes: trigram top 40 (`SearchAsync(..., 50, 0.3)` for NameEn and NameOriginal, merged by max similarity), Rank not used for ordering. Items with no candidates are not sent; they take the existing no-match path.
+**Gate and mapping.** Rank still runs as today and supplies the fallback.
+- Jev picks `f<id>` from that item's shortlist: that food; `Confidence.High` at Jev confidence 0.95 or more (`JevHighConfidence`: the only cut-off where every Jev food pick in both rounds was correct, with or without the label slips), otherwise `Medium`.
+- Jev picks `none` at confidence 0.9 or more (`NoneGate`, pre-registered): the existing no-match path (AI estimate, `Low`, existing notes).
+- `none` below 0.9, an unknown key, a missing answer, or no decision at all: Rank's top pick exactly as today.
 
-**Mapping.** Jev picks `f<id>` in the shortlist: use that food; `Confidence.High` when Jev's confidence is at least `JevHighConfidence`, else `Medium`. Jev picks `none`: the existing no-match path (AI estimate, `Low`, existing notes). Unknown key or missing answer: Rank top-1 for that item, as today. `JevHighConfidence` is set from the Phase 0 data (the lowest confidence at which every Jev pick in the set was correct, rounded down to 0.05), recorded in the Task 0 results.
+**Failure.** Per-call timeout 3 s (Phase 0 max was 1,011 ms). No retry. Timeout, non-2xx, network error or unreadable body: log a warning and return null.
 
-**Failure.** Per-call timeout `JevTimeout` = 3 s (Phase 0 reports p95 latency; if p95 is above 1 s, revisit before Task 2). No retry. Timeout, any non-2xx, network error or unreadable body: log a warning and return null. The parser keeps its own 15 s per attempt, so a parse stays within its existing budget plus at most 3 s.
+**AI model settings, per task.** `AiTask { Parser, Matcher }` with one shared setting each, built so a later task is one more enum value and one more entry:
+- Parser: OpenRouter's chat catalog, as today. The stored name stays `OpenRouter:Model`, so the model already chosen on wizard carries over; fallback `OPENROUTER_MODEL`, then `openai/gpt-6-luna`.
+- Matcher: a fixed list, because decision models are not in `/api/v1/models`: `off` ("Database ranking only") and `typesafe/jev-1.13`. Stored as `OpenRouter:Model:Matcher`, default `off`. Only versions that were evaluated are offered; a new Jev version means evaluating it and adding it to the list.
+- Settings shows one row per task under the OpenRouter section, each opening `/settings/model/{task}`, the existing picker reused. Choosing a Jev model runs a one-question test decision and reports the outcome, like the parser's test.
 
-**Version.** Pin `typesafe/jev-1.13` as a constant (`JevFoodMatchDecider.Model`). Moving to a new version means rerunning the Phase 0 eval and adjusting `JevHighConfidence`, so it is a code change, not configuration.
+**Traceability.** New nullable `FoodLogEntry.MatchModel` (max 100): the Jev version that decided the row's match (a food or a gated none), null when Rank decided. Carried through the confirm form per row and added to the CSV export. One log line per call: resolved model, item count, latency, input tokens, `usage.cost`.
 
-**Settings.** A shared on/off setting `OpenRouter:JevMatching` in `AppSettings`, like the model, default off. Shown under Settings → Food text parser as "Pick database matches with Jev", only when a key exists. Off, or no key: today's behaviour.
+**Rate limits.** The Jev call happens inside `POST /food/parse`, already limited to 30 per user per 10 minutes. Nothing to add.
 
-**Traceability.** New nullable `FoodLogEntry.MatchModel` (max 100), the Jev version that decided that row's match (including a "none"), null when Rank decided. Carried through the confirm form per row, like `FoodItemId`, and added to the CSV export. One log line per call: resolved model, item count, latency, input tokens, `usage.cost`.
+## Decisions
 
-**Rate limits.** The Jev call happens inside `POST /food/parse`, which is already limited to 30 per user per 10 minutes, so one parse is one parser call plus at most one Jev call. Nothing to add.
-
-## Open decisions (recommendation first)
-
-1. **Version: pin `typesafe/jev-1.13`** rather than `~typesafe/jev-latest`. Thresholds are tuned per version and the alias can move without a deploy; the response's `model` is logged either way.
-2. **Toggle: shared on/off in Settings, default off**, rather than always on with a key. It doubles as a kill switch for an alpha endpoint, and lets Antoan turn it on after the deploy is checked.
-3. **No production fake decider.** Without a key or with the toggle off, the decider returns null and the matcher runs today's Rank path, which is also the failure fallback. A production fake that copied Rank's top-1 would duplicate that path. Tests use a scripted `StubMatchDecider`. (This departs from the FakeFoodParser pattern on purpose; say if you want the fake anyway.)
-4. **Traceability: a `MatchModel` column** rather than only a log line. SPEC keeps `AiModel` so "a shift in estimates after a model change can be traced"; a matcher version change shifts numbers the same way, and container logs don't survive. It costs one migration and one hidden field.
-5. **One request per parse, all items in the state**, rather than one request per item. The other items are a small distractor (TypeSafe warns about irrelevant state), but the diary text is context for every item and one call keeps latency and cost predictable. Phase 0 runs it this way, so the measurement covers the trade-off.
-6. **Shortlist (b) or (c)**: decided by Phase 0.
+1. **Version: pinned `typesafe/jev-1.13`**, offered as the only matcher model; the response's dated snapshot is recorded.
+2. **Matcher model setting, default off**, replacing the earlier on/off toggle: the same thing, in the shape of the per-task model settings.
+3. **No production fake decider.** With the matcher off or no key the decider returns null and Rank runs as today, which is also the failure path. Tests use a scripted `StubMatchDecider`.
+4. **`MatchModel` column** rather than only a log line.
+5. **One request per parse, all items in the state**, as measured.
+6. **Gated (c)**, decided by Phase 0b and Antoan.
+7. **The evaluation files are deleted when everything is implemented** (Antoan, 2026-10-04): the harness and sets under `tests/GymTracker.Web.Tests/JevEval/`. The plan and the two results files stay as the record; the harness stays in git history (commit 9702766) if a new Jev version needs evaluating.
 
 ## Review Focus
 
-- A Jev answer naming an option that was not offered (or a hallucinated `f<id>` of a food the user cannot see) must never become a match: only ids from that item's shortlist are accepted. Test in Task 1.
+- A Jev answer naming an option that was not offered for that item must never become a match: only ids from that item's shortlist are accepted. Test in Task 1.
 - A parse where every item has no candidates must not call Jev at all. Test in Task 4.
-- Jev slow but under the HttpClient timeout: the 3 s per-call timeout, not the 10 s client timeout, must win. Test in Task 2.
-- The user switches the toggle off while a key is set: no Jev calls. Test in Task 3.
-- A confirmed row whose match the user did not change keeps its `MatchModel`; a row with no `FoodItemId` (estimate) still records `MatchModel` when Jev said none. Test in Task 5.
+- Jev slow but under the HttpClient timeout: the 3 s per-call timeout must win. Test in Task 2.
+- The matcher set to Off while a key is set: no Jev calls. Test in Task 3.
+- An estimate row (no `FoodItemId`) still records `MatchModel` when Jev's gated none decided it. Test in Task 5.
 
 ---
 
@@ -154,170 +162,74 @@ Results: `2026-10-04-jev-food-matching-results-2.md` (32 items, labels confirmed
 
 ---
 
-## Phase 1: build it (only after the go decision)
+## Phase 1: build it
+
+Executed inline in this session (executing-plans). Every task ends with `dotnet build` and `dotnet test` green, then a commit.
 
 ### Task 1: Decider types and the Jev request and response
 
-**Files:**
-- Create: `src/GymTracker.Core/Nutrition/FoodMatchDecider.cs` (the records and interface from "Design")
-- Create: `src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs` (static `Body` and `Read` only in this task)
-- Test: `tests/GymTracker.Web.Tests/JevTests.cs`
+**Files:** create `src/GymTracker.Core/Nutrition/FoodMatchDecider.cs` (the records and interface above) and `src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs` (static `Body` and `Read`); test `tests/GymTracker.Web.Tests/JevTests.cs`.
 
-**Interfaces:**
-- Produces: `internal static JsonObject JevFoodMatchDecider.Body(string text, IReadOnlyList<MatchQuestion> questions)`; `internal static MatchDecisions? JevFoodMatchDecider.Read(JsonNode? response, IReadOnlyList<MatchQuestion> questions)`; `public const string Model = "typesafe/jev-1.13"`.
+**Produces:** `internal static JsonObject Body(string model, string text, IReadOnlyList<MatchQuestion> questions)`; `internal static MatchDecisions? Read(JsonNode? response, IReadOnlyList<MatchQuestion> questions)`; `public const string Jev113 = "typesafe/jev-1.13"`.
 
-- [ ] **Step 1: Write the failing tests**
-
-```csharp
-[Fact] public void One_request_holds_every_item_with_a_none_option()
-// Two questions (chicken: 2 candidates, rice: 1). Body: model == "typesafe/jev-1.13";
-// state.diary_entry == text; state.foods.i0.as_written == "пилешко филе", .english, .state == "cooked", .grams == 200;
-// questions has exactly keys i0, i1, each type "choice"; i0.criteria keys == f11, f12, none (in that order);
-// criteria f11 contains the English name, the Bulgarian name and "165 kcal"; i1.criteria has no Bulgarian part when NameBg is null.
-
-[Fact] public void Picks_none_and_confidence_are_read_per_item()
-// answers: i0 choice f12 confidence 0.91; i1 choice none confidence 0.7; model "typesafe/jev-1.13-20260917".
-// Read => Items[0] == new MatchDecision(12, 0.91m), Items[1] == new MatchDecision(null, 0.7m), Model == "typesafe/jev-1.13-20260917".
-
-[Fact] public void Unknown_or_missing_answers_leave_that_item_undecided()
-// i0 choice "f999" (not in its shortlist), i1 missing => Items == [null, null]; no "answers" at all => null.
-```
-
-- [ ] **Step 2:** Run `dotnet test --filter JevTests`; expect compile failure.
-- [ ] **Step 3:** Implement the records, the interface, `Body` and `Read`. Instruction text and the `none` description verbatim from the Task 0 results.
-- [ ] **Step 4:** `dotnet build && dotnet test`; all pass.
-- [ ] **Step 5:** Commit "Add the Jev match decision request and response".
+- [ ] Tests first:
+  - `One_request_holds_every_item_with_a_none_option`: two questions (chicken: candidates 11 and 12, rice: 13 with no NameBg). `model`, `state.diary_entry`, `state.foods.i0.as_written/english/state/grams`; `questions` has keys `i0`, `i1`, type `choice`; `i0.criteria` keys are `f11`, `f12`, `none` in that order; `f11` contains the English name, the Bulgarian name and `165 kcal`; `f13` has no " / ".
+  - `Items_without_candidates_get_no_question`: the second item has none, so `questions` has only `i0`, but `state.foods` still has `i1`.
+  - `Picks_none_and_confidence_are_read_per_item`: `i0` → `f12` at 0.91, `i1` → `none` at 0.7, model `typesafe/jev-1.13-20260917` → `[(12, 0.91), (null, 0.7)]` and that model.
+  - `Unknown_or_missing_answers_leave_that_item_undecided`: `i0` → `f999`, `i1` missing → `[null, null]`; no `answers` → null.
+- [ ] Implement; build and test; commit "Add the Jev match decision request and response".
 
 ### Task 2: The Jev HTTP call
 
-**Files:**
-- Modify: `src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs`
-- Modify: `src/GymTracker.Web/Program.cs` (typed client next to `OpenRouterFoodParser`, `OpenRouterClient(c)`, `c.Timeout = 10 s`)
-- Test: `tests/GymTracker.Web.Tests/JevTests.cs` (a `StubJev : HttpMessageHandler` like `StubOpenRouter`, with status, body and delay)
-- Modify: `tests/GymTracker.Web.Tests/JevEval/JevEvalTests.cs` (use `Body`/`Read`, so the eval keeps measuring the shipped request)
+**Files:** modify `JevFoodMatchDecider.cs` and `Program.cs` (typed client, `OpenRouterClient(c)`, `c.Timeout` 10 s); test `JevTests.cs` with a `StubJev` handler (status, body, delay, call count).
 
-**Interfaces:**
-- Produces: `public Task<MatchDecisions?> DecideAsync(string text, IReadOnlyList<MatchQuestion> questions, string apiKey, CancellationToken ct)` on `JevFoodMatchDecider(HttpClient http, ILogger<JevFoodMatchDecider> log)`; `internal static TimeSpan Timeout = 3 s` (settable by tests).
+**Produces:** `public Task<MatchDecisions?> DecideAsync(string text, IReadOnlyList<MatchQuestion> questions, string apiKey, string model, CancellationToken ct)`; `public Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct)` (one banana question with "Bananas, raw" and "Pepper, banana, raw"; null when it picks the banana); `internal TimeSpan Timeout` (default 3 s, settable in tests).
 
-- [ ] **Step 1: Write the failing tests**
+- [ ] Tests first: `Posts_to_the_decisions_endpoint_with_the_key` (path ends `/api/alpha/decisions`, Bearer key, result decided); `Http_errors_return_null_without_retrying` (500, 401, 429, 502 → null, one call); `A_slow_answer_returns_null_after_the_timeout` (200 ms timeout, 2 s delay → null within 1 s); `Malformed_json_returns_null`; `The_test_decision_reports_what_went_wrong` (401 → message about the key; good answer → null).
+- [ ] Implement; build and test; commit "Call Jev's Decisions API with a short timeout and no retry".
 
-```csharp
-[Fact] public async Task Posts_to_the_decisions_endpoint_with_the_key()
-// stub sees POST .../api/alpha/decisions, Bearer key; result Items[0].FoodItemId == 11.
+### Task 3: Model settings per AI task, and the switching decider
 
-[Theory] [InlineData(500)] [InlineData(401)] [InlineData(429)] [InlineData(502)]
-public async Task Http_errors_return_null_without_retrying(int status) // result null, stub.Calls == 1
+**Files:** create `src/GymTracker.Web/Integrations/AiTasks.cs` (`AiTask`, the matcher's fixed model list, `Off`); modify `OpenRouterSettings.cs` (`GetModelAsync(AiTask, ct)`, `SetModelAsync(AiTask, string, ct)`, `ListModelsAsync(AiTask, ct)`; `SwitchingMatchDecider : IFoodMatchDecider`; `SwitchingFoodParser` uses the parser task), `Program.cs`, `SettingsController.cs` (`GET`/`POST /settings/model/{task}`; the matcher save runs `TestAsync` when a key exists), `ViewModels.cs` (`ParserStatus` becomes the OpenRouter status with one entry per task; `ModelPickerViewModel` gains the task), `Views/Settings/Index.cshtml`, `Views/Settings/Model.cshtml` (title and footer per task), `Resources/strings.bg.json`; test `OpenRouterTests.cs`.
 
-[Fact] public async Task A_slow_answer_returns_null_after_the_timeout() // Timeout = 200 ms, stub delays 2 s => null within 1 s
-
-[Fact] public async Task Malformed_json_returns_null() // body "<html>" => null
-```
-
-- [ ] **Step 2:** Run; expect failures.
-- [ ] **Step 3:** Implement: linked CTS with `Timeout`; any exception except caller cancellation, non-2xx or unreadable body logs a warning and returns null. On success log Information "Jev {Model} decided {Count} items in {Ms} ms, {Tokens} input tokens, ${Cost}".
-- [ ] **Step 4:** `dotnet build && dotnet test`; all pass. Run `GYM_JEV_EVAL=score dotnet test --filter JevEval` once and check the numbers match Task 0's within noise.
-- [ ] **Step 5:** Commit "Call Jev's Decisions API with a short timeout and no retry".
-
-### Task 3: Settings toggle and the switching decider
-
-**Files:**
-- Modify: `src/GymTracker.Web/Integrations/OpenRouterSettings.cs` (`JevSettingName = "OpenRouter:JevMatching"`, `GetJevMatchingAsync`, `SetJevMatchingAsync(bool)`; add `SwitchingMatchDecider : IFoodMatchDecider` beside `SwitchingFoodParser`)
-- Modify: `src/GymTracker.Web/Program.cs` (`AddScoped<IFoodMatchDecider, SwitchingMatchDecider>()`)
-- Modify: `src/GymTracker.Web/Controllers/SettingsController.cs` (`POST /settings/jev-matching`, with the existing per-user settings rate limit)
-- Modify: `src/GymTracker.Web/Views/Settings/Index.cshtml` (a toggle in the Food text parser section, shown only when a key is set)
-- Modify: `src/GymTracker.Web/Resources/strings.bg.json`
-- Test: `tests/GymTracker.Web.Tests/OpenRouterTests.cs`
-
-- [ ] **Step 1: Write the failing tests**
-
-```csharp
-[Fact] public async Task Jev_matching_is_off_until_turned_on_and_needs_a_key()
-// No key, on => SwitchingMatchDecider returns null and the stub sees no call.
-// Key, default (off) => null, no call. Key, SetJevMatchingAsync(true) => stub called once, result not null.
-// SetJevMatchingAsync(false) => null again.
-```
-
-- [ ] **Step 2:** Run; expect failures.
-- [ ] **Step 3:** Implement. Strings: "Pick database matches with Jev", "Jev, a decision model, chooses which database food each item is, or says none fits. Uses the same key; costs a fraction of a cent per entry." Bulgarian drafted with `tools/i18n/translate.mjs` and reviewed.
-- [ ] **Step 4:** `dotnet build && dotnet test` (CatalogueTests included); check the toggle at 390 px in the browser.
-- [ ] **Step 5:** Commit "Add a Settings switch for Jev food matching".
+- [ ] Tests first:
+  - `Each_task_has_its_own_model`: parser default and override as today; matcher defaults to `off`; setting the matcher to `typesafe/jev-1.13` leaves the parser unchanged; the parser still reads the existing `OpenRouter:Model` row.
+  - `Only_listed_models_can_be_picked_per_task`: `openai/gpt-x` for the matcher and `typesafe/jev-1.13` for the parser are rejected.
+  - `The_matcher_runs_only_with_a_key_and_a_model`: no key + Jev → null, no call; key + off → null, no call; key + Jev → one call, decided.
+  - Controller: `POST /settings/model/matcher` with `typesafe/jev-1.13` saves it (AppFactory).
+- [ ] Implement; strings through `L[...]`, Bulgarian added; check the section and both pickers at 390 px.
+- [ ] Build and test (CatalogueTests included); commit "Split the AI model setting into parser and matcher".
 
 ### Task 4: FoodMatcher asks the decider
 
-**Files:**
-- Modify: `src/GymTracker.Web/Features/Food/FoodMatcher.cs` (constructor takes `IFoodMatchDecider`; `ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct)`; new `internal Shortlist`; `JevHighConfidence` constant)
-- Modify: `src/GymTracker.Web/Controllers/FoodController.cs:68` (pass `text`)
-- Modify: `tests/GymTracker.Web.Tests/UserScope.cs` (`Matcher` built with a settable `StubMatchDecider`, default returns null)
-- Create: `tests/GymTracker.Web.Tests/StubMatchDecider.cs`
-- Test: `tests/GymTracker.Web.Tests/NutritionTests.cs`, `tests/GymTracker.Web.Tests/FoodMatchingTests.cs` (new, Postgres collection)
+**Files:** modify `Features/Food/FoodMatcher.cs` (takes `IFoodMatchDecider`; `ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct)`; `internal static` shortlist merge; `NoneGate`, `JevHighConfidence`; `ConfirmItem` gains `string? MatchModel`), `Controllers/FoodController.cs` (pass `text`), `tests/GymTracker.Web.Tests/UserScope.cs` (matcher with a settable `StubMatchDecider`, default null); create `tests/GymTracker.Web.Tests/StubMatchDecider.cs`; test `tests/GymTracker.Web.Tests/FoodMatchingTests.cs` (Postgres collection).
 
-**Interfaces:**
-- Consumes: `IFoodMatchDecider`, `MatchQuestion`, `MatchDecisions` (Task 1).
-- Produces: `ConfirmItem` gains `string? MatchModel` (last positional parameter).
-
-- [ ] **Step 1: Write the failing tests**
-
-```csharp
-[Fact] public async Task The_deciders_pick_replaces_ranks_top_choice()
-// "chicken breast" raw: stub picks the shortlist's second candidate with 0.95 => FoodItemId == that id,
-// Confidence.High, MatchModel == stub's model. Stub saw one call with one question of at most 5 candidates.
-
-[Fact] public async Task None_from_the_decider_uses_the_ai_estimate()
-// stub answers none => FoodItemId null, Confidence.Low, Per100 == the parser's estimate, the "No database match" note.
-
-[Fact] public async Task Low_confidence_picks_are_medium() // 0.3 => Confidence.Medium
-
-[Fact] public async Task Without_a_decision_the_matcher_behaves_as_before()
-// stub returns null => identical ConfirmItems to the current tests' expectations (rerun the three existing matcher tests).
-
-[Fact] public async Task Items_without_candidates_are_not_sent()
-// "zzqx florp" alone => stub never called; with "banana" => one question.
-
-[Fact] public async Task An_undecided_item_falls_back_to_rank_alone() // Items == [decision, null]
-```
-
-Plus an end-to-end test through `/food/parse` with `AppFactory` and `StubMatchDecider` registered, asserting the confirm page shows the stub's pick and carries its `MatchModel` in a hidden field (that field lands in Task 5; in this task assert the matched name only).
-
-- [ ] **Step 2:** Run; expect failures.
-- [ ] **Step 3:** Implement: rank as today; build the shortlist; call the decider once with every item that has candidates; apply the mapping from "Design".
-- [ ] **Step 4:** `dotnet build && dotnet test`; all pass.
-- [ ] **Step 5:** Commit "Let Jev choose the database food from Rank's shortlist".
+- [ ] Tests first:
+  - `A_jev_pick_replaces_ranks_top_choice`: chicken breast raw; the stub picks a different candidate at 0.97 → that id, `High`, `MatchModel` set; the stub saw one question with at most 50 candidates, in trigram order.
+  - `Picks_below_the_high_cut_are_medium`: 0.6 → `Medium`.
+  - `A_confident_none_uses_the_ai_estimate`: none at 0.95 → no `FoodItemId`, `Low`, the parser's numbers, the "No database match" note, `MatchModel` set.
+  - `An_unsure_none_falls_back_to_rank`: none at 0.5 → Rank's pick and confidence, `MatchModel` null.
+  - `Without_a_decision_the_matcher_behaves_as_before`: stub null → the existing NutritionTests matcher expectations hold.
+  - `Items_without_candidates_are_not_sent`: "zzqx florp" alone → no call; with "banana" → one question.
+  - End to end: `/food/parse` with the stub registered shows the stub's pick on the confirm page.
+- [ ] Implement; build and test; commit "Let Jev choose the database food, gated by confidence".
 
 ### Task 5: Record which model chose the match
 
-**Files:**
-- Modify: `src/GymTracker.Core/Domain/Nutrition.cs` (`FoodLogEntry.MatchModel`), `src/GymTracker.Web/Data/AppDbContext.cs` (`HasMaxLength(100)`)
-- Create: migration `AddMatchModel` (`dotnet ef migrations add AddMatchModel --project src/GymTracker.Web --output-dir Data/Migrations`)
-- Modify: `src/GymTracker.Web/Features/Food/FoodLogService.cs` (`NewEntry` gains `string? MatchModel = null`), `src/GymTracker.Web/Controllers/FoodController.cs` (`ConfirmRow.MatchModel`), `src/GymTracker.Web/Views/Food/Confirm.cshtml` (hidden `items[i].MatchModel`), `src/GymTracker.Web/Features/Export/DataExport.cs` (column after `AiModel`)
-- Test: `tests/GymTracker.Web.Tests/FoodMatchingTests.cs`, `tests/GymTracker.Web.Tests/ExportTests.cs`
+**Files:** `Core/Domain/Nutrition.cs` (`FoodLogEntry.MatchModel`), `Data/AppDbContext.cs` (max 100), migration `AddMatchModel`, `FoodLogService.cs` (`NewEntry` gains `string? MatchModel = null`), `FoodController.cs` (`ConfirmRow.MatchModel`), `Views/Food/Confirm.cshtml` (hidden `items[i].MatchModel`), `Export/DataExport.cs` (column after `AiModel`); test `FoodMatchingTests.cs`, `ExportTests.cs`.
 
-- [ ] **Step 1: Write the failing tests**
+- [ ] Test first: `Confirmed_rows_keep_the_match_model`: a matched row and an estimate row with `MatchModel` and one without are saved as sent (trimmed to 100); the export has a `MatchModel` column with the value.
+- [ ] Implement; build and test; commit "Record the model that chose each AI entry's match".
 
-```csharp
-[Fact] public async Task Confirmed_rows_keep_the_match_model()
-// POST /food/confirm with two rows: one with FoodItemId and MatchModel "typesafe/jev-1.13-20260917",
-// one estimate (no FoodItemId) with the same MatchModel => both saved with MatchModel; a third row without => null.
-// Export food_log.csv header contains "MatchModel" and the row value.
-```
+### Task 6: Spec, README and env
 
-- [ ] **Step 2:** Run; expect failures.
-- [ ] **Step 3:** Implement; the confirm form trims `MatchModel` to 100 characters like other free text.
-- [ ] **Step 4:** `dotnet build && dotnet test`; all pass (the fixture applies the migration).
-- [ ] **Step 5:** Commit "Record the model that chose each AI entry's match".
+- [ ] `SPEC.md`: section 2 LLM row (matching by Jev when chosen in Settings); section 3 Integrations line; section 4 `FoodLogEntry.MatchModel`; section 6.1 the per-task model settings, the matcher, the shortlist, the gate, the thresholds, the failure path, and the English-first caveat; section 7 Settings (parser and matcher models).
+- [ ] `README.md`: the OpenRouter paragraph under "First time" (two model settings, matcher default off, same key, cost).
+- [ ] `docker/.env.example`: no new variable; say so in the commit message.
+- [ ] Build and test; commit "Document Jev food matching".
 
-### Task 6: Spec, README and deploy notes
+### Task 7: Check against the real API, then delete the evaluation
 
-**Files:**
-- Modify: `SPEC.md`
-  - Section 2, LLM row: add "Food matches chosen by TypeSafe Jev (`typesafe/jev-1.13`) through OpenRouter's Decisions API when switched on in Settings."
-  - Section 3: Integrations line adds "Jev match decider".
-  - Section 4, FoodLogEntry: `MatchModel` (nullable; the Jev version that chose the match, so a shift after a version change can be traced).
-  - Section 6.1, "Resolving nutrition values": step 1 becomes search and rank to a shortlist (b: Rank top 5; c: trigram top 40); new step 2: when Jev matching is on and a key exists, one `POST /api/alpha/decisions` per parse with one Choice per item plus `none`, pinned version, 3 s timeout, no retry, any failure uses the ranking's top food; `none` goes to the estimate path; confidence mapping with the Phase 0 threshold. Note the English-first language caveat and that the eval (`tests/GymTracker.Web.Tests/JevEval`) must be rerun before changing the version.
-  - Section 7, Settings: the Jev switch.
-- Modify: `README.md`: the Settings paragraph under "First time" (the switch, default off, same key, cost); "Food data" gets one sentence on the eval and how to run it.
-- `docker/.env.example`: no change (no new configuration). State this in the commit message.
-
-- [ ] **Step 1:** Edit the three documents.
-- [ ] **Step 2:** `dotnet build && dotnet test`.
-- [ ] **Step 3:** Commit "Document Jev food matching".
-- [ ] **Step 4:** Deploy notes for Antoan: rsync, `up -d --build` (the migration runs on start), switch Jev on in Settings, check `docker logs gymtracker-app | grep "Jev "` after a few entries.
+- [ ] Run the round 2 set once through the production `FoodMatcher` with the real `JevFoodMatchDecider` (temporary eval method) and check it matches the Phase 0b gated (c) result within one item.
+- [ ] Delete `tests/GymTracker.Web.Tests/JevEval/` and its `.gitignore` line. Build and test; commit "Remove the Jev evaluation harness".
+- [ ] Deploy notes for Antoan: rsync, `up -d --build` (the migration runs on start), choose Jev under Settings → Food matcher, then `docker logs gymtracker-app | grep "Jev "` after a few entries.
