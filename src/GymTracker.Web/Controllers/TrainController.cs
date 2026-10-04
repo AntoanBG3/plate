@@ -97,8 +97,7 @@ public class TrainController(
             new LocalText("Swap {0}", localizer.Exercise(item.Exercise)),
             $"/train/session-exercises/{id}/swap",
             $"/train/sessions/{item.SessionId}",
-            ExerciseOrder.ForSwap(await exercises.ListAsync(ct), item.Exercise),
-            item.Exercise.PrimaryMuscle));
+            ExerciseOrder.ForSwap(await exercises.ListAsync(ct), item.Exercise)));
     }
 
     [HttpPost("session-exercises/{id:int}/swap")]
@@ -117,15 +116,18 @@ public class TrainController(
         return Redirect($"/train/sessions/{sessionId}");
     }
 
-    /// <summary>The plate calculator sheet: the typed weight, else the last working set, else the suggestion.</summary>
+    /// <summary>
+    /// The plate calculator sheet. Opened from the card it starts from the last working set, else the suggestion;
+    /// once the sheet's own field sends (typed), only what is in the field counts, so clearing it asks for a weight.
+    /// </summary>
     [HttpGet("session-exercises/{id:int}/plates")]
-    public async Task<IActionResult> Plates(int id, decimal? weight, decimal? suggested, CancellationToken ct)
+    public async Task<IActionResult> Plates(int id, decimal? weight, decimal? suggested, bool typed, CancellationToken ct)
     {
         var exercise = await sessions.GetExerciseAsync(id, ct);
         var profile = await profiles.GetAsync(ct);
         var bar = PlateMath.BarFor(exercise.Exercise.Equipment, (await settings.GetAsync(exercise.ExerciseId, ct))?.BarWeightKg, profile.BarWeightKg)
             ?? throw new NotFoundException();
-        var target = weight ?? await sessions.LastWorkingWeightAsync(id, ct) ?? suggested;
+        var target = typed ? weight : weight ?? await sessions.LastWorkingWeightAsync(id, ct) ?? suggested;
         var load = target is > 0 and <= SetRules.MaxWeightKg ? PlateMath.PerSide(target.Value, bar, profile.PlatesKg) : null;
         return PartialView("_Plates", new PlatesViewModel(id, bar, target, load));
     }
@@ -148,7 +150,7 @@ public class TrainController(
         var set = await sessions.LogSetAsync(
             new LogSetInput(form.ClientId, form.SessionExerciseId, form.WeightKg ?? 0, form.Reps ?? 0, form.Rpe, form.IsWarmup, form.CompletedAt),
             ct);
-        return PartialView("_SetRow", SetRowViewModel.For(set));
+        return PartialView("_SetRow", SetRowViewModel.AfterLog(set));
     }
 
     [HttpPost("sets/{id:int}/update")]

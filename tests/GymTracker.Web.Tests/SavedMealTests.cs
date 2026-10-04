@@ -104,4 +104,55 @@ public class SavedMealTests(PostgresFixture fixture)
         s.Db.ChangeTracker.Clear();
         (await s.SavedMeals.GetAsync(saved.Id, default)).Name.Should().Be("Breakfast B");
     }
+
+    [Fact]
+    public async Task The_posted_form_keeps_grams_lined_up_around_a_quick_item()
+    {
+        await using var app = new AppFactory(fixture);
+        var (client, email) = await app.SignedInClientAsync();
+        await using var system = fixture.CreateContext(null);
+        var userId = await system.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
+        await using var s = new UserScope(fixture, userId);
+        await s.FoodLog.AddAsync([new NewEntry(Day, Meal.Breakfast, "Oats", 80, new Per100g(380, 13, 60, 7), null, EntrySource.Manual)], default);
+        await s.FoodLog.AddQuickAsync(Day, Meal.Breakfast, "Coffee out", 120, 4, 12, 6, default);
+        await s.FoodLog.AddAsync([new NewEntry(Day, Meal.Breakfast, "Milk", 250, new Per100g(64, 3.4m, 4.8m, 3.6m), null, EntrySource.Manual)], default);
+        var saved = await s.SavedMeals.SaveFromMealAsync(Day, Meal.Breakfast, "Usual", default);
+        var token = await AppFactory.TokenAsync(client, "/food");
+
+        // The sheet sends one grams field per item, empty for the quick one.
+        var response = await client.PostAsync($"/food/saved-meals/{saved.Id}/log", new FormUrlEncodedContent(
+        [
+            new("date", "2026-10-06"), new("meal", "Snack"),
+            new("grams", "100"), new("grams", ""), new("grams", "300"),
+            new("__RequestVerificationToken", token),
+        ]));
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.Redirect);
+        var entries = (await s.FoodLog.DayAsync(new DateOnly(2026, 10, 6), default)).Entries;
+        entries.Select(e => (e.Description, e.Grams)).Should().BeEquivalentTo([("Oats", 100m), ("Coffee out", 0m), ("Milk", 300m)]);
+    }
+
+    [Fact]
+    public async Task An_error_about_one_item_stays_in_Bulgarian_after_the_redirect()
+    {
+        await using var app = new AppFactory(fixture);
+        var (client, email) = await app.SignedInClientAsync();
+        await using var system = fixture.CreateContext(null);
+        var userId = await system.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
+        await using var s = new UserScope(fixture, userId);
+        await s.FoodLog.AddAsync([new NewEntry(Day, Meal.Breakfast, "Oats", 80, new Per100g(380, 13, 60, 7), null, EntrySource.Manual)], default);
+        var saved = await s.SavedMeals.SaveFromMealAsync(Day, Meal.Breakfast, "Usual", default);
+        await s.Db.Profiles.ExecuteUpdateAsync(u => u.SetProperty(p => p.Language, Language.Bulgarian));
+        var token = await AppFactory.TokenAsync(client, "/food");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/food/saved-meals/{saved.Id}/log")
+        {
+            Content = new FormUrlEncodedContent([new("date", "2026-10-07"), new("meal", "Snack"), new("grams", "0"), new("__RequestVerificationToken", token)]),
+        };
+        request.Headers.Referrer = new Uri("https://localhost/food");
+        var response = await client.SendAsync(request);
+        var page = await client.GetStringAsync(response.Headers.Location!.ToString());
+
+        System.Net.WebUtility.HtmlDecode(page).Should().Contain("Oats: Грамовете трябва да са над 0");
+    }
 }

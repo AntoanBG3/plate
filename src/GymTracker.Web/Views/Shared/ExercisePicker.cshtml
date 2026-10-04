@@ -14,7 +14,8 @@
 </div>
 
 <div id="exercise-groups">
-    @foreach (var group in Model.Exercises.GroupBy(e => e.PrimaryMuscle).OrderBy(g => g.Key == Model.FirstMuscle ? 0 : 1))
+    @* Groups appear in the order the controller listed the exercises (ForSwap puts the same muscle first). *@
+    @foreach (var group in Model.Exercises.GroupBy(e => e.PrimaryMuscle))
     {
         <section class="section" data-filter-group style="margin-top: var(--s-5)">
             <h2 class="section-header">@L.Enum(group.Key)</h2>

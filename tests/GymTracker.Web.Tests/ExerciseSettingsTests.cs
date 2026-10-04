@@ -58,6 +58,21 @@ public class ExerciseSettingsTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task Exercise_lookup_sees_the_library_and_own_exercises_only()
+    {
+        await using var owner = new UserScope(fixture, await fixture.CreateUserAsync());
+        var custom = new GymTracker.Core.Domain.Exercise { Name = "Secret row", OwnerUserId = owner.UserId };
+        owner.Db.Exercises.Add(custom);
+        await owner.Db.SaveChangesAsync();
+        var squat = await owner.Db.Exercises.FirstAsync(e => e.Name == "Squat");
+        await using var other = new UserScope(fixture, await fixture.CreateUserAsync());
+
+        (await owner.Exercises.GetAsync(custom.Id, default)).Name.Should().Be("Secret row");
+        (await other.Exercises.GetAsync(squat.Id, default)).Name.Should().Be("Squat");
+        await other.Invoking(x => x.Exercises.GetAsync(custom.Id, default)).Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
     public async Task Profile_defaults_to_a_20_kg_bar_and_a_standard_plate_set()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

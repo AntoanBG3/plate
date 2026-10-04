@@ -8,7 +8,7 @@ namespace GymTracker.Web.Tests;
 public class PlatesEndpointTests(PostgresFixture fixture)
 {
     /// <summary>A signed-in client whose user has an active session with one exercise.</summary>
-    private async Task<(HttpClient Client, int SessionExerciseId)> SessionWithAsync(AppFactory app, string exerciseName)
+    private async Task<(HttpClient Client, int SessionExerciseId)> SessionWithAsync(AppFactory app, string exerciseName, decimal? loggedKg = null)
     {
         var (client, email) = await app.SignedInClientAsync();
         await using var system = fixture.CreateContext(null);
@@ -18,6 +18,11 @@ public class PlatesEndpointTests(PostgresFixture fixture)
         var template = await s.Templates.CreateAsync("Push", default);
         await s.Templates.AddExerciseAsync(template.Id, exercise.Id, default);
         var session = await s.Sessions.GetAsync((await s.Sessions.StartAsync(template.Id, default)).Id, default);
+        if (loggedKg is { } kg)
+        {
+            await s.Sessions.LogSetAsync(new GymTracker.Web.Features.Training.LogSetInput(Guid.NewGuid(), session.Exercises[0].Id, kg, 8, null, false, null), default);
+        }
+
         return (client, session.Exercises[0].Id);
     }
 
@@ -42,6 +47,26 @@ public class PlatesEndpointTests(PostgresFixture fixture)
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         (await response.Content.ReadAsStringAsync()).Should().Contain("data-plates-empty");
+    }
+
+    [Fact]
+    public async Task Opening_the_sheet_starts_from_the_last_working_set()
+    {
+        await using var app = new AppFactory(fixture);
+        var (client, id) = await SessionWithAsync(app, "Bench press", loggedKg: 80);
+
+        (await client.GetStringAsync($"/train/session-exercises/{id}/plates")).Should().Contain("data-total=\"80\"");
+    }
+
+    [Fact]
+    public async Task Clearing_the_field_asks_for_a_weight_instead_of_falling_back()
+    {
+        await using var app = new AppFactory(fixture);
+        var (client, id) = await SessionWithAsync(app, "Bench press", loggedKg: 80);
+
+        var html = await client.GetStringAsync($"/train/session-exercises/{id}/plates?typed=true&weight=");
+
+        html.Should().Contain("data-plates-empty").And.NotContain("data-total");
     }
 
     [Fact]

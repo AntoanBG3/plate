@@ -185,6 +185,8 @@ docker compose -f docker/docker-compose.yml up -d --build && docker builder prun
 
 Migrations run automatically when the app starts.
 
+Deleted food entries, sets and exercises are kept for 24 hours so Undo can bring them back, then purged. Rolling back the `AddSoftDelete` migration drops that column, so anything deleted in the last 24 hours would reappear; restore from the pre-deploy dump instead.
+
 ### Updating base images
 
 The Dockerfile and compose file pin the .NET and Postgres images by digest, so a rebuild never pulls a different image by surprise. About once a month, look up the current digests and replace the `@sha256:...` parts:

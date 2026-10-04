@@ -461,14 +461,16 @@
                 return input;
             };
             const token = field("__RequestVerificationToken");
-            field("returnUrl").value = location.pathname + location.search;
+            const returnUrl = field("returnUrl");
             const button = document.createElement("button");
             button.type = "submit";
             button.textContent = action.label;
             form.appendChild(button);
-            // The token is read when sent: site.js (gymToken) loads after this script, and nav.js keeps it current.
+            // Both are read when sent: site.js (gymToken) loads after this script, nav.js keeps the token current,
+            // and the toast outlives soft navigation, so undo returns to the page it was pressed on.
             form.addEventListener("submit", () => {
                 token.value = window.gymToken ? window.gymToken() : "";
+                returnUrl.value = location.pathname + location.search;
                 el.hidden = true;
             });
             el.appendChild(form);

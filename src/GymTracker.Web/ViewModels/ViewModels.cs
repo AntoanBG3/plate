@@ -29,6 +29,13 @@ public record SetRowViewModel(int SessionExerciseId, bool IsWarmup, SetEntry? Lo
         new(sessionExerciseId, isWarmup, null, Guid.NewGuid(), target);
 
     public static SetRowViewModel For(SetEntry set) => new(set.SessionExerciseId, set.IsWarmup, set, set.ClientId);
+
+    /// <summary>
+    /// The row for a set the phone sent. Blank when that set was deleted meanwhile, or its exercise removed, so a retry
+    /// from the offline queue doesn't put it back on screen.
+    /// </summary>
+    public static SetRowViewModel AfterLog(SetEntry set) =>
+        set.DeletedAt is null && set.SessionExercise?.DeletedAt is null ? For(set) : Blank(set.SessionExerciseId, set.IsWarmup);
 }
 
 public record SessionViewModel(
@@ -71,7 +78,7 @@ public record TemplateEditViewModel(WorkoutTemplate Template, IReadOnlyDictionar
 
 public record ExerciseSettingsFormViewModel(Exercise Exercise, UserExerciseSettings? Settings, decimal ProfileBarKg, string ReturnUrl);
 
-public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises, Muscle? FirstMuscle = null);
+public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises);
 
 public record QuickAddViewModel(DateOnly Date, Meal Meal);
 

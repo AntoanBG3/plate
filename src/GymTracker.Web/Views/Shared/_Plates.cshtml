@@ -4,7 +4,7 @@
     <div class="field-row">
         <label for="plates-weight">@L["Weight"]</label>
         <input id="plates-weight" class="num" type="number" name="weight" value="@(Model.TargetKg?.Kg())" min="0" max="500" step="any" inputmode="decimal"
-               hx-get="/train/session-exercises/@Model.SessionExerciseId/plates" hx-trigger="input changed delay:300ms" hx-target="#plates-result" hx-select="#plates-result" hx-swap="outerHTML" />
+               hx-get="/train/session-exercises/@Model.SessionExerciseId/plates" hx-vals='{"typed": true}' hx-trigger="input changed delay:300ms" hx-target="#plates-result" hx-select="#plates-result" hx-swap="outerHTML" />
         <span class="unit">@L["kg"]</span>
     </div>
 </div>
