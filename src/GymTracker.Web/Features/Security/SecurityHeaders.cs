@@ -9,22 +9,17 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvi
         "img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; " +
         "manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
-    private readonly bool enforce = config.GetValue("Security:CspEnforce", false);
+    // Report-only until enforced: browsers then only report what the policy would block.
+    private readonly (string Name, string Value) csp = config.GetValue("Security:CspEnforce", false)
+        ? ("Content-Security-Policy", Policy)
+        : ("Content-Security-Policy-Report-Only", Policy + "; report-uri /csp-report");
 
     public Task InvokeAsync(HttpContext context)
     {
         context.Response.OnStarting(() =>
         {
             var h = context.Response.Headers;
-            if (enforce)
-            {
-                h.ContentSecurityPolicy = Policy;
-            }
-            else
-            {
-                h["Content-Security-Policy-Report-Only"] = Policy + "; report-uri /csp-report";
-            }
-
+            h[csp.Name] = csp.Value;
             h.XContentTypeOptions = "nosniff";
             h.XFrameOptions = "DENY";
             h["Referrer-Policy"] = "same-origin";

@@ -18,7 +18,7 @@ public class AccountController(
     [AllowAnonymous]
     [HttpGet("login")]
     public IActionResult Login(string? returnUrl) =>
-        User.Identity?.IsAuthenticated == true ? LocalRedirect(SafeReturnUrl(returnUrl)) : View(new LoginViewModel(null, returnUrl, null));
+        User.Identity?.IsAuthenticated == true ? LocalRedirect(Url.SafeReturnUrl(returnUrl)) : View(new LoginViewModel(null, returnUrl, null));
 
     [AllowAnonymous]
     [HttpPost("login")]
@@ -44,7 +44,7 @@ public class AccountController(
 
         if (result.Succeeded)
         {
-            return LocalRedirect(SafeReturnUrl(returnUrl));
+            return LocalRedirect(Url.SafeReturnUrl(returnUrl));
         }
 
         logger.LogWarning("Failed sign-in for {Email} from {Ip}: {Reason}", email, HttpContext.Connection.RemoteIpAddress,
@@ -62,7 +62,4 @@ public class AccountController(
         await signIn.SignOutAsync();
         return Redirect("/account/login");
     }
-
-    private string SafeReturnUrl(string? returnUrl) =>
-        !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : "/today";
 }

@@ -26,8 +26,7 @@ public class BodyweightService
         db.SavedChanges += (_, _) => all = null;
     }
 
-    /// <summary>All of the user's weigh-ins, oldest first. Not tracked; use <see cref="SetAsync"/> to change one.</summary>
-    public async Task<IReadOnlyList<BodyweightEntry>> AllAsync(CancellationToken ct) =>
+    private async Task<IReadOnlyList<BodyweightEntry>> AllAsync(CancellationToken ct) =>
         all ??= await db.Bodyweights.AsNoTracking().OrderBy(b => b.Date).ToListAsync(ct);
 
     public async Task<IReadOnlyList<WeighIn>> WeighInsAsync(CancellationToken ct) =>

@@ -139,9 +139,16 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.Cookie.Path = "/";
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Lax;
-    o.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+    o.Cookie.SecurePolicy = hostCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
     o.ExpireTimeSpan = TimeSpan.FromDays(30);
     o.SlidingExpiration = true;
+    // Every sign-in is persistent, password or passkey: the app is used as an installed PWA and should stay
+    // signed in when it is closed. (SignInManager.PasskeySignInAsync on its own issues a session cookie.)
+    o.Events.OnSigningIn = context =>
+    {
+        context.Properties.IsPersistent = true;
+        return Task.CompletedTask;
+    };
     o.LoginPath = "/account/login";
     o.LogoutPath = "/account/logout";
     o.AccessDeniedPath = "/account/login";
@@ -187,17 +194,18 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
     }
 });
 
+// Fixed-window limits keyed by client address or by signed-in user. Requests are refused, never queued.
+RateLimitPartition<string> PerIp(HttpContext http, int permits, TimeSpan window) =>
+    RateLimitPartition.GetFixedWindowLimiter(http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = permits, Window = window, QueueLimit = 0 });
+RateLimitPartition<string> PerUser(HttpContext http, int permits, TimeSpan window) =>
+    RateLimitPartition.GetFixedWindowLimiter(http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = permits, Window = window, QueueLimit = 0 });
+
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    o.AddPolicy(RateLimits.Login, http => RateLimitPartition.GetFixedWindowLimiter(
-        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = config.GetValue("RateLimits:LoginPerWindow", 10),
-            Window = TimeSpan.FromMinutes(5),
-            QueueLimit = 0,
-        }));
+    o.AddPolicy(RateLimits.Login, http => PerIp(http, config.GetValue("RateLimits:LoginPerWindow", 10), TimeSpan.FromMinutes(5)));
 
     // Distributed guessing: all sign-in attempts together, whatever the source address.
     o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(http =>
@@ -211,31 +219,13 @@ builder.Services.AddRateLimiter(o =>
             })
             : RateLimitPartition.GetNoLimiter("other"));
 
-    // Password and API key changes, per signed-in user.
-    o.AddPolicy(RateLimits.Sensitive, http => RateLimitPartition.GetFixedWindowLimiter(
-        http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
-        _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = config.GetValue("RateLimits:SensitivePerWindow", 5),
-            Window = TimeSpan.FromMinutes(15),
-            QueueLimit = 0,
-        }));
+    // Password and API key changes.
+    o.AddPolicy(RateLimits.Sensitive, http => PerUser(http, config.GetValue("RateLimits:SensitivePerWindow", 5), TimeSpan.FromMinutes(15)));
     // Food text parsing spends the shared OpenRouter balance.
-    o.AddPolicy(RateLimits.AiParse, http => RateLimitPartition.GetFixedWindowLimiter(
-        http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
-        _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = config.GetValue("RateLimits:AiParsePerWindow", 30),
-            Window = TimeSpan.FromMinutes(10),
-            QueueLimit = 0,
-        }));
-    // The login page asks for passkey options on every view (autofill), so they get their own per-IP budget.
-    o.AddPolicy(RateLimits.PasskeyOptions, http => RateLimitPartition.GetFixedWindowLimiter(
-        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(5), QueueLimit = 0 }));
-    o.AddPolicy(RateLimits.CspReport, http => RateLimitPartition.GetFixedWindowLimiter(
-        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    o.AddPolicy(RateLimits.AiParse, http => PerUser(http, config.GetValue("RateLimits:AiParsePerWindow", 30), TimeSpan.FromMinutes(10)));
+    // The login page asks for passkey options on every view (autofill), so they get their own budget.
+    o.AddPolicy(RateLimits.PasskeyOptions, http => PerIp(http, 30, TimeSpan.FromMinutes(5)));
+    o.AddPolicy(RateLimits.CspReport, http => PerIp(http, 20, TimeSpan.FromMinutes(1)));
 });
 
 builder.Services.AddAuthorization(o => o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());

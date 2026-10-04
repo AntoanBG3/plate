@@ -11,9 +11,7 @@ public class AiParseLimitTests(PostgresFixture db)
     {
         // Each parse can spend the shared OpenRouter balance; a stuck client or stolen session must not loop it.
         using var app = new AppFactory(db, settings: new Dictionary<string, string?> { ["RateLimits:AiParsePerWindow"] = "2" });
-        var (email, password) = await app.CreateUserAsync();
-        var client = app.NewClient();
-        await AppFactory.LoginAsync(client, email, password);
+        var (client, _) = await app.SignedInClientAsync();
         var token = await AppFactory.TokenAsync(client, "/food/add");
         var fields = new Dictionary<string, string> { ["date"] = "2026-10-04", ["meal"] = "Lunch", ["text"] = "a banana" };
 

@@ -23,13 +23,24 @@ public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDicti
         }
     }
 
-    public HttpClient NewClient() => CreateClient(new WebApplicationFactoryClientOptions
+    public static WebApplicationFactoryClientOptions HttpsClientOptions => new()
     {
         // https so the Secure auth cookie is sent back.
         BaseAddress = new Uri("https://localhost"),
         AllowAutoRedirect = false,
         HandleCookies = true,
-    });
+    };
+
+    public HttpClient NewClient() => CreateClient(HttpsClientOptions);
+
+    /// <summary>A new user, signed in on a new client.</summary>
+    public async Task<(HttpClient Client, string Email)> SignedInClientAsync()
+    {
+        var (email, password) = await CreateUserAsync();
+        var client = NewClient();
+        await LoginAsync(client, email, password);
+        return (client, email);
+    }
 
     public async Task<(string Email, string Password)> CreateUserAsync()
     {

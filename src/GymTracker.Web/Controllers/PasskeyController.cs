@@ -66,44 +66,25 @@ public class PasskeyController(SignInManager<AppUser> signIn, UserManager<AppUse
     [EnableRateLimiting(RateLimits.Login)]
     public async Task<IActionResult> Login([FromBody] PasskeyCredential body)
     {
-        PasskeyAssertionResult<AppUser> assertion;
+        Microsoft.AspNetCore.Identity.SignInResult result;
         try
         {
-            assertion = await signIn.PerformPasskeyAssertionAsync(body.Credential ?? "");
+            // Persistent like a password sign-in: the cookie's OnSigningIn event makes every sign-in persistent.
+            result = await signIn.PasskeySignInAsync(body.Credential ?? "");
         }
         catch (Exception e) when (e is PasskeyException or System.Text.Json.JsonException or FormatException)
         {
-            return Reject("unreadable assertion");
+            result = Microsoft.AspNetCore.Identity.SignInResult.Failed;
         }
 
-        if (!assertion.Succeeded)
+        if (!result.Succeeded)
         {
-            return Reject(assertion.Failure.Message);
+            logger.LogWarning("Failed passkey sign-in from {Ip}: {Reason}", HttpContext.Connection.RemoteIpAddress,
+                result.IsLockedOut ? "locked out" : "assertion failed");
+            return BadRequest();
         }
 
-        // SignInManager.PasskeySignInAsync would do these steps too, but always with a session cookie. The app is an
-        // installed PWA and must stay signed in like after a password sign-in, so sign in persistently here.
-        var user = assertion.User;
-        if (!await signIn.CanSignInAsync(user) || await users.IsLockedOutAsync(user))
-        {
-            return Reject("locked out or not allowed");
-        }
-
-        // Keeps the authenticator's signature counter current, which is how a cloned authenticator would show.
-        if (!(await users.AddOrUpdatePasskeyAsync(user, assertion.Passkey)).Succeeded)
-        {
-            return Reject("could not update the passkey");
-        }
-
-        await signIn.SignInAsync(user, isPersistent: true, authenticationMethod: "passkey");
-        var returnUrl = body.ReturnUrl;
-        return Json(new { redirect = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : "/today" });
-    }
-
-    private BadRequestResult Reject(string reason)
-    {
-        logger.LogWarning("Failed passkey sign-in from {Ip}: {Reason}", HttpContext.Connection.RemoteIpAddress, reason);
-        return BadRequest();
+        return Json(new { redirect = Url.SafeReturnUrl(body.ReturnUrl) });
     }
 
     [HttpPost("settings/passkeys/{id}/remove")]

@@ -13,9 +13,7 @@ public class ServerTimingTests(PostgresFixture db) : IDisposable
     [Fact]
     public async Task Pages_report_app_and_database_time()
     {
-        var (email, password) = await app.CreateUserAsync();
-        var client = app.NewClient();
-        await AppFactory.LoginAsync(client, email, password);
+        var (client, _) = await app.SignedInClientAsync();
 
         var response = await client.GetAsync("/today");
 
@@ -27,9 +25,7 @@ public class ServerTimingTests(PostgresFixture db) : IDisposable
     [Fact]
     public async Task Today_page_stays_within_its_query_budget()
     {
-        var (email, password) = await app.CreateUserAsync();
-        var client = app.NewClient();
-        await AppFactory.LoginAsync(client, email, password);
+        var (client, _) = await app.SignedInClientAsync();
         await client.GetAsync("/today"); // the first load may store the initial maintenance estimate
 
         var response = await client.GetAsync("/today");

@@ -2,7 +2,6 @@ using System.Net;
 using FluentAssertions;
 using GymTracker.Web.Data;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -28,7 +27,7 @@ public class LoginHardeningTests(PostgresFixture db)
         var hasher = new CountingHasher();
         using var app = new AppFactory(db);
         using var withHasher = app.WithWebHostBuilder(b => b.ConfigureTestServices(s => s.AddSingleton<IPasswordHasher<AppUser>>(hasher)));
-        var client = withHasher.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
+        var client = withHasher.CreateClient(AppFactory.HttpsClientOptions);
 
         await AppFactory.LoginAsync(client, "nobody@test.local", "some long password");
 
@@ -53,9 +52,7 @@ public class LoginHardeningTests(PostgresFixture db)
     public async Task Password_changes_are_rate_limited_per_user()
     {
         using var app = new AppFactory(db, settings: new Dictionary<string, string?> { ["RateLimits:SensitivePerWindow"] = "2" });
-        var (email, password) = await app.CreateUserAsync();
-        var client = app.NewClient();
-        await AppFactory.LoginAsync(client, email, password);
+        var (client, _) = await app.SignedInClientAsync();
         var token = await AppFactory.TokenAsync(client, "/settings");
         var wrong = new Dictionary<string, string>
         {

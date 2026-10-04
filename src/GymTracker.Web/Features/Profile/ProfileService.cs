@@ -13,7 +13,7 @@ public class ProfileService(AppDbContext db, TimeProvider time)
 
     /// <summary>The current user's profile. Every user gets one when created, so this never returns null for a signed-in user.</summary>
     public async Task<UserProfile> GetAsync(CancellationToken ct) =>
-        profile ??= await db.Profiles.SingleAsync(ct);
+        await FindAsync(ct) ?? throw new InvalidOperationException("The signed-in user has no profile.");
 
     /// <summary>The current user's profile, or null when there is none (a session can outlive a deleted account).</summary>
     public async Task<UserProfile?> FindAsync(CancellationToken ct) =>
