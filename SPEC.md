@@ -88,8 +88,9 @@ Units: weights in kilograms (`decimal(6,2)`), energy in kcal, macros in grams. D
 - `DisplayName`
 - `TimeZoneId` (default `Europe/Sofia`)
 - `HeightCm`
-- `Sex` (Male, Female), `BirthYear`: used only for the initial maintenance guess
-- `InitialMaintenanceKcal` (nullable; if null, compute with Mifflin-St Jeor times an activity factor of 1.55)
+- `Sex` (Male, Female; also sets the calorie floor in 5.6), `BirthYear`, `ActivityLevel` (Inactive, LowActive, Active, VeryActive; nullable, null counts as Inactive): used for the initial maintenance guess (5.5)
+- `InitialMaintenanceKcal` (nullable; if null, the NASEM 2023 estimate in 5.5 is used)
+- `OnboardedAt` (nullable; set when the user finishes or skips the setup chat, section 6.4)
 - `Goal` (Cut, Maintain, Bulk)
 - `TargetRatePercentPerWeek` (decimal, e.g. 0.5 means 0.5% of bodyweight per week; ignored for Maintain)
 - `ProteinGramsPerKg` (default 2.0)
@@ -213,7 +214,18 @@ Exponential moving average with smoothing factor 0.1, seeded with the first weig
 
 Checked when the Today page loads. The estimate is updated **once per week**: if the latest stored `MaintenanceEstimate` for the user is less than 7 days old, it is reused as is; otherwise a new one is calculated and stored. (A daily update with the weekly clamp and 0.7/0.3 smoothing below would compound seven times a week, so the cadence is fixed at weekly.)
 
-1. **Prior:** `InitialMaintenanceKcal` if set, else Mifflin-St Jeor BMR times 1.55 using the latest trend weight.
+1. **Prior:** `InitialMaintenanceKcal` if set, else the NASEM 2023 estimated energy requirement for adults (Dietary Reference Intakes for Energy, 2023) using the latest trend weight, height, age (`currentYear - BirthYear`) and activity level. These equations were fitted to total energy expenditure measured with doubly labeled water, one equation per sex and activity category, so there is no separate BMR or multiplier. Age in years, height in cm, weight in kg:
+
+   | | Men | Women |
+   |---|---|---|
+   | Inactive (PAL 1.00–1.53) | 753.07 − 10.83·age + 6.50·h + 14.10·w | 584.90 − 7.01·age + 5.72·h + 11.71·w |
+   | Low active (1.53–1.68) | 581.47 − 10.83·age + 8.30·h + 14.94·w | 575.77 − 7.01·age + 6.60·h + 12.14·w |
+   | Active (1.68–1.85) | 1004.82 − 10.83·age + 6.52·h + 15.91·w | 710.25 − 7.01·age + 6.54·h + 12.34·w |
+   | Very active (1.85–2.50) | −517.88 − 10.83·age + 15.61·h + 19.11·w | 511.83 − 7.01·age + 9.07·h + 12.56·w |
+
+   The equations can cross for very small bodies (a very active man of 150 cm and 45 kg computes below an active one), so the result is the highest value among the chosen category and every lower one. A null activity level counts as Inactive. The adult equations are published for 19 and over and are used from 18 (the minimum age, 5.7). Round to the nearest kcal. Test: a 30-year-old man of 180 cm and 80 kg gives 2,726 / 2,946 / 3,126 / 3,496 kcal; a 30-year-old woman of 165 cm and 60 kg gives 2,021 / 2,183 / 2,319 / 2,552.
+
+   Why this equation: it predicts total expenditure directly rather than resting rate times a guessed factor, and BMR-times-multiplier calculators overestimate for most gym-goers with desk jobs. All equations still miss individuals by more than 10% about half the time (a 2024 doubly labeled water comparison), which is why the adaptive estimate below replaces the prior as soon as there is data. Lean-mass equations (Katch-McArdle, Cunningham) were no more accurate in a 2023 meta-analysis of athletes and need a body fat figure that home scales measure poorly, so body fat is not asked.
 2. **Window:** the most recent 21 days ending yesterday (today's log is incomplete).
 3. **Data requirements:** at least 14 days in the window (the window starts no earlier than the first weigh-in, since the trend begins there), food logged on at least 80% of days, and weigh-ins on at least 50% of days. A day with under 200 kcal logged counts as not logged. If not met, carry forward the last `Adaptive` estimate (or the prior if there is none) and mark `Method = Initial`.
 4. **Calculation:**
@@ -232,6 +244,26 @@ Test with synthetic data: stable weight at known intake returns that intake; ste
 - **Safety limits:** `TargetRatePercentPerWeek` is capped at 1.0 for Cut and 0.5 for Bulk in profile validation. `TargetKcal` is never below 1,800 for men or 1,500 for women; if the limit applies, show a short note on the Today page.
 - `TargetProteinG = TrendWeight * ProteinGramsPerKg`, rounded to 5 g.
 - Carbs and fat are displayed but not targeted.
+
+### 5.7 Profile limits
+
+One set of limits in Core (`ProfileLimits`), used by profile validation, the weigh-in, the Settings inputs, the setup chat's draft and its prompt, so a value one screen accepts is never refused by another.
+
+| Field | Limit |
+|---|---|
+| `DisplayName` | 1 to 50 characters after trimming |
+| `BirthYear` | age 18 to 100 in the current year (the energy equations, the calorie floors and the rate caps are adult guidance) |
+| `HeightCm` | 120 to 230 |
+| Bodyweight | 30 to 300 kg |
+| `InitialMaintenanceKcal` | 1,200 to 6,000 |
+| `Sex`, `Goal`, `ActivityLevel` | a defined value (a posted number outside the enum is refused) |
+| `TargetRatePercentPerWeek` | 0 to 1.0 for Cut, 0 to 0.5 for Bulk (5.6) |
+| `ProteinGramsPerKg` | 0.8 to 3.5 |
+| `DefaultWeightIncrementKg` | 0.25 to 20 |
+| `BarWeightKg` | 0 to 50 |
+| `PlatesKg` | from the plate list |
+
+Tests cover each limit just inside and just outside.
 
 ---
 
@@ -300,6 +332,22 @@ Generic foods (chicken breast, cooked rice, banana) come from USDA FoodData Cent
 - A one-off script, committed to the repository, converts the Foundation and SR Legacy downloads into a trimmed CSV (name, kcal, protein, carbs, fat per 100 g, raw/cooked where the name states it) under `src/GymTracker.Web/Data/Seed/`.
 - On startup, if no `Usda` items exist, the app imports the CSV as shared `FoodItem`s with `Source = Usda`. No runtime calls to the USDA API.
 
+### 6.4 Setup chat (onboarding)
+
+A new account starts with an empty profile, so on first sign-in the user gets a short setup chat that fills it in.
+
+**When it shows.** A signed-in user whose `OnboardedAt` is null is redirected to `/welcome` on any full-page GET navigation (not htmx requests, POSTs, static files, or the account, admin, feedback, passkey, CSP-report and welcome paths), with the page they asked for as the return URL. Finishing or skipping sets `OnboardedAt`. Settings has "Run the setup chat again". Accounts that existed before this feature see it once too, with what is already known filled in.
+
+**Flow.** A splash (greeting, "Let's set you up", "Skip for now", and the line "Your answers are sent to an AI model through OpenRouter. Prefer not to? Use the form.") opens the chat. Each user message (up to 500 characters) goes to the server, which calls the model and shows its reply with up to four quick-reply chips. The server, not the model, decides when everything required is known: sex, birth year, height, current weight, activity level, goal, and the weekly rate unless the goal is Maintain. Starting maintenance is optional; protein defaults to 2.0 g per kg. Then a summary card appears under the chat: every field as an input within the 5.7 limits, the starting maintenance and today's target computed from them, and Save. The user can keep chatting and the card is redrawn. Nothing is saved until Save, which goes through the same profile validation as Settings, writes today's weigh-in if the weight differs from the latest one, saves the browser's time zone, and sets `OnboardedAt`. After 30 turns the chat stops and only the form remains. Without an OpenRouter key, or with the onboarding model set to off, and whenever a call fails, the same form is offered without the chat.
+
+**State lives on the server.** `OnboardingChat` (one row per user, owner query filter): the draft (the fields gathered so far), the messages, the turn count and the update time. Each turn sends the model the current draft as JSON, the fields still missing, the reasons any value from the last turn was refused, the 5.7 limits, and the last 20 messages. The model's answer only proposes values; each is checked against 5.7 and an out-of-range one is dropped and named in the next turn. The row is deleted when the user finishes or skips.
+
+**Model call.** `IOnboardingAssistant` in Core, `OpenRouterOnboardingAssistant` in Integrations, with the same request shape, structured output, timeout, retry and error messages as the food parser (6.1). Schema: `reply` (string), `quick_replies` (up to four short strings), and `fields` with every profile field from the list above, each nullable. A third AI task, `onboarding`, has its own model setting; unset, it uses the parser's model.
+
+**Prompt rules.** Warm and brief; one or two questions per turn; say in a few words why each item is needed; for values already known, confirm instead of asking again; never give medical advice or comment on the user's weight; reply in the account's language. Activity level is classified from the user's job, daily steps and training, using the Settings descriptions (section 7); lifting three or four times a week rarely moves someone up a level on its own; when unsure between two levels, ask one follow-up, and if still unsure pick the lower one.
+
+**Limits.** Rate limit of 40 chat messages per 10 minutes per user (section 9).
+
 ---
 
 ## 7. Screens
@@ -348,10 +396,17 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Calories: daily intake versus target for the last 4 weeks, with the maintenance estimate as a line.
 
 ### Settings
-- Profile fields from section 4, with validation including the safety limits in 5.6.
+- Profile fields from section 4, with the limits in 5.7. Inputs take their `min` and `max` from the same limits.
+- Activity level, one line of explanation per choice (from the NASEM 2023 examples; the step counts are a rough guide):
+  - Inactive: desk job, up to about 7,500 steps a day, little other exercise.
+  - Low active: about 7,500 to 12,000 steps a day, or an hour of exercise most days.
+  - Active: a physical job, or 1.5 to 2 hours of moderate activity a day.
+  - Very active: 2 hours or more of moderate to hard activity a day (manual work plus training, endurance athletes).
+  Under it: "Lifting 3 to 4 times a week rarely moves you up a level on its own; daily movement matters more. Used only until about three weeks of logs give an adaptive estimate."
+- Run the setup chat again (section 6.4).
 - Custom exercises.
 - Bar and plates: the profile bar weight and which plates the gym has.
-- AI models: the current food parser and food matcher models, read-only. Only the developer changes the key and models, in the admin area (section 12).
+- AI models: the current food parser, food matcher and setup chat models, read-only. Only the developer changes the key and models, in the admin area (section 12).
 - Admin: a row shown only to accounts with the `Dev` role, linking to `/admin`.
 - Export all of the user's data as CSV files in a zip.
 - Feedback: Send feedback and Your feedback (section 11).
@@ -391,7 +446,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - ASP.NET Core rate limiting middleware on the login POST, partitioned by client IP.
 - Forwarded headers: behind cloudflared every request comes from 172.30.0.10, so configure `ForwardedHeadersOptions` with that address as the only known proxy, read the client IP from `CF-Connecting-IP` and the scheme from `X-Forwarded-Proto`. Without this, rate limiting puts every client in one bucket.
 - Passwords: minimum 12 characters, no composition rules. An unknown email costs one password hash like a known one, so timing does not reveal which accounts exist.
-- A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes), admin unlock requests (10 per 15 minutes, two per unlock), AI food parsing (30 per 10 minutes) and admin writes (60 per 10 minutes).
+- A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes), admin unlock requests (10 per 15 minutes, two per unlock), AI food parsing (30 per 10 minutes), setup chat messages (40 per 10 minutes) and admin writes (60 per 10 minutes).
 - Passkeys alongside passwords: registered in Settings, usernameless sign-in on the login page (button and autofill), relying party `gym.peychev.uk`.
 - Response headers: Content-Security-Policy (`script-src 'self' 'wasm-unsafe-eval'`, no inline scripts or event handlers; sent report-only with a `/csp-report` log until `CSP_ENFORCE=true`), HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `Permissions-Policy` (camera only), COOP. `AllowedHosts` limited to the public host name. Request bodies over 1 MB are refused.
 - Cookie: `Secure`, `HttpOnly`, `SameSite=Lax`, `__Host-` prefix, sliding 30-day expiration. "Log out everywhere" in Settings updates the security stamp.
@@ -496,7 +551,7 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 - Reports: list with the CLI's filters; a report shows everything `feedback show` does with the screenshot inline, and sets status, reply and fixed-in version (defaulting to the running version). Opening a new report marks it Seen.
 - Parses and errors as in the CLI; regression cases download as JSONL.
 - What's new: list, add and remove.
-- AI: the OpenRouter key (set, test, remove; only its last 4 characters are ever shown) and the parser and matcher model pickers with model accuracy.
+- AI: the OpenRouter key (set, test, remove; only its last 4 characters are ever shown) and the parser, matcher and onboarding model pickers, with model accuracy for the first two.
 - Eval: the CLI's `eval` as a background job, one at a time, limit at most 20, with progress and the result kept in memory until the next job.
 - Users: name, email, created date, role, passkey count, last report. Read-only. The admin area shows what users sent as feedback and the parse and error records; it never browses another account's food log, weights or workouts.
 - Audit: the latest entries.
@@ -509,7 +564,7 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 ### CLI additions
 
 - `role grant|revoke dev --email <email>`, `role list`.
-- `ai show`, `ai set-model parser|matcher <id>`, `ai set-key` (the key is read from standard input, never an argument), `ai clear-key`, `ai test`.
+- `ai show`, `ai set-model parser|matcher|onboarding <id>`, `ai set-key` (the key is read from standard input, never an argument), `ai clear-key`, `ai test`.
 - `feedback changelog list|remove <id>`, `admin audit [--since 30d]`.
 
 ---
@@ -548,3 +603,7 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 ### Phase 7: Admin
 - Section 12: the `Dev` role, Cloudflare Access check, passkey unlock, the admin pages, the audit log, AI settings moved out of Settings, and the CLI additions.
 - **Done when:** the other account sees read-only AI models and gets a 404 at `/admin`; the developer reaches `/admin` from the iPhone only through the Access code and Face ID; a status and reply set from the admin area show on the reporter's phone; an eval runs from the admin area; and the unlock shows in `admin audit` and on Telegram.
+
+### Phase 8: Activity level and onboarding
+- Activity level and the NASEM 2023 prior (5.5), profile limits in one place (5.7), the setup chat (6.4) with its form fallback, and the onboarding model in the admin area and CLI.
+- **Done when:** the Core tests for 5.5 and 5.7 pass; a new account lands on the splash at first sign-in, finishes the chat in English and Bulgarian at 390 px, and Today shows the target computed from its answers; an existing account sees the chat once with its known values filled in; and the form works without an OpenRouter key.

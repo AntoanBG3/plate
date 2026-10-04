@@ -358,6 +358,30 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 @keyframes think { 0%, 80%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 
 .bubble { margin-left: auto; max-width: 85%; width: fit-content; padding: 10px var(--s-4); border-radius: 20px 20px 6px 20px; background: var(--fill-strong); font-size: var(--text-body); overflow-wrap: anywhere; }
+/* ---------- setup chat (SPEC 6.4) ---------- */
+
+.splash { display: flex; flex-direction: column; gap: var(--s-4); min-height: calc(100dvh - 160px); justify-content: center; text-align: center; }
+.splash .large-title { margin: 0; }
+.splash-mark { width: 72px; height: 72px; margin: 0 auto var(--s-2); border-radius: 22px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); }
+.splash-mark .icon { width: 40px; height: 40px; stroke-width: 1.8; }
+.splash-lead { margin: 0 auto; max-width: 32ch; color: var(--label-2); font-size: var(--text-body); line-height: 1.4; }
+.splash-note { margin: 0 auto; max-width: 36ch; }
+.splash-skip, .setup-links form { display: flex; justify-content: center; }
+.setup-links { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-6); }
+.chat { display: flex; flex-direction: column; gap: var(--s-2); }
+.bubble.from-app { margin-left: 0; margin-right: auto; border-radius: 20px 20px 20px 6px; background: var(--surface); box-shadow: var(--shadow-card); animation: appear var(--dur-medium) var(--ease-out) backwards; }
+.chat > .bubble { margin-top: 0; margin-bottom: 0; }
+.reply-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-4); }
+.reply-chip { min-height: var(--tap); padding: 0 var(--s-4); border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-weight: var(--weight-semibold); font-size: var(--text-subhead); }
+.reply-chip:disabled { opacity: 0.5; }
+.setup-composer { margin-top: var(--s-4); }
+.setup-limit { margin: var(--s-4) var(--s-4) 0; }
+.setup-form { margin-top: var(--s-6); }
+.setup-form > .btn { margin-top: var(--s-5); }
+.setup-preview-main { margin: 0 0 var(--s-1); font-size: var(--text-title-1); font-weight: var(--weight-semibold); }
+.setup-preview-main small { font-size: var(--text-subhead); font-weight: var(--weight-regular); color: var(--label-2); }
+.setup-preview .footnote { margin: 0; }
+
 .result { padding: var(--s-3) var(--s-4); animation: appear var(--dur-medium) var(--ease-out) backwards; }
 .result-head { display: flex; align-items: center; gap: var(--s-3); }
 .result-head .input { flex: 1; min-width: 0; background: none; padding: 0; min-height: 32px; font-weight: var(--weight-semibold); }
@@ -398,6 +422,10 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .ex-head > div:first-child { flex: 1; min-width: 0; }
 .ex-name { font-size: var(--text-title-2); line-height: 1.27; font-weight: var(--weight-bold); letter-spacing: 0.016em; overflow-wrap: anywhere; }
 .ex-note { margin-top: 2px; font-size: var(--text-footnote); color: var(--label-2); overflow-wrap: anywhere; }
+/* A radio list with a description per choice (activity level). */
+.choice-row { align-items: flex-start; cursor: pointer; }
+.choice-row input { flex: none; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--accent); }
+.choice-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .plate-choices { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-2); }
 .plate-choice { position: relative; display: inline-flex; }
 .plate-choice input { position: absolute; opacity: 0; inset: 0; margin: 0; }

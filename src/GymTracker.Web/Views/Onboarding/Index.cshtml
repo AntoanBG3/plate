@@ -1,0 +1,99 @@
+@model OnboardingPage
+@{
+    ViewData["Title"] = L["Set up"];
+    ViewData["HideTabs"] = true;
+    ViewData["Depth"] = 0;
+    var returnUrl = (string)ViewData["ReturnUrl"]!;
+    var formOnly = ViewData["ShowForm"] is true || !Model.Available;
+    var formUrl = "/welcome?form=true" + (returnUrl == "/today" ? "" : "&returnUrl=" + Uri.EscapeDataString(returnUrl));
+    var name = Model.Draft.Name;
+}
+<div class="setup" data-module="setup">
+    @if (!Model.Started && !formOnly)
+    {
+        <section class="splash">
+            <div class="splash-mark" aria-hidden="true">@Ui.Icon("target")</div>
+            <h1 class="large-title">@(name is null ? L["Welcome"] : L["Welcome, {0}", name])</h1>
+            <p class="splash-lead">@L["A few quick questions and your calorie and protein targets are ready. It takes about two minutes."]</p>
+            <form method="post" asp-antiforgery="true" action="/welcome/start" data-busy>
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <button type="submit" class="btn btn-primary btn-block">@L["Let's set you up"]</button>
+                <p class="thinking" role="status"><i></i><i></i><i></i><span>@L["Starting…"]</span></p>
+            </form>
+            <p class="footnote splash-note">@L["Your answers are sent to an AI model through OpenRouter. Prefer not to?"] <a href="@formUrl">@L["Use the form"]</a></p>
+            <form method="post" asp-antiforgery="true" action="/welcome/skip" class="splash-skip">
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <button type="submit" class="btn btn-plain">@L["Skip for now"]</button>
+            </form>
+        </section>
+    }
+    else if (formOnly)
+    {
+        <header class="page-head">
+            <h1 class="large-title">@L["Your profile"]</h1>
+            <p class="subhead">@L["This sets your starting calorie and protein targets. They adapt as you log food and weight."]</p>
+        </header>
+        <partial name="_SetupForm" model="new SetupFormModel(Model.Draft, null, Model.CurrentYear, returnUrl, Summary: false)" />
+        <form method="post" asp-antiforgery="true" action="/welcome/skip" class="splash-skip">
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <button type="submit" class="btn btn-plain">@L["Skip for now"]</button>
+        </form>
+    }
+    else
+    {
+        <header class="page-head">
+            <h1 class="large-title">@L["Set up"]</h1>
+        </header>
+        <div class="chat" aria-live="polite" data-chat>
+            @foreach (var line in Model.Messages)
+            {
+                <p class="bubble @(line.FromUser ? null : "from-app")">@line.Text</p>
+            }
+        </div>
+
+        @if (Model.LimitReached)
+        {
+            <p class="footnote setup-limit">@L["That's the end of the chat. Check the summary and save, or use the form."]</p>
+        }
+        else
+        {
+            @if (Model.QuickReplies.Count > 0)
+            {
+                <div class="reply-chips">
+                    @foreach (var reply in Model.QuickReplies)
+                    {
+                        <form method="post" asp-antiforgery="true" action="/welcome/message" data-busy data-quick-reply>
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                            <input type="hidden" name="text" value="@reply" />
+                            <button type="submit" class="reply-chip">@reply</button>
+                        </form>
+                    }
+                </div>
+            }
+
+            <form method="post" asp-antiforgery="true" action="/welcome/message" class="setup-composer" data-busy data-composer>
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <div class="composer">
+                    <label for="setup-text" class="sr-only">@L["Your answer"]</label>
+                    <textarea id="setup-text" name="text" rows="1" maxlength="@OnboardingService.MaxMessageLength" placeholder="@L["Your answer"]" required enterkeyhint="send"></textarea>
+                    <button type="submit" class="send-btn" aria-label="@L["Send"]">@Ui.Icon("send")</button>
+                </div>
+                <p class="thinking" role="status"><i></i><i></i><i></i><span>@L["Thinking…"]</span></p>
+            </form>
+        }
+
+        @if (Model.Complete)
+        {
+            <partial name="_SetupForm" model="new SetupFormModel(Model.Draft, Model.Preview, Model.CurrentYear, returnUrl, Summary: true)" />
+        }
+
+        <div class="setup-links">
+            <a class="btn btn-plain" href="@formUrl">@L["Use the form instead"]</a>
+            <form method="post" asp-antiforgery="true" action="/welcome/skip">
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <button type="submit" class="btn btn-plain">@L["Skip for now"]</button>
+            </form>
+        </div>
+    }
+</div>
+<script src="~/js/onboarding.js" asp-append-version="true"></script>

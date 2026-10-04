@@ -66,21 +66,54 @@ public class FoodMathTests
 
 public class MaintenanceTests
 {
-    private static UserProfile Profile(Sex? sex = Sex.Male, int? height = 180, int? born = 1996) =>
-        new() { Sex = sex, HeightCm = height, BirthYear = born, ProteinGramsPerKg = 2.0m };
+    private static UserProfile Profile(Sex? sex = Sex.Male, int? height = 180, int? born = 1996, ActivityLevel? activity = null) =>
+        new() { Sex = sex, HeightCm = height, BirthYear = born, ActivityLevel = activity, ProteinGramsPerKg = 2.0m };
+
+    [Theory]
+    // Male, 30 years, 180 cm, 80 kg
+    [InlineData(Sex.Male, ActivityLevel.Inactive, 180, 80, 2726.17)]
+    [InlineData(Sex.Male, ActivityLevel.LowActive, 180, 80, 2945.77)]
+    [InlineData(Sex.Male, ActivityLevel.Active, 180, 80, 3126.32)]
+    [InlineData(Sex.Male, ActivityLevel.VeryActive, 180, 80, 3495.82)]
+    // Female, 30 years, 165 cm, 60 kg
+    [InlineData(Sex.Female, ActivityLevel.Inactive, 165, 60, 2021.00)]
+    [InlineData(Sex.Female, ActivityLevel.LowActive, 165, 60, 2182.87)]
+    [InlineData(Sex.Female, ActivityLevel.Active, 165, 60, 2319.45)]
+    [InlineData(Sex.Female, ActivityLevel.VeryActive, 165, 60, 2551.68)]
+    public void Nasem_2023_matches_the_published_equations(Sex sex, ActivityLevel level, int height, double weight, double expected) =>
+        Maintenance.Nasem2023(sex, level, 30, height, (decimal)weight).Should().Be((decimal)expected);
 
     [Fact]
-    public void Mifflin_st_jeor_matches_the_published_formula()
+    public void A_higher_level_never_gives_less_where_the_equations_cross()
     {
-        // Male, 80 kg, 180 cm, 30 years: 800 + 1125 - 150 + 5 = 1780
-        Maintenance.MifflinStJeor(Sex.Male, 80, 180, 30).Should().Be(1780m);
-        // Female, 60 kg, 165 cm, 55 years: 600 + 1031.25 - 275 - 161 = 1195.25
-        Maintenance.MifflinStJeor(Sex.Female, 60, 165, 55).Should().Be(1195.25m);
+        // Male, 30 years, 150 cm, 45 kg: the very active equation alone gives 2358.67, below active's 2373.87.
+        Maintenance.Nasem2023(Sex.Male, ActivityLevel.VeryActive, 30, 150, 45).Should().Be(2373.87m);
+        Maintenance.Nasem2023(Sex.Male, ActivityLevel.Active, 30, 150, 45).Should().Be(2373.87m);
     }
 
     [Fact]
-    public void Prior_is_bmr_times_1_55_using_age_from_birth_year() =>
-        Maintenance.Prior(Profile(), 80, currentYear: 2026).Should().Be(2759); // 1780 * 1.55 = 2759
+    public void Levels_are_in_order_across_the_profile_limits()
+    {
+        foreach (var sex in new[] { Sex.Male, Sex.Female })
+        foreach (var age in new[] { ProfileLimits.MinAgeYears, 40, 70, ProfileLimits.MaxAgeYears })
+        foreach (var height in new[] { ProfileLimits.MinHeightCm, 160, 190, ProfileLimits.MaxHeightCm })
+        foreach (var weight in new[] { ProfileLimits.MinWeightKg, 60m, 120m, ProfileLimits.MaxWeightKg })
+        {
+            var values = Enum.GetValues<ActivityLevel>().Select(l => Maintenance.Nasem2023(sex, l, age, height, weight)).ToList();
+            values.Should().BeInAscendingOrder($"{sex}, {age} y, {height} cm, {weight} kg");
+        }
+    }
+
+    [Fact]
+    public void Prior_uses_the_activity_level_and_age_from_birth_year()
+    {
+        Maintenance.Prior(Profile(activity: ActivityLevel.LowActive), 80, currentYear: 2026).Should().Be(2946);
+        Maintenance.Prior(Profile(activity: ActivityLevel.VeryActive), 80, currentYear: 2026).Should().Be(3496);
+    }
+
+    [Fact]
+    public void Prior_without_an_activity_level_is_inactive() =>
+        Maintenance.Prior(Profile(activity: null), 80, 2026).Should().Be(2726);
 
     [Fact]
     public void A_stated_maintenance_wins() =>
@@ -139,6 +172,116 @@ public class ProfileRulesTests
         p = Valid();
         p.ProteinGramsPerKg = 5;
         ProfileRules.Validate(p, 2026).Should().NotBeNull();
+    }
+
+    [Theory]
+    [InlineData(1926, true)]    // 100 in 2026
+    [InlineData(1925, false)]
+    [InlineData(2008, true)]    // 18
+    [InlineData(2009, false)]   // 17: the adult equations and floors don't apply
+    public void Age_must_be_18_to_100(int born, bool valid)
+    {
+        var p = Valid();
+        p.BirthYear = born;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData(120, true)]
+    [InlineData(119, false)]
+    [InlineData(230, true)]
+    [InlineData(231, false)]
+    public void Height_must_be_120_to_230_cm(int height, bool valid)
+    {
+        var p = Valid();
+        p.HeightCm = height;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData(30, true)]
+    [InlineData(29.9, false)]
+    [InlineData(300, true)]
+    [InlineData(300.1, false)]
+    public void Bodyweight_must_be_30_to_300_kg(double weight, bool valid) =>
+        (ProfileRules.WeightError((decimal)weight) is null).Should().Be(valid);
+
+    [Theory]
+    [InlineData(1200, true)]
+    [InlineData(1199, false)]
+    [InlineData(6000, true)]
+    [InlineData(6001, false)]
+    public void Starting_maintenance_must_be_1200_to_6000_kcal(int kcal, bool valid)
+    {
+        var p = Valid();
+        p.InitialMaintenanceKcal = kcal;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData(0.8, true)]
+    [InlineData(0.7, false)]
+    [InlineData(3.5, true)]
+    [InlineData(3.6, false)]
+    public void Protein_must_be_0_8_to_3_5_g_per_kg(double protein, bool valid)
+    {
+        var p = Valid();
+        p.ProteinGramsPerKg = (decimal)protein;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData(0.25, true)]
+    [InlineData(0.2, false)]
+    [InlineData(20, true)]
+    [InlineData(20.5, false)]
+    public void Weight_increment_must_be_0_25_to_20_kg(double increment, bool valid)
+    {
+        var p = Valid();
+        p.DefaultWeightIncrementKg = (decimal)increment;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData("A", true)]
+    [InlineData("  Antoan  ", true)]   // measured after trimming
+    [InlineData("   ", false)]
+    [InlineData("", false)]
+    public void Name_must_not_be_blank(string name, bool valid)
+    {
+        var p = Valid();
+        p.DisplayName = name;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Fact]
+    public void Name_is_at_most_50_characters()
+    {
+        var p = Valid();
+        p.DisplayName = new string('a', 50);
+        ProfileRules.Validate(p, 2026).Should().BeNull();
+        p.DisplayName = new string('a', 51);
+        ProfileRules.Validate(p, 2026).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Enum_values_outside_the_list_are_refused()
+    {
+        var p = Valid();
+        p.Sex = (Sex)7;
+        ProfileRules.Validate(p, 2026).Should().NotBeNull();
+
+        p = Valid();
+        p.Goal = (Goal)7;
+        ProfileRules.Validate(p, 2026).Should().NotBeNull();
+
+        p = Valid();
+        p.ActivityLevel = (ActivityLevel)7;
+        ProfileRules.Validate(p, 2026).Should().NotBeNull();
+
+        p = Valid();
+        p.ActivityLevel = ActivityLevel.VeryActive;
+        ProfileRules.Validate(p, 2026).Should().BeNull();
     }
 
     [Theory]

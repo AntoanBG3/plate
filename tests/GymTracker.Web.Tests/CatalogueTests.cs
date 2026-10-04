@@ -38,7 +38,7 @@ public partial class CatalogueTests(ITestOutputHelper output)
     private static readonly string[] Extra = ["assumed 100 g", "Freestyle", "Dark", "Light", "Match phone", "Entry deleted.", "Exercise removed."];
 
     // Matched by a pattern but never shown: instructions sent to the model.
-    private static readonly string[] Ignore = ["Write assumption in English."];
+    private static readonly string[] Ignore = ["Write assumption in English.", "Reply in English."];
 
     public static SortedDictionary<string, SortedSet<string>> Extract()
     {
@@ -94,7 +94,7 @@ public partial class CatalogueTests(ITestOutputHelper output)
             Add(key, "wwwroot/js");
         }
 
-        foreach (var name in Enum.GetNames<Meal>().Concat(Enum.GetNames<Muscle>()).Concat(Enum.GetNames<Equipment>()).Concat(Enum.GetNames<Goal>()))
+        foreach (var name in Enum.GetNames<Meal>().Concat(Enum.GetNames<Muscle>()).Concat(Enum.GetNames<Equipment>()).Concat(Enum.GetNames<Goal>()).Concat(Enum.GetNames<ActivityLevel>()))
         {
             Add(Localizer.Humanize(name), "enum");
         }

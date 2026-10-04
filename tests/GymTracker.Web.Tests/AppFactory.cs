@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using GymTracker.Web.Data;
 using GymTracker.Web.Features.Users;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -49,7 +51,8 @@ public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDicti
         return (client, email);
     }
 
-    public async Task<(string Email, string Password)> CreateUserAsync()
+    /// <summary>A new account. Unless <paramref name="onboarded"/> is false it has done the setup chat, so pages load directly.</summary>
+    public async Task<(string Email, string Password)> CreateUserAsync(bool onboarded = true)
     {
         var email = $"{Guid.NewGuid():N}@test.local";
         const string password = "correct horse battery";
@@ -58,6 +61,14 @@ public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDicti
         if (errors.Count > 0)
         {
             throw new InvalidOperationException(string.Join(" ", errors));
+        }
+
+        if (onboarded)
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var id = await db.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
+            await db.Profiles.IgnoreQueryFilters().Where(p => p.UserId == id)
+                .ExecuteUpdateAsync(p => p.SetProperty(x => x.OnboardedAt, DateTimeOffset.UtcNow));
         }
 
         return (email, password);

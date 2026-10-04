@@ -129,6 +129,21 @@ public class AdaptiveTargetsTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task The_estimated_prior_follows_the_activity_level()
+    {
+        await using var x = await SetupAsync(statedMaintenance: null);
+        await x.Profiles.UpdateAsync(p => { p.HeightCm = 180; p.BirthYear = 1996; }, default);
+        await x.Scope.Bodyweights.SetAsync(Today, 80m, default);
+
+        (await x.Targets.ForTodayAsync(default)).Kcal.Should().Be(2726, "no activity level counts as inactive (NASEM 2023, male, 30 y, 180 cm, 80 kg)");
+
+        await x.Profiles.UpdateAsync(p => p.ActivityLevel = ActivityLevel.LowActive, default);
+        var targets = await x.Targets.ForTodayAsync(default);
+        targets.Kcal.Should().Be(2946);
+        targets.Estimate!.Method.Should().Be(MaintenanceMethod.Initial);
+    }
+
+    [Fact]
     public async Task Estimates_are_private_to_each_user()
     {
         await using var a = await SetupAsync();

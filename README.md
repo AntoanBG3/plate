@@ -7,7 +7,8 @@ All five build phases are in place:
 - Workouts: templates, sessions with double-progression suggestions, a rest timer, and an offline queue so sets logged on bad signal are never lost.
 - Training charts: estimated 1RM per exercise and weekly sets per muscle.
 - Food: logging by text (parsed by an LLM through OpenRouter, numbers taken from the food database, optionally with a decision model choosing the database food), barcode, search and recents.
-- Targets: trend weight, a weekly adaptive maintenance estimate, and calorie and protein targets for a cut, maintenance or bulk, with weight and calorie charts.
+- Targets: trend weight, a weekly adaptive maintenance estimate, and calorie and protein targets for a cut, maintenance or bulk, with weight and calorie charts. Until there are about three weeks of logs, maintenance comes from the NASEM 2023 energy equations (sex, age, height, weight and activity level).
+- Setup: on first sign-in a short AI chat fills in the profile and ends on an editable summary; without an OpenRouter key it is a plain form.
 - Settings: profile, CSV export of all your data, password change and logging out everywhere.
 
 ## Local development (Mac)
@@ -102,6 +103,8 @@ docker exec -it gymtracker-app dotnet GymTracker.Web.dll create-user --email som
 ```
 
 Passwords need at least 12 characters. Five wrong passwords lock the account for 15 minutes. Sign-in attempts are also limited per address (10 per 5 minutes) and across all addresses together (30 per 15 minutes); failed attempts are logged with the reason and address (`docker logs gymtracker-app | grep "Failed sign-in"`).
+
+At first sign-in each account goes through the setup chat (or its form) at `/welcome`; "Skip for now" leaves it, and Settings → Run the setup chat again brings it back. Accounts created before the setup chat existed see it once too, with what they had already entered filled in. The chat sends the answers to the onboarding model through OpenRouter and is limited to 40 messages per 10 minutes per account (`RateLimits__AiOnboardingPerWindow`).
 
 After signing in on each iPhone, add a passkey under Settings → Passkeys; from then on "Sign in with a passkey" (or the keyboard's autofill bar) signs in with Face ID. Passwords keep working. Passkeys are bound to `gym.peychev.uk` (`Passkeys__ServerDomain` in the compose file); changing the host name makes them stop working.
 
@@ -240,6 +243,7 @@ The same things work over SSH:
 ```sh
 ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll ai show
 ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll ai set-model matcher off
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll ai set-model onboarding off   # setup form only; unset, the chat uses the parser's model
 ssh -t wizard docker exec -it gymtracker-app dotnet GymTracker.Web.dll ai set-key     # asks for the key without echoing it
 ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll admin audit --since 30d
 ```

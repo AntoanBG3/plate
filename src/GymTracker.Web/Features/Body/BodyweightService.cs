@@ -9,9 +9,6 @@ namespace GymTracker.Web.Features.Body;
 
 public class BodyweightService
 {
-    public const decimal MinWeightKg = 20m;
-    public const decimal MaxWeightKg = 400m;
-
     private readonly AppDbContext db;
     private readonly ICurrentUser currentUser;
 
@@ -41,9 +38,9 @@ public class BodyweightService
     /// <summary>Records the weight for a day. A second entry on the same day replaces the first.</summary>
     public async Task<BodyweightEntry> SetAsync(DateOnly date, decimal weightKg, CancellationToken ct)
     {
-        if (weightKg < MinWeightKg || weightKg > MaxWeightKg)
+        if (ProfileRules.WeightError(weightKg) is { } error)
         {
-            throw new ValidationException(new LocalText("Weight must be between {0} and {1} kg.", MinWeightKg, MaxWeightKg));
+            throw new ValidationException(error);
         }
 
         var entry = await db.Bodyweights.SingleOrDefaultAsync(b => b.Date == date, ct);

@@ -73,7 +73,7 @@ public class AdminAiController(OpenRouterSettings openRouter, AiAdmin ai, ModelA
         }
 
         await ai.SetModelAsync(t, modelId ?? "", ct);
-        if (await openRouter.GetKeyAsync(ct) is null || (t == AiTask.Matcher && modelId == AiTasks.Off))
+        if (await openRouter.GetKeyAsync(ct) is null || (t != AiTask.Parser && modelId == AiTasks.Off))
         {
             TempData.Notice("Model saved.");
         }
@@ -81,9 +81,13 @@ public class AdminAiController(OpenRouterSettings openRouter, AiAdmin ai, ModelA
         {
             Report(await ai.TestParserAsync(ct), "Model saved: food parsing works.", "Model saved, but it doesn't work yet: {0}");
         }
-        else
+        else if (t == AiTask.Matcher)
         {
             Report(await ai.TestMatcherAsync(ct), "Model saved: food matching works.", "Model saved, but it doesn't work yet: {0}");
+        }
+        else
+        {
+            Report(await ai.TestOnboardingAsync(ct), "Model saved: the setup chat works.", "Model saved, but it doesn't work yet: {0}");
         }
 
         return Redirect("/admin/ai");

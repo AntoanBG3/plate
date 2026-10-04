@@ -1,8 +1,11 @@
 @model UserProfile
 @using GymTracker.Web.Integrations
+@using GymTracker.Core.Nutrition
+@inject TimeProvider Time
 @{
     ViewData["Title"] = L["Settings"];
     var openRouter = (OpenRouterStatus)ViewData["OpenRouter"]!;
+    var year = Time.GetUtcNow().Year;
 }
 <header class="page-head">
     <h1 class="large-title">@L["Settings"]</h1>
@@ -39,7 +42,7 @@
         <h2 class="section-title">@L["Profile"]</h2>
         <div class="list">
             <div class="row"><span class="row-main">@L["Email"]</span><span class="row-value row-ellipsis">@ViewData["Email"]</span></div>
-            <div class="field-row"><label for="displayName">@L["Name"]</label><input id="displayName" type="text" name="displayName" value="@Model.DisplayName" maxlength="100" required autocomplete="name" /></div>
+            <div class="field-row"><label for="displayName">@L["Name"]</label><input id="displayName" type="text" name="displayName" value="@Model.DisplayName" maxlength="@ProfileLimits.MaxNameLength" required autocomplete="name" /></div>
             <div class="field-row">
                 <label for="sex">@L["Sex"]</label>
                 <select id="sex" name="sex">
@@ -48,11 +51,25 @@
                     <option value="Female" selected="@(Model.Sex == Sex.Female)">@L["Female"]</option>
                 </select>
             </div>
-            <div class="field-row"><label for="birthYear">@L["Birth year"]</label><input id="birthYear" class="num" type="number" name="birthYear" value="@Model.BirthYear" min="1920" max="2015" inputmode="numeric" /></div>
-            <div class="field-row"><label for="heightCm">@L["Height"]</label><input id="heightCm" class="num" type="number" name="heightCm" value="@Model.HeightCm" min="120" max="230" inputmode="numeric" /><span class="unit">@L["cm"]</span></div>
-            <div class="field-row"><label for="initialMaintenanceKcal">@L["Starting maintenance"]</label><input id="initialMaintenanceKcal" class="num" type="number" name="initialMaintenanceKcal" value="@Model.InitialMaintenanceKcal" min="1200" max="6000" inputmode="numeric" placeholder="@L["Estimate"]" /><span class="unit">@L["kcal"]</span></div>
+            <div class="field-row"><label for="birthYear">@L["Birth year"]</label><input id="birthYear" class="num" type="number" name="birthYear" value="@Model.BirthYear" min="@ProfileLimits.MinBirthYear(year)" max="@ProfileLimits.MaxBirthYear(year)" inputmode="numeric" /></div>
+            <div class="field-row"><label for="heightCm">@L["Height"]</label><input id="heightCm" class="num" type="number" name="heightCm" value="@Model.HeightCm" min="@ProfileLimits.MinHeightCm" max="@ProfileLimits.MaxHeightCm" inputmode="numeric" /><span class="unit">@L["cm"]</span></div>
+            <div class="field-row"><label for="initialMaintenanceKcal">@L["Starting maintenance"]</label><input id="initialMaintenanceKcal" class="num" type="number" name="initialMaintenanceKcal" value="@Model.InitialMaintenanceKcal" min="@ProfileLimits.MinMaintenanceKcal" max="@ProfileLimits.MaxMaintenanceKcal" inputmode="numeric" placeholder="@L["Estimate"]" /><span class="unit">@L["kcal"]</span></div>
         </div>
-        <p class="section-footer">@L["Leave starting maintenance empty to estimate it from sex, height, age and weight. It adapts to your logged data later."]</p>
+        <p class="section-footer">@L["Leave starting maintenance empty to estimate it from sex, age, height, weight and activity. It adapts to your logged data later."]</p>
+    </section>
+
+    <section class="section">
+        <h2 class="section-title">@L["Activity"]</h2>
+        <div class="list" role="radiogroup" aria-label="@L["Activity level"]">
+            @foreach (var level in Enum.GetValues<ActivityLevel>())
+            {
+                <label class="row choice-row">
+                    <input type="radio" name="activityLevel" value="@level" checked="@(Model.ActivityLevel == level)" />
+                    <span class="choice-text"><span class="row-main">@L.Enum(level)</span><span class="row-sub">@L[ActivityLevels.Description(level)]</span></span>
+                </label>
+            }
+        </div>
+        <p class="section-footer">@L[ActivityLevels.Note] <a href="/welcome?restart=1">@L["Run the setup chat again"]</a></p>
     </section>
 
     <section class="section">
@@ -67,9 +84,9 @@
                     }
                 </select>
             </div>
-            <div class="field-row"><label for="rate">@L["Rate per week"]</label><input id="rate" class="num" type="number" name="targetRatePercentPerWeek" value="@Model.TargetRatePercentPerWeek.Kg()" min="0" max="1" step="0.05" inputmode="decimal" /><span class="unit">@L["% of weight"]</span></div>
-            <div class="field-row"><label for="protein">@L["Protein"]</label><input id="protein" class="num" type="number" name="proteinGramsPerKg" value="@Model.ProteinGramsPerKg.Kg()" min="0.8" max="3.5" step="0.1" inputmode="decimal" /><span class="unit">@L["g per kg"]</span></div>
-            <div class="field-row"><label for="increment">@L["Weight jump"]</label><input id="increment" class="num" type="number" name="defaultWeightIncrementKg" value="@Model.DefaultWeightIncrementKg.Kg()" min="0.25" max="20" step="any" inputmode="decimal" /><span class="unit">@L["kg"]</span></div>
+            <div class="field-row"><label for="rate">@L["Rate per week"]</label><input id="rate" class="num" type="number" name="targetRatePercentPerWeek" value="@Model.TargetRatePercentPerWeek.Kg()" min="0" max="@ProfileLimits.MaxCutRatePercent.Kg()" step="0.05" inputmode="decimal" /><span class="unit">@L["% of weight"]</span></div>
+            <div class="field-row"><label for="protein">@L["Protein"]</label><input id="protein" class="num" type="number" name="proteinGramsPerKg" value="@Model.ProteinGramsPerKg.Kg()" min="@ProfileLimits.MinProteinGramsPerKg.Kg()" max="@ProfileLimits.MaxProteinGramsPerKg.Kg()" step="0.1" inputmode="decimal" /><span class="unit">@L["g per kg"]</span></div>
+            <div class="field-row"><label for="increment">@L["Weight jump"]</label><input id="increment" class="num" type="number" name="defaultWeightIncrementKg" value="@Model.DefaultWeightIncrementKg.Kg()" min="@ProfileLimits.MinWeightIncrementKg.Kg()" max="@ProfileLimits.MaxWeightIncrementKg.Kg()" step="any" inputmode="decimal" /><span class="unit">@L["kg"]</span></div>
             <div class="field-row"><label for="timeZoneId">@L["Time zone"]</label><input id="timeZoneId" type="text" name="timeZoneId" value="@Model.TimeZoneId" maxlength="64" autocapitalize="off" spellcheck="false" /></div>
         </div>
         <p class="section-footer">@L["Cuts are capped at 1% and bulks at 0.5% of bodyweight per week. The weight jump is how much is added when every set reaches the top of its range."]</p>
@@ -78,7 +95,7 @@
     <section class="section">
         <h2 class="section-title">@L["Bar and plates"]</h2>
         <div class="list">
-            <div class="field-row"><label for="bar">@L["Bar weight"]</label><input id="bar" class="num" type="number" name="barWeightKg" value="@Model.BarWeightKg.Kg()" min="0" max="50" step="any" inputmode="decimal" /><span class="unit">@L["kg"]</span></div>
+            <div class="field-row"><label for="bar">@L["Bar weight"]</label><input id="bar" class="num" type="number" name="barWeightKg" value="@Model.BarWeightKg.Kg()" min="@ProfileLimits.MinBarWeightKg.Kg()" max="@ProfileLimits.MaxBarWeightKg.Kg()" step="any" inputmode="decimal" /><span class="unit">@L["kg"]</span></div>
             <fieldset class="field-row stacked" style="border: 0; margin: 0">
                 <legend class="sr-only">@L["Plates you have"]</legend>
                 <span aria-hidden="true">@L["Plates you have"]</span>
@@ -100,13 +117,14 @@
     <div class="list">
         @foreach (var task in openRouter.Tasks)
         {
+            var off = task.Task == AiTask.Onboarding ? L["Off: setup form only"] : L["Off: database ranking only"];
             <div class="row">
-                <span class="row-icon neutral">@Ui.Icon(task.Task == AiTask.Parser ? "text" : "search")</span>
+                <span class="row-icon neutral">@Ui.Icon(task.Task switch { AiTask.Parser => "text", AiTask.Matcher => "search", _ => "feedback" })</span>
                 <span class="row-main">
-                    <span class="row-title">@(task.Task == AiTask.Parser ? L["Food parser"] : L["Food matcher"])</span>
+                    <span class="row-title">@(task.Task switch { AiTask.Parser => L["Food parser"], AiTask.Matcher => L["Food matcher"], _ => L["Setup chat"] })</span>
                     <span class="row-sub" style="display: block">@(openRouter.Key.Source == KeySource.None
-                        ? (task.Task == AiTask.Parser ? L["Simple built-in parser"] : L["Off: database ranking only"])
-                        : task.Model == AiTasks.Off ? L["Off: database ranking only"] : task.ModelInfo?.Name ?? task.Model)</span>
+                        ? (task.Task == AiTask.Parser ? L["Simple built-in parser"] : off)
+                        : task.Model == AiTasks.Off ? off : task.ModelInfo?.Name ?? task.Model)</span>
                 </span>
             </div>
         }

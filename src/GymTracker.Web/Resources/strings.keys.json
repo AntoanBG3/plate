@@ -3,6 +3,7 @@
     "src/GymTracker.Web/Integrations/OpenRouterModels.cs"
   ],
   "% of weight": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "1 exercise": [
@@ -39,11 +40,17 @@
   "A cut can't be faster than {0}% of bodyweight per week.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
+  "A few quick questions and your calorie and protein targets are ready. It takes about two minutes.": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
   "A food reading rated wrong.": [
     "src/GymTracker.Web/Views/Feedback/Index.cshtml"
   ],
   "A food with that barcode already exists.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
+  ],
+  "A physical job, or 1.5 to 2 hours of moderate activity a day.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "A template is the list of exercises for one workout, like Upper A or Legs.": [
     "src/GymTracker.Web/Views/Train/Index.cshtml"
@@ -57,8 +64,14 @@
   "About": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
+  "About 7,500 to 12,000 steps a day, or an hour of exercise most days.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
+  ],
   "About the error on the previous page ({0}).": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
+  "About you": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
   ],
   "About: the suggestion for {0}": [
     "src/GymTracker.Web/Features/Feedback/FeedbackSnapshots.cs"
@@ -77,6 +90,17 @@
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
+  ],
+  "Active": [
+    "enum"
+  ],
+  "Activity": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Activity level": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Add": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
@@ -190,8 +214,10 @@
     "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
   ],
   "Bar weight must be between 0 and 50 kg.": [
-    "src/GymTracker.Core/Domain/ProfileRules.cs",
     "src/GymTracker.Web/Features/Training/ExerciseSettingsService.cs"
+  ],
+  "Bar weight must be between {0} and {1} kg.": [
+    "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Barbell": [
     "enum"
@@ -224,9 +250,10 @@
     "enum"
   ],
   "Birth year": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "Birth year is out of range.": [
+  "Birth year must be between {0} and {1} (age {2} to {3}).": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Body": [
@@ -312,6 +339,9 @@
   "Check match": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
+  "Check the details and change anything that's off. Nothing is saved until you tap Save.": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
   "Chest": [
     "enum"
   ],
@@ -373,6 +403,9 @@
   "Cuts are capped at 1% and bulks at 0.5% of bodyweight per week. The weight jump is how much is added when every set reaches the top of its range.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Cuts are capped at 1% and bulks at 0.5% of bodyweight per week; the rate is ignored for maintain. Leave starting maintenance empty unless you know it from tracking.": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
   "Daily calories against target for the last 4 weeks": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
@@ -418,6 +451,9 @@
   ],
   "Description must be 1 to 200 characters.": [
     "src/GymTracker.Web/Features/Food/FoodLogService.cs"
+  ],
+  "Desk job, up to about 7,500 steps a day, little other exercise.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "Did this read your food right?": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
@@ -491,6 +527,7 @@
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
   "Estimate": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Estimated 1RM": [
@@ -530,7 +567,11 @@
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Female": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Fill in every field to finish, or skip for now.": [
+    "src/GymTracker.Web/Features/Onboarding/OnboardingService.cs"
   ],
   "Fill in sex, height and birth year (or a starting maintenance) in Settings to get a calorie target.": [
     "src/GymTracker.Web/Features/Food/NutritionTargets.cs"
@@ -595,6 +636,9 @@
     "src/GymTracker.Web/Views/Train/Session.cshtml",
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
+  "From a starting maintenance of about {0} kcal, with {1} g of protein. It adapts as you log food and weight.": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
   "Front squat": [
     "exercise"
   ],
@@ -606,6 +650,7 @@
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
   "Goal": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Got it": [
@@ -628,9 +673,10 @@
     "exercise"
   ],
   "Height": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "Height must be between 120 and 230 cm.": [
+  "Height must be between {0} and {1} cm.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Hip thrust": [
@@ -660,6 +706,9 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml"
   ],
+  "Inactive": [
+    "enum"
+  ],
   "Incline bench press": [
     "exercise"
   ],
@@ -683,6 +732,9 @@
   ],
   "Just the bar": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Keep a message under {0} characters.": [
+    "src/GymTracker.Web/Features/Onboarding/OnboardingService.cs"
   ],
   "Keep it under {0} characters.": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
@@ -715,7 +767,7 @@
   "Layout and design": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
-  "Leave starting maintenance empty to estimate it from sex, height, age and weight. It adapts to your logged data later.": [
+  "Leave starting maintenance empty to estimate it from sex, age, height, weight and activity. It adapts to your logged data later.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Leave the bar empty to use {0} kg for barbell exercises. Set it on any exercise to get the plate calculator, 0 for a plate-loaded machine.": [
@@ -726,6 +778,12 @@
   ],
   "Leg press": [
     "exercise"
+  ],
+  "Let's set you up": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Lifting 3 to 4 times a week rarely moves you up a level on its own; daily movement matters more. Used only until about three weeks of logs give an adaptive estimate.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "Light": [
     "extra"
@@ -769,6 +827,9 @@
   "Lookup failed": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
+  "Low active": [
+    "enum"
+  ],
   "Low confidence: weigh-ins had a gap of 3 or more days.": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
@@ -807,6 +868,7 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Male": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Manual": [
@@ -845,11 +907,11 @@
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
   "Name must be 1 to 100 characters.": [
-    "src/GymTracker.Core/Domain/ProfileRules.cs",
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
   ],
   "Name must be 1 to 200 characters.": [
@@ -857,6 +919,10 @@
   ],
   "Name must be 1 to 60 characters.": [
     "src/GymTracker.Web/Features/Food/SavedMealService.cs"
+  ],
+  "Name must be 1 to {0} characters.": [
+    "src/GymTracker.Core/Domain/ProfileRules.cs",
+    "src/GymTracker.Core/Onboarding/OnboardingDraft.cs"
   ],
   "Name, e.g. Upper A": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
@@ -995,6 +1061,9 @@
   "Off: database ranking only": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Off: setup form only": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Offline and sending": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
@@ -1081,6 +1150,9 @@
   "Per side": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
+  "Pick sex, goal and activity level from the list.": [
+    "src/GymTracker.Core/Domain/ProfileRules.cs"
+  ],
   "Pick what this is about.": [
     "src/GymTracker.Web/Controllers/FeedbackController.cs",
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
@@ -1138,9 +1210,10 @@
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "Protein must be between 0.8 and 3.5 g per kg.": [
+  "Protein must be between {0} and {1} g per kg.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Protein, carbs and fat must be between 0 and 500 g.": [
@@ -1162,6 +1235,9 @@
   "RPE must be between 5 and 10 in steps of 0.5.": [
     "src/GymTracker.Core/Training/SetRules.cs"
   ],
+  "Raised to the minimum for your sex.": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
   "Raised to the {0} kcal minimum. Consider a slower rate in Settings.": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
@@ -1172,6 +1248,7 @@
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Rate per week": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Read it": [
@@ -1262,9 +1339,13 @@
   "Romanian deadlift": [
     "exercise"
   ],
+  "Run the setup chat again": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Save": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
@@ -1362,7 +1443,8 @@
   ],
   "Send": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml",
-    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml",
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
   "Send feedback": [
     "src/GymTracker.Web/Views/Feedback/Index.cshtml",
@@ -1378,13 +1460,20 @@
   "Set deleted.": [
     "wwwroot/js"
   ],
+  "Set up": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
   "Settings": [
     "src/GymTracker.Web/Views/Feedback/Index.cshtml",
     "src/GymTracker.Web/Views/Feedback/New.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
+  "Setup chat": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Sex": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Should be split or joined": [
@@ -1417,6 +1506,9 @@
   "Skip": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
     "src/GymTracker.Web/Views/Train/Session.cshtml"
+  ],
+  "Skip for now": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
   "Skip rest": [
     "src/GymTracker.Web/Views/Train/Session.cshtml"
@@ -1471,10 +1563,14 @@
     "src/GymTracker.Web/Views/Train/Index.cshtml"
   ],
   "Starting maintenance": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "Starting maintenance must be between 1200 and 6000 kcal.": [
+  "Starting maintenance must be between {0} and {1} kcal.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
+  ],
+  "Starting…": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
   "Summary": [
     "src/GymTracker.Web/Views/Train/Session.cshtml",
@@ -1533,6 +1629,9 @@
   "That model can't parse food.": [
     "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
+  "That model can't run the setup chat.": [
+    "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
+  ],
   "That page doesn't exist, or it isn't yours.": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
@@ -1564,11 +1663,34 @@
   "That's less than the bar ({0} kg).": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
+  "That's the end of the chat. Check the summary and save, or use the form.": [
+    "src/GymTracker.Web/Features/Onboarding/OnboardingService.cs",
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
   "The OpenRouter account is out of credits.": [
     "src/GymTracker.Web/Integrations/JevFoodMatchDecider.cs"
   ],
   "The OpenRouter account is out of credits. Top it up, or enter the food by hand.": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The assistant is busy. Try again in a minute, or use the form.": [
+    "src/GymTracker.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The assistant is out of credits. Use the form for now.": [
+    "src/GymTracker.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The assistant is unreachable. Use the form instead.": [
+    "src/GymTracker.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The assistant isn't available right now. Use the form instead.": [
+    "src/GymTracker.Web/Features/Onboarding/OnboardingService.cs",
+    "src/GymTracker.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The assistant returned something unreadable. Try again, or use the form.": [
+    "src/GymTracker.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The assistant took too long. Try again, or use the form.": [
+    "src/GymTracker.Web/Integrations/OpenRouterOnboardingAssistant.cs"
   ],
   "The calories don't add up from the macros.": [
     "src/GymTracker.Web/Features/Food/FoodMatcher.cs"
@@ -1642,6 +1764,9 @@
   "Theme": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Thinking…": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
   "This browser can't open the camera. Type the digits or take a photo instead.": [
     "wwwroot/js"
   ],
@@ -1650,6 +1775,9 @@
   ],
   "This product isn't in Open Food Facts. Enter it from the label once and it's saved for both of you.": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
+  ],
+  "This sets your starting calorie and protein targets. They adapt as you log food and weight.": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
   "This week": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
@@ -1713,8 +1841,14 @@
   "Try again. If it keeps happening, the server may be restarting.": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
+  "Two hours or more of moderate to hard activity a day: manual work plus training, endurance athletes.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
+  ],
   "Type": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
+  "Type a message first.": [
+    "src/GymTracker.Web/Features/Onboarding/OnboardingService.cs"
   ],
   "Under {0} reps twice at {1} kg, deload to {2} kg": [
     "src/GymTracker.Core/Training/Progression.cs"
@@ -1734,11 +1868,20 @@
   "Update": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
+  "Use the form": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Use the form instead": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
   "Using: {0}": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
   "Values per 100 g are impossible (over 900 kcal or over 100 g of macros).": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
+  ],
+  "Very active": [
+    "enum"
   ],
   "Wait a few minutes and try again.": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
@@ -1764,6 +1907,7 @@
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
   "Weight": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
   "Weight and rep suggestions": [
@@ -1778,7 +1922,7 @@
   "Weight in kg, suggested {0}": [
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
   ],
-  "Weight increment must be above 0 and at most 20 kg.": [
+  "Weight increment must be between {0} and {1} kg.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Weight jump": [
@@ -1789,7 +1933,13 @@
     "src/GymTracker.Core/Training/SetRules.cs"
   ],
   "Weight must be between {0} and {1} kg.": [
-    "src/GymTracker.Web/Features/Body/BodyweightService.cs"
+    "src/GymTracker.Core/Domain/ProfileRules.cs"
+  ],
+  "Welcome": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Welcome, {0}": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
   "What did you eat?": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
@@ -1862,6 +2012,15 @@
   "You reported this": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
+  "You're all set.": [
+    "src/GymTracker.Web/Controllers/OnboardingController.cs"
+  ],
+  "Your answer": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Your answers are sent to an AI model through OpenRouter. Prefer not to?": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
   "Your data": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -1872,6 +2031,15 @@
   "Your food is still not saved; you can fix it and save as usual.": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
+  "Your profile": [
+    "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Your starting maintenance is about {0} kcal, with {1} g of protein. It adapts as you log food and weight.": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
+  "Your summary": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
   "assumed 100 g": [
     "extra"
   ],
@@ -1881,6 +2049,7 @@
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "cm": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "fat": [
@@ -1903,6 +2072,7 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "g per kg": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "in progress": [
@@ -1916,8 +2086,12 @@
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "kcal a day": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
   ],
   "kcal left": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
@@ -1926,6 +2100,7 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "kg": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml",

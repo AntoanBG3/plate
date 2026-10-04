@@ -67,6 +67,8 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
 
     public OpenRouterFoodParser Parser() => new(Client(), Catalog(), NullLogger<OpenRouterFoodParser>.Instance);
 
+    public OpenRouterOnboardingAssistant Onboarding() => new(Client(), Catalog(), NullLogger<OpenRouterOnboardingAssistant>.Instance);
+
     private HttpClient Client() => new(this, disposeHandler: false) { BaseAddress = new Uri("https://openrouter.test/api/v1/") };
 }
 
