@@ -134,6 +134,14 @@ Results: `2026-10-04-jev-food-matching-results.md` (jev-1.13-20260917, 41 items,
 - Label gap found after scoring: en05.1 omits one acceptable 2% USDA milk that (c) picked; correcting it gives (c) 21/22 English and changes no pass/fail. The confirmed labels were left as they are.
 - The one variant worth testing, if anything: (c) with Jev's "none" trusted only at confidence 0.9 or more, otherwise Rank's top pick. That cut-off was chosen after seeing these results, so it needs a fresh held-out set and repeat runs (to separate run-to-run noise from order bias) before it counts as evidence.
 
+### Phase 0b: held-out round for gated (c) (pre-registered 2026-10-04, before the new set exists)
+
+- **Set:** `JevEval/jev-eval-set-2.json`, about 30 new items, none reused from round 1, mostly Bulgarian staples, plus English entries and about 6 foods with no correct match. Parsed by the parser once and frozen; labels drafted by the same rules and confirmed by Antoan before scoring.
+- **Rule under test, "gated c":** Jev chooses from the trigram top 50 plus `none`. A food pick is used. A `none` with confidence 0.9 or more is used. A `none` below 0.9, a missing answer or an error falls back to Rank's top pick. Nothing about this rule changes after scoring.
+- **Repeats:** Jev runs 3 times in listed order and 3 times in reversed order. Run-to-run agreement within the same order measures noise; listed against reversed, compared with that, measures order bias.
+- **Reported:** a) Rank, plain c and gated c, each as the mean and the range over the runs; the same bars as Phase 0; agreement figures; latency and cost. Gated c on the round 1 set is reported as in-sample only.
+- **Go:** gated c passes every Phase 0 bar on the held-out set in all 3 listed-order runs: Bulgarian at least 3 items and 10 points above Rank, English at most 1 item below Rank, at least half the `none` items caught, at most 1 in 20 matchable items rejected, max latency under 2 s, and at least 90% of items with the same final decision across all 6 runs. Otherwise stop.
+
 ---
 
 ## Phase 1: build it (only after the go decision)
