@@ -142,6 +142,16 @@ Results: `2026-10-04-jev-food-matching-results.md` (jev-1.13-20260917, 41 items,
 - **Reported:** a) Rank, plain c and gated c, each as the mean and the range over the runs; the same bars as Phase 0; agreement figures; latency and cost. Gated c on the round 1 set is reported as in-sample only.
 - **Go:** gated c passes every Phase 0 bar on the held-out set in all 3 listed-order runs: Bulgarian at least 3 items and 10 points above Rank, English at most 1 item below Rank, at least half the `none` items caught, at most 1 in 20 matchable items rejected, max latency under 2 s, and at least 90% of items with the same final decision across all 6 runs. Otherwise stop.
 
+### Phase 0b outcome (2026-10-04)
+
+Results: `2026-10-04-jev-food-matching-results-2.md` (32 items, labels confirmed before scoring, 3 runs per order, 168 calls, about $0.03).
+
+- As scored with the confirmed labels, gated c is 29/32 in every listed run against Rank's 24/32, and passes every bar except Bulgarian: +2 items and +9 points against a bar of +3 and +10. That is a no-go by one item.
+- Labelling slip found after scoring: r2bg01 (кюфтета). Its confirmed note accepts "plain pork or pork-and-beef кюфтета, generic or branded", but the regex that built the list missed "Велико кюфте от свинско и говеждо" (off:4056489941552), which gated c picks in all three listed runs. Counted under the note as written, gated c is +3 items and +13 points on Bulgarian and passes every bar in all runs. The same kind of slip affects r2en01.1 ("Milk, producer, fluid, 3.7% milkfat" is whole milk within the note's 3 to 3.7%), which changes no bar. Labels are not edited until Antoan decides.
+- Every other gain over Rank is a no-match case caught (falafel wrap, bubble tea, pad thai, cappuccino, кашкавал пане, чушки бюрек). On matchable items gated c rejected none in any run; the gate turned the three reversed-order "none" answers for кавърма back into Rank's correct pick.
+- Noise against order: the raw answer was the same in 31/32 items across the three listed runs and 32/32 across the reversed runs, but only 28/32 across all six, so the instability is mostly the option order, not randomness. Gated c's final decision was the same in 29/32 (91%).
+- Latency: median 333 ms, max 1,011 ms. Cost $0.00019 per parse.
+
 ---
 
 ## Phase 1: build it (only after the go decision)
