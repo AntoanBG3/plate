@@ -156,7 +156,7 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Description` (what is shown in the log, e.g. "Chicken breast, grilled")
 - `Grams`
 - `Kcal`, `ProteinG`, `CarbsG`, `FatG` (stored totals, so the entry is stable even if the FoodItem changes)
-- `FoodItemId` (nullable), `Source` (Barcode, Search, Ai, Manual, Recent)
+- `FoodItemId` (nullable), `Source` (Barcode, Search, Ai, Manual, Recent, Quick). A Quick entry is calories and macros typed directly: no food, `Grams` 0, edited by its numbers and never scaled.
 - `AiModel` (nullable; the OpenRouter model id for AI-parsed entries, so a shift in estimates after a model change can be traced)
 - `CreatedAt`
 
@@ -316,6 +316,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
   3. **Search:** searches the user's own FoodItems and recent entries first, then shared items (including the USDA subset), then Open Food Facts on explicit submit.
   4. **Recent / favourites:** one-tap re-log of the 20 most frequent entries from the last 30 days, with editable grams.
 - Edit or delete any entry. Copy yesterday's meal into today.
+- Quick add per meal: a name (optional), calories, and optional protein, carbs and fat, for restaurant meals and labels not worth saving. Quick entries stay out of Recent.
 
 ### Progress
 - Bodyweight chart: raw weigh-ins as dots, trend weight as a line, selectable range (4 weeks, 12 weeks, all).

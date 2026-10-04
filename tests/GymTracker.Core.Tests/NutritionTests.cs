@@ -39,6 +39,17 @@ public class FoodMathTests
         FoodMath.Validate(100, new Per100g(400, 60, 60, 0)).Should().NotBeNull();
         FoodMath.Validate(3000, new Per100g(884, 0, 0, 100)).Should().BeNull("pure oil is real");
     }
+
+    [Theory]
+    [InlineData(650, 40, 0, 0, true)]
+    [InlineData(1, 0, 0, 0, true)]
+    [InlineData(5000, 500, 500, 500, true)]
+    [InlineData(0, 10, 0, 0, false)]
+    [InlineData(5001, 0, 0, 0, false)]
+    [InlineData(500, -1, 0, 0, false)]
+    [InlineData(500, 0, 501, 0, false)]
+    public void Quick_entries_need_calories_and_sane_macros(decimal kcal, decimal p, decimal c, decimal f, bool ok) =>
+        (FoodMath.ValidateQuick(kcal, p, c, f) is null).Should().Be(ok);
 }
 
 public class MaintenanceTests

@@ -17,23 +17,48 @@
     <div class="stat"><div class="stat-value num">@Model.FatG.Kg(0)</div><div class="stat-label">@L["fat"]</div></div>
 </div>
 
-<form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id" class="section">
-    <div class="list">
-        <div class="field-row"><label for="description">@L["Description"]</label><input id="description" type="text" name="description" value="@Model.Description" maxlength="200" required /></div>
-        <div class="field-row"><label for="grams">@L["Amount"]</label><input id="grams" class="num" type="number" name="grams" value="@Model.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" required /><span class="unit">@L["g"]</span></div>
-        <div class="field-row">
-            <label for="meal">@L["Meal"]</label>
-            <select id="meal" name="meal">
-                @foreach (var meal in Enum.GetValues<Meal>())
-                {
-                    <option value="@meal" selected="@(meal == Model.Meal)">@L.Enum(meal)</option>
-                }
-            </select>
+@if (Model.Source != EntrySource.Quick)
+{
+    <form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id" class="section">
+        <div class="list">
+            <div class="field-row"><label for="description">@L["Description"]</label><input id="description" type="text" name="description" value="@Model.Description" maxlength="200" required /></div>
+            <div class="field-row"><label for="grams">@L["Amount"]</label><input id="grams" class="num" type="number" name="grams" value="@Model.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" required /><span class="unit">@L["g"]</span></div>
+            <div class="field-row">
+                <label for="meal">@L["Meal"]</label>
+                <select id="meal" name="meal">
+                    @foreach (var meal in Enum.GetValues<Meal>())
+                    {
+                        <option value="@meal" selected="@(meal == Model.Meal)">@L.Enum(meal)</option>
+                    }
+                </select>
+            </div>
         </div>
-    </div>
-    <p class="section-footer">@L["Changing the amount scales calories and macros with it."]</p>
-    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Save"]</button>
-</form>
+        <p class="section-footer">@L["Changing the amount scales calories and macros with it."]</p>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Save"]</button>
+    </form>
+}
+else
+{
+    <form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id/quick" class="section">
+        <div class="list">
+            <div class="field-row"><label for="description">@L["Description"]</label><input id="description" type="text" name="description" value="@Model.Description" maxlength="200" required /></div>
+            <div class="field-row"><label for="kcal">@L["Calories"]</label><input id="kcal" class="num" type="number" name="kcal" value="@Model.Kcal.Kg()" min="1" max="5000" step="any" inputmode="decimal" required /><span class="unit">@L["kcal"]</span></div>
+            <div class="field-row"><label for="protein">@L["Protein"]</label><input id="protein" class="num" type="number" name="protein" value="@Model.ProteinG.Kg()" min="0" max="500" step="any" inputmode="decimal" /><span class="unit">@L["g"]</span></div>
+            <div class="field-row"><label for="carbs">@L["Carbs"]</label><input id="carbs" class="num" type="number" name="carbs" value="@Model.CarbsG.Kg()" min="0" max="500" step="any" inputmode="decimal" /><span class="unit">@L["g"]</span></div>
+            <div class="field-row"><label for="fat">@L["Fat"]</label><input id="fat" class="num" type="number" name="fat" value="@Model.FatG.Kg()" min="0" max="500" step="any" inputmode="decimal" /><span class="unit">@L["g"]</span></div>
+            <div class="field-row">
+                <label for="meal">@L["Meal"]</label>
+                <select id="meal" name="meal">
+                    @foreach (var meal in Enum.GetValues<Meal>())
+                    {
+                        <option value="@meal" selected="@(meal == Model.Meal)">@L.Enum(meal)</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Save"]</button>
+    </form>
+}
 
 <form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id/delete" data-confirm="@L["Delete this entry?"]" style="margin-top: var(--s-3)">
     <button type="submit" class="btn btn-destructive btn-block">@L["Delete entry"]</button>

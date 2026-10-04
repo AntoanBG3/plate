@@ -59,5 +59,21 @@ public static class FoodMath
         return null;
     }
 
+    /// <summary>Checks a quick entry (calories typed directly). Returns an error, or null when acceptable.</summary>
+    public static LocalText? ValidateQuick(decimal kcal, decimal protein, decimal carbs, decimal fat)
+    {
+        if (kcal is < 1 or > 5000)
+        {
+            return "Calories must be between 1 and 5000.";
+        }
+
+        if (protein is < 0 or > 500 || carbs is < 0 or > 500 || fat is < 0 or > 500)
+        {
+            return "Protein, carbs and fat must be between 0 and 500 g.";
+        }
+
+        return null;
+    }
+
     private static decimal R(decimal value) => Math.Round(value, 1, MidpointRounding.AwayFromZero);
 }

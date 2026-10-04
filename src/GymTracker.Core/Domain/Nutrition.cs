@@ -26,6 +26,9 @@ public enum EntrySource
     Ai,
     Manual,
     Recent,
+
+    /// <summary>Calories and macros typed directly, with no food and no grams.</summary>
+    Quick,
 }
 
 /// <summary>A reusable food definition. Shared (no owner) for the USDA subset, the Open Food Facts cache and manual barcode items.</summary>

@@ -20,7 +20,8 @@ public class FoodController(
     NutritionTargets targets,
     ProfileService profiles,
     UserTime userTime,
-    TimeProvider time) : Controller
+    TimeProvider time,
+    Localizer localizer) : Controller
 {
     private static readonly string[] Tabs = ["text", "barcode", "search", "recent", "manual"];
 
@@ -132,6 +133,24 @@ public class FoodController(
         [Meal.Dinner] = "Nothing was logged for dinner the day before.",
         [Meal.Snack] = "No snacks were logged the day before.",
     };
+
+    [HttpGet("quick")]
+    public IActionResult QuickForm(DateOnly date, Meal meal) => PartialView("_QuickAddForm", new QuickAddViewModel(date, meal));
+
+    [HttpPost("quick")]
+    public async Task<IActionResult> Quick(DateOnly date, Meal meal, string? description, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, CancellationToken ct)
+    {
+        await log.AddQuickAsync(date, meal, string.IsNullOrWhiteSpace(description) ? localizer["Quick add"] : description, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, ct);
+        return Redirect($"/food?date={date:yyyy-MM-dd}");
+    }
+
+    [HttpPost("entries/{id:int}/quick")]
+    public async Task<IActionResult> UpdateQuick(int id, string description, Meal meal, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, CancellationToken ct)
+    {
+        await log.UpdateQuickAsync(id, description, meal, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, ct);
+        var entry = await log.GetAsync(id, ct);
+        return Redirect($"/food?date={entry.Date:yyyy-MM-dd}");
+    }
 
     [HttpGet("entries/{id:int}")]
     public async Task<IActionResult> Entry(int id, CancellationToken ct) => View(await log.GetAsync(id, ct));

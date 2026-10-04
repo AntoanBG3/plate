@@ -73,6 +73,8 @@ public record ExerciseSettingsFormViewModel(Exercise Exercise, UserExerciseSetti
 
 public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises, Muscle? FirstMuscle = null);
 
+public record QuickAddViewModel(DateOnly Date, Meal Meal);
+
 public record FoodDayViewModel(GymTracker.Web.Features.Food.DayLog Day, DateOnly Today, GymTracker.Web.Features.Food.DailyTargets Targets);
 
 public record FoodAddViewModel(
