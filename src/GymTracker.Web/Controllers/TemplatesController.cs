@@ -1,3 +1,5 @@
+using GymTracker.Core.Text;
+using GymTracker.Web.Features.Localization;
 using GymTracker.Web.Features.Training;
 using GymTracker.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -5,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymTracker.Web.Controllers;
 
 [Route("train/templates")]
-public class TemplatesController(TemplateService templates, ExerciseService exercises) : Controller
+public class TemplatesController(TemplateService templates, ExerciseService exercises, Localizer localizer) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct) => View(await templates.ListAsync(ct));
@@ -39,6 +41,13 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     {
         await templates.MoveAsync(id, direction, ct);
         return Redirect("/train/templates");
+    }
+
+    [HttpPost("{id:int}/duplicate")]
+    public async Task<IActionResult> Duplicate(int id, CancellationToken ct)
+    {
+        var copy = await templates.DuplicateAsync(id, name => localizer[new LocalText("{0} (copy)", name)], ct);
+        return Redirect($"/train/templates/{copy.Id}");
     }
 
     [HttpGet("{id:int}/add-exercise")]

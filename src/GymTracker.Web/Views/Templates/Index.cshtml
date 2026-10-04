@@ -31,6 +31,7 @@
                             <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" role="menuitem">@L["Move down"]@Ui.Icon("down")</button></form>
                         }
                         <a href="/train/templates/@template.Id" role="menuitem">@L["Edit"]@Ui.Icon("pencil")</a>
+                        <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/duplicate"><button type="submit" role="menuitem">@L["Duplicate"]@Ui.Icon("copy")</button></form>
                     </div>
                 </div>
             </div>

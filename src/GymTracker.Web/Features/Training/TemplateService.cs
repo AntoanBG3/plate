@@ -32,6 +32,41 @@ public class TemplateService(AppDbContext db, ICurrentUser currentUser)
         return template;
     }
 
+    /// <summary>
+    /// Copies a template and its exercises to the end of the list. copyName turns "Upper A" into "Upper A (copy)"
+    /// in the user's language; the original part is shortened if the result would pass the 100-character limit.
+    /// </summary>
+    public async Task<WorkoutTemplate> DuplicateAsync(int id, Func<string, string> copyName, CancellationToken ct)
+    {
+        var source = await GetAsync(id, ct);
+        var name = copyName(source.Name);
+        if (name.Length > 100)
+        {
+            name = copyName(source.Name[..Math.Max(1, source.Name.Length - (name.Length - 100))].TrimEnd());
+        }
+
+        var maxOrder = await db.Templates.MaxAsync(t => (int?)t.SortOrder, ct) ?? -1;
+        var copy = new WorkoutTemplate
+        {
+            UserId = source.UserId,
+            Name = name,
+            SortOrder = maxOrder + 1,
+            Exercises = source.Exercises.Select(e => new TemplateExercise
+            {
+                ExerciseId = e.ExerciseId,
+                SortOrder = e.SortOrder,
+                WorkingSets = e.WorkingSets,
+                RepMin = e.RepMin,
+                RepMax = e.RepMax,
+                WeightIncrementKg = e.WeightIncrementKg,
+                RestSeconds = e.RestSeconds,
+            }).ToList(),
+        };
+        db.Templates.Add(copy);
+        await db.SaveChangesAsync(ct);
+        return copy;
+    }
+
     public async Task RenameAsync(int id, string name, CancellationToken ct)
     {
         var template = await FindAsync(id, ct);

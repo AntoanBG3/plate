@@ -297,7 +297,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
     - Always compute the remaining time from the stored end timestamp, never by counting ticks, because iOS suspends timers in the background.
   - Finish button ends the session and shows a summary: duration, total working sets, new e1RM records.
 - **History:** sessions list, newest first; tap to view or edit a past session.
-- **Templates:** create, edit, reorder exercises, set rep ranges, sets, increment and rest per exercise.
+- **Templates:** create, edit, duplicate (the copy goes to the end of the list as "Name (copy)"), reorder exercises, set rep ranges, sets, increment and rest per exercise.
 
 ### Food
 - Date selector (defaults to today), entries grouped by meal, daily totals at the top.
