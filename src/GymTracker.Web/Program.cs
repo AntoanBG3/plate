@@ -208,6 +208,15 @@ builder.Services.AddRateLimiter(o =>
             Window = TimeSpan.FromMinutes(15),
             QueueLimit = 0,
         }));
+    // Food text parsing spends the shared OpenRouter balance.
+    o.AddPolicy(RateLimits.AiParse, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = config.GetValue("RateLimits:AiParsePerWindow", 30),
+            Window = TimeSpan.FromMinutes(10),
+            QueueLimit = 0,
+        }));
     o.AddPolicy(RateLimits.CspReport, http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
