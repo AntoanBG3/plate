@@ -46,6 +46,19 @@ public class SwapExerciseTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task Swapping_is_refused_while_a_deleted_set_can_still_be_undone()
+    {
+        var (s, _, seId, inclineId) = await StartedAsync();
+        await using var _ = s;
+        var set = await s.Sessions.LogSetAsync(new LogSetInput(Guid.NewGuid(), seId, 80, 8, null, false, null), default);
+        await s.Sessions.DeleteSetAsync(set.Id, default);
+        s.Db.ChangeTracker.Clear();
+
+        // An undo after the swap would bring the bench set back under the new exercise.
+        await s.Invoking(x => x.Sessions.SwapExerciseAsync(seId, inclineId, default)).Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
     public async Task Another_users_session_exercise_is_not_found()
     {
         var (s, _, seId, inclineId) = await StartedAsync();

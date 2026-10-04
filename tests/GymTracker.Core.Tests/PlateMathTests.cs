@@ -76,6 +76,14 @@ public class PlateMathTests
         PlateMath.PerSide(22.5m, 20m, [1.25m, 0m, -5m, 1.13m]).PerSide.Should().Equal(1.25m);
 
     [Fact]
+    public void An_absurd_target_is_capped_at_the_heaviest_loggable_weight()
+    {
+        var load = PlateMath.PerSide(10_000_000_000m, 20m, Standard);
+        load.TotalKg.Should().BeLessThanOrEqualTo(SetRules.MaxWeightKg);
+        load.Exact.Should().BeFalse();
+    }
+
+    [Fact]
     public void A_zero_kilo_bar_works_for_plate_loaded_machines() =>
         PlateMath.PerSide(90m, 0m, Standard).PerSide.Should().Equal(25m, 20m);
 }

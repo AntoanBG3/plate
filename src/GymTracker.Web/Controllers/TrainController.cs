@@ -126,7 +126,7 @@ public class TrainController(
         var bar = PlateMath.BarFor(exercise.Exercise.Equipment, (await settings.GetAsync(exercise.ExerciseId, ct))?.BarWeightKg, profile.BarWeightKg)
             ?? throw new NotFoundException();
         var target = weight ?? await sessions.LastWorkingWeightAsync(id, ct) ?? suggested;
-        var load = target is > 0 ? PlateMath.PerSide(target.Value, bar, profile.PlatesKg) : null;
+        var load = target is > 0 and <= SetRules.MaxWeightKg ? PlateMath.PerSide(target.Value, bar, profile.PlatesKg) : null;
         return PartialView("_Plates", new PlatesViewModel(id, bar, target, load));
     }
 

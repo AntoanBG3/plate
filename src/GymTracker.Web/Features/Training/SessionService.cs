@@ -193,13 +193,17 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
 
     /// <summary>
     /// Replaces the exercise in a session slot, keeping its sets, rep range, increment and rest. Only before any set
-    /// is logged on it, so history never mixes two exercises. The template is not changed.
+    /// is logged on it, so history never mixes two exercises. A set deleted recently enough to be undone counts too,
+    /// since undoing it after a swap would put it under the new exercise. The template is not changed.
     /// </summary>
     public async Task<int> SwapExerciseAsync(int sessionExerciseId, int exerciseId, CancellationToken ct)
     {
-        var item = await db.SessionExercises.Include(e => e.Sets).SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct)
+        var item = await db.SessionExercises.SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct)
             ?? throw new NotFoundException();
-        if (item.Sets.Count > 0)
+        var undoableSince = time.GetUtcNow() - GymTracker.Web.Features.Undo.UndoService.Window;
+        var hasSets = await db.Sets.IgnoreQueryFilters([AppDbContext.SoftDeleteFilter])
+            .AnyAsync(x => x.SessionExerciseId == item.Id && (x.DeletedAt == null || x.DeletedAt > undoableSince), ct);
+        if (hasSets)
         {
             throw new ValidationException("Only an exercise with no sets logged can be swapped.");
         }

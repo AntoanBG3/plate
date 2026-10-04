@@ -45,6 +45,17 @@ public class PlatesEndpointTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task An_impossible_weight_asks_for_a_real_one()
+    {
+        await using var app = new AppFactory(fixture);
+        var (client, id) = await SessionWithAsync(app, "Bench press");
+
+        var html = await client.GetStringAsync($"/train/session-exercises/{id}/plates?weight=100000000");
+
+        html.Should().Contain("data-plates-empty");
+    }
+
+    [Fact]
     public async Task An_exercise_without_a_bar_has_no_plates()
     {
         await using var app = new AppFactory(fixture);

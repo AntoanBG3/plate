@@ -21,7 +21,8 @@ public static class PlateMath
 
     /// <summary>
     /// The heaviest load at or below the target, using the fewest plates (any number of pairs of each plate).
-    /// An exact search, not greedy: plates {15, 10} make 20 per side as 10 + 10.
+    /// An exact search, not greedy: plates {15, 10} make 20 per side as 10 + 10. The search stops at the heaviest
+    /// weight a set can log, so a mistyped target can't make it allocate without bound.
     /// </summary>
     public static PlateLoad PerSide(decimal targetKg, decimal barKg, IEnumerable<decimal> platesKg)
     {
@@ -36,7 +37,7 @@ public static class PlateMath
             .OrderDescending()
             .Select(p => (Kg: p, Units: (int)(p / Step)))
             .ToList();
-        var goal = (int)Math.Floor((targetKg - barKg) / 2 / Step);
+        var goal = (int)Math.Floor((Math.Min(targetKg, SetRules.MaxWeightKg) - barKg) / 2 / Step);
 
         // fewest[s] = fewest plates that make exactly s units per side; last[s] = the plate added to get there.
         var fewest = new int[goal + 1];
