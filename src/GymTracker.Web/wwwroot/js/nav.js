@@ -84,11 +84,40 @@
         }
     });
 
-    function navType(fromTab, fromDepth, toTab, toDepth, isBack) {
-        if (reduce.matches || fromTab !== toTab || fromDepth === toDepth) {
+    // Position in the tab bar, or -1 on pages without one (signed out).
+    function tabIndex(tab) {
+        return Array.from(document.querySelectorAll(".tabbar .tab")).findIndex((t) => t.getAttribute("href") === "/" + tab);
+    }
+
+    // "forward" and "back" push and pop within a tab. "next" and "prev" slide sideways: to a tab further right or
+    // left in the tab bar, or to a sibling page (`side`, from a segmented control). "tab" crossfades when the
+    // direction is unknown.
+    function navType(fromTab, fromDepth, toTab, toDepth, isBack, side) {
+        if (reduce.matches) {
             return "tab";
         }
+        if (fromTab !== toTab) {
+            const from = tabIndex(fromTab);
+            const to = tabIndex(toTab);
+            return from < 0 || to < 0 ? "tab" : to > from ? "next" : "prev";
+        }
+        if (fromDepth === toDepth) {
+            return side || "tab";
+        }
         return isBack || toDepth < fromDepth ? "back" : "forward";
+    }
+
+    // In a segmented control that switches between sibling pages (data-slide), a segment to the right of the
+    // active one is the next page over. Null for any other link, including filters like a chart range.
+    function segmentSide(a) {
+        const control = a.closest(".segmented[data-slide]");
+        if (!control) {
+            return null;
+        }
+        const segments = Array.from(control.querySelectorAll("a.segment"));
+        const from = segments.findIndex((s) => s.classList.contains("is-active"));
+        const to = segments.indexOf(a);
+        return from < 0 || to < 0 || from === to ? null : to > from ? "next" : "prev";
     }
 
     function loadScript(src) {
@@ -128,7 +157,7 @@
         Array.from(from.attributes).forEach((a) => to.setAttribute(a.name, a.value));
     }
 
-    async function swapIn(doc, finalUrl, { push, isBack, scrollY }) {
+    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side }) {
         const next = doc.documentElement;
         const nextShell = doc.querySelector(".app-scale");
         const shell = document.querySelector(".app-scale");
@@ -144,7 +173,7 @@
             await loadScript(s.getAttribute("src"));
         }
 
-        const nav = navType(root.dataset.tab, Number(root.dataset.depth || 0), next.dataset.tab, Number(next.dataset.depth || 0), isBack);
+        const nav = navType(root.dataset.tab, Number(root.dataset.depth || 0), next.dataset.tab, Number(next.dataset.depth || 0), isBack, side);
         const keepTabbar = !!shell.querySelector(".tabbar") && !!nextShell.querySelector(".tabbar");
 
         const apply = () => {
@@ -193,7 +222,7 @@
         await transition.updateCallbackDone;
     }
 
-    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, fallback = () => { location.href = url.href; } } = {}) {
+    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, side = null, fallback = () => { location.href = url.href; } } = {}) {
         // Remember where we were, for Back.
         history.replaceState(Object.assign({}, history.state, { gym: true, scrollY: window.scrollY }), "");
         const slow = setTimeout(() => root.classList.add("is-navigating"), SLOW_MS);
@@ -211,7 +240,7 @@
             }
             const doc = new DOMParser().parseFromString(await response.text(), "text/html");
             const samePage = finalUrl.href === location.href;
-            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY });
+            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side });
         } catch (error) {
             if (error instanceof FullLoad) {
                 location.href = error.url;
@@ -236,7 +265,7 @@
         if (a.closest(".tabbar")) {
             markActiveTab(url.pathname.split("/")[1] || "today");
         }
-        go(url);
+        go(url, { side: segmentSide(a) });
     });
 
     // Plain POST forms (no htmx): submit with fetch, follow the redirect, swap the result. The form's buttons stay

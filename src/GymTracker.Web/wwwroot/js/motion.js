@@ -42,7 +42,7 @@
         window.addEventListener("scroll", release, true);
     }, { passive: true });
 
-    // ---- page transitions: tabs crossfade, deeper pages push, shallower pages pop ----
+    // ---- page transitions: tabs slide sideways in tab-bar order, deeper pages push, shallower pages pop ----
 
     function remember() {
         store("sessionStorage", "gym.nav", JSON.stringify({ depth: root.dataset.depth, tab: root.dataset.tab }));
@@ -63,6 +63,13 @@
         let nav = "tab";
         if (from && from.tab === to.tab && Number(from.depth) !== to.depth) {
             nav = to.depth > Number(from.depth) ? "forward" : "back";
+        } else if (from && from.tab !== to.tab) {
+            const tabs = Array.from(document.querySelectorAll(".tabbar .tab"), (t) => t.getAttribute("href"));
+            const a = tabs.indexOf("/" + from.tab);
+            const b = tabs.indexOf("/" + to.tab);
+            if (a >= 0 && b >= 0) {
+                nav = b > a ? "next" : "prev";
+            }
         }
         root.dataset.nav = reduce.matches ? "tab" : nav;
         event.viewTransition.finished.finally(() => { delete root.dataset.nav; });
@@ -163,8 +170,9 @@
         const main = document.getElementById("main");
         reveal(main);
 
-        // New content rises in, first eight blocks staggered. Not on Back: returning should feel like going back.
-        if (reduce.matches || event.detail.nav === "back") {
+        // New content rises in, first eight blocks staggered. Not on Back, which should feel like returning, nor on
+        // a sideways slide, which already moves the whole page.
+        if (reduce.matches || (event.detail.nav !== "forward" && event.detail.nav !== "tab")) {
             return;
         }
         Array.from(main.children).slice(0, 8).forEach((el, i) => el.style.setProperty("--i", String(i)));
