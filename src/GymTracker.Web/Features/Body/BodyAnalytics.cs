@@ -11,7 +11,7 @@ public record WeightChart(string Range, IReadOnlyList<TrendPoint> Points);
 public record CalorieDay(DateOnly Date, decimal? Kcal, int? TargetKcal, int? MaintenanceKcal);
 
 /// <summary>Bodyweight and calorie history for the Progress charts.</summary>
-public class BodyAnalytics(AppDbContext db)
+public class BodyAnalytics(AppDbContext db, BodyweightService bodyweights)
 {
     public const string DefaultRange = "12w";
     public static readonly IReadOnlyList<(string Key, string Label)> Ranges = [("4w", "4 weeks"), ("12w", "12 weeks"), ("all", "All")];
@@ -21,10 +21,7 @@ public class BodyAnalytics(AppDbContext db)
     public async Task<WeightChart> WeightAsync(string? range, DateOnly today, CancellationToken ct)
     {
         range = Ranges.Any(r => r.Key == range) ? range! : DefaultRange;
-        var weighIns = await db.Bodyweights
-            .OrderBy(b => b.Date)
-            .Select(b => new WeighIn(b.Date, b.WeightKg))
-            .ToListAsync(ct);
+        var weighIns = await bodyweights.WeighInsAsync(ct);
 
         // The trend is always computed from the first weigh-in, then cut to the range.
         var from = range switch

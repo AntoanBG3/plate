@@ -23,4 +23,19 @@ public class ServerTimingTests(PostgresFixture db) : IDisposable
         header.Should().MatchRegex(@"app;dur=\d+(\.\d+)?");
         Regex.Match(header, "db;dur=[0-9.]+;desc=\"(\\d+) queries\"").Success.Should().BeTrue(header);
     }
+
+    [Fact]
+    public async Task Today_page_stays_within_its_query_budget()
+    {
+        var (email, password) = await app.CreateUserAsync();
+        var client = app.NewClient();
+        await AppFactory.LoginAsync(client, email, password);
+        await client.GetAsync("/today"); // the first load may store the initial maintenance estimate
+
+        var response = await client.GetAsync("/today");
+
+        var header = string.Join(",", response.Headers.GetValues("Server-Timing"));
+        var queries = int.Parse(Regex.Match(header, "desc=\"(\\d+) queries\"").Groups[1].Value);
+        queries.Should().BeLessThanOrEqualTo(10, header);
+    }
 }

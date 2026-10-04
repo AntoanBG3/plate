@@ -2,6 +2,7 @@ using GymTracker.Core.Domain;
 using GymTracker.Core.Nutrition;
 using GymTracker.Core.Time;
 using GymTracker.Web.Data;
+using GymTracker.Web.Features.Body;
 using GymTracker.Web.Features.Profile;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,16 +24,13 @@ public record DailyTargets(
 /// Keeps the weekly maintenance estimate (SPEC 5.5) and turns it into today's targets (SPEC 5.6).
 /// The math is in Core; this class reads the inputs and stores the result.
 /// </summary>
-public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, ProfileService profiles, TimeProvider time)
+public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, ProfileService profiles, BodyweightService bodyweights, TimeProvider time)
 {
     public async Task<DailyTargets> ForTodayAsync(CancellationToken ct)
     {
         var profile = await profiles.GetAsync(ct);
         var today = UserClock.Today(time.GetUtcNow(), profile.TimeZoneId);
-        var weighIns = await db.Bodyweights
-            .OrderBy(b => b.Date)
-            .Select(b => new WeighIn(b.Date, b.WeightKg))
-            .ToListAsync(ct);
+        var weighIns = await bodyweights.WeighInsAsync(ct);
         var trend = TrendWeight.On(weighIns, today);
 
         var estimate = await CurrentEstimateAsync(profile, today, weighIns, trend, ct);
@@ -67,7 +65,7 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
 
     /// <summary>The latest estimate if it is less than a week old, otherwise a new one, stored. Null when no estimate is possible.</summary>
     private async Task<MaintenanceEstimate?> CurrentEstimateAsync(
-        UserProfile profile, DateOnly today, List<WeighIn> weighIns, decimal? trend, CancellationToken ct)
+        UserProfile profile, DateOnly today, IReadOnlyList<WeighIn> weighIns, decimal? trend, CancellationToken ct)
     {
         var prior = Maintenance.Prior(profile, trend, today.Year);
         var latest = await db.MaintenanceEstimates.OrderByDescending(e => e.CalculatedOn).FirstOrDefaultAsync(ct);
