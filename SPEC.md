@@ -35,6 +35,7 @@ Build in the phases at the end of this document. Each phase must be usable on it
 | Database | PostgreSQL 18, EF Core with Npgsql provider |
 | Auth | ASP.NET Core Identity, cookie auth, sliding 30-day persistent login, lockout and login rate limiting on (section 9). No Cloudflare Access in front of the app. Passkeys (WebAuthn, built into Identity in .NET 10) alongside passwords |
 | LLM | OpenRouter chat completions API (`openai/gpt-6-luna` by default, model picked in Settings) via typed HttpClient, behind an interface. It extracts foods and grams; nutrition values come from the food database (section 6.1) |
+| Food matching | Optionally TypeSafe's Jev decision model (`typesafe/jev-1.13`) through OpenRouter's Decisions API, chosen in Settings: it picks which shortlisted database food each parsed item is, or that none fits (section 6.1) |
 | Food database | Users' own and shared `FoodItem`s, a locally imported subset of USDA FoodData Central for generic foods, and Open Food Facts API v3 for barcodes |
 | Barcode scanning | `barcode-detector` ponyfill (ZXing-C++ compiled to WASM), self-hosted. Safari on iOS ships the native `BarcodeDetector` API disabled, and `@zxing/browser` sits on a library in maintenance mode |
 | Tests | xUnit, FluentAssertions; Testcontainers (`postgres:18`) for PostgreSQL integration tests |
@@ -55,7 +56,7 @@ src/
   GymTracker.Core/            Domain entities, enums, pure calculation services. No EF, no HTTP, no ASP.NET references.
   GymTracker.Web/             Controllers, views, view models, htmx partials, static assets, PWA manifest and service worker.
     Data/                     EF DbContext, migrations, seed data (exercises, USDA subset).
-    Integrations/             OpenRouter client and model catalog, Open Food Facts client.
+    Integrations/             OpenRouter client and model catalog, Jev match decider, Open Food Facts client.
     Features/                 Thin feature services that use the DbContext directly and call Core for the math.
 tests/
   GymTracker.Core.Tests/      Unit tests for all calculation logic.
@@ -167,6 +168,7 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Kcal`, `ProteinG`, `CarbsG`, `FatG` (stored totals, so the entry is stable even if the FoodItem changes)
 - `FoodItemId` (nullable), `Source` (Barcode, Search, Ai, Manual, Recent, Quick). A Quick entry is calories and macros typed directly: no food, `Grams` 0, edited by its numbers and never scaled.
 - `AiModel` (nullable; the OpenRouter model id for AI-parsed entries, so a shift in estimates after a model change can be traced)
+- `MatchModel` (nullable; the decision model version that chose the matched food or decided there is none, for the same reason; null when the database ranking decided)
 - `CreatedAt`
 
 **MaintenanceEstimate**
@@ -256,17 +258,26 @@ LLM nutrition estimates are unreliable on their own (published studies show ener
 
 Implementation `OpenRouterFoodParser`:
 - Typed `HttpClient` calling OpenRouter's `POST /api/v1/chat/completions`.
-- Model: picked in Settings from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `openai/gpt-6-luna`. The model is one setting shared by both accounts, like the key, and a saved id must be in the catalog.
+- Model: each AI task has its own model setting, shared by both accounts like the key (currently the parser and the matcher below). The parser's is picked from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `openai/gpt-6-luna`; a saved id must be in the catalog.
 - API key from Settings (encrypted with Data Protection) or configuration `OpenRouter:ApiKey` (environment variable `OPENROUTER_API_KEY` in Docker). Never commit it.
 - Request structured output: `response_format: {type: "json_schema", json_schema: {name, strict: true, schema}}` with a strict-compatible schema (`additionalProperties: false`, every property required, nullable ones typed `["string","null"]`) matching `ParsedFoodItem[]`, and `provider: {require_parameters: true}`. Because that excludes providers lacking any sent parameter, `temperature` and `reasoning.effort` (the model's lowest supported effort) are sent only when the catalog lists them for the model.
 - System prompt: the user writes foods in English or Bulgarian; return one item per food; estimate grams for vague quantities ("a banana", "a plate of rice") and state the assumption; assume raw weight for meat and cooked weight for rice and pasta unless stated; always fill `NameEn`.
 - Timeout 15 seconds, one retry on 5xx or timeout. On failure, the UI falls back to manual entry with the text preserved.
 
 Resolving nutrition values (a Web feature service, not the parser):
-1. Match `NameEn`/`NameOriginal` and `State` against the user's own `FoodItem`s and recent entries, then shared items including the USDA subset (PostgreSQL `pg_trgm` similarity on names).
-2. If a match is found, compute totals from its per-100 g values and show the matched item's name, with a control to pick a different match.
-3. If not, use the model's estimated values and mark the item Low confidence. If `|Kcal - (4*Protein + 4*Carbs + 9*Fat)|` exceeds 15% of `Kcal` for those values, also say so.
-4. Reject negative values or grams above 3,000.
+1. Match `NameEn`/`NameOriginal` and `State` against the user's own `FoodItem`s and recent entries, then shared items including the USDA subset (PostgreSQL `pg_trgm` similarity on names). A ranking adds bonuses for the user's own foods, the food's main word, the right raw or cooked state, and fewer niche variants, and its top candidate is the match.
+2. When a matcher model is chosen in Settings and a key exists, a decision model chooses instead (below). Otherwise, and whenever it gives no usable answer, the ranking's top candidate stands.
+3. If a match is found, compute totals from its per-100 g values and show the matched item's name, with a control to pick a different match.
+4. If not, use the model's estimated values and mark the item Low confidence. If `|Kcal - (4*Protein + 4*Carbs + 9*Fat)|` exceeds 15% of `Kcal` for those values, also say so.
+5. Reject negative values or grams above 3,000.
+
+Matcher (`IFoodMatchDecider`, interface in Core; `JevFoodMatchDecider` in Integrations):
+- Settings offers Off (the ranking alone, the default) and `typesafe/jev-1.13`, pinned: Jev is not in `/api/v1/models`, and its thresholds were measured on that version, so a new version is evaluated before it is offered.
+- Per item, a shortlist of the plain trigram top 50 (similarity of at least 0.3 on `NameEn`, and on `NameOriginal` when it differs, merged by the better similarity, best first; the ranking is not used). Jev leans toward the first option, so the order is fixed.
+- One `POST https://openrouter.ai/api/alpha/decisions` per parse with the same key. State: the typed text and every item (as written, English name, state, preparation, grams). One Choice question per item that has candidates; each option names the food in English and Bulgarian, its brand, and kcal and protein per 100 g, plus a `none` option.
+- A picked food is the match: High confidence when Jev's confidence is 0.95 or more, otherwise Medium. `none` at confidence 0.9 or more is no match (step 4). A `none` below 0.9, an option that was not offered, or a missing answer leaves that item to the ranking.
+- 3-second timeout, no retry; any error, timeout or unreadable response falls back to the ranking silently. One log line per call with the version, latency, input tokens and cost (input tokens only, about $0.0002 per parse).
+- Jev's main training language is English. It was evaluated on Bulgarian and English entries before adoption (gated rule: 29 of 32 held-out items against the ranking's 24), but its Bulgarian accuracy is the thing to watch.
 
 Results are never saved directly. The user always sees an editable confirmation list first. Saved entries record `AiModel`.
 
@@ -339,6 +350,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Profile fields from section 4, with validation including the safety limits in 5.6.
 - Custom exercises.
 - Bar and plates: the profile bar weight and which plates the gym has.
+- AI models (shared by both accounts): the OpenRouter key, the food parser model and the food matcher model (Off or Jev).
 - Export all of the user's data as CSV files in a zip.
 - Change password, log out.
 
