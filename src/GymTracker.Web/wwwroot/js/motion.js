@@ -158,9 +158,18 @@
     reveal(document);
 
     // After a soft navigation (nav.js) the new page needs its own title binding and first-sight animations.
-    document.addEventListener("gym:page", () => {
+    document.addEventListener("gym:page", (event) => {
         bindLargeTitle();
-        reveal(document.getElementById("main"));
+        const main = document.getElementById("main");
+        reveal(main);
+
+        // New content rises in, first eight blocks staggered. Not on Back: returning should feel like going back.
+        if (reduce.matches || event.detail.nav === "back") {
+            return;
+        }
+        Array.from(main.children).slice(0, 8).forEach((el, i) => el.style.setProperty("--i", String(i)));
+        main.classList.add("is-entering");
+        setTimeout(() => main.classList.remove("is-entering"), 600);
     });
 
     // ---- things that appear or leave: htmx rows, list items ----
