@@ -22,12 +22,14 @@ public sealed class UserScope : IAsyncDisposable
         Foods = new GymTracker.Web.Features.Food.FoodItemService(Db, currentUser, FoodDatabase);
         Matcher = new GymTracker.Web.Features.Food.FoodMatcher(Foods);
         FoodLog = new GymTracker.Web.Features.Food.FoodLogService(Db, currentUser, TimeProvider.System);
+        SavedMeals = new GymTracker.Web.Features.Food.SavedMealService(Db, currentUser, TimeProvider.System);
     }
 
     public FakeFoodDatabase FoodDatabase { get; }
     public GymTracker.Web.Features.Food.FoodItemService Foods { get; }
     public GymTracker.Web.Features.Food.FoodMatcher Matcher { get; }
     public GymTracker.Web.Features.Food.FoodLogService FoodLog { get; }
+    public GymTracker.Web.Features.Food.SavedMealService SavedMeals { get; }
 
     public string UserId { get; }
     public AppDbContext Db { get; }

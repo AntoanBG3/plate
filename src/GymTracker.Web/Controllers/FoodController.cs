@@ -14,6 +14,7 @@ namespace GymTracker.Web.Controllers;
 [Route("food")]
 public class FoodController(
     FoodLogService log,
+    SavedMealService savedMeals,
     FoodItemService foods,
     FoodMatcher matcher,
     IFoodParser parser,
@@ -43,7 +44,8 @@ public class FoodController(
         var local = tab == "search" && !string.IsNullOrWhiteSpace(q) ? await foods.SearchAsync(q, 20, 0.3, ct) : [];
         var offResults = tab == "search" && off && !string.IsNullOrWhiteSpace(q) ? await foods.SearchOpenFoodFactsAsync(q, ct) : null;
         var recents = tab == "recent" ? await log.RecentsAsync(await profiles.TodayAsync(ct), ct) : [];
-        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents));
+        var saved = tab == "recent" ? await savedMeals.ListAsync(ct) : [];
+        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved));
     }
 
     [HttpPost("parse")]
@@ -53,14 +55,14 @@ public class FoodController(
         text = text?.Trim() ?? "";
         if (text.Length is 0 or > 1000)
         {
-            return View("Add", new FoodAddViewModel(date, meal, "text", text, "Write what you ate, up to 1000 characters.", null, [], null, []));
+            return View("Add", new FoodAddViewModel(date, meal, "text", text, "Write what you ate, up to 1000 characters.", null, [], null, [], []));
         }
 
         var result = await parser.ParseAsync(text, ct);
         if (result.Items.Count == 0)
         {
             // Keep the text so nothing typed is lost, and offer manual entry.
-            return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? new LocalText("Couldn't read that."), null, [], null, []));
+            return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? new LocalText("Couldn't read that."), null, [], null, [], []));
         }
 
         var items = await matcher.ResolveAsync(result.Items, ct);

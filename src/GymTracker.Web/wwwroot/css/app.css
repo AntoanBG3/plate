@@ -108,6 +108,8 @@ body.no-tabs .page { padding-bottom: calc(env(safe-area-inset-bottom) + var(--s-
     font-size: var(--text-title-2); line-height: 1.27; font-weight: var(--weight-bold); letter-spacing: 0.016em;
 }
 .section-title .section-aside { font-size: var(--text-subhead); font-weight: var(--weight-regular); color: var(--label-2); letter-spacing: -0.015em; }
+.meal-head { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); }
+.meal-head .section-title { flex: 1; margin-bottom: 0; }
 a.section-aside { color: var(--accent-text) !important; }
 .search-field { position: relative; }
 .search-field .icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--label-2); pointer-events: none; }

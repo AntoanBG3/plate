@@ -21,6 +21,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<BodyweightEntry> Bodyweights => Set<BodyweightEntry>();
     public DbSet<FoodItem> FoodItems => Set<FoodItem>();
     public DbSet<FoodLogEntry> FoodLog => Set<FoodLogEntry>();
+    public DbSet<SavedMeal> SavedMeals => Set<SavedMeal>();
+    public DbSet<SavedMealItem> SavedMealItems => Set<SavedMealItem>();
     public DbSet<MaintenanceEstimate> MaintenanceEstimates => Set<MaintenanceEstimate>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
@@ -155,6 +157,28 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasOne(x => x.FoodItem).WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => new { x.UserId, x.Date });
             e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
+        builder.Entity<SavedMeal>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(SavedMeal.MaxNameLength);
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.UserId);
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
+        builder.Entity<SavedMealItem>(e =>
+        {
+            e.HasOne(x => x.SavedMeal).WithMany(m => m.Items).HasForeignKey(x => x.SavedMealId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<FoodItem>().WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
+            e.Property(x => x.Description).HasMaxLength(200);
+            e.Property(x => x.Source).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Grams).HasPrecision(7, 1);
+            e.Property(x => x.Kcal).HasPrecision(7, 1);
+            e.Property(x => x.ProteinG).HasPrecision(6, 1);
+            e.Property(x => x.CarbsG).HasPrecision(6, 1);
+            e.Property(x => x.FatG).HasPrecision(6, 1);
+            e.HasQueryFilter(x => x.SavedMeal.UserId == CurrentUserId);
         });
 
         // Shared by all accounts, so no user filter.

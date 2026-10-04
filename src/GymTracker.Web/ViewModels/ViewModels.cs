@@ -75,6 +75,10 @@ public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, stri
 
 public record QuickAddViewModel(DateOnly Date, Meal Meal);
 
+public record SaveMealFormViewModel(DateOnly Date, Meal Meal, string DefaultName);
+
+public record SavedMealViewModel(SavedMeal Meal, DateOnly Date, Meal LogTo);
+
 public record FoodDayViewModel(GymTracker.Web.Features.Food.DayLog Day, DateOnly Today, GymTracker.Web.Features.Food.DailyTargets Targets);
 
 public record FoodAddViewModel(
@@ -86,7 +90,8 @@ public record FoodAddViewModel(
     string? Query,
     IReadOnlyList<GymTracker.Web.Features.Food.FoodMatch> Local,
     GymTracker.Core.Nutrition.ProductSearch? OpenFoodFacts,
-    IReadOnlyList<GymTracker.Web.Features.Food.RecentFood> Recents);
+    IReadOnlyList<GymTracker.Web.Features.Food.RecentFood> Recents,
+    IReadOnlyList<SavedMeal> SavedMeals);
 
 public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, GymTracker.Core.Text.LocalText? Warning);
 

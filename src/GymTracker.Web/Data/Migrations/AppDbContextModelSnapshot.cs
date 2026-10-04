@@ -285,6 +285,89 @@ namespace GymTracker.Web.Data.Migrations
                     b.ToTable("MaintenanceEstimates");
                 });
 
+            modelBuilder.Entity("GymTracker.Core.Domain.SavedMeal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SavedMeals");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.SavedMealItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("CarbsG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("FatG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
+                    b.Property<int?>("FoodItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Grams")
+                        .HasPrecision(7, 1)
+                        .HasColumnType("numeric(7,1)");
+
+                    b.Property<decimal>("Kcal")
+                        .HasPrecision(7, 1)
+                        .HasColumnType("numeric(7,1)");
+
+                    b.Property<decimal>("ProteinG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
+                    b.Property<int>("SavedMealId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FoodItemId");
+
+                    b.HasIndex("SavedMealId");
+
+                    b.ToTable("SavedMealItems");
+                });
+
             modelBuilder.Entity("GymTracker.Core.Domain.SessionExercise", b =>
                 {
                     b.Property<int>("Id")
@@ -864,6 +947,31 @@ namespace GymTracker.Web.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("GymTracker.Core.Domain.SavedMeal", b =>
+                {
+                    b.HasOne("GymTracker.Web.Data.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.SavedMealItem", b =>
+                {
+                    b.HasOne("GymTracker.Core.Domain.FoodItem", null)
+                        .WithMany()
+                        .HasForeignKey("FoodItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("GymTracker.Core.Domain.SavedMeal", "SavedMeal")
+                        .WithMany("Items")
+                        .HasForeignKey("SavedMealId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SavedMeal");
+                });
+
             modelBuilder.Entity("GymTracker.Core.Domain.SessionExercise", b =>
                 {
                     b.HasOne("GymTracker.Core.Domain.Exercise", "Exercise")
@@ -1062,6 +1170,11 @@ namespace GymTracker.Web.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.SavedMeal", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.SessionExercise", b =>

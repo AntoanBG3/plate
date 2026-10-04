@@ -75,5 +75,17 @@ public static class FoodMath
         return null;
     }
 
+    /// <summary>Totals stored for one amount, rescaled to another. Items without grams (quick entries) are unchanged.</summary>
+    public static Totals Scale(Totals totals, decimal fromGrams, decimal toGrams)
+    {
+        if (fromGrams <= 0)
+        {
+            return totals;
+        }
+
+        var f = toGrams / fromGrams;
+        return new Totals(R(totals.Kcal * f), R(totals.ProteinG * f), R(totals.CarbsG * f), R(totals.FatG * f));
+    }
+
     private static decimal R(decimal value) => Math.Round(value, 1, MidpointRounding.AwayFromZero);
 }

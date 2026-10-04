@@ -152,6 +152,25 @@
         break;
 
     case "recent":
+        @if (Model.SavedMeals.Count > 0)
+        {
+            <section class="section" style="margin-top: 0">
+                <h2 class="section-header">@L["Saved meals"]</h2>
+                <div class="list">
+                    @foreach (var m in Model.SavedMeals)
+                    {
+                        <button type="button" class="row row-link" style="width: 100%; text-align: left" hx-get="/food/saved-meals/@m.Id?date=@date&amp;meal=@Model.Meal" hx-target="#food-sheet-body" hx-swap="innerHTML" data-sheet-open="food-sheet">
+                            <span class="row-main">
+                                <span class="row-title" style="display: block">@m.Name</span>
+                                <span class="row-sub num" style="display: block">@L.Count(m.Items.Count, "1 item", "{0} items") · @L["{0} kcal", Math.Round(m.Items.Sum(i => i.Kcal))]</span>
+                            </span>
+                            @Ui.Icon("chevron", "row-chevron")
+                        </button>
+                    }
+                </div>
+            </section>
+            <h2 class="section-header" style="margin-top: var(--s-6)">@L["Recent"]</h2>
+        }
         @if (Model.Recents.Count == 0)
         {
             <div class="card empty">
@@ -192,6 +211,13 @@
 }
 
 @section Overlays {
+    <div class="sheet" id="food-sheet" hidden>
+        <div class="sheet-scrim"></div>
+        <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="food-sheet-title">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <div id="food-sheet-body"></div>
+        </div>
+    </div>
     @if (Model.Tab == "barcode")
     {
         <div class="sheet" id="scanner" data-module="scanner" hidden>

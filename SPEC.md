@@ -151,6 +151,13 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Source` (OpenFoodFacts, Usda, Manual, Ai)
 - Manual items created from a barcode scan are shared (`OwnerUserId` null) so the other user doesn't re-enter the same product; Open Food Facts coverage of Bulgarian products is thin, so this path will be common. Manual items without a barcode stay private.
 
+**SavedMeal**
+- `Id`, `UserId`, `Name` (up to 60 characters), `CreatedAt`
+
+**SavedMealItem**
+- `Id`, `SavedMealId`, `SortOrder`, `Description`, `Grams` (0 for a quick entry), stored `Kcal`, `ProteinG`, `CarbsG`, `FatG`, `FoodItemId` (nullable), `Source`
+- A snapshot of a logged entry, so later food edits don't change the saved meal.
+
 **FoodLogEntry**
 - `Id`, `UserId`, `Date`, `Meal` (Breakfast, Lunch, Dinner, Snack)
 - `Description` (what is shown in the log, e.g. "Chicken breast, grilled")
@@ -317,6 +324,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
   4. **Recent / favourites:** one-tap re-log of the 20 most frequent entries from the last 30 days, with editable grams.
 - Edit or delete any entry. Copy yesterday's meal into today.
 - Quick add per meal: a name (optional), calories, and optional protein, carbs and fat, for restaurant meals and labels not worth saving. Quick entries stay out of Recent.
+- Saved meals: a meal's menu on the Food day saves its entries under a name. Saved meals are listed first on the Recent tab; tapping one opens a sheet with editable grams per item (quick items keep their numbers) and logs them all into the chosen meal. Rename or delete from the same sheet.
 
 ### Progress
 - Bodyweight chart: raw weigh-ins as dots, trend weight as a line, selectable range (4 weeks, 12 weeks, all).

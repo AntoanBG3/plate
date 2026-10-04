@@ -63,7 +63,18 @@
     var entries = day.For(meal).ToList();
     var mealTotals = day.TotalsFor(meal);
     <section class="section">
-        <h2 class="section-title">@L.Enum(meal)<span class="section-aside num">@(entries.Count > 0 ? L["{0} kcal", Math.Round(mealTotals.Kcal)] : "")</span></h2>
+        <div class="meal-head">
+            <h2 class="section-title">@L.Enum(meal)<span class="section-aside num">@(entries.Count > 0 ? L["{0} kcal", Math.Round(mealTotals.Kcal)] : "")</span></h2>
+            @if (entries.Count > 0)
+            {
+                <div class="menu-wrap">
+                    <button type="button" class="icon-btn" data-menu-trigger aria-expanded="false" aria-label="@L["Actions for {0}", L.Enum(meal)]">@Ui.Icon("more")</button>
+                    <div class="menu" role="menu">
+                        <button type="button" role="menuitem" hx-get="/food/saved-meals/new?date=@Iso(day.Date)&amp;meal=@meal" hx-target="#food-sheet-body" hx-swap="innerHTML" data-sheet-open="food-sheet">@L["Save as a meal"]@Ui.Icon("list")</button>
+                    </div>
+                </div>
+            }
+        </div>
         <div class="list">
             @foreach (var e in entries)
             {
@@ -96,6 +107,13 @@
 }
 
 @section Overlays {
+    <div class="sheet" id="food-sheet" hidden>
+        <div class="sheet-scrim"></div>
+        <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="food-sheet-title">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <div id="food-sheet-body"></div>
+        </div>
+    </div>
     <div class="sheet" id="quick-sheet" hidden>
         <div class="sheet-scrim"></div>
         <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="quick-title">

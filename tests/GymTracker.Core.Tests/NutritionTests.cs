@@ -50,6 +50,18 @@ public class FoodMathTests
     [InlineData(500, 0, 501, 0, false)]
     public void Quick_entries_need_calories_and_sane_macros(decimal kcal, decimal p, decimal c, decimal f, bool ok) =>
         (FoodMath.ValidateQuick(kcal, p, c, f) is null).Should().Be(ok);
+
+    [Fact]
+    public void Scales_stored_totals_to_new_grams()
+    {
+        var totals = new Totals(240, 45, 0, 5.2m);
+        FoodMath.Scale(totals, 200, 300).Should().Be(new Totals(360, 67.5m, 0, 7.8m));
+        FoodMath.Scale(totals, 200, 200).Should().Be(totals);
+    }
+
+    [Fact]
+    public void Quick_items_with_no_grams_keep_their_totals() =>
+        FoodMath.Scale(new Totals(650, 40, 60, 25), 0, 150).Should().Be(new Totals(650, 40, 60, 25));
 }
 
 public class MaintenanceTests
