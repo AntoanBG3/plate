@@ -61,6 +61,7 @@ builder.Services.AddScoped<FoodItemService>();
 builder.Services.AddScoped<FoodMatcher>();
 builder.Services.AddScoped<FoodLogService>();
 builder.Services.AddScoped<SavedMealService>();
+builder.Services.AddScoped<GymTracker.Web.Features.Feedback.ParseRunService>();
 builder.Services.AddScoped<GymTracker.Web.Features.Undo.UndoService>();
 builder.Services.AddHostedService<GymTracker.Web.Features.Undo.SoftDeletePurge>();
 builder.Services.AddScoped<NutritionTargets>();

@@ -24,7 +24,11 @@ public sealed class UserScope : IAsyncDisposable
         FoodLog = new GymTracker.Web.Features.Food.FoodLogService(Db, currentUser, TimeProvider.System);
         SavedMeals = new GymTracker.Web.Features.Food.SavedMealService(Db, currentUser, TimeProvider.System);
         Undo = new GymTracker.Web.Features.Undo.UndoService(Db, TimeProvider.System);
+        ParseRuns = new GymTracker.Web.Features.Feedback.ParseRunService(Db, currentUser, new GymTracker.Web.Integrations.FakeFoodParser(), Matcher, TimeProvider.System,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<GymTracker.Web.Features.Feedback.ParseRunService>.Instance);
     }
+
+    public GymTracker.Web.Features.Feedback.ParseRunService ParseRuns { get; }
 
     public FakeFoodDatabase FoodDatabase { get; }
 

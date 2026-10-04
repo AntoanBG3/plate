@@ -29,6 +29,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<SavedMealItem> SavedMealItems => Set<SavedMealItem>();
     public DbSet<MaintenanceEstimate> MaintenanceEstimates => Set<MaintenanceEstimate>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+    public DbSet<ParseRun> ParseRuns => Set<ParseRun>();
+    public DbSet<Feedback> Feedback => Set<Feedback>();
+    public DbSet<FeedbackAttachment> FeedbackAttachments => Set<FeedbackAttachment>();
+    public DbSet<ErrorEvent> ErrorEvents => Set<ErrorEvent>();
+    public DbSet<ChangelogEntry> Changelog => Set<ChangelogEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -165,6 +170,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.FatG).HasPrecision(6, 1);
             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.FoodItem).WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<ParseRun>().WithMany().HasForeignKey(x => x.ParseRunId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => new { x.UserId, x.Date });
             e.HasQueryFilter(OwnerFilter, x => x.UserId == CurrentUserId);
             e.HasQueryFilter(SoftDeleteFilter, x => x.DeletedAt == null);
@@ -209,6 +215,78 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => new { x.UserId, x.CalculatedOn }).IsUnique();
             e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
+        // Feedback (SPEC 11). JSON snapshots are stored as jsonb strings and read only by the CLI and the services.
+        builder.Entity<ParseRun>(e =>
+        {
+            e.Property(x => x.Text).HasMaxLength(1000);
+            e.Property(x => x.AiModel).HasMaxLength(100);
+            e.Property(x => x.MatchModel).HasMaxLength(100);
+            e.Property(x => x.ParserError).HasMaxLength(500);
+            e.Property(x => x.Parsed).HasColumnType("jsonb");
+            e.Property(x => x.Resolved).HasColumnType("jsonb");
+            e.Property(x => x.Saved).HasColumnType("jsonb");
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.UserId, x.CreatedAt });
+            e.HasIndex(x => x.CreatedAt);
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
+        builder.Entity<Feedback>(e =>
+        {
+            e.Property(x => x.Source).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Area).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Rating).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Message).HasMaxLength(Core.Domain.Feedback.MaxMessageLength);
+            e.Property(x => x.Reply).HasMaxLength(Core.Domain.Feedback.MaxReplyLength);
+            e.Property(x => x.FixedInVersion).HasMaxLength(40);
+            e.Property(x => x.Context).HasColumnType("jsonb");
+            e.Ignore(x => x.HasUnreadReply);
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.ParseRun).WithMany().HasForeignKey(x => x.ParseRunId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<ErrorEvent>().WithMany().HasForeignKey(x => x.ErrorEventId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Attachment).WithOne(a => a.Feedback).HasForeignKey<FeedbackAttachment>(a => a.FeedbackId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.ClientId).IsUnique();
+            e.HasIndex(x => new { x.UserId, x.CreatedAt });
+            e.HasIndex(x => x.Status);
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
+        builder.Entity<FeedbackAttachment>(e =>
+        {
+            e.Property(x => x.ContentType).HasMaxLength(20);
+            e.HasIndex(x => x.FeedbackId).IsUnique();
+            e.HasQueryFilter(x => x.Feedback.UserId == CurrentUserId);
+        });
+
+        // Not user data: written for anyone, read only by the CLI.
+        builder.Entity<ErrorEvent>(e =>
+        {
+            e.Property(x => x.Fingerprint).HasMaxLength(16);
+            e.Property(x => x.Origin).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Type).HasMaxLength(200);
+            e.Property(x => x.Message).HasMaxLength(1000);
+            e.Property(x => x.Path).HasMaxLength(300);
+            e.Property(x => x.Stack).HasMaxLength(4000);
+            e.Property(x => x.UserId).HasMaxLength(450);
+            e.Property(x => x.LastTraceId).HasMaxLength(100);
+            e.Property(x => x.FirstVersion).HasMaxLength(40);
+            e.Property(x => x.LastVersion).HasMaxLength(40);
+            e.HasIndex(x => x.Fingerprint).IsUnique();
+            e.HasIndex(x => x.LastSeenAt);
+        });
+
+        // Shared by both accounts.
+        builder.Entity<ChangelogEntry>(e =>
+        {
+            e.Property(x => x.TextEn).HasMaxLength(ChangelogEntry.MaxTextLength);
+            e.Property(x => x.TextBg).HasMaxLength(ChangelogEntry.MaxTextLength);
+            e.Property(x => x.Version).HasMaxLength(40);
+            e.HasOne<Feedback>().WithMany().HasForeignKey(x => x.FeedbackId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => x.CreatedAt);
         });
     }
 }

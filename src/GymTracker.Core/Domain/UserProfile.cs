@@ -18,6 +18,9 @@ public class UserProfile
     public Theme Theme { get; set; } = Theme.Dark;
     public Language Language { get; set; } = Language.English;
 
+    /// <summary>What's new entries up to this time have been dismissed.</summary>
+    public DateTimeOffset? ChangelogSeenAt { get; set; }
+
     /// <summary>The plates the calculator offers by default: a common gym set.</summary>
     public static readonly decimal[] DefaultPlatesKg = [25m, 20m, 15m, 10m, 5m, 2.5m, 1.25m];
 

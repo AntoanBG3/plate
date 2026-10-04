@@ -353,6 +353,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Bar and plates: the profile bar weight and which plates the gym has.
 - AI models (shared by both accounts): the OpenRouter key, the food parser model and the food matcher model (Off or Jev).
 - Export all of the user's data as CSV files in a zip.
+- Feedback: Send feedback and Your feedback (section 11).
 - Change password, log out.
 
 ---
@@ -424,7 +425,57 @@ HTTPS (required for the camera and PWA install): add the public hostname `gym.pe
 
 ---
 
-## 11. Build phases and acceptance criteria
+## 11. Feedback
+
+Both users report problems and ideas from their phones, food parsing collects ratings and the corrections people make, and errors are recorded on their own. the agent reads all of it over SSH with a CLI command and writes back a status and a short reply. Nothing is exposed on the public host beyond the app's own authenticated pages.
+
+### Data
+
+- **ParseRun** (user-owned): one row per text parse. `Text`, `AiModel`, `MatchModel`, `ParserMs`, `MatchMs`, `ParserError`, `Parsed` (jsonb, the parser's items as returned), `Resolved` (jsonb, per item: the chosen food, confidence, notes, the ranking's top 5 candidates with scores, and Jev's raw answer when it ran), `Saved` (jsonb, what the user saved per item, null until confirmed), `Corrections` (flags), `ConfirmedAt`. `FoodLogEntry.ParseRunId` (nullable, set null on delete) links saved entries to their run.
+- **Feedback** (user-owned): `ClientId` (Guid, unique, for the offline queue), `Source` (Settings, ParseRating, Barcode, Progression, Maintenance, FoodEntry, ErrorPage), `Kind` (Problem, Idea, Other), `Area`, `Rating` (Up, Down; parse ratings only), `Reasons` (flags: wrong food, wrong amount, wrong nutrition values, missed a food, extra item, should be split or merged, language not understood), `Message` (up to 2,000 characters), `Context` (jsonb: page, app version, user agent, viewport, standalone, language, theme, local time, recent client errors, and a snapshot of what the report is about), `ParseRunId` and `ParseItemIndex`, `ErrorEventId`, `Status` (New, Seen, Planned, Fixed, WontFix, NeedsInfo), `Reply` (up to 1,000), `StatusChangedAt`, `FixedInVersion`, `ReplySeenAt`.
+- **FeedbackAttachment**: one image per report (`ContentType`, `Width`, `Height`, `Bytes`), in its own table so lists never load images. Stored in PostgreSQL so the nightly dump includes it.
+- **ErrorEvent** (not user-facing, no user filter): unhandled server exceptions and browser errors, one row per fingerprint (type, message with numbers and ids removed, first in-app stack frame, path template) with `Count`, first and last seen, last trace id, first and last app version.
+- **ChangelogEntry** (shared): `TextEn`, `TextBg`, `FeedbackId` (nullable), `Version`. `UserProfile.ChangelogSeenAt`.
+- Areas: Training (workout logging, progression suggestions, rest timer, templates, plate calculator), Food (text parsing, food matching, barcode scanning, food search, nutrition values, saved meals), Targets and progress (calories and maintenance, progress charts), App (offline and sync, sign-in and passkeys, Bulgarian wording, layout and design, speed, other).
+
+### Food parsing
+
+- Every parse stores a ParseRun. Confirming stores what was saved and compares it with what was suggested (`ParseCorrections` in Core): an item unticked, grams changed by more than 10% and more than 10 g, any per-100 g value edited, the description edited, a different food. This needs no tap. A missing or foreign run id never blocks saving food.
+- The Check foods screen asks "Did this read your food right?" with thumbs up and down, and each item has its own thumbs down. A tap records at once without submitting the form; a thumbs down then opens a sheet with the reasons and an optional comment. An AI entry's page offers "Report a parsing problem" for the same run.
+
+### Reporting
+
+- Settings has Send feedback (kind, area, message, an optional screenshot) and Your feedback (own reports, newest first, with status and reply; a badge when a reply is unread).
+- Contextual links open the same form with a snapshot of what was shown: a barcode result (the code and the food's per-100 g values), a progression suggestion (the inputs the Core service received and its output) and the maintenance estimate (the stored estimate and the window's daily intake and weigh-ins). A referenced row is loaded through the user's query filters, so a foreign id is not found.
+- Screenshots are downscaled on the phone to at most 1,600 px and JPEG quality 0.8; the server accepts JPEG, PNG or WebP by their first bytes, up to 900 KB.
+- Reports and ratings are written to a `localStorage` queue first and sent with the same retry rules as sets (section 8); a repeated `ClientId` is success. Screenshots need a connection.
+- Rate limits: 30 reports and ratings per user per 10 minutes; 20 browser error reports per user per 10 minutes, each at most 8 KB.
+
+### Errors
+
+- Unhandled server exceptions are recorded by an exception handler that never throws; validation and not-found results are not errors. Browser `error` and `unhandledrejection` events are sent once per page load to an authenticated endpoint, and the last five are kept in `sessionStorage` for the report form. The error page shows a short trace id and a Report this button.
+
+### Notifications and what's new
+
+- When `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are set, new reports (not thumbs up) and new error fingerprints send a Telegram message from a background queue: the id, the reporter's name, kind, area and the first 80 characters. Never attachments, snapshots or food text.
+- Today shows a dismissible What's new card with changelog entries newer than `ChangelogSeenAt`, in the user's language; an entry linked to the viewer's own report says so. The CLI writes the entries.
+
+### Model accuracy
+
+- The AI model pages in Settings show, for each model used in the last 90 days, the number of parses, the thumbs-down rate and the correction rate, pooled across both accounts because the model setting is shared. Under 20 parses shows "not enough data".
+
+### CLI
+
+`dotnet GymTracker.Web.dll feedback <command>` (run on wizard as `docker exec gymtracker-app dotnet GymTracker.Web.dll feedback ...`). Logs go to stderr so stdout can be piped. Text output, or `--json`.
+- `list [--status new|open|all|<status>] [--since 7d] [--area <area>]`, `show <id>`, `attachment <id>` (raw bytes), `status <id> <status> [--reply ...] [--version <sha>]`.
+- `parses [--since 30d] [--corrected] [--export-eval]`, `eval [--parser <model>] [--matcher off|jev] [--limit N]` (re-runs the live parser and matcher on exported cases; never part of the tests).
+- `errors [--since 7d]`, `digest [--since <date>]`, `changelog add --en ... --bg ... [--feedback <id>] [--version <sha>]`.
+- The app version is the Git commit, passed at build time as `APP_VERSION` and stored as the assembly's informational version.
+- Retention: ParseRuns older than 180 days with no feedback, and ErrorEvents last seen more than 90 days ago, are removed by the hourly cleanup job. The data export includes the user's own reports.
+
+---
+
+## 12. Build phases and acceptance criteria
 
 ### Phase 1: Foundation and workout logging
 - Solution structure, Docker setup, PostgreSQL, migrations, Identity with the create-user CLI.
@@ -450,3 +501,7 @@ HTTPS (required for the camera and PWA install): add the public hostname `gym.pe
 
 ### Phase 5: Polish
 - CSV export, PWA icons and manifest polish, README completion, backup restore repeated from a real nightly dump, `mem_limit` values set from Beszel readings.
+
+### Phase 6: Feedback
+- Section 11: parse runs and corrections, ratings, reports with screenshots and contextual snapshots, error capture, the offline queue, Telegram, What's new, model accuracy, and the CLI with its project skill.
+- **Done when:** a rating, a report with a screenshot and a browser error each reach `feedback digest` over SSH from the Mac; a status and reply set from the CLI show on the reporter's phone; user isolation tests cover runs, reports and attachments; and a report sent in airplane mode arrives once when back online.
