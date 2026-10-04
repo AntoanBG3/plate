@@ -75,10 +75,19 @@ public class JevEvalTests(ITestOutputHelper output)
 
     private const string NoneOption = "None of these entries is this food.";
 
+    /// <summary>Gated rule (Phase 0b): a "none" counts only at this confidence; below it Rank's top pick is used.</summary>
+    private const double NoneGate = 0.9;
+
     private static readonly string Dir = Path.Combine(RepoPaths.Root, "tests", "GymTracker.Web.Tests", "JevEval");
-    private static readonly string SetPath = Path.Combine(Dir, "jev-eval-set.json");
-    private static readonly string OutDir = Path.Combine(Dir, "out");
-    private static readonly string ResultsPath = Path.Combine(RepoPaths.Root, "docs", "superpowers", "plans", "2026-10-04-jev-food-matching-results.md");
+
+    /// <summary>jev-eval-set (round 1) or jev-eval-set-2 (the held-out round); GYM_JEV_EVAL_SET picks one.</summary>
+    private static readonly string SetName = Env("GYM_JEV_EVAL_SET", "jev-eval-set");
+    private static readonly string SetPath = Path.Combine(Dir, SetName + ".json");
+    private static readonly string OutDir = Path.Combine(Dir, "out", SetName);
+    private static readonly string ResultsPath = Path.Combine(RepoPaths.Root, "docs", "superpowers", "plans",
+        $"2026-10-04-jev-food-matching-results{SetName["jev-eval-set".Length..]}.md");
+
+    private static string Env(string name, string fallback) => Environment.GetEnvironmentVariable(name) is { Length: > 0 } v ? v : fallback;
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
@@ -151,6 +160,8 @@ public class JevEvalTests(ITestOutputHelper output)
         var foods = Foods(db);
         var matcher = new FoodMatcher(foods);
         var jev = OpenRouterHttp("alpha/");
+        var approaches = Env("GYM_JEV_EVAL_APPROACHES", "b,c").Split(',');
+        var runs = int.Parse(Env("GYM_JEV_EVAL_RUNS", "1"), CultureInfo.InvariantCulture);
         Directory.CreateDirectory(OutDir);
 
         var rows = new List<Row>();
@@ -167,14 +178,17 @@ public class JevEvalTests(ITestOutputHelper output)
             }
 
             var picks = new Dictionary<string, List<Pick?>>();
-            foreach (var (approach, lists) in new[] { ("b", rankLists), ("c", trigramLists) })
+            foreach (var approach in approaches)
             {
-                foreach (var reversed in new[] { false, true })
+                for (var run = 1; run <= runs; run++)
                 {
-                    var name = approach + (reversed ? "-reversed" : "");
-                    var (answers, call) = await AskJevAsync(jev, entry, lists, reversed, name);
-                    picks[name] = answers;
-                    calls.Add(call);
+                    foreach (var reversed in new[] { false, true })
+                    {
+                        var key = Key(approach, reversed, run);
+                        var (answers, call) = await AskJevAsync(jev, entry, approach == "b" ? rankLists : trigramLists, reversed, key);
+                        picks[key] = answers;
+                        calls.Add(call);
+                    }
                 }
             }
 
@@ -193,7 +207,7 @@ public class JevEvalTests(ITestOutputHelper output)
         }
 
         var names = await KeysAsync(db, rows.SelectMany(r => r.Expected.Concat(r.Picks.Values.Where(p => p?.Id is not null).Select(p => p!.Id!.Value)).Append(r.Today ?? 0)));
-        var report = Report(rows, calls, names);
+        var report = Report(rows, calls, names, approaches, runs);
         await File.WriteAllTextAsync(ResultsPath, report);
         await File.WriteAllTextAsync(Path.Combine(OutDir, "rows.json"), JsonSerializer.Serialize(rows, Json));
         output.WriteLine(report);
@@ -303,7 +317,7 @@ public class JevEvalTests(ITestOutputHelper output)
         using var response = await http.SendAsync(request);
         var text = await response.Content.ReadAsStringAsync();
         clock.Stop();
-        await File.WriteAllTextAsync(Path.Combine(OutDir, $"{entry.Id}-{approach}.json"),
+        await File.WriteAllTextAsync(Path.Combine(OutDir, $"{entry.Id}-{approach.Replace('#', '-')}.json"),
             $"{{\"request\":{body.ToJsonString(Json)},\"status\":{(int)response.StatusCode},\"response\":{(text.TrimStart().StartsWith('{') ? text : JsonSerializer.Serialize(text))}}}");
 
         if (!response.IsSuccessStatusCode)
@@ -342,56 +356,136 @@ public class JevEvalTests(ITestOutputHelper output)
         public bool IsNone => Expected.Count == 0;
 
         public bool Correct(int? id) => IsNone ? id is null : id is { } x && Expected.Contains(x);
-
-        /// <summary>An undecided Jev item falls back to Rank's top pick, as the production design does.</summary>
-        public int? Effective(string approach) => Picks[approach] is { } p ? p.Id : Today;
     }
 
-    private static string Report(List<Row> rows, List<Call> calls, Dictionary<int, string> names)
+    private static string Key(string approach, bool reversed, int run) => $"{approach}{(reversed ? "-reversed" : "")}#{run}";
+
+    /// <summary>Jev's answer as given; an undecided item falls back to Rank's top pick.</summary>
+    private static int? Plain(Row r, string key) => r.Picks[key] is { } p ? p.Id : r.Today;
+
+    /// <summary>Jev's food pick, or its "none" at NoneGate confidence or more; anything else is Rank's top pick.</summary>
+    private static int? Gated(Row r, string key) => r.Picks[key] is { } p ? p.Id ?? (p.Confidence >= NoneGate ? null : r.Today) : r.Today;
+
+    private static string Raw(Row r, string key) => r.Picks[key] is { } p ? p.Id?.ToString(CultureInfo.InvariantCulture) ?? "none" : "undecided";
+
+    private record Rule(string Label, Func<Row, string, int?> Decide);
+
+    private static readonly Rule[] Rules = [new("plain", Plain), new("gated", Gated)];
+
+    private static string Report(List<Row> rows, List<Call> calls, Dictionary<int, string> names, string[] approaches, int runs)
     {
-        var approaches = new (string Key, string Label, Func<Row, int?> Pick)[]
-        {
-            ("a", "a) Rank top-1 (today)", r => r.Today),
-            ("b", "b) Jev over Rank top 5", r => r.Effective("b")),
-            ("b-reversed", "b) reversed order", r => r.Effective("b-reversed")),
-            ("c", "c) Jev over trigram top 50", r => r.Effective("c")),
-            ("c-reversed", "c) reversed order", r => r.Effective("c-reversed")),
-        };
+        var bg = rows.Where(r => r.Bulgarian).ToList();
+        var en = rows.Where(r => !r.Bulgarian).ToList();
+        var nones = rows.Where(r => r.IsNone).ToList();
+        var matchable = rows.Where(r => !r.IsNone).ToList();
+        List<string> Keys(string a, bool reversed) => Enumerable.Range(1, runs).Select(n => Key(a, reversed, n)).ToList();
 
-        var s = new StringBuilder("# Jev food matching: Phase 0 results\n\n");
-        s.Append(CultureInfo.InvariantCulture, $"Run {DateTime.Now:yyyy-MM-dd HH:mm}. {rows.Count} items from {rows.Select(r => r.Id.Split('.')[0]).Distinct().Count()} entries; ")
-            .Append(CultureInfo.InvariantCulture, $"{rows.Count(r => r.Bulgarian)} Bulgarian, {rows.Count(r => !r.Bulgarian)} English; {rows.Count(r => r.IsNone)} labelled none. ")
-            .Append(CultureInfo.InvariantCulture, $"Jev answered as {string.Join(", ", calls.Select(c => c.Model).Where(m => m is not null).Distinct())}.\n\n");
+        var s = new StringBuilder("# Jev food matching: results\n\n");
+        s.Append(CultureInfo.InvariantCulture, $"Set `{SetName}`, run {DateTime.Now:yyyy-MM-dd HH:mm}. {rows.Count} items from {rows.Select(r => r.Id.Split('.')[0]).Distinct().Count()} entries; ")
+            .Append(CultureInfo.InvariantCulture, $"{bg.Count} Bulgarian, {en.Count} English; {nones.Count} labelled none. ")
+            .Append(CultureInfo.InvariantCulture, $"Jev answered as {string.Join(", ", calls.Select(c => c.Model).Where(m => m is not null).Distinct())}; ")
+            .Append(CultureInfo.InvariantCulture, $"{runs} run(s) per order. \"Gated\": a none counts only at confidence {NoneGate:0.0} or more, otherwise Rank's top pick. ")
+            .Append("With several runs a cell shows the mean and, in brackets, the lowest and highest run.\n\n");
 
-        s.Append("## Accuracy\n\n| Approach | All | Bulgarian | English | None caught | Matchable wrongly rejected |\n|---|---|---|---|---|---|\n");
-        foreach (var (_, label, pick) in approaches)
+        // Correct items per run for one rule, as "n/m (p%)" for one run or "mean/m (min-max)" for several.
+        string Cell(List<Row> subset, IEnumerable<Func<Row, int?>> decides, Func<Row, int?, bool> ok)
         {
-            s.Append(CultureInfo.InvariantCulture, $"| {label} | {Pct(rows, r => r.Correct(pick(r)))} | {Pct(rows.Where(r => r.Bulgarian), r => r.Correct(pick(r)))} | ")
-                .Append(CultureInfo.InvariantCulture, $"{Pct(rows.Where(r => !r.Bulgarian), r => r.Correct(pick(r)))} | {Pct(rows.Where(r => r.IsNone), r => pick(r) is null)} | ")
-                .Append(CultureInfo.InvariantCulture, $"{Pct(rows.Where(r => !r.IsNone), r => pick(r) is null)} |\n");
+            var counts = decides.Select(d => subset.Count(r => ok(r, d(r)))).ToList();
+            if (subset.Count == 0)
+            {
+                return "-";
+            }
+
+            return counts.Count == 1
+                ? string.Create(CultureInfo.InvariantCulture, $"{counts[0]}/{subset.Count} ({100.0 * counts[0] / subset.Count:0}%)")
+                : string.Create(CultureInfo.InvariantCulture, $"{counts.Average():0.#}/{subset.Count} ({counts.Min()}–{counts.Max()})");
         }
 
-        var matchable = rows.Where(r => !r.IsNone).ToList();
-        s.Append("\n## Shortlist recall (matchable items with a correct food in the list)\n\n| List | All | Bulgarian | English |\n|---|---|---|---|\n");
+        var lines = new List<(string Label, List<Func<Row, int?>> Decides)> { ("a) Rank top-1 (today)", [r => r.Today]) };
+        foreach (var a in approaches)
+        {
+            foreach (var rule in Rules)
+            {
+                foreach (var reversed in new[] { false, true })
+                {
+                    lines.Add(($"{a} {rule.Label}, {(reversed ? "reversed" : "listed")}", Keys(a, reversed).Select(k => (Func<Row, int?>)(r => rule.Decide(r, k))).ToList()));
+                }
+            }
+        }
+
+        s.Append("## Accuracy\n\n| Approach | All | Bulgarian | English | None caught | Matchable wrongly rejected |\n|---|---|---|---|---|---|\n");
+        foreach (var (label, decides) in lines)
+        {
+            s.Append(CultureInfo.InvariantCulture, $"| {label} | {Cell(rows, decides, (r, id) => r.Correct(id))} | {Cell(bg, decides, (r, id) => r.Correct(id))} | ")
+                .Append(CultureInfo.InvariantCulture, $"{Cell(en, decides, (r, id) => r.Correct(id))} | {Cell(nones, decides, (_, id) => id is null)} | {Cell(matchable, decides, (_, id) => id is null)} |\n");
+        }
+
+        // The go / no-go bars from the plan, per listed-order run.
+        var rankBg = bg.Count(r => r.Correct(r.Today));
+        var rankEn = en.Count(r => r.Correct(r.Today));
+        s.Append("\n## Go / no-go bars (listed order, per run)\n\n");
+        foreach (var a in approaches)
+        {
+            foreach (var rule in Rules)
+            {
+                var all = Keys(a, false).Concat(Keys(a, true)).ToList();
+                var stable = rows.Count(r => all.Select(k => rule.Decide(r, k)).Distinct().Count() == 1);
+                var maxMs = calls.Where(c => c.Approach.StartsWith(a + "#") || c.Approach.StartsWith(a + "-reversed#")).Select(c => c.Ms).DefaultIfEmpty(0).Max();
+                s.Append(CultureInfo.InvariantCulture, $"**{a} {rule.Label}.** Same final decision in all {all.Count} runs: {stable}/{rows.Count} ({100.0 * stable / rows.Count:0}%) {Mark(stable >= 0.9 * rows.Count)}; ")
+                    .Append(CultureInfo.InvariantCulture, $"max latency {maxMs} ms {Mark(maxMs < 2000)}.\n\n| Bar | {string.Join(" | ", Enumerable.Range(1, runs).Select(n => $"run {n}"))} |\n|---|{string.Concat(Enumerable.Repeat("---|", runs))}\n");
+                var bars = new (string Label, Func<string, string> Value)[]
+                {
+                    ("Bulgarian: at least +3 items and +10 points over Rank (" + rankBg + "/" + bg.Count + ")", k =>
+                    {
+                        var n = bg.Count(r => r.Correct(rule.Decide(r, k)));
+                        return string.Create(CultureInfo.InvariantCulture, $"{n - rankBg:+0;-0;0} items, {100.0 * (n - rankBg) / Math.Max(1, bg.Count):+0;-0;0} pts {Mark(n - rankBg >= 3 && 100.0 * (n - rankBg) / bg.Count >= 10)}");
+                    }),
+                    ("English: at most 1 item below Rank (" + rankEn + "/" + en.Count + ")", k =>
+                    {
+                        var n = en.Count(r => r.Correct(rule.Decide(r, k)));
+                        return string.Create(CultureInfo.InvariantCulture, $"{n - rankEn:+0;-0;0} {Mark(n >= rankEn - 1)}");
+                    }),
+                    ("None caught: at least half", k =>
+                    {
+                        var n = nones.Count(r => rule.Decide(r, k) is null);
+                        return $"{n}/{nones.Count} {Mark(2 * n >= nones.Count)}";
+                    }),
+                    ("Matchable rejected: at most 1 in 20", k =>
+                    {
+                        var n = matchable.Count(r => rule.Decide(r, k) is null);
+                        return $"{n}/{matchable.Count} {Mark(20 * n <= matchable.Count)}";
+                    }),
+                };
+                foreach (var (label, value) in bars)
+                {
+                    s.Append($"| {label} | {string.Join(" | ", Keys(a, false).Select(value))} |\n");
+                }
+
+                s.Append('\n');
+            }
+        }
+
+        s.Append("## Shortlist recall (matchable items with a correct food in the list)\n\n| List | All | Bulgarian | English |\n|---|---|---|---|\n");
         foreach (var (label, ids) in new (string, Func<Row, IEnumerable<int>>)[]
                  {
                      ("Rank top 1", r => r.RankIds.Take(1)), ("Rank top 5", r => r.RankIds),
                      ("Trigram top 30", r => r.TrigramIds.Take(30)), ("Trigram top 40", r => r.TrigramIds.Take(40)), ("Trigram top 50", r => r.TrigramIds),
                  })
         {
-            s.Append(CultureInfo.InvariantCulture, $"| {label} | {Pct(matchable, r => ids(r).Any(r.Expected.Contains))} | ")
-                .Append(CultureInfo.InvariantCulture, $"{Pct(matchable.Where(r => r.Bulgarian), r => ids(r).Any(r.Expected.Contains))} | {Pct(matchable.Where(r => !r.Bulgarian), r => ids(r).Any(r.Expected.Contains))} |\n");
+            Func<Row, int?> hit = r => ids(r).Any(r.Expected.Contains) ? 1 : null;
+            s.Append(CultureInfo.InvariantCulture, $"| {label} | {Cell(matchable, [hit], (_, x) => x is not null)} | ")
+                .Append(CultureInfo.InvariantCulture, $"{Cell(matchable.Where(r => r.Bulgarian).ToList(), [hit], (_, x) => x is not null)} | {Cell(matchable.Where(r => !r.Bulgarian).ToList(), [hit], (_, x) => x is not null)} |\n");
         }
 
-        s.Append("\n## Order sensitivity (same pick with the options reversed)\n\n");
-        foreach (var a in new[] { "b", "c" })
+        s.Append("\n## Agreement (items whose raw Jev answer is the same in every run of the group)\n\n");
+        foreach (var a in approaches)
         {
-            var both = rows.Where(r => r.Picks[a] is not null && r.Picks[$"{a}-reversed"] is not null).ToList();
-            s.Append(CultureInfo.InvariantCulture, $"- {a}: {Pct(both, r => r.Picks[a]!.Id == r.Picks[$"{a}-reversed"]!.Id)}\n");
+            string Same(List<string> keys) => runs * 2 == 0 ? "-" : Pct(rows, r => keys.Select(k => Raw(r, k)).Distinct().Count() == 1);
+            s.Append($"- {a}: listed runs {Same(Keys(a, false))}, reversed runs {Same(Keys(a, true))}, all runs {Same(Keys(a, false).Concat(Keys(a, true)).ToList())}\n");
         }
 
-        s.Append("\n## Latency and cost per parse (one call per entry)\n\n| Approach | Median ms | Max ms | Mean input tokens | Mean cost | Max cost | Errors |\n|---|---|---|---|---|---|---|\n");
-        foreach (var group in calls.Where(c => c.Questions > 0).GroupBy(c => c.Approach))
+        s.Append("\n## Latency and cost per parse (one call per entry)\n\n| Calls | Median ms | Max ms | Mean input tokens | Mean cost | Max cost | Errors |\n|---|---|---|---|---|---|---|\n");
+        foreach (var group in calls.Where(c => c.Questions > 0).GroupBy(c => c.Approach.Split('#')[0]))
         {
             var ok = group.Where(c => c.Error is null).ToList();
             var ms = ok.Select(c => c.Ms).Order().ToList();
@@ -399,29 +493,40 @@ public class JevEvalTests(ITestOutputHelper output)
                 .Append(CultureInfo.InvariantCulture, $"${(ok.Count == 0 ? 0 : ok.Average(c => c.Cost)):0.000000} | ${(ok.Count == 0 ? 0 : ok.Max(c => c.Cost)):0.000000} | {group.Count(c => c.Error is not null)} |\n");
         }
 
-        s.Append("\n## Accuracy by Jev confidence (listed order; correct / items)\n\n| Confidence | b | c |\n|---|---|---|\n");
-        foreach (var (lo, hi) in new[] { (0.0, 0.5), (0.5, 0.7), (0.7, 0.85), (0.85, 0.95), (0.95, 1.01) })
+        s.Append($"\n## Accuracy by Jev confidence (raw answer, all listed runs; correct / answers)\n\n| Confidence | {string.Join(" | ", approaches)} |\n|---|{string.Concat(approaches.Select(_ => "---|"))}\n");
+        foreach (var (lo, hi) in new[] { (0.0, 0.5), (0.5, 0.7), (0.7, 0.85), (0.85, 0.9), (0.9, 0.95), (0.95, 1.01) })
         {
             string Bucket(string a)
             {
-                var inBucket = rows.Where(r => r.Picks[a] is { } p && p.Confidence >= lo && p.Confidence < hi).ToList();
-                return $"{inBucket.Count(r => r.Correct(r.Picks[a]!.Id))} / {inBucket.Count}";
+                var answers = Keys(a, false).SelectMany(k => rows.Where(r => r.Picks[k] is { } p && p.Confidence >= lo && p.Confidence < hi).Select(r => (r, r.Picks[k]!))).ToList();
+                return $"{answers.Count(x => x.r.Correct(x.Item2.Id))} / {answers.Count}";
             }
 
-            s.Append(CultureInfo.InvariantCulture, $"| {lo:0.00} to {Math.Min(hi, 1):0.00} | {Bucket("b")} | {Bucket("c")} |\n");
+            s.Append(CultureInfo.InvariantCulture, $"| {lo:0.00} to {Math.Min(hi, 1):0.00} | {string.Join(" | ", approaches.Select(Bucket))} |\n");
         }
 
-        s.Append("\n## Per item\n\n✓ correct, ✗ wrong; the name is what was picked (— means no match).\n\n| Item | Text | Label | a | b | c |\n|---|---|---|---|---|---|\n");
+        s.Append("\n## Per item\n\n✓ correct, ✗ wrong; the name is what was picked (— means no match). Jev columns are run 1, listed order, with its confidence; \"runs\" is how many of all runs gave the most common raw answer.\n\n")
+            .Append($"| Item | Text | Label | a | {string.Join(" | ", approaches.Select(a => $"{a} plain | {a} gated | {a} runs"))} |\n|---|---|---|---|{string.Concat(approaches.Select(_ => "---|---|---|"))}\n");
         foreach (var r in rows)
         {
-            string Cell(int? id) => $"{(r.Correct(id) ? "✓" : "✗")} {(id is { } x ? names.GetValueOrDefault(x, x.ToString()) : "—")}";
-            string JevCell(string a) => Cell(r.Effective(a)) + (r.Picks[a] is { } p ? string.Create(CultureInfo.InvariantCulture, $" ({p.Confidence:0.00})") : " (undecided)");
-            s.Append(CultureInfo.InvariantCulture, $"| {r.Id} | {r.Item.NameOriginal} | {(r.IsNone ? "none" : string.Join(" or ", r.Expected.Select(x => names.GetValueOrDefault(x))))} | ")
-                .Append(CultureInfo.InvariantCulture, $"{Cell(r.Today)} | {JevCell("b")} | {JevCell("c")} |\n");
+            string Cell1(int? id) => $"{(r.Correct(id) ? "✓" : "✗")} {(id is { } x ? names.GetValueOrDefault(x, x.ToString(CultureInfo.InvariantCulture)) : "—")}";
+            string Conf(string k) => r.Picks[k] is { } p ? string.Create(CultureInfo.InvariantCulture, $" ({p.Confidence:0.00})") : " (undecided)";
+            string Runs(string a)
+            {
+                var all = Keys(a, false).Concat(Keys(a, true)).Select(k => Raw(r, k)).ToList();
+                return $"{all.GroupBy(x => x).Max(g => g.Count())}/{all.Count}";
+            }
+
+            var label = r.IsNone ? "none" : names.GetValueOrDefault(r.Expected[0]) + (r.Expected.Count > 1 ? $" (+{r.Expected.Count - 1})" : "");
+            s.Append(CultureInfo.InvariantCulture, $"| {r.Id} | {r.Item.NameOriginal} | {label} | {Cell1(r.Today)} | ")
+                .Append(string.Join(" | ", approaches.Select(a => $"{Cell1(Plain(r, Key(a, false, 1)))}{Conf(Key(a, false, 1))} | {Cell1(Gated(r, Key(a, false, 1)))} | {Runs(a)}")))
+                .Append(" |\n");
         }
 
         return s.ToString();
     }
+
+    private static string Mark(bool ok) => ok ? "✓" : "✗";
 
     private static string Pct<T>(IEnumerable<T> items, Func<T, bool> ok)
     {
