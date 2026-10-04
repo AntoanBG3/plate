@@ -94,7 +94,7 @@ public partial class CatalogueTests(ITestOutputHelper output)
             Add(key, "wwwroot/js");
         }
 
-        foreach (var name in Enum.GetNames<Meal>().Concat(Enum.GetNames<Muscle>()).Concat(Enum.GetNames<Equipment>()).Concat(Enum.GetNames<Goal>()))
+        foreach (var name in Enum.GetNames<Meal>().Concat(Enum.GetNames<Muscle>()).Concat(Enum.GetNames<Equipment>()).Concat(Enum.GetNames<Goal>()).Concat(Enum.GetNames<ActivityLevel>()))
         {
             Add(Localizer.Humanize(name), "enum");
         }

@@ -42,6 +42,7 @@ public class SettingsController(
             p.Sex = form.Sex;
             p.HeightCm = form.HeightCm;
             p.BirthYear = form.BirthYear;
+            p.ActivityLevel = form.ActivityLevel;
             p.InitialMaintenanceKcal = form.InitialMaintenanceKcal;
             p.Goal = form.Goal;
             p.TargetRatePercentPerWeek = form.TargetRatePercentPerWeek ?? 0;
@@ -60,6 +61,7 @@ public class SettingsController(
         GymTracker.Core.Domain.Sex? Sex,
         int? HeightCm,
         int? BirthYear,
+        GymTracker.Core.Domain.ActivityLevel? ActivityLevel,
         int? InitialMaintenanceKcal,
         GymTracker.Core.Domain.Goal Goal,
         decimal? TargetRatePercentPerWeek,

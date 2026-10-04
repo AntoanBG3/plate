@@ -398,6 +398,10 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .ex-head > div:first-child { flex: 1; min-width: 0; }
 .ex-name { font-size: var(--text-title-2); line-height: 1.27; font-weight: var(--weight-bold); letter-spacing: 0.016em; overflow-wrap: anywhere; }
 .ex-note { margin-top: 2px; font-size: var(--text-footnote); color: var(--label-2); overflow-wrap: anywhere; }
+/* A radio list with a description per choice (activity level). */
+.choice-row { align-items: flex-start; cursor: pointer; }
+.choice-row input { flex: none; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--accent); }
+.choice-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .plate-choices { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-2); }
 .plate-choice { position: relative; display: inline-flex; }
 .plate-choice input { position: absolute; opacity: 0; inset: 0; margin: 0; }

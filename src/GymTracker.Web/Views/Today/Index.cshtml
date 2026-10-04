@@ -136,7 +136,7 @@
         }
         <form method="post" asp-antiforgery="true" action="/today/weight" class="field-row">
             <label for="weightKg">@L["Today's weight"]</label>
-            <input id="weightKg" class="num" type="number" name="weightKg" inputmode="decimal" step="any" min="20" max="400"
+            <input id="weightKg" class="num" type="number" name="weightKg" inputmode="decimal" step="any" min="@ProfileLimits.MinWeightKg.Kg()" max="@ProfileLimits.MaxWeightKg.Kg()"
                    placeholder="—" required value="@(Model.TodayWeight?.WeightKg.Kg())" @(Model.TodayWeight is null ? "autofocus" : "") />
             <span class="unit">@L["kg"]</span>
             <button type="submit" class="btn btn-plain">@(Model.TodayWeight is null ? L["Save"] : L["Update"])</button>

@@ -175,6 +175,116 @@ public class ProfileRulesTests
     }
 
     [Theory]
+    [InlineData(1926, true)]    // 100 in 2026
+    [InlineData(1925, false)]
+    [InlineData(2008, true)]    // 18
+    [InlineData(2009, false)]   // 17: the adult equations and floors don't apply
+    public void Age_must_be_18_to_100(int born, bool valid)
+    {
+        var p = Valid();
+        p.BirthYear = born;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData(120, true)]
+    [InlineData(119, false)]
+    [InlineData(230, true)]
+    [InlineData(231, false)]
+    public void Height_must_be_120_to_230_cm(int height, bool valid)
+    {
+        var p = Valid();
+        p.HeightCm = height;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData(30, true)]
+    [InlineData(29.9, false)]
+    [InlineData(300, true)]
+    [InlineData(300.1, false)]
+    public void Bodyweight_must_be_30_to_300_kg(double weight, bool valid) =>
+        (ProfileRules.WeightError((decimal)weight) is null).Should().Be(valid);
+
+    [Theory]
+    [InlineData(1200, true)]
+    [InlineData(1199, false)]
+    [InlineData(6000, true)]
+    [InlineData(6001, false)]
+    public void Starting_maintenance_must_be_1200_to_6000_kcal(int kcal, bool valid)
+    {
+        var p = Valid();
+        p.InitialMaintenanceKcal = kcal;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData(0.8, true)]
+    [InlineData(0.7, false)]
+    [InlineData(3.5, true)]
+    [InlineData(3.6, false)]
+    public void Protein_must_be_0_8_to_3_5_g_per_kg(double protein, bool valid)
+    {
+        var p = Valid();
+        p.ProteinGramsPerKg = (decimal)protein;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData(0.25, true)]
+    [InlineData(0.2, false)]
+    [InlineData(20, true)]
+    [InlineData(20.5, false)]
+    public void Weight_increment_must_be_0_25_to_20_kg(double increment, bool valid)
+    {
+        var p = Valid();
+        p.DefaultWeightIncrementKg = (decimal)increment;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData("A", true)]
+    [InlineData("  Antoan  ", true)]   // measured after trimming
+    [InlineData("   ", false)]
+    [InlineData("", false)]
+    public void Name_must_not_be_blank(string name, bool valid)
+    {
+        var p = Valid();
+        p.DisplayName = name;
+        (ProfileRules.Validate(p, 2026) is null).Should().Be(valid);
+    }
+
+    [Fact]
+    public void Name_is_at_most_50_characters()
+    {
+        var p = Valid();
+        p.DisplayName = new string('a', 50);
+        ProfileRules.Validate(p, 2026).Should().BeNull();
+        p.DisplayName = new string('a', 51);
+        ProfileRules.Validate(p, 2026).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Enum_values_outside_the_list_are_refused()
+    {
+        var p = Valid();
+        p.Sex = (Sex)7;
+        ProfileRules.Validate(p, 2026).Should().NotBeNull();
+
+        p = Valid();
+        p.Goal = (Goal)7;
+        ProfileRules.Validate(p, 2026).Should().NotBeNull();
+
+        p = Valid();
+        p.ActivityLevel = (ActivityLevel)7;
+        ProfileRules.Validate(p, 2026).Should().NotBeNull();
+
+        p = Valid();
+        p.ActivityLevel = ActivityLevel.VeryActive;
+        ProfileRules.Validate(p, 2026).Should().BeNull();
+    }
+
+    [Theory]
     [InlineData(-0.5, false)]
     [InlineData(0, true)]
     [InlineData(50, true)]

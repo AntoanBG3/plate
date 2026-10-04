@@ -45,6 +45,9 @@
   "A food with that barcode already exists.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
   ],
+  "A physical job, or 1.5 to 2 hours of moderate activity a day.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
+  ],
   "A template is the list of exercises for one workout, like Upper A or Legs.": [
     "src/GymTracker.Web/Views/Train/Index.cshtml"
   ],
@@ -56,6 +59,9 @@
   ],
   "About": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
+  "About 7,500 to 12,000 steps a day, or an hour of exercise most days.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "About the error on the previous page ({0}).": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
@@ -77,6 +83,15 @@
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
+  ],
+  "Active": [
+    "enum"
+  ],
+  "Activity": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Activity level": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Add": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
@@ -190,8 +205,10 @@
     "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
   ],
   "Bar weight must be between 0 and 50 kg.": [
-    "src/GymTracker.Core/Domain/ProfileRules.cs",
     "src/GymTracker.Web/Features/Training/ExerciseSettingsService.cs"
+  ],
+  "Bar weight must be between {0} and {1} kg.": [
+    "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Barbell": [
     "enum"
@@ -226,7 +243,7 @@
   "Birth year": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "Birth year is out of range.": [
+  "Birth year must be between {0} and {1} (age {2} to {3}).": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Body": [
@@ -418,6 +435,9 @@
   ],
   "Description must be 1 to 200 characters.": [
     "src/GymTracker.Web/Features/Food/FoodLogService.cs"
+  ],
+  "Desk job, up to about 7,500 steps a day, little other exercise.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "Did this read your food right?": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
@@ -630,7 +650,7 @@
   "Height": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "Height must be between 120 and 230 cm.": [
+  "Height must be between {0} and {1} cm.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Hip thrust": [
@@ -659,6 +679,9 @@
   "In progress · {0}": [
     "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml"
+  ],
+  "Inactive": [
+    "enum"
   ],
   "Incline bench press": [
     "exercise"
@@ -715,7 +738,7 @@
   "Layout and design": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
-  "Leave starting maintenance empty to estimate it from sex, height, age and weight. It adapts to your logged data later.": [
+  "Leave starting maintenance empty to estimate it from sex, age, height, weight and activity. It adapts to your logged data later.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Leave the bar empty to use {0} kg for barbell exercises. Set it on any exercise to get the plate calculator, 0 for a plate-loaded machine.": [
@@ -726,6 +749,9 @@
   ],
   "Leg press": [
     "exercise"
+  ],
+  "Lifting 3 to 4 times a week rarely moves you up a level on its own; daily movement matters more. Used only until about three weeks of logs give an adaptive estimate.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "Light": [
     "extra"
@@ -768,6 +794,9 @@
   ],
   "Lookup failed": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Low active": [
+    "enum"
   ],
   "Low confidence: weigh-ins had a gap of 3 or more days.": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
@@ -849,7 +878,6 @@
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
   "Name must be 1 to 100 characters.": [
-    "src/GymTracker.Core/Domain/ProfileRules.cs",
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
   ],
   "Name must be 1 to 200 characters.": [
@@ -857,6 +885,9 @@
   ],
   "Name must be 1 to 60 characters.": [
     "src/GymTracker.Web/Features/Food/SavedMealService.cs"
+  ],
+  "Name must be 1 to {0} characters.": [
+    "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Name, e.g. Upper A": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
@@ -1081,6 +1112,9 @@
   "Per side": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
+  "Pick sex, goal and activity level from the list.": [
+    "src/GymTracker.Core/Domain/ProfileRules.cs"
+  ],
   "Pick what this is about.": [
     "src/GymTracker.Web/Controllers/FeedbackController.cs",
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
@@ -1140,7 +1174,7 @@
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "Protein must be between 0.8 and 3.5 g per kg.": [
+  "Protein must be between {0} and {1} g per kg.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Protein, carbs and fat must be between 0 and 500 g.": [
@@ -1261,6 +1295,9 @@
   ],
   "Romanian deadlift": [
     "exercise"
+  ],
+  "Run the setup chat again": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Save": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
@@ -1473,7 +1510,7 @@
   "Starting maintenance": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
-  "Starting maintenance must be between 1200 and 6000 kcal.": [
+  "Starting maintenance must be between {0} and {1} kcal.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Summary": [
@@ -1713,6 +1750,9 @@
   "Try again. If it keeps happening, the server may be restarting.": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
+  "Two hours or more of moderate to hard activity a day: manual work plus training, endurance athletes.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
+  ],
   "Type": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
@@ -1739,6 +1779,9 @@
   ],
   "Values per 100 g are impossible (over 900 kcal or over 100 g of macros).": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
+  ],
+  "Very active": [
+    "enum"
   ],
   "Wait a few minutes and try again.": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
@@ -1778,7 +1821,7 @@
   "Weight in kg, suggested {0}": [
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
   ],
-  "Weight increment must be above 0 and at most 20 kg.": [
+  "Weight increment must be between {0} and {1} kg.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Weight jump": [
@@ -1789,7 +1832,7 @@
     "src/GymTracker.Core/Training/SetRules.cs"
   ],
   "Weight must be between {0} and {1} kg.": [
-    "src/GymTracker.Web/Features/Body/BodyweightService.cs"
+    "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "What did you eat?": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
