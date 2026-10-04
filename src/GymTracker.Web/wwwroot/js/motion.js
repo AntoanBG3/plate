@@ -439,12 +439,40 @@
     // ---- toast ----
 
     let toastTimer;
-    window.gymToast = function (text) {
+    // An action ({ label, url }) adds a button that POSTs to url and comes back to this page (nav.js swaps it in).
+    window.gymToast = function (text, action) {
         const el = document.getElementById("toast");
         if (!el) {
             return;
         }
-        el.textContent = text;
+        const message = document.createElement("span");
+        message.textContent = text;
+        el.replaceChildren(message);
+        if (action) {
+            const form = document.createElement("form");
+            form.method = "post";
+            form.action = action.url;
+            form.className = "toast-action";
+            const field = (name) => {
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = name;
+                form.appendChild(input);
+                return input;
+            };
+            const token = field("__RequestVerificationToken");
+            field("returnUrl").value = location.pathname + location.search;
+            const button = document.createElement("button");
+            button.type = "submit";
+            button.textContent = action.label;
+            form.appendChild(button);
+            // The token is read when sent: site.js (gymToken) loads after this script, and nav.js keeps it current.
+            form.addEventListener("submit", () => {
+                token.value = window.gymToken ? window.gymToken() : "";
+                el.hidden = true;
+            });
+            el.appendChild(form);
+        }
         el.hidden = false;
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => {
@@ -454,8 +482,21 @@
             }
             el.animate([{ opacity: 1 }, { opacity: 0, transform: "translateY(12px)" }], { duration: 220, easing: "ease-in" })
                 .finished.then(() => { el.hidden = true; });
-        }, 5000);
+        }, action ? 6000 : 5000);
     };
+
+    // Undo offered by the server: after a redirect (data in #main) or by an htmx response (gym:undo event).
+    function offerUndo(scope) {
+        const data = scope && scope.querySelector("[data-undo-url]");
+        if (data) {
+            window.gymToast(data.dataset.undoText, { label: t("Undo"), url: data.dataset.undoUrl });
+        }
+    }
+    offerUndo(document.getElementById("main"));
+    document.addEventListener("gym:page", () => offerUndo(document.getElementById("main")));
+    document.body.addEventListener("gym:undo", (event) => {
+        window.gymToast(t(event.detail.text), { label: t("Undo"), url: event.detail.url });
+    });
 
     // Give anything with data-spring a spring entrance the first time the page shows (used by sheets' contents).
     window.gymSpring = (el, from) => {

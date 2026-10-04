@@ -110,8 +110,12 @@ public class TrainController(
         Redirect($"/train/sessions/{await sessions.MoveExerciseAsync(id, direction, ct)}");
 
     [HttpPost("session-exercises/{id:int}/remove")]
-    public async Task<IActionResult> RemoveExercise(int id, CancellationToken ct) =>
-        Redirect($"/train/sessions/{await sessions.RemoveExerciseAsync(id, ct)}");
+    public async Task<IActionResult> RemoveExercise(int id, CancellationToken ct)
+    {
+        var sessionId = await sessions.RemoveExerciseAsync(id, ct);
+        TempData.Undo("Exercise removed.", $"/undo/session-exercise/{id}");
+        return Redirect($"/train/sessions/{sessionId}");
+    }
 
     /// <summary>The plate calculator sheet: the typed weight, else the last working set, else the suggestion.</summary>
     [HttpGet("session-exercises/{id:int}/plates")]
@@ -155,6 +159,12 @@ public class TrainController(
     public async Task<IActionResult> DeleteSet(int id, CancellationToken ct)
     {
         var set = await sessions.DeleteSetAsync(id, ct);
+
+        // htmx turns this header into a "gym:undo" event; motion.js shows the toast. The text is a script string (t()).
+        Response.Headers["HX-Trigger"] = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["gym:undo"] = new { text = "Set deleted.", url = $"/undo/set/{id}" },
+        });
         return PartialView("_SetRow", SetRowViewModel.Blank(set.SessionExerciseId, set.IsWarmup));
     }
 

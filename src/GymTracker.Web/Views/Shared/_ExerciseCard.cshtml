@@ -26,7 +26,7 @@
                 {
                     <a href="/train/session-exercises/@Ex.Id/swap" role="menuitem">@L["Swap exercise"]@Ui.Icon("reorder")</a>
                 }
-                <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/remove" data-confirm="@L["Remove this exercise and its sets from the workout?"]"><button type="submit" role="menuitem" class="danger">@L["Remove exercise"]@Ui.Icon("trash")</button></form>
+                <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/remove"><button type="submit" role="menuitem" class="danger">@L["Remove exercise"]@Ui.Icon("trash")</button></form>
             </div>
         </div>
     </div>

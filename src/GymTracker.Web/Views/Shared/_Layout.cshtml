@@ -15,6 +15,7 @@
     string? Current(string name) => name == tab ? "page" : null;
     var error = Notices.Read(TempData[FeatureExceptionFilter.ErrorKey]);
     var message = Notices.Read(TempData[Notices.MessageKey]);
+    var undo = Notices.ReadUndo(TempData);
 }
 <!DOCTYPE html>
 <html lang="@prefs.LangAttribute" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth" data-shell="@prefs.LangAttribute-@(Context.User.Identity?.IsAuthenticated == true ? "in" : "out")">
@@ -79,6 +80,10 @@
             @if (message is not null)
             {
                 <div class="banner is-success" role="status">@Ui.Icon("done")<span>@L[message]</span></div>
+            }
+            @if (undo is { } u)
+            {
+                <div hidden data-undo-url="@u.Url" data-undo-text="@L[u.Text]"></div>
             }
             @RenderBody()
         </main>

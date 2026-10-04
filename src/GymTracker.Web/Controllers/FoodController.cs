@@ -169,6 +169,7 @@ public class FoodController(
     public async Task<IActionResult> DeleteEntry(int id, CancellationToken ct)
     {
         var date = await log.DeleteAsync(id, ct);
+        TempData.Undo("Entry deleted.", $"/undo/entry/{id}");
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 

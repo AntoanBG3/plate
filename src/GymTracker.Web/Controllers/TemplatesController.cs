@@ -88,6 +88,7 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     {
         var templateId = await templates.TemplateIdOfExerciseAsync(id, ct);
         await templates.RemoveExerciseAsync(id, ct);
+        TempData.Undo("Exercise removed.", $"/undo/template-exercise/{id}");
         return Redirect($"/train/templates/{templateId}");
     }
 }

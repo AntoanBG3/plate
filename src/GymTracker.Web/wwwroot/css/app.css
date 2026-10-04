@@ -258,6 +258,10 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
     box-shadow: var(--shadow-float), inset 0 0 0 0.5px var(--separator); font-size: var(--text-subhead);
 }
 body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
+.toast:has(.toast-action) { display: flex; align-items: center; gap: var(--s-3); padding-top: 0; padding-bottom: 0; padding-right: var(--s-2); }
+.toast:has(.toast-action) > span { padding: var(--s-3) 0; }
+.toast-action { margin-left: auto; }
+.toast-action button { min-height: var(--tap); padding: 0 var(--s-3); color: var(--accent-text); font-weight: var(--weight-semibold); }
 
 .empty { text-align: center; padding: var(--s-7) var(--s-5); }
 .empty .empty-icon { width: 56px; height: 56px; margin: 0 auto var(--s-4); border-radius: 50%; display: grid; place-items: center; background: var(--fill); color: var(--label-2); }

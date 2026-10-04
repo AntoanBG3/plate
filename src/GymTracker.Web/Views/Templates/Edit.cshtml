@@ -44,7 +44,7 @@
                         <form method="post" asp-antiforgery="true" action="/train/templates/exercises/@item.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" role="menuitem">@L["Move down"]@Ui.Icon("down")</button></form>
                     }
                     <button type="button" role="menuitem" hx-get="/train/exercises/@item.ExerciseId/settings?returnUrl=@Uri.EscapeDataString($"/train/templates/{template.Id}")" hx-target="#exercise-sheet-body" hx-swap="innerHTML" data-sheet-open="exercise-sheet">@L["Notes & bar"]@Ui.Icon("pencil")</button>
-                    <form method="post" asp-antiforgery="true" action="/train/templates/exercises/@item.Id/remove" data-confirm="@L["Remove this exercise from the template?"]"><button type="submit" role="menuitem" class="danger">@L["Remove"]@Ui.Icon("trash")</button></form>
+                    <form method="post" asp-antiforgery="true" action="/train/templates/exercises/@item.Id/remove"><button type="submit" role="menuitem" class="danger">@L["Remove"]@Ui.Icon("trash")</button></form>
                 </div>
             </div>
         </div>

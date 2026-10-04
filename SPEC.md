@@ -327,6 +327,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Edit or delete any entry. Copy yesterday's meal into today.
 - Quick add per meal: a name (optional), calories, and optional protein, carbs and fat, for restaurant meals and labels not worth saving. Quick entries stay out of Recent.
 - Saved meals: a meal's menu on the Food day saves its entries under a name. Saved meals are listed first on the Recent tab; tapping one opens a sheet with editable grams per item (quick items keep their numbers) and logs them all into the chosen meal. Rename or delete from the same sheet.
+- Deleting a food entry or a set, and removing an exercise from a session or a template, happen at once with an Undo toast for 6 seconds (no confirm). Archiving a template, finishing or deleting a workout, removing a passkey, signing out everywhere and deleting a saved meal still ask first.
 
 ### Progress
 - Bodyweight chart: raw weigh-ins as dots, trend weight as a line, selectable range (4 weeks, 12 weeks, all).
