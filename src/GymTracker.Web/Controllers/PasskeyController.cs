@@ -112,12 +112,12 @@ public class PasskeyController(SignInManager<AppUser> signIn, UserManager<AppUse
         return Redirect("/settings");
     }
 
-    /// <summary>A short label so the list in Settings tells an iPhone from a Mac.</summary>
-    private static string DeviceName(string userAgent) =>
+    /// <summary>A short label so the list in Settings tells an iPhone from a Mac. Null when unknown; Settings shows a translated "Passkey".</summary>
+    private static string? DeviceName(string userAgent) =>
         userAgent.Contains("iPhone") ? "iPhone"
         : userAgent.Contains("iPad") ? "iPad"
         : userAgent.Contains("Macintosh") ? "Mac"
         : userAgent.Contains("Android") ? "Android"
         : userAgent.Contains("Windows") ? "Windows"
-        : "Passkey";
+        : null;
 }

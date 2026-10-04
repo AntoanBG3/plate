@@ -879,6 +879,9 @@
   "Overhead press": [
     "exercise"
   ],
+  "Passkey": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Passkey added.": [
     "src/GymTracker.Web/Controllers/PasskeyController.cs"
   ],
