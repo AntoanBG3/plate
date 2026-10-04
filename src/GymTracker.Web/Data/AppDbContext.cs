@@ -35,6 +35,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<ErrorEvent> ErrorEvents => Set<ErrorEvent>();
     public DbSet<ChangelogEntry> Changelog => Set<ChangelogEntry>();
     public DbSet<AdminAudit> AdminAudit => Set<AdminAudit>();
+    public DbSet<OnboardingChat> OnboardingChats => Set<OnboardingChat>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -220,6 +221,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
         });
 
         // Feedback (SPEC 11). JSON snapshots are stored as jsonb strings and read only by the CLI and the services.
+        builder.Entity<OnboardingChat>(e =>
+        {
+            e.HasKey(x => x.UserId);
+            e.HasOne<AppUser>().WithOne().HasForeignKey<OnboardingChat>(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.Draft).HasColumnType("jsonb");
+            e.Property(x => x.Messages).HasColumnType("jsonb");
+            e.Property(x => x.Rejected).HasColumnType("jsonb");
+            e.Property(x => x.QuickReplies).HasColumnType("jsonb");
+            e.Property(x => x.Model).HasMaxLength(100);
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
         builder.Entity<ParseRun>(e =>
         {
             e.Property(x => x.Text).HasMaxLength(1000);

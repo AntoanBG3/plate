@@ -57,17 +57,25 @@ public class OpenRouterSettings(
     public async Task ClearKeyAsync(CancellationToken ct) =>
         await db.AppSettings.Where(s => s.Name == KeySettingName).ExecuteDeleteAsync(ct);
 
-    /// <summary>The model picked for a task in Settings, else its default (the parser's from configuration).</summary>
+    /// <summary>
+    /// The model picked for a task in Settings, else its default: the parser's from configuration, the setup chat
+    /// the parser's model (any chat model with structured output will do), the matcher off.
+    /// </summary>
     public async Task<string> GetModelAsync(AiTask task, CancellationToken ct) =>
         await StoredAsync(AiTasks.SettingName(task), ct) ?? task switch
         {
             AiTask.Parser => string.IsNullOrWhiteSpace(options.Value.Model) ? OpenRouterOptions.DefaultModel : options.Value.Model.Trim(),
+            AiTask.Onboarding => await GetModelAsync(AiTask.Parser, ct),
             _ => AiTasks.Off,
         };
 
-    /// <summary>The models a task can use; null when the parser's list can't be loaded from OpenRouter.</summary>
-    public async Task<IReadOnlyList<OpenRouterModel>?> ListModelsAsync(AiTask task, CancellationToken ct) =>
-        task == AiTask.Parser ? await catalog.ListAsync(ct) : AiTasks.MatcherModels;
+    /// <summary>The models a task can use; null when OpenRouter's list can't be loaded.</summary>
+    public async Task<IReadOnlyList<OpenRouterModel>?> ListModelsAsync(AiTask task, CancellationToken ct) => task switch
+    {
+        AiTask.Parser => await catalog.ListAsync(ct),
+        AiTask.Onboarding => await catalog.ListAsync(ct) is { } models ? [AiTasks.OnboardingOff, .. models] : null,
+        _ => AiTasks.MatcherModels,
+    };
 
     public async Task<OpenRouterModel?> FindModelAsync(AiTask task, string id, CancellationToken ct) =>
         (await ListModelsAsync(task, ct))?.FirstOrDefault(m => m.Id == id);
@@ -79,7 +87,12 @@ public class OpenRouterSettings(
             ?? throw new Features.ValidationException("OpenRouter's model list can't be loaded right now. Try again later.");
         if (models.All(m => m.Id != id))
         {
-            throw new Features.ValidationException(task == AiTask.Parser ? "That model can't parse food." : "That model can't match food.");
+            throw new Features.ValidationException(task switch
+            {
+                AiTask.Parser => "That model can't parse food.",
+                AiTask.Matcher => "That model can't match food.",
+                _ => "That model can't run the setup chat.",
+            });
         }
 
         await SaveAsync(AiTasks.SettingName(task), id, ct);

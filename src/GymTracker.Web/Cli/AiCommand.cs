@@ -17,7 +17,7 @@ public static class AiCommand
     private const string Usage = """
         Usage: ai <command>
           show
-          set-model parser|matcher <model id>
+          set-model parser|matcher|onboarding <model id>
           set-key                         reads the key from standard input
           clear-key
           test
@@ -97,6 +97,8 @@ public static class AiCommand
         o.WriteLine(parser is null ? "Parser: works." : $"Parser: {localizer[parser]}");
         var matcher = await ai.TestMatcherAsync(ct);
         o.WriteLine(matcher is null ? "Matcher: works or off." : $"Matcher: {localizer[matcher]}");
-        return parser is null && matcher is null ? 0 : 1;
+        var onboarding = await ai.TestOnboardingAsync(ct);
+        o.WriteLine(onboarding is null ? "Onboarding: works or off." : $"Onboarding: {localizer[onboarding]}");
+        return parser is null && matcher is null && onboarding is null ? 0 : 1;
     }
 }

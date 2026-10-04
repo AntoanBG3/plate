@@ -531,6 +531,42 @@ namespace GymTracker.Web.Data.Migrations
                     b.ToTable("MaintenanceEstimates");
                 });
 
+            modelBuilder.Entity("GymTracker.Core.Domain.OnboardingChat", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Draft")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Messages")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("QuickReplies")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Rejected")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Turns")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("OnboardingChats");
+                });
+
             modelBuilder.Entity("GymTracker.Core.Domain.ParseRun", b =>
                 {
                     b.Property<int>("Id")
@@ -1361,6 +1397,15 @@ namespace GymTracker.Web.Data.Migrations
                     b.HasOne("GymTracker.Web.Data.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.OnboardingChat", b =>
+                {
+                    b.HasOne("GymTracker.Web.Data.AppUser", null)
+                        .WithOne()
+                        .HasForeignKey("GymTracker.Core.Domain.OnboardingChat", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

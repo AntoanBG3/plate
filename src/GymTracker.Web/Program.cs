@@ -127,12 +127,20 @@ builder.Services.AddHttpClient<JevFoodMatchDecider>(c =>
     // The decider cancels each call after 3 s itself; this is only a backstop.
     c.Timeout = TimeSpan.FromSeconds(10);
 });
+builder.Services.AddHttpClient<OpenRouterOnboardingAssistant>(c =>
+{
+    OpenRouterClient(c);
+    c.Timeout = TimeSpan.FromSeconds(40);
+});
 builder.Services.AddScoped<OpenRouterSettings>();
 
 // OpenRouter when a key is set (in Settings or OPENROUTER_API_KEY), otherwise a simple built-in parser.
 builder.Services.AddScoped<IFoodParser, SwitchingFoodParser>();
 // The matcher model picked in Settings when a key is set; otherwise the database ranking alone.
 builder.Services.AddScoped<IFoodMatchDecider, SwitchingMatchDecider>();
+// The setup chat's model when a key is set and it isn't off; otherwise the setup page shows only the form.
+builder.Services.AddScoped<GymTracker.Core.Onboarding.IOnboardingAssistant, SwitchingOnboardingAssistant>();
+builder.Services.AddScoped<GymTracker.Web.Features.Onboarding.OnboardingService>();
 
 builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>
 {
@@ -276,6 +284,8 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy(RateLimits.Sensitive, http => PerUser(http, config.GetValue("RateLimits:SensitivePerWindow", 5), TimeSpan.FromMinutes(15)));
     // Food text parsing spends the shared OpenRouter balance.
     o.AddPolicy(RateLimits.AiParse, http => PerUser(http, config.GetValue("RateLimits:AiParsePerWindow", 30), TimeSpan.FromMinutes(10)));
+    // Setup chat messages spend it too (SPEC 6.4).
+    o.AddPolicy(RateLimits.AiOnboarding, http => PerUser(http, config.GetValue("RateLimits:AiOnboardingPerWindow", 40), TimeSpan.FromMinutes(10)));
     // The login page asks for passkey options on every view (autofill), so they get their own budget.
     o.AddPolicy(RateLimits.PasskeyOptions, http => PerIp(http, 30, TimeSpan.FromMinutes(5)));
     o.AddPolicy(RateLimits.CspReport, http => PerIp(http, 20, TimeSpan.FromMinutes(1)));
@@ -366,6 +376,8 @@ app.UseAuthorization();
 // After authentication, so per-user limits see the signed-in user.
 app.UseRateLimiter();
 app.UseMiddleware<UserPreferencesMiddleware>();
+// After preferences, which has already loaded the profile this checks.
+app.UseMiddleware<GymTracker.Web.Features.Onboarding.OnboardingRedirectMiddleware>();
 
 app.MapStaticAssets().AllowAnonymous();
 app.MapControllers();

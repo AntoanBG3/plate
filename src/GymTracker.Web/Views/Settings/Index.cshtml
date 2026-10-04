@@ -117,13 +117,14 @@
     <div class="list">
         @foreach (var task in openRouter.Tasks)
         {
+            var off = task.Task == AiTask.Onboarding ? L["Off: setup form only"] : L["Off: database ranking only"];
             <div class="row">
-                <span class="row-icon neutral">@Ui.Icon(task.Task == AiTask.Parser ? "text" : "search")</span>
+                <span class="row-icon neutral">@Ui.Icon(task.Task switch { AiTask.Parser => "text", AiTask.Matcher => "search", _ => "feedback" })</span>
                 <span class="row-main">
-                    <span class="row-title">@(task.Task == AiTask.Parser ? L["Food parser"] : L["Food matcher"])</span>
+                    <span class="row-title">@(task.Task switch { AiTask.Parser => L["Food parser"], AiTask.Matcher => L["Food matcher"], _ => L["Setup chat"] })</span>
                     <span class="row-sub" style="display: block">@(openRouter.Key.Source == KeySource.None
-                        ? (task.Task == AiTask.Parser ? L["Simple built-in parser"] : L["Off: database ranking only"])
-                        : task.Model == AiTasks.Off ? L["Off: database ranking only"] : task.ModelInfo?.Name ?? task.Model)</span>
+                        ? (task.Task == AiTask.Parser ? L["Simple built-in parser"] : off)
+                        : task.Model == AiTasks.Off ? off : task.ModelInfo?.Name ?? task.Model)</span>
                 </span>
             </div>
         }

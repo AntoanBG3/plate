@@ -8,7 +8,7 @@ namespace GymTracker.Web.Features.Admin;
 /// Changes to the shared OpenRouter key and AI models, for the admin area and the CLI (SPEC 12). Every change is
 /// audited, and a key change also sends a Telegram alert. The key is never returned, logged or audited.
 /// </summary>
-public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, JevFoodMatchDecider matcher, AdminAuditLog audit, IFeedbackNotifier notifier)
+public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, JevFoodMatchDecider matcher, OpenRouterOnboardingAssistant onboarding, AdminAuditLog audit, IFeedbackNotifier notifier)
 {
     public async Task SetKeyAsync(string key, CancellationToken ct)
     {
@@ -60,6 +60,25 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
 
         var error = await matcher.TestAsync(key, model, ct);
         await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Matcher), error is null ? "works" : "fails", ct);
+        return error;
+    }
+
+    /// <summary>Opens a setup chat with the onboarding model: null when it answers or the chat is off.</summary>
+    public async Task<LocalText?> TestOnboardingAsync(CancellationToken ct)
+    {
+        var model = await settings.GetModelAsync(AiTask.Onboarding, ct);
+        if (model == AiTasks.Off)
+        {
+            return null;
+        }
+
+        if (await settings.GetKeyAsync(ct) is not { } key)
+        {
+            return new LocalText("No OpenRouter key is set.");
+        }
+
+        var error = await onboarding.TestAsync(key, model, ct);
+        await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Onboarding), error is null ? "works" : "fails", ct);
         return error;
     }
 }
