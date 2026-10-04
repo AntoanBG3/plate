@@ -86,7 +86,7 @@ public interface IFoodMatchDecider
 4. **`MatchModel` column** rather than only a log line.
 5. **One request per parse, all items in the state**, as measured.
 6. **Gated (c)**, decided by Phase 0b and Antoan.
-7. **The evaluation files are deleted when everything is implemented** (Antoan, 2026-10-04): the harness and sets under `tests/GymTracker.Web.Tests/JevEval/`. The plan and the two results files stay as the record; the harness stays in git history (commit 9702766) if a new Jev version needs evaluating.
+7. **The evaluation files are deleted when everything is implemented** (Antoan, 2026-10-04): the harness and sets under `tests/GymTracker.Web.Tests/JevEval/`. The plan and the two results files stay as the record; the harness, both labelled sets and their frozen parser output stay in git history (last at commit 8dd4262) if a new Jev version needs evaluating. Before deletion, the shipped `FoodMatcher` with the real Jev reproduced the Phase 0b gated (c) result exactly on the held-out set: 29/32, Bulgarian 21/23, English 8/9, 7/8 none caught, 0/24 rejected.
 
 ## Review Focus
 
