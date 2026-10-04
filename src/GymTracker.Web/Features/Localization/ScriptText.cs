@@ -41,6 +41,9 @@ public static class ScriptText
         "{0} kg",
         "{0} kcal",
         "{0} sets",
+        // passkey.js
+        "Couldn't add the passkey. Try again.",
+        "That passkey didn't work. Try again or use your password.",
     ];
 
     public static Dictionary<string, string> For(Localizer localizer) =>

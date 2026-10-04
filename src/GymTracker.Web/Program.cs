@@ -115,12 +115,24 @@ builder.Services
 
         o.User.RequireUniqueEmail = true;
         o.SignIn.RequireConfirmedAccount = false;
+
+        // Version 3 adds the passkeys table (Face ID / Touch ID sign-in).
+        o.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
     })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
 // __Host- cookies must be Secure with Path=/ and no Domain; local development runs over plain http.
 var hostCookies = !builder.Environment.IsDevelopment();
+// The passkey relying party: the public host name in production; unset locally, where the request's host is used.
+builder.Services.Configure<IdentityPasskeyOptions>(o =>
+{
+    if (config["Passkeys:ServerDomain"] is { Length: > 0 } domain)
+    {
+        o.ServerDomain = domain;
+    }
+});
+
 builder.Services.ConfigureApplicationCookie(o =>
 {
     o.Cookie.Name = hostCookies ? "__Host-gym.auth" : "gym.auth";
@@ -217,6 +229,10 @@ builder.Services.AddRateLimiter(o =>
             Window = TimeSpan.FromMinutes(10),
             QueueLimit = 0,
         }));
+    // The login page asks for passkey options on every view (autofill), so they get their own per-IP budget.
+    o.AddPolicy(RateLimits.PasskeyOptions, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(5), QueueLimit = 0 }));
     o.AddPolicy(RateLimits.CspReport, http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));

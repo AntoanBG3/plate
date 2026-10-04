@@ -11,6 +11,7 @@ public static class RateLimits
     public const string CspReport = "csp-report";
     public const string Sensitive = "sensitive";
     public const string AiParse = "ai-parse";
+    public const string PasskeyOptions = "passkey-options";
 }
 
 /// <summary>Maps service exceptions to HTTP responses so controllers stay thin.</summary>

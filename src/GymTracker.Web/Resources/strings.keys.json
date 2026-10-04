@@ -56,6 +56,9 @@
   "Add": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "Add a passkey": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Add a snack": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
@@ -88,6 +91,9 @@
   ],
   "Add to {0}": [
     "src/GymTracker.Web/Controllers/TemplatesController.cs"
+  ],
+  "Added {0}": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "All": [
     "range"
@@ -241,6 +247,9 @@
   ],
   "Copy yesterday's snacks": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "Couldn't add the passkey. Try again.": [
+    "wwwroot/js"
   ],
   "Couldn't read that photo. Type the digits instead.": [
     "wwwroot/js"
@@ -870,6 +879,15 @@
   "Overhead press": [
     "exercise"
   ],
+  "Passkey added.": [
+    "src/GymTracker.Web/Controllers/PasskeyController.cs"
+  ],
+  "Passkey removed.": [
+    "src/GymTracker.Web/Controllers/PasskeyController.cs"
+  ],
+  "Passkeys": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Password": [
     "src/GymTracker.Web/Views/Account/Login.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -960,6 +978,7 @@
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "Remove": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
   "Remove exercise": [
@@ -973,6 +992,9 @@
   ],
   "Remove this exercise from the template?": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+  ],
+  "Remove this passkey? You can still sign in with your password.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Rename": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
@@ -1101,6 +1123,12 @@
   "Sign in": [
     "src/GymTracker.Web/Views/Account/Login.cshtml"
   ],
+  "Sign in with Face ID or Touch ID instead of typing your password.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Sign in with a passkey": [
+    "src/GymTracker.Web/Views/Account/Login.cshtml"
+  ],
   "Sign out on every device, including this one?": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -1189,6 +1217,9 @@
   ],
   "That page doesn't exist, or it isn't yours.": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
+  ],
+  "That passkey didn't work. Try again or use your password.": [
+    "wwwroot/js"
   ],
   "That set was not valid.": [
     "wwwroot/js"

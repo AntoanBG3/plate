@@ -1,7 +1,9 @@
 using GymTracker.Core.Domain;
 using GymTracker.Web.Data;
 using GymTracker.Web.Data.Seed;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 
 namespace GymTracker.Web.Tests;
@@ -28,8 +30,15 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     public Task DisposeAsync() => container.DisposeAsync().AsTask();
 
+    // Identity builds its tables from IdentityOptions in the application services; give contexts made here the
+    // same schema version as the app (Version 3, with passkeys) so the model matches the migrations.
+    private static readonly IServiceProvider IdentityServices = new ServiceCollection()
+        .Configure<IdentityOptions>(o => o.Stores.SchemaVersion = IdentitySchemaVersions.Version3)
+        .BuildServiceProvider();
+
     public AppDbContext CreateContext(string? userId) =>
-        new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(ConnectionString).Options, new FixedCurrentUser(userId));
+        new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(ConnectionString).UseApplicationServiceProvider(IdentityServices).Options,
+            new FixedCurrentUser(userId));
 
     /// <summary>Inserts a user and profile directly, bypassing Identity, for service-level tests.</summary>
     public async Task<string> CreateUserAsync()

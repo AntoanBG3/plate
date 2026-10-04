@@ -45,6 +45,8 @@ services:
       OpenRouter__Model: "${OPENROUTER_MODEL:-}"
       OpenFoodFacts__ContactEmail: "${OFF_CONTACT_EMAIL:-}"
       AllowedHosts: "gym.peychev.uk;localhost"
+      # Passkeys are bound to this host name; changing it makes existing passkeys stop working.
+      Passkeys__ServerDomain: gym.peychev.uk
       Security__CspEnforce: "${CSP_ENFORCE:-false}"
     volumes:
       - ../keys:/keys

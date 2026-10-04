@@ -154,6 +154,29 @@
     <p class="section-footer">@L["Workouts, sets, templates, weigh-ins, food log and targets as CSV files in a zip."]</p>
 </section>
 
+@{
+    var passkeys = ViewData["Passkeys"] as IList<Microsoft.AspNetCore.Identity.UserPasskeyInfo> ?? [];
+}
+<section class="section">
+    <h2 class="section-title">@L["Passkeys"]</h2>
+    <div class="list">
+        @foreach (var passkey in passkeys)
+        {
+            var id = Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(passkey.CredentialId);
+            <form method="post" asp-antiforgery="true" action="/settings/passkeys/@id/remove" class="row" data-confirm="@L["Remove this passkey? You can still sign in with your password."]">
+                <span class="row-icon neutral">@Ui.Icon("key")</span>
+                <span class="row-main">@(passkey.Name ?? "Passkey")</span>
+                <span class="row-value">@L["Added {0}", Ui.DayMonth(passkey.CreatedAt.UtcDateTime)]</span>
+                <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--destructive)">@L["Remove"]</button>
+            </form>
+        }
+        <div class="row" style="padding-top: 0; padding-bottom: 0">
+            <button type="button" class="btn btn-plain" style="padding: 0" data-module="passkey-add" hidden>@Ui.Icon("plus")@L["Add a passkey"]</button>
+        </div>
+    </div>
+    <p class="section-footer">@L["Sign in with Face ID or Touch ID instead of typing your password."]</p>
+</section>
+
 <form method="post" asp-antiforgery="true" action="/settings/password">
     <section class="section">
         <h2 class="section-title">@L["Password"]</h2>

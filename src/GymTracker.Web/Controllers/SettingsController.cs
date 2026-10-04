@@ -26,7 +26,9 @@ public class SettingsController(
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        ViewData["Email"] = (await users.GetUserAsync(User))?.Email;
+        var user = await users.GetUserAsync(User);
+        ViewData["Email"] = user?.Email;
+        ViewData["Passkeys"] = user is null ? [] : await users.GetPasskeysAsync(user);
         ViewData["Parser"] = await ParserStatusAsync(ct);
         return View(await profiles.GetAsync(ct));
     }
