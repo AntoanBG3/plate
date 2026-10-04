@@ -8,7 +8,8 @@ const context = await browser.newContext({ viewport: { width: 390, height: 844 }
 const page = await context.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
-page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+// Chrome's virtual authenticator can answer the autofill request and the button at once; the loser gets a 400.
+page.on("console", (m) => m.type() === "error" && !m.text().includes("status of 400") && errors.push(m.text()));
 const cdp = await context.newCDPSession(page);
 await cdp.send("WebAuthn.enable");
 await cdp.send("WebAuthn.addVirtualAuthenticator", { options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
@@ -35,6 +36,9 @@ await page.waitForSelector("[data-module=passkey-login]:not([hidden])");
 page.click("[data-module=passkey-login]", { timeout: 3000 }).catch(() => {});
 await page.waitForURL(/\/today/, { timeout: 10000 });
 console.log("signed in with passkey:", page.url());
+const auth = (await context.cookies()).find((c) => /gym\.auth$/.test(c.name));
+console.log("auth cookie expires:", auth.expires === -1 ? "session only" : new Date(auth.expires * 1000).toISOString());
+assert.notEqual(auth.expires, -1, "passkey sign-in must stay signed in like a password sign-in (persistent cookie)");
 
 await page.goto(`${base}/settings`);
 page.on("dialog", (d) => d.accept());
@@ -43,5 +47,6 @@ assert.equal(await count(), 1, "one passkey listed");
 await page.evaluate(() => document.querySelector('form[action^="/settings/passkeys/"]').requestSubmit());
 await page.waitForFunction(() => !document.querySelector('form[action^="/settings/passkeys/"]') && !document.documentElement.dataset.nav, null, { timeout: 10000 });
 console.log("removed; banner:", await page.locator(".banner").first().innerText().catch(() => "none"));
-console.log("errors:", errors);
+assert.deepEqual(errors, []);
+console.log("passkey-check passed");
 await browser.close();
