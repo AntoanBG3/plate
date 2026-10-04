@@ -74,6 +74,8 @@ builder.Services.AddScoped<GymTracker.Web.Features.Feedback.ParseRunService>();
 builder.Services.AddScoped<GymTracker.Web.Features.Feedback.FeedbackService>();
 builder.Services.AddScoped<GymTracker.Web.Features.Feedback.FeedbackSnapshots>();
 builder.Services.AddScoped<GymTracker.Web.Features.Feedback.FeedbackAdmin>();
+builder.Services.AddScoped<GymTracker.Web.Features.Feedback.Changelog>();
+builder.Services.AddScoped<GymTracker.Web.Features.Feedback.ModelAccuracyReport>();
 builder.Services.Configure<GymTracker.Web.Features.Feedback.TelegramOptions>(config.GetSection("Telegram"));
 builder.Services.AddSingleton<GymTracker.Web.Features.Feedback.FeedbackNotifier>();
 builder.Services.AddSingleton<GymTracker.Web.Features.Feedback.IFeedbackNotifier>(sp => sp.GetRequiredService<GymTracker.Web.Features.Feedback.FeedbackNotifier>());

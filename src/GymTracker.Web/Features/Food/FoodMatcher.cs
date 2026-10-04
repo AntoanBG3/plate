@@ -22,7 +22,8 @@ public record ConfirmItem(
     string? MatchModel = null);
 
 /// <summary>How one item was matched, kept with the parse run for feedback (SPEC 11): the ranking's top candidates and the decider's answer.</summary>
-public record MatchTrace(IReadOnlyList<TraceCandidate> Top, bool Asked, int? DeciderPick, decimal? DeciderConfidence);
+/// <param name="DeciderModel">The decision model that answered for this parse, even where its answer was not used.</param>
+public record MatchTrace(IReadOnlyList<TraceCandidate> Top, bool Asked, int? DeciderPick, decimal? DeciderConfidence, string? DeciderModel = null);
 
 public record TraceCandidate(int Id, string Name, double Score, bool Own);
 
@@ -106,7 +107,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             var decision = shortlists[n].Count == 0 ? null : decisions?.Items.ElementAtOrDefault(n);
             trace?.Add(new MatchTrace(
                 tops[n].Select(t => new TraceCandidate(t.Food.Id, t.Food.DisplayName, Math.Round(t.Score, 3), t.Food.Own)).ToList(),
-                shortlists[n].Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence));
+                shortlists[n].Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence, decisions?.Model));
             if (decision is { FoodItemId: { } id } && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
             {
                 var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;

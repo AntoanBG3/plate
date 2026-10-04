@@ -38,6 +38,7 @@ public static class ParseEvaluation
 
         o.WriteLine($"Evaluating {cases.Count} parses with parser {parserModel} and matcher {matcherModel}.");
         var total = AgreementResult.Zero;
+        var repeats = 0;
         var results = new List<object>();
         foreach (var c in cases)
         {
@@ -49,25 +50,29 @@ public static class ParseEvaluation
 
             var parsed = await parser.ParseAsync(c.Text, key, parserModel, ct);
             var fresh = parsed.Items.Count == 0 ? [] : await matcher.ResolveAsync(c.Text, parsed.Items, ct);
-            var saved = FeedbackJson.Read<List<SavedRow>>(c.Saved?.ToJsonString())?
-                .Select(s => new SavedItem(s.Included, s.Description, s.Grams, s.Per100, s.FoodItemId)).ToList() ?? [];
+            // Wrong-food items are not expected back; they are counted when the same food is picked again.
+            var saved = c.Items.Where(i => i.Verdict != EvalVerdict.WrongFood)
+                .Select(i => new SavedItem(i.Verdict != EvalVerdict.Removed, i.Parsed.NameOriginal, i.SavedGrams ?? i.Parsed.Grams, new Per100g(0, 0, 0, 0), i.FoodItemId))
+                .ToList();
             var score = ParseAgreement.Score(saved, fresh.Select(f => new SuggestedItem(f.Description, f.Grams, f.Per100, f.FoodItemId)).ToList());
+            var repeated = c.Items.Count(i => i.Verdict == EvalVerdict.WrongFood && i.FoodItemId is { } bad && fresh.Any(f => f.FoodItemId == bad));
+            repeats += repeated;
             total += score;
-            results.Add(new { c.RunId, c.Text, score, error = parsed.Error?.ToString(), fresh = fresh.Select(f => new { f.Description, f.Grams, f.FoodItemId, f.MatchedName }) });
+            results.Add(new { c.RunId, c.Text, score, repeatedWrongFoods = repeated, error = parsed.Error?.ToString(), fresh = fresh.Select(f => new { f.Description, f.Grams, f.FoodItemId, f.MatchedName }) });
             if (!json)
             {
-                o.WriteLine($"run {c.RunId,-5} food {score.FoodAgreed}/{score.Expected}, grams {score.GramsAgreed}/{score.Expected}, extra {score.Extra}  \"{Clip(c.Text)}\""
+                o.WriteLine($"run {c.RunId,-5} food {score.FoodAgreed}/{score.Expected}, grams {score.GramsAgreed}/{score.Expected}, extra {score.Extra}{(repeated > 0 ? $", picked a rejected food {repeated}x" : "")}  \"{Clip(c.Text)}\""
                     + (parsed.Error is { } error ? $"  [{error}]" : ""));
             }
         }
 
         if (json)
         {
-            Cli.FeedbackCommand.WriteJson(o, new { parserModel, matcherModel, total, cases = results });
+            Cli.FeedbackCommand.WriteJson(o, new { parserModel, matcherModel, total, repeatedWrongFoods = repeats, cases = results });
         }
         else
         {
-            o.WriteLine($"Total: food {total.FoodAgreed}/{total.Expected} ({Percent(total.FoodAgreed, total.Expected)}), grams {total.GramsAgreed}/{total.Expected} ({Percent(total.GramsAgreed, total.Expected)}), extra items {total.Extra}.");
+            o.WriteLine($"Total: food {total.FoodAgreed}/{total.Expected} ({Percent(total.FoodAgreed, total.Expected)}), grams {total.GramsAgreed}/{total.Expected} ({Percent(total.GramsAgreed, total.Expected)}), extra items {total.Extra}, rejected foods picked again {repeats}.");
             o.WriteLine("Cost is not reported here; check the OpenRouter activity page.");
         }
 

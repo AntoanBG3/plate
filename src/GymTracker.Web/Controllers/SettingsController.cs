@@ -22,6 +22,7 @@ public class SettingsController(
     UserManager<AppUser> users,
     SignInManager<AppUser> signIn,
     GymTracker.Web.Features.Feedback.FeedbackService feedback,
+    GymTracker.Web.Features.Feedback.ModelAccuracyReport accuracy,
     Localizer localizer) : Controller
 {
     [HttpGet("")]
@@ -123,7 +124,7 @@ public class SettingsController(
     [HttpGet("model/{task}")]
     public async Task<IActionResult> Model(string task, CancellationToken ct) =>
         AiTasks.FromSlug(task) is { } t
-            ? View(new ModelPickerViewModel(t, await openRouter.ListModelsAsync(t, ct), await openRouter.GetModelAsync(t, ct)))
+            ? View(new ModelPickerViewModel(t, await openRouter.ListModelsAsync(t, ct), await openRouter.GetModelAsync(t, ct), await accuracy.ForAsync(t, ct)))
             : NotFound();
 
     [HttpPost("model/{task}")]

@@ -157,3 +157,33 @@ public class ParseAgreementTests
     public void Results_add_up() =>
         (new AgreementResult(2, 1, 1, 0) + new AgreementResult(3, 3, 2, 1)).Should().Be(new AgreementResult(5, 4, 3, 1));
 }
+
+public class ModelAccuracyTests
+{
+    [Fact]
+    public void No_runs_give_no_figures() =>
+        ModelAccuracy.Summarize([]).Should().BeEmpty();
+
+    [Fact]
+    public void Corrections_count_against_saved_parses_and_ratings_against_all()
+    {
+        var runs = Enumerable.Range(0, 20).Select(n => new RunOutcome("a", Confirmed: n < 10, Corrected: n < 3, RatedDown: n == 15)).ToList();
+
+        var stats = ModelAccuracy.Summarize(runs)["a"];
+
+        stats.Should().Be(new ModelStats("a", 20, 10, 0.3m, 0.05m, true));
+    }
+
+    [Fact]
+    public void Runs_never_saved_have_no_correction_rate() =>
+        ModelAccuracy.Summarize([new RunOutcome("a", false, false, true)])["a"].Should().Be(new ModelStats("a", 1, 0, null, 1m, false));
+
+    [Fact]
+    public void Each_model_is_counted_on_its_own_and_fewer_than_20_runs_is_not_enough()
+    {
+        var stats = ModelAccuracy.Summarize([.. Enumerable.Repeat(new RunOutcome("a", true, false, false), 19), new RunOutcome("b", true, true, false)]);
+
+        stats["a"].Enough.Should().BeFalse();
+        (stats["b"].Runs, stats["b"].CorrectionRate).Should().Be((1, 1m));
+    }
+}

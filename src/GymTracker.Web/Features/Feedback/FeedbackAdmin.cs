@@ -16,8 +16,27 @@ public record ParseRunDetail(int Id, DateTimeOffset CreatedAt, string Reporter, 
     string? ParserError, JsonNode? Parsed, JsonNode? Resolved, JsonNode? Saved, ParseCorrection Corrections, DateTimeOffset? ConfirmedAt,
     IReadOnlyList<(int? Item, FeedbackRating? Rating, ParseReason Reasons, string? Message)> Ratings);
 
-/// <summary>One parse as a regression case: the typed text, the parser's items and what the user saved.</summary>
-public record EvalCase(int RunId, string Text, JsonNode? Parsed, JsonNode? Saved, string? AiModel, string? MatchModel);
+/// <summary>What the user's actions say about one parsed item.</summary>
+public static class EvalVerdict
+{
+    /// <summary>Saved as suggested and not rated down: the matcher should keep picking this food.</summary>
+    public const string Accepted = "accepted";
+
+    /// <summary>Rated down as the wrong food: the matcher should stop picking it.</summary>
+    public const string WrongFood = "wrong-food";
+
+    /// <summary>Saved with changes, or rated down for another reason.</summary>
+    public const string Corrected = "corrected";
+
+    /// <summary>Unticked before saving.</summary>
+    public const string Removed = "removed";
+}
+
+/// <param name="FoodName">The suggested (and, unless removed, saved) food's English name, stable across databases unlike its id.</param>
+public record EvalItem(int Index, ParsedFoodItem Parsed, string Verdict, int? FoodItemId, string? FoodName, FoodSource? FoodSource, decimal? SavedGrams, ParseReason Reasons);
+
+/// <summary>One confirmed parse as a regression case.</summary>
+public record EvalCase(int RunId, string Text, string? AiModel, string? MatchModel, IReadOnlyList<EvalItem> Items);
 
 public record Digest(DateTimeOffset Since, IReadOnlyList<FeedbackRow> Reports, IReadOnlyList<ErrorEvent> Errors, int Parses, int Confirmed, int Corrected,
     int RatedUp, int RatedDown);
@@ -142,14 +161,52 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time)
         return result;
     }
 
-    /// <summary>Confirmed parses as regression cases: what was typed, what the parser read and what the user saved.</summary>
+    /// <summary>
+    /// Confirmed parses as regression cases, oldest first: per item what the parser read, the food that was suggested
+    /// and saved, and the user's verdict. With <paramref name="flaggedOnly"/>, only cases with something not accepted.
+    /// </summary>
     public async Task<List<EvalCase>> EvalCasesAsync(DateTimeOffset since, bool flaggedOnly, CancellationToken ct)
     {
         var runs = await db.ParseRuns.IgnoreQueryFilters().AsNoTracking()
-            .Where(r => r.CreatedAt >= since && r.Saved != null && (!flaggedOnly || r.Corrections != ParseCorrection.None))
+            .Where(r => r.CreatedAt >= since && r.Saved != null)
             .OrderBy(r => r.CreatedAt)
             .ToListAsync(ct);
-        return runs.Select(r => new EvalCase(r.Id, r.Text, JsonNode.Parse(r.Parsed), JsonNode.Parse(r.Saved!), r.AiModel, r.MatchModel)).ToList();
+        var runIds = runs.Select(r => r.Id).ToList();
+        var ratings = await AllFeedback.AsNoTracking()
+            .Where(f => f.ParseRunId != null && runIds.Contains(f.ParseRunId.Value) && f.ParseItemIndex != null && f.Rating == FeedbackRating.Down)
+            .Select(f => new { RunId = f.ParseRunId!.Value, Item = f.ParseItemIndex!.Value, f.Reasons })
+            .ToListAsync(ct);
+
+        var cases = new List<EvalCase>();
+        foreach (var run in runs)
+        {
+            var parsed = FeedbackJson.Read<List<ParsedFoodItem>>(run.Parsed) ?? [];
+            var resolved = FeedbackJson.Read<List<ResolvedRow>>(run.Resolved) ?? [];
+            var saved = FeedbackJson.Read<List<SavedRow>>(run.Saved) ?? [];
+            var ids = resolved.Where(r => r.FoodItemId is not null).Select(r => r.FoodItemId!.Value).ToList();
+            var foods = await db.FoodItems.IgnoreQueryFilters().Where(f => ids.Contains(f.Id)).ToDictionaryAsync(f => f.Id, f => new { f.Name, f.Source }, ct);
+
+            var items = new List<EvalItem>();
+            for (var n = 0; n < Math.Min(parsed.Count, resolved.Count); n++)
+            {
+                var row = saved.ElementAtOrDefault(n);
+                var down = ratings.Where(r => r.RunId == run.Id && r.Item == n).Select(r => r.Reasons).DefaultIfEmpty(ParseReason.None).Aggregate((a, b) => a | b);
+                var rated = ratings.Any(r => r.RunId == run.Id && r.Item == n);
+                var verdict = down.HasFlag(ParseReason.WrongFood) ? EvalVerdict.WrongFood
+                    : row is null || !row.Included ? EvalVerdict.Removed
+                    : row.Corrections != ParseCorrection.None || rated ? EvalVerdict.Corrected
+                    : EvalVerdict.Accepted;
+                var food = resolved[n].FoodItemId is { } id && foods.TryGetValue(id, out var f) ? f : null;
+                items.Add(new EvalItem(n, parsed[n], verdict, resolved[n].FoodItemId, food?.Name, food?.Source, row?.Included == true ? row.Grams : null, down));
+            }
+
+            if (!flaggedOnly || items.Any(i => i.Verdict != EvalVerdict.Accepted))
+            {
+                cases.Add(new EvalCase(run.Id, run.Text, run.AiModel, run.MatchModel, items));
+            }
+        }
+
+        return cases;
     }
 
     public Task<List<ErrorEvent>> ErrorsAsync(DateTimeOffset since, CancellationToken ct) =>

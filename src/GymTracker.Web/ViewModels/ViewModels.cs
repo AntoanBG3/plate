@@ -111,6 +111,7 @@ public record AiTaskStatus(GymTracker.Web.Integrations.AiTask Task, string Model
 public record OpenRouterStatus(GymTracker.Web.Integrations.OpenRouterKeyStatus Key, IReadOnlyList<AiTaskStatus> Tasks);
 
 /// <param name="Models">Null when OpenRouter's model list can't be loaded.</param>
-public record ModelPickerViewModel(GymTracker.Web.Integrations.AiTask Task, IReadOnlyList<GymTracker.Web.Integrations.OpenRouterModel>? Models, string Current);
+public record ModelPickerViewModel(GymTracker.Web.Integrations.AiTask Task, IReadOnlyList<GymTracker.Web.Integrations.OpenRouterModel>? Models, string Current,
+    IReadOnlyDictionary<string, GymTracker.Core.Nutrition.ModelStats>? Accuracy = null);
 
 public record FeedbackFormViewModel(GymTracker.Web.Features.Feedback.ReportDraft Draft, Guid ClientId, string? TraceId, string? Page);

@@ -45,7 +45,8 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             CreatedAt = time.GetUtcNow(),
             Text = text.Length > 1000 ? text[..1000] : text,
             AiModel = Trim(result.Model),
-            MatchModel = Trim(items.Select(i => i.MatchModel).FirstOrDefault(m => m is not null)),
+            // The decider that answered, even if the ranking kept every item; null when the ranking alone decided.
+            MatchModel = Trim(trace.Select(t => t.DeciderModel).FirstOrDefault(m => m is not null) ?? items.Select(i => i.MatchModel).FirstOrDefault(m => m is not null)),
             ParserMs = parserMs,
             MatchMs = matchMs,
             ParserError = result.Error is { } error ? Trim(error.ToString(), 500) : null,

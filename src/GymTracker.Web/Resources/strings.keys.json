@@ -610,6 +610,9 @@
   "Goal": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Got it": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "Grams": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
@@ -712,6 +715,15 @@
   ],
   "Language": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Last 90 days: {0} entries, not enough to judge yet": [
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
+  "Last 90 days: {0} entries, {1}% corrected before saving, {2}% rated wrong": [
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
+  ],
+  "Last 90 days: {0} entries, {1}% rated wrong": [
+    "src/GymTracker.Web/Views/Settings/Model.cshtml"
   ],
   "Last week": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
@@ -1866,6 +1878,9 @@
   "What would you like it to do?": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
+  "What's new": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "Without a key, typed food is split up by a simple built-in parser.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -1920,6 +1935,9 @@
   ],
   "You ate": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "You reported this": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Your data": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"

@@ -23,6 +23,7 @@ public class DataExport(AppDbContext db)
             ["custom_exercises.csv"] = await CustomExercisesAsync(ct),
             ["food_log.csv"] = await FoodLogAsync(ct),
             ["maintenance_estimates.csv"] = await EstimatesAsync(ct),
+            ["feedback.csv"] = await FeedbackAsync(ct),
         };
 
         using var stream = new MemoryStream();
@@ -163,6 +164,20 @@ public class DataExport(AppDbContext db)
         foreach (var e in estimates)
         {
             csv.Row(e.CalculatedOn, e.Method.ToString(), e.EstimatedTdeeKcal, e.TargetKcal, e.TargetProteinG, e.TrendWeightKg, e.DaysOfData, e.LoggingCompleteness, e.LowConfidence);
+        }
+
+        return csv;
+    }
+
+    /// <summary>The user's own reports and ratings with their status and reply; screenshots are left out.</summary>
+    private async Task<Csv> FeedbackAsync(CancellationToken ct)
+    {
+        var csv = new Csv("created_at_utc", "source", "kind", "area", "rating", "reasons", "message", "status", "reply");
+        var items = await db.Feedback.AsNoTracking().OrderBy(f => f.CreatedAt).ToListAsync(ct);
+        foreach (var f in items)
+        {
+            csv.Row(f.CreatedAt, f.Source.ToString(), f.Kind.ToString(), f.Area.ToString(), f.Rating?.ToString(),
+                f.Reasons == GymTracker.Core.Domain.ParseReason.None ? null : f.Reasons.ToString(), f.Message, f.Status.ToString(), f.Reply);
         }
 
         return csv;

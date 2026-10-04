@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymTracker.Web.Controllers;
 
 [Route("today")]
-public class TodayController(ProfileService profiles, BodyweightService bodyweights, BodyAnalytics body, TemplateService templates, SessionService sessions, FoodLogService food, NutritionTargets targets) : Controller
+public class TodayController(ProfileService profiles, BodyweightService bodyweights, BodyAnalytics body, TemplateService templates, SessionService sessions, FoodLogService food, NutritionTargets targets, GymTracker.Web.Features.Feedback.Changelog changelog) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -23,6 +23,7 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
             await sessions.LastCompletedTemplateIdAsync(ct));
         var day = await food.DayAsync(today, ct);
         var weights = await body.WeightAsync("4w", today, ct);
+        ViewData["WhatsNew"] = await changelog.UnseenAsync(ct);
 
         return View(new TodayViewModel(
             profile.DisplayName,
@@ -36,6 +37,13 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
             await targets.ForTodayAsync(ct),
             weights.Points.TakeLast(15).ToList(),
             day.Entries.MaxBy(e => e.CreatedAt)?.Description));
+    }
+
+    [HttpPost("whats-new/dismiss")]
+    public async Task<IActionResult> DismissWhatsNew(CancellationToken ct)
+    {
+        await changelog.DismissAsync(ct);
+        return Request.Headers.ContainsKey("HX-Request") ? Content("") : Redirect("/today");
     }
 
     [HttpPost("weight")]
