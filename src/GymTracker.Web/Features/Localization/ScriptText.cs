@@ -44,6 +44,13 @@ public static class ScriptText
         "{0} kg",
         "{0} kcal",
         "{0} sets",
+        // feedback.js
+        "Report",
+        "Thanks!",
+        "Thanks. What was wrong?",
+        "Thanks. This helps it read food better.",
+        "Couldn't read that picture. Try a screenshot.",
+        "No connection. Remove the screenshot to keep the message on this phone, or try again with signal.",
         // passkey.js
         "Couldn't add the passkey. Try again.",
         "That passkey didn't work. Try again or use your password.",

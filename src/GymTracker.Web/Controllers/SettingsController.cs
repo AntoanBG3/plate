@@ -21,6 +21,7 @@ public class SettingsController(
     JevFoodMatchDecider matcher,
     UserManager<AppUser> users,
     SignInManager<AppUser> signIn,
+    GymTracker.Web.Features.Feedback.FeedbackService feedback,
     Localizer localizer) : Controller
 {
     [HttpGet("")]
@@ -30,6 +31,7 @@ public class SettingsController(
         ViewData["Email"] = user?.Email;
         ViewData["Passkeys"] = user is null ? [] : await users.GetPasskeysAsync(user);
         ViewData["OpenRouter"] = await OpenRouterStatusAsync(ct);
+        ViewData["UnreadFeedback"] = await feedback.UnreadRepliesAsync(ct);
         return View(await profiles.GetAsync(ct));
     }
 

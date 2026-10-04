@@ -46,6 +46,28 @@ public class UserIsolationTests(PostgresFixture fixture) : IAsyncLifetime
     private UserScope AsA() => new(fixture, userA);
 
     [Fact]
+    public async Task Cannot_see_parse_runs_feedback_or_screenshots()
+    {
+        var userB = await fixture.CreateUserAsync();
+        await using (var asB = new UserScope(fixture, userB))
+        {
+            var outcome = await asB.ParseRuns.ParseAsync("a banana", default);
+            asB.Db.Feedback.Add(new Feedback
+            {
+                ClientId = Guid.NewGuid(), UserId = userB, CreatedAt = DateTimeOffset.UtcNow, Message = "B's report", ParseRunId = outcome.RunId,
+                Attachment = new FeedbackAttachment { ContentType = "image/png", Bytes = [1, 2, 3] },
+            });
+            await asB.Db.SaveChangesAsync();
+        }
+
+        await using var a = AsA();
+        (await a.Db.ParseRuns.AnyAsync(r => r.UserId == userB)).Should().BeFalse();
+        (await a.Db.Feedback.AnyAsync(f => f.UserId == userB)).Should().BeFalse();
+        (await a.Db.FeedbackAttachments.AnyAsync(x => x.Feedback.UserId == userB)).Should().BeFalse();
+        (await a.Db.ParseRuns.IgnoreQueryFilters().AnyAsync(r => r.UserId == userB)).Should().BeTrue("the rows exist; only the filter hides them");
+    }
+
+    [Fact]
     public async Task Export_contains_none_of_the_other_users_data()
     {
         await using var a = AsA();

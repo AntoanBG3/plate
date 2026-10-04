@@ -118,3 +118,42 @@ public class ErrorFingerprintTests
         ErrorFingerprint.FirstAppFrame("at render (https://gym.peychev.uk/js/nav.js?v=abc:10:5)").Should().Be("render (/js/nav.js)");
     }
 }
+
+public class ParseAgreementTests
+{
+    private static readonly Per100g Values = new(100, 10, 10, 1);
+
+    private static SavedItem Saved(int? food, decimal grams, bool included = true, string name = "x") => new(included, name, grams, Values, food);
+
+    private static SuggestedItem Fresh(int? food, decimal grams, string name = "x") => new(name, grams, Values, food);
+
+    [Fact]
+    public void Items_pair_by_food_whatever_their_order()
+    {
+        var result = ParseAgreement.Score([Saved(1, 200), Saved(2, 120)], [Fresh(2, 120), Fresh(1, 200)]);
+
+        result.Should().Be(new AgreementResult(2, 2, 2, 0));
+    }
+
+    [Fact]
+    public void Grams_count_only_within_the_correction_tolerance() =>
+        ParseAgreement.Score([Saved(1, 200), Saved(2, 100)], [Fresh(1, 215), Fresh(2, 150)]).Should().Be(new AgreementResult(2, 2, 1, 0));
+
+    [Fact]
+    public void Unticked_items_are_not_expected_and_new_items_nobody_saved_are_extra() =>
+        ParseAgreement.Score([Saved(1, 200), Saved(3, 50, included: false)], [Fresh(1, 200), Fresh(3, 50), Fresh(4, 10)])
+            .Should().Be(new AgreementResult(1, 1, 1, 2));
+
+    [Fact]
+    public void AI_estimates_pair_by_name_and_a_different_food_is_a_miss() =>
+        ParseAgreement.Score([Saved(null, 100, name: "Баница"), Saved(1, 100)], [Fresh(null, 100, name: "баница"), Fresh(9, 100)])
+            .Should().Be(new AgreementResult(2, 1, 1, 1));
+
+    [Fact]
+    public void One_fresh_item_answers_only_one_saved_item() =>
+        ParseAgreement.Score([Saved(1, 100), Saved(1, 100)], [Fresh(1, 100)]).Should().Be(new AgreementResult(2, 1, 1, 0));
+
+    [Fact]
+    public void Results_add_up() =>
+        (new AgreementResult(2, 1, 1, 0) + new AgreementResult(3, 3, 2, 1)).Should().Be(new AgreementResult(5, 4, 3, 1));
+}

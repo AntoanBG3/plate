@@ -36,6 +36,23 @@ public class TrainingAnalytics(AppDbContext db, TimeProvider time)
         return result;
     }
 
+    /// <summary>
+    /// The inputs the progression rules received for one session exercise, and what they suggested; a feedback
+    /// report keeps them so the case can be replayed in a Core test (SPEC 11).
+    /// </summary>
+    public async Task<(SessionExercise Exercise, ProgressionRules Rules, List<IReadOnlyList<LoggedSet>> History, ProgressionSuggestion? Suggestion)> SuggestionInputsAsync(
+        int sessionExerciseId, CancellationToken ct)
+    {
+        var exercise = await db.SessionExercises
+            .Include(e => e.Session)
+            .Include(e => e.Exercise)
+            .FirstOrDefaultAsync(e => e.Id == sessionExerciseId, ct) ?? throw new NotFoundException("Exercise not found.");
+        var history = await RecentSessionSetsAsync(exercise.ExerciseId, exercise.Session, 2, ct);
+        var rules = new ProgressionRules(exercise.RepMin, exercise.RepMax, exercise.WorkingSets, exercise.WeightIncrementKg,
+            exercise.Exercise.Equipment == Equipment.Bodyweight);
+        return (exercise, rules, history, Progression.Suggest(rules, history));
+    }
+
     /// <summary>The session's best e1RM per exercise that beats every earlier session's.</summary>
     public async Task<List<PersonalRecord>> RecordsAsync(WorkoutSession session, CancellationToken ct)
     {

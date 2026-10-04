@@ -32,10 +32,19 @@ CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
+// The feedback CLI prints to stdout for piping over SSH (attachments are raw bytes), so its logs go to stderr.
+if (args.Length > 0 && args[0] == FeedbackCommand.Name)
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
+    // A console-specific rule wins over the general levels in appsettings.
+    builder.Logging.AddFilter<Microsoft.Extensions.Logging.Console.ConsoleLoggerProvider>(null, LogLevel.Warning);
+}
+
 builder.WebHost.ConfigureKestrel(k =>
 {
     k.AddServerHeader = false;
-    // Nothing in the app uploads files; barcode photos are decoded in the browser.
+    // Barcode photos are decoded in the browser; feedback screenshots are shrunk there first (SPEC 11).
     k.Limits.MaxRequestBodySize = 1024 * 1024;
 });
 
@@ -62,6 +71,17 @@ builder.Services.AddScoped<FoodMatcher>();
 builder.Services.AddScoped<FoodLogService>();
 builder.Services.AddScoped<SavedMealService>();
 builder.Services.AddScoped<GymTracker.Web.Features.Feedback.ParseRunService>();
+builder.Services.AddScoped<GymTracker.Web.Features.Feedback.FeedbackService>();
+builder.Services.AddScoped<GymTracker.Web.Features.Feedback.FeedbackSnapshots>();
+builder.Services.AddScoped<GymTracker.Web.Features.Feedback.FeedbackAdmin>();
+builder.Services.Configure<GymTracker.Web.Features.Feedback.TelegramOptions>(config.GetSection("Telegram"));
+builder.Services.AddSingleton<GymTracker.Web.Features.Feedback.FeedbackNotifier>();
+builder.Services.AddSingleton<GymTracker.Web.Features.Feedback.IFeedbackNotifier>(sp => sp.GetRequiredService<GymTracker.Web.Features.Feedback.FeedbackNotifier>());
+builder.Services.AddHostedService<GymTracker.Web.Features.Feedback.FeedbackNotifierWorker>();
+builder.Services.AddSingleton<GymTracker.Web.Features.Feedback.ErrorRecorder>();
+builder.Services.AddExceptionHandler<GymTracker.Web.Features.Feedback.ErrorCaptureHandler>();
+// The bot token is part of Telegram's URL, so this client must not log request URLs.
+builder.Services.AddHttpClient(GymTracker.Web.Features.Feedback.FeedbackNotifierWorker.HttpClientName).RemoveAllLoggers();
 builder.Services.AddScoped<GymTracker.Web.Features.Undo.UndoService>();
 builder.Services.AddHostedService<GymTracker.Web.Features.Undo.SoftDeletePurge>();
 builder.Services.AddScoped<NutritionTargets>();
@@ -239,6 +259,9 @@ builder.Services.AddRateLimiter(o =>
     // The login page asks for passkey options on every view (autofill), so they get their own budget.
     o.AddPolicy(RateLimits.PasskeyOptions, http => PerIp(http, 30, TimeSpan.FromMinutes(5)));
     o.AddPolicy(RateLimits.CspReport, http => PerIp(http, 20, TimeSpan.FromMinutes(1)));
+    // Reports and parse ratings, and browser error reports (SPEC 11).
+    o.AddPolicy(RateLimits.Feedback, http => PerUser(http, config.GetValue("RateLimits:FeedbackPerWindow", 30), TimeSpan.FromMinutes(10)));
+    o.AddPolicy(RateLimits.ClientError, http => PerUser(http, config.GetValue("RateLimits:ClientErrorPerWindow", 20), TimeSpan.FromMinutes(10)));
 });
 
 builder.Services.AddAuthorization(o => o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
@@ -273,6 +296,11 @@ await using (var scope = app.Services.CreateAsyncScope())
 if (args.Length > 0 && args[0] == CreateUserCommand.Name)
 {
     return await CreateUserCommand.RunAsync(app.Services, args);
+}
+
+if (args.Length > 0 && args[0] == FeedbackCommand.Name)
+{
+    return await FeedbackCommand.RunAsync(app.Services, args);
 }
 
 app.UseForwardedHeaders();

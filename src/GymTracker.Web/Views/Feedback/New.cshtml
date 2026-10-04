@@ -1,0 +1,97 @@
+@model FeedbackFormViewModel
+@using GymTracker.Web.Features.Feedback
+@{
+    var draft = Model.Draft;
+    ViewData["Title"] = L["Send feedback"];
+    ViewData["BackUrl"] = Model.Page ?? "/settings";
+    ViewData["BackLabel"] = Model.Page is null ? L["Settings"] : L["Go back"];
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Send feedback"]</h1>
+    <p class="subhead">@L["It goes straight to the developer. The answer shows under Your feedback in Settings."]</p>
+</header>
+
+<form method="post" asp-antiforgery="true" action="/feedback" enctype="multipart/form-data" data-module="feedback-form">
+    <input type="hidden" name="clientId" value="@Model.ClientId" />
+    <input type="hidden" name="source" value="@draft.Source" />
+    <input type="hidden" name="aboutId" value="@draft.AboutId" />
+    <input type="hidden" name="page" value="@Model.Page" />
+    <input type="hidden" name="traceId" value="@Model.TraceId" />
+    <input type="hidden" name="viewport" value="" />
+    <input type="hidden" name="standalone" value="" />
+    <input type="hidden" name="recentErrors" value="" />
+    <input type="hidden" name="screenshotWidth" value="0" />
+    <input type="hidden" name="screenshotHeight" value="0" />
+
+    @if (draft.About is not null || Model.TraceId is not null)
+    {
+        <div class="banner" role="note">@Ui.Icon("info")<span>@(draft.About is not null ? L[draft.About] : L["About the error on the previous page ({0}).", Model.TraceId!])</span></div>
+    }
+
+    <section class="section">
+        <div class="segmented tall" data-thumb role="radiogroup" aria-label="@L["Kind"]">
+            @foreach (var (kind, text) in FeedbackText.Kinds)
+            {
+                <label class="segment"><input type="radio" name="kind" value="@kind" checked="@(kind == draft.Kind)" />@L[text]</label>
+            }
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="list">
+            <div class="field-row">
+                <label for="area">@L["About"]</label>
+                <select id="area" name="area">
+                    @foreach (var (group, areas) in FeedbackText.AreaGroups)
+                    {
+                        <optgroup label="@L[group]">
+                            @foreach (var area in areas)
+                            {
+                                <option value="@area" selected="@(area == draft.Area)">@L[FeedbackText.Areas[area]]</option>
+                            }
+                        </optgroup>
+                    }
+                </select>
+            </div>
+        </div>
+    </section>
+
+    @if (draft.ShowReasons)
+    {
+        <section class="section">
+            <h2 class="section-title">@L["What was wrong?"]</h2>
+            <div class="choice-chips">
+                @foreach (var (reason, text) in FeedbackText.Reasons)
+                {
+                    <label class="plate-choice"><input type="checkbox" name="reasons" value="@reason" /><span>@L[text]</span></label>
+                }
+            </div>
+        </section>
+    }
+
+    <section class="section">
+        <label for="message" class="sr-only">@L["Message"]</label>
+        <textarea id="message" class="textarea" name="message" rows="6" maxlength="2000" required="@(!draft.ShowReasons)"
+                  placeholder="@(draft.Kind == GymTracker.Core.Domain.FeedbackKind.Idea ? L["What would you like it to do?"] : L["What happened, and what did you expect?"])"></textarea>
+    </section>
+
+    <section class="section">
+        <div class="list">
+            <div class="shot-preview" data-shot-preview hidden>
+                <img alt="@L["Screenshot to send"]" />
+                <span class="row-main footnote" data-shot-size></span>
+                <button type="button" class="btn btn-plain" data-shot-remove>@L["Remove"]</button>
+            </div>
+            <div class="row shot-pick" data-shot-pick>
+                <span class="row-icon neutral">@Ui.Icon("photo")</span>
+                <span class="row-main">@L["Add a screenshot"]</span>
+                <input type="file" name="screenshot" accept="image/jpeg,image/png,image/webp,image/*" aria-label="@L["Add a screenshot"]" />
+            </div>
+        </div>
+        <p class="section-footer" data-shot-offline hidden>@L["Screenshots need a connection. The message alone can wait on this phone."]</p>
+        <p class="section-footer">@L["Sent with it: this page, the app version, your phone's screen size and browser, and any recent errors on this phone."]</p>
+    </section>
+
+    <div class="banner is-success" role="status" data-queued hidden>@Ui.Icon("pending")<span>@L["Saved on this phone. It will send when you're back online."]</span></div>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Send"]</button>
+</form>

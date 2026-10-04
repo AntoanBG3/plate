@@ -26,6 +26,10 @@
                 {
                     <a href="/train/session-exercises/@Ex.Id/swap" role="menuitem">@L["Swap exercise"]@Ui.Icon("reorder")</a>
                 }
+                @if (Model.Suggestion is not null)
+                {
+                    <a href="/feedback/new?about=Progression&id=@Ex.Id" role="menuitem">@L["Report this suggestion"]@Ui.Icon("flag")</a>
+                }
                 <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/remove"><button type="submit" role="menuitem" class="danger">@L["Remove exercise"]@Ui.Icon("trash")</button></form>
             </div>
         </div>
