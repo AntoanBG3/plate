@@ -73,12 +73,12 @@ public class PasskeyController(SignInManager<AppUser> signIn, UserManager<AppUse
         }
         catch (Exception e) when (e is PasskeyException or System.Text.Json.JsonException or FormatException)
         {
-            return Failed("unreadable assertion");
+            return Reject("unreadable assertion");
         }
 
         if (!assertion.Succeeded)
         {
-            return Failed(assertion.Failure.Message);
+            return Reject(assertion.Failure.Message);
         }
 
         // SignInManager.PasskeySignInAsync would do these steps too, but always with a session cookie. The app is an
@@ -86,13 +86,13 @@ public class PasskeyController(SignInManager<AppUser> signIn, UserManager<AppUse
         var user = assertion.User;
         if (!await signIn.CanSignInAsync(user) || await users.IsLockedOutAsync(user))
         {
-            return Failed("locked out or not allowed");
+            return Reject("locked out or not allowed");
         }
 
         // Keeps the authenticator's signature counter current, which is how a cloned authenticator would show.
         if (!(await users.AddOrUpdatePasskeyAsync(user, assertion.Passkey)).Succeeded)
         {
-            return Failed("could not update the passkey");
+            return Reject("could not update the passkey");
         }
 
         await signIn.SignInAsync(user, isPersistent: true, authenticationMethod: "passkey");
@@ -100,7 +100,7 @@ public class PasskeyController(SignInManager<AppUser> signIn, UserManager<AppUse
         return Json(new { redirect = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : "/today" });
     }
 
-    private BadRequestResult Failed(string reason)
+    private BadRequestResult Reject(string reason)
     {
         logger.LogWarning("Failed passkey sign-in from {Ip}: {Reason}", HttpContext.Connection.RemoteIpAddress, reason);
         return BadRequest();
