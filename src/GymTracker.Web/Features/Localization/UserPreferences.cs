@@ -1,8 +1,7 @@
 using System.Globalization;
 using GymTracker.Core.Domain;
-using GymTracker.Web.Data;
+using GymTracker.Web.Features.Profile;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Features.Localization;
 
@@ -25,7 +24,7 @@ public class UserPreferencesMiddleware(RequestDelegate next)
     public const string LangCookie = "gym.lang";
     public const string ThemeCookie = "gym.theme";
 
-    public async Task InvokeAsync(HttpContext context, AppDbContext db)
+    public async Task InvokeAsync(HttpContext context, ProfileService profiles)
     {
         if (context.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>() is null)
         {
@@ -36,12 +35,10 @@ public class UserPreferencesMiddleware(RequestDelegate next)
         var prefs = FromCookies(context.Request.Cookies);
         if (context.User.Identity?.IsAuthenticated == true)
         {
-            var stored = await db.Profiles
-                .Select(p => new UserPreferences(p.Theme, p.Language))
-                .SingleOrDefaultAsync(context.RequestAborted);
-            if (stored is not null)
+            // Loads the whole profile, which the page then reuses (ProfileService keeps it for the request).
+            if (await profiles.FindAsync(context.RequestAborted) is { } profile)
             {
-                prefs = stored;
+                prefs = new UserPreferences(profile.Theme, profile.Language);
                 Remember(context.Response, context.Request.Cookies, prefs);
             }
         }

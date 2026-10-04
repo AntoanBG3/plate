@@ -1,17 +1,20 @@
 using System.Globalization;
 using System.Net;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using GymTracker.Web.Cli;
 using GymTracker.Web.Data;
 using GymTracker.Web.Data.Seed;
 using GymTracker.Web.Features;
 using GymTracker.Web.Features.Analytics;
+using GymTracker.Web.Features.Diagnostics;
 using GymTracker.Web.Features.Food;
 using GymTracker.Web.Features.Localization;
 using GymTracker.Web.Integrations;
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Features.Body;
 using GymTracker.Web.Features.Profile;
+using GymTracker.Web.Features.Security;
 using GymTracker.Web.Features.Training;
 using GymTracker.Web.Features.Users;
 using Microsoft.AspNetCore.Authorization;
@@ -29,8 +32,17 @@ CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
-builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseNpgsql(config.GetConnectionString("Default") ?? throw new InvalidOperationException("ConnectionStrings:Default is not set.")));
+builder.WebHost.ConfigureKestrel(k =>
+{
+    k.AddServerHeader = false;
+    // Nothing in the app uploads files; barcode photos are decoded in the browser.
+    k.Limits.MaxRequestBodySize = 1024 * 1024;
+});
+
+builder.Services.AddSingleton<DbTimingInterceptor>();
+builder.Services.AddDbContext<AppDbContext>((sp, o) => o
+    .UseNpgsql(config.GetConnectionString("Default") ?? throw new InvalidOperationException("ConnectionStrings:Default is not set."))
+    .AddInterceptors(sp.GetRequiredService<DbTimingInterceptor>()));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
@@ -103,18 +115,40 @@ builder.Services
 
         o.User.RequireUniqueEmail = true;
         o.SignIn.RequireConfirmedAccount = false;
+
+        // Version 3 adds the passkeys table (Face ID / Touch ID sign-in).
+        o.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
     })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+// __Host- cookies must be Secure with Path=/ and no Domain; local development runs over plain http.
+var hostCookies = !builder.Environment.IsDevelopment();
+// The passkey relying party: the public host name in production; unset locally, where the request's host is used.
+builder.Services.Configure<IdentityPasskeyOptions>(o =>
+{
+    if (config["Passkeys:ServerDomain"] is { Length: > 0 } domain)
+    {
+        o.ServerDomain = domain;
+    }
+});
+
 builder.Services.ConfigureApplicationCookie(o =>
 {
-    o.Cookie.Name = "gym.auth";
+    o.Cookie.Name = hostCookies ? "__Host-gym.auth" : "gym.auth";
+    o.Cookie.Path = "/";
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Lax;
-    o.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+    o.Cookie.SecurePolicy = hostCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
     o.ExpireTimeSpan = TimeSpan.FromDays(30);
     o.SlidingExpiration = true;
+    // Every sign-in is persistent, password or passkey: the app is used as an installed PWA and should stay
+    // signed in when it is closed. (SignInManager.PasskeySignInAsync on its own issues a session cookie.)
+    o.Events.OnSigningIn = context =>
+    {
+        context.Properties.IsPersistent = true;
+        return Task.CompletedTask;
+    };
     o.LoginPath = "/account/login";
     o.LogoutPath = "/account/logout";
     o.AccessDeniedPath = "/account/login";
@@ -160,17 +194,38 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
     }
 });
 
+// Fixed-window limits keyed by client address or by signed-in user. Requests are refused, never queued.
+RateLimitPartition<string> PerIp(HttpContext http, int permits, TimeSpan window) =>
+    RateLimitPartition.GetFixedWindowLimiter(http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = permits, Window = window, QueueLimit = 0 });
+RateLimitPartition<string> PerUser(HttpContext http, int permits, TimeSpan window) =>
+    RateLimitPartition.GetFixedWindowLimiter(http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = permits, Window = window, QueueLimit = 0 });
+
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    o.AddPolicy(RateLimits.Login, http => RateLimitPartition.GetFixedWindowLimiter(
-        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = config.GetValue("RateLimits:LoginPerWindow", 10),
-            Window = TimeSpan.FromMinutes(5),
-            QueueLimit = 0,
-        }));
+    o.AddPolicy(RateLimits.Login, http => PerIp(http, config.GetValue("RateLimits:LoginPerWindow", 10), TimeSpan.FromMinutes(5)));
+
+    // Distributed guessing: all sign-in attempts together, whatever the source address.
+    o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(http =>
+        HttpMethods.IsPost(http.Request.Method) && http.Request.Path.StartsWithSegments("/account/login")
+            ? RateLimitPartition.GetSlidingWindowLimiter("login-all", _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = config.GetValue("RateLimits:LoginGlobalPerWindow", 30),
+                Window = TimeSpan.FromMinutes(15),
+                SegmentsPerWindow = 3,
+                QueueLimit = 0,
+            })
+            : RateLimitPartition.GetNoLimiter("other"));
+
+    // Password and API key changes.
+    o.AddPolicy(RateLimits.Sensitive, http => PerUser(http, config.GetValue("RateLimits:SensitivePerWindow", 5), TimeSpan.FromMinutes(15)));
+    // Food text parsing spends the shared OpenRouter balance.
+    o.AddPolicy(RateLimits.AiParse, http => PerUser(http, config.GetValue("RateLimits:AiParsePerWindow", 30), TimeSpan.FromMinutes(10)));
+    // The login page asks for passkey options on every view (autofill), so they get their own budget.
+    o.AddPolicy(RateLimits.PasskeyOptions, http => PerIp(http, 30, TimeSpan.FromMinutes(5)));
+    o.AddPolicy(RateLimits.CspReport, http => PerIp(http, 20, TimeSpan.FromMinutes(1)));
 });
 
 builder.Services.AddAuthorization(o => o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
@@ -180,9 +235,18 @@ builder.Services.AddControllersWithViews(o =>
     o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
     o.Filters.Add<FeatureExceptionFilter>();
 });
-builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");
+builder.Services.AddAntiforgery(o =>
+{
+    o.HeaderName = "RequestVerificationToken";
+    o.SuppressXFrameOptionsHeader = true; // SecurityHeadersMiddleware sends DENY
+    o.Cookie.Name = hostCookies ? "__Host-gym.af" : "gym.af";
+    o.Cookie.SecurePolicy = hostCookies ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+});
 
 var app = builder.Build();
+app.Logger.LogInformation("GC: server={Server}, latency={Latency}, heap limit={Limit} MiB",
+    System.Runtime.GCSettings.IsServerGC, System.Runtime.GCSettings.LatencyMode,
+    GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / 1024 / 1024);
 
 await using (var scope = app.Services.CreateAsyncScope())
 {
@@ -199,6 +263,8 @@ if (args.Length > 0 && args[0] == CreateUserCommand.Name)
 }
 
 app.UseForwardedHeaders();
+app.UseMiddleware<ServerTimingMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -207,9 +273,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStatusCodePagesWithReExecute("/error/{0}");
 app.UseRouting();
-app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+// After authentication, so per-user limits see the signed-in user.
+app.UseRateLimiter();
 app.UseMiddleware<UserPreferencesMiddleware>();
 
 app.MapStaticAssets().AllowAnonymous();

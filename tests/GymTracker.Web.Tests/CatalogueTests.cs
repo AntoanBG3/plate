@@ -18,8 +18,8 @@ namespace GymTracker.Web.Tests;
 /// </summary>
 public partial class CatalogueTests(ITestOutputHelper output)
 {
-    private static readonly string Repo = FindRepo();
-    private static readonly string Web = Path.Combine(Repo, "src", "GymTracker.Web");
+    private static readonly string Repo = RepoPaths.Root;
+    private static readonly string Web = RepoPaths.Web;
 
     private const string Str = "\"((?:[^\"\\\\]|\\\\.)*)\"";
 
@@ -158,15 +158,4 @@ public partial class CatalogueTests(ITestOutputHelper output)
 
     [GeneratedRegex("\\bt\\(\\s*\"((?:[^\"\\\\]|\\\\.)*)\"")]
     private static partial Regex TCall();
-
-    private static string FindRepo()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "GymTracker.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        return dir?.FullName ?? throw new InvalidOperationException("Repository root not found.");
-    }
 }

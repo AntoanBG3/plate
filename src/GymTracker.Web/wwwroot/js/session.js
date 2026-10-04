@@ -11,9 +11,9 @@
     const REST_KEY = "gym.restTimer.v1";
     const RETRY_MS = 15000;
 
-    const sessionEl = document.getElementById("session");
-    const sessionId = sessionEl ? Number(sessionEl.dataset.sessionId) : null;
-    const sessionActive = sessionEl ? sessionEl.dataset.active === "true" : false;
+    // Set while a session page is shown (the "session" page module below); the queue itself runs on every page.
+    let sessionId = null;
+    let sessionActive = false;
 
     // ---- storage (private browsing or a full disk must not break logging) ----
 
@@ -40,15 +40,6 @@
 
     const loadQueue = () => read(QUEUE_KEY, []);
     const saveQueue = (queue) => write(QUEUE_KEY, queue.length ? queue : null);
-
-    function antiforgeryToken() {
-        // Read at send time: a set queued before a reload must use the current page's token.
-        try {
-            return JSON.parse(document.body.getAttribute("hx-headers") || "{}").RequestVerificationToken || "";
-        } catch {
-            return "";
-        }
-    }
 
     // ---- queue ----
 
@@ -132,7 +123,7 @@
                 credentials: "same-origin",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
-                    "RequestVerificationToken": antiforgeryToken(),
+                    "RequestVerificationToken": window.gymToken(),
                     "HX-Request": "true",
                 },
                 body,
@@ -277,7 +268,7 @@
         if (document.visibilityState === "visible") {
             flush();
             keepAwake();
-            tick();
+            ensureTicking();
         }
     });
     document.body.addEventListener("htmx:afterRequest", (event) => {
@@ -334,19 +325,51 @@
             return;
         }
         write(REST_KEY, { sessionId, end: Date.now() + seconds * 1000, total: seconds, beeped: false });
-        tick();
+        ensureTicking();
     }
 
+    // Two loops run only while a rest timer is set on the session page: animation frames for a smooth ring while
+    // the page is visible, and a 250 ms interval that keeps the logic (the beep) going while it is not.
+    let tickTimer = null;
+    let frameId = 0;
+
+    function ensureTicking() {
+        if (!tick() || tickTimer) {
+            return;
+        }
+        tickTimer = setInterval(() => {
+            if (document.visibilityState !== "visible" && !tick()) {
+                stopTicking();
+            }
+        }, 250);
+        frameId = requestAnimationFrame(frame);
+    }
+
+    function frame() {
+        if (document.visibilityState === "visible" && !tick()) {
+            stopTicking();
+            return;
+        }
+        frameId = requestAnimationFrame(frame);
+    }
+
+    function stopTicking() {
+        clearInterval(tickTimer);
+        tickTimer = null;
+        cancelAnimationFrame(frameId);
+    }
+
+    // Updates the timer on screen; returns whether a rest is still running.
     function tick() {
         const timer = document.getElementById("rest-timer");
         if (!timer) {
-            return;
+            return false;
         }
 
         const state = read(REST_KEY, null);
         if (!state || state.sessionId !== sessionId) {
             timer.hidden = true;
-            return;
+            return false;
         }
 
         const leftMs = Math.max(0, state.end - Date.now());
@@ -387,7 +410,10 @@
             if (window.gymSheet) {
                 window.gymSheet.hide();
             }
+            return false;
         }
+
+        return true;
     }
 
     // What comes after the rest: the first set not yet logged, with its suggested weight and reps.
@@ -411,15 +437,6 @@
         }
     }
 
-    // Smooth ring while the timer is on screen; the 250 ms interval keeps logic running otherwise.
-    function frame() {
-        const timer = document.getElementById("rest-timer");
-        if (timer && !timer.hidden && document.visibilityState === "visible") {
-            tick();
-        }
-        requestAnimationFrame(frame);
-    }
-
     function adjustRest(byMs) {
         const state = read(REST_KEY, null);
         if (!state) {
@@ -429,7 +446,7 @@
         state.total = Math.max(state.total, Math.ceil((state.end - Date.now()) / 1000));
         state.beeped = false;
         write(REST_KEY, state);
-        tick();
+        ensureTicking();
     }
 
     document.addEventListener("click", (event) => {
@@ -438,6 +455,7 @@
             adjustRest(30000);
         } else if (event.target.closest("#rest-skip, [data-rest-skip]")) {
             write(REST_KEY, null);
+            stopTicking();
             tick();
             if (window.gymSheet) {
                 window.gymSheet.hide();
@@ -466,12 +484,25 @@
         navigator.storage.persist().catch(() => {});
     }
 
-    restorePending();
     flush();
-    keepAwake();
-    tick();
-    setInterval(tick, 250);
-    if (document.getElementById("rest-timer")) {
-        requestAnimationFrame(frame);
-    }
+
+    // The session page: merge pending sets into it, keep the phone awake and run the rest timer.
+    // Leaving the page (soft navigation) stops the timer loops and releases the wake lock.
+    window.gymModule("session", (el) => {
+        sessionId = Number(el.dataset.sessionId);
+        sessionActive = el.dataset.active === "true";
+        restorePending();
+        flush();
+        keepAwake();
+        ensureTicking();
+        return () => {
+            sessionId = null;
+            sessionActive = false;
+            stopTicking();
+            if (wakeLock) {
+                wakeLock.release().catch(() => {});
+                wakeLock = null;
+            }
+        };
+    });
 })();

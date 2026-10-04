@@ -7,6 +7,7 @@ using GymTracker.Web.Features.Food;
 using GymTracker.Web.Features.Profile;
 using GymTracker.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GymTracker.Web.Controllers;
 
@@ -45,6 +46,7 @@ public class FoodController(
     }
 
     [HttpPost("parse")]
+    [EnableRateLimiting(RateLimits.AiParse)]
     public async Task<IActionResult> Parse(DateOnly date, Meal meal, string? text, CancellationToken ct)
     {
         text = text?.Trim() ?? "";

@@ -21,3 +21,4 @@ design-samples/tools/node_modules
 
 # Food pipeline scrapes (third-party pages; only the compiled seed CSV is committed)
 tools/foods/raw/
+.superpowers/

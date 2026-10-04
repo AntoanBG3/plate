@@ -24,6 +24,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
     public async Task<DayLog> DayAsync(DateOnly date, CancellationToken ct)
     {
         var entries = await db.FoodLog
+            .AsNoTracking()
             .Where(e => e.Date == date)
             .OrderBy(e => e.CreatedAt).ThenBy(e => e.Id)
             .ToListAsync(ct);

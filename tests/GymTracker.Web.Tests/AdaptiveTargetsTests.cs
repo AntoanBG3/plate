@@ -38,7 +38,7 @@ public class AdaptiveTargetsTests(PostgresFixture fixture)
             p.Goal = goal;
             p.TargetRatePercentPerWeek = rate;
         }, default);
-        return new Setup(s, clock, new NutritionTargets(s.Db, new FixedCurrentUser(s.UserId), profiles, clock), profiles);
+        return new Setup(s, clock, new NutritionTargets(s.Db, new FixedCurrentUser(s.UserId), profiles, s.Bodyweights, clock), profiles);
     }
 
     /// <summary>Weigh-ins and food for each of the given days before today.</summary>
@@ -145,7 +145,7 @@ public class AdaptiveTargetsTests(PostgresFixture fixture)
         await LogDaysAsync(x.Scope, 3, 80m, 2300m);
         await x.Targets.ForTodayAsync(default);
 
-        var days = await new BodyAnalytics(x.Scope.Db).CaloriesAsync(Today, default);
+        var days = await new BodyAnalytics(x.Scope.Db, x.Scope.Bodyweights).CaloriesAsync(Today, default);
 
         days.Should().HaveCount(28);
         days[^1].Date.Should().Be(Today);
@@ -154,9 +154,9 @@ public class AdaptiveTargetsTests(PostgresFixture fixture)
         days[^1].TargetKcal.Should().Be(2500);
         days[^1].Kcal.Should().BeNull();
 
-        var weight = await new BodyAnalytics(x.Scope.Db).WeightAsync("4w", Today, default);
+        var weight = await new BodyAnalytics(x.Scope.Db, x.Scope.Bodyweights).WeightAsync("4w", Today, default);
         weight.Points.Should().HaveCount(4);
         weight.Points.Should().OnlyContain(p => p.TrendKg == 80m);
-        (await new BodyAnalytics(x.Scope.Db).WeightAsync("bogus", Today, default)).Range.Should().Be("12w");
+        (await new BodyAnalytics(x.Scope.Db, x.Scope.Bodyweights).WeightAsync("bogus", Today, default)).Range.Should().Be("12w");
     }
 }

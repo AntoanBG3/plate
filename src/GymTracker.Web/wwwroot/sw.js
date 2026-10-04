@@ -1,6 +1,7 @@
 // Caches static files only (SPEC section 8). Pages and data always come from the server;
-// when a page can't be fetched, the offline page is shown instead.
-const CACHE = "gym-static-v6";
+// when a page can't be fetched, the offline page is shown instead. Static files carry ?v=<hash>,
+// so a cached copy of the exact URL is served without revalidating.
+const CACHE = "gym-static-v15";
 const OFFLINE = "/offline.html";
 const PRECACHE = [
     OFFLINE,
@@ -12,9 +13,13 @@ const PRECACHE = [
     "/css/tokens.css",
     "/css/app.css",
     "/js/i18n.js",
+    "/js/pages.js",
     "/js/motion.js",
     "/js/site.js",
     "/js/session.js",
+    "/js/passkey.js",
+    "/js/nav.js",
+    "/js/offline.js",
     "/js/progress.js",
     "/js/scanner.js",
     "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
@@ -45,6 +50,36 @@ function isStatic(url) {
     return url.origin === self.location.origin && /^\/(css|js|lib)\//.test(url.pathname);
 }
 
+// Stores a newly fetched version and drops older versions of the same file.
+async function store(request, url, response) {
+    const cache = await caches.open(CACHE);
+    const keys = await cache.keys();
+    await Promise.all(keys
+        .filter((k) => new URL(k.url).pathname === url.pathname && k.url !== request.url)
+        .map((k) => cache.delete(k)));
+    await cache.put(request, response);
+}
+
+async function staticResponse(event, request, url) {
+    const cache = await caches.open(CACHE);
+    // Exact URL first: versioned URLs (?v=hash) never change, so no revalidation is needed.
+    const exact = await cache.match(request);
+    if (exact) {
+        return exact;
+    }
+    try {
+        const response = await fetch(request);
+        if (response.ok) {
+            // The page gets the response now; storing it finishes in the background.
+            event.waitUntil(store(request, url, response.clone()));
+        }
+        return response;
+    } catch {
+        // Offline and this version was never fetched: any cached copy of the file beats nothing.
+        return (await cache.match(request, { ignoreSearch: true })) || Response.error();
+    }
+}
+
 self.addEventListener("fetch", (event) => {
     const request = event.request;
     if (request.method !== "GET") {
@@ -54,19 +89,7 @@ self.addEventListener("fetch", (event) => {
     const url = new URL(request.url);
 
     if (isStatic(url)) {
-        // Serve from cache straight away (version query strings ignored), refresh in the background.
-        event.respondWith(caches.open(CACHE).then(async (cache) => {
-            const cached = await cache.match(request, { ignoreSearch: true });
-            const network = fetch(request)
-                .then((response) => {
-                    if (response.ok) {
-                        cache.put(url.pathname, response.clone());
-                    }
-                    return response;
-                })
-                .catch(() => cached);
-            return cached || network;
-        }));
+        event.respondWith(staticResponse(event, request, url));
         return;
     }
 

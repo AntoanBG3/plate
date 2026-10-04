@@ -5,13 +5,14 @@ name: gymtracker
 
 services:
   db:
-    image: postgres:18
+    image: postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
     container_name: gymtracker-db
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=25"]
+    # jit=off: Postgres JIT only pays off for large analytic queries and costs CPU when it kicks in.
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=15", "-c", "jit=off"]
     volumes:
       # The postgres 18 image keeps data under /var/lib/postgresql/18/docker; mount the parent.
       - ../db:/var/lib/postgresql
@@ -21,6 +22,8 @@ services:
       timeout: 5s
       retries: 10
     mem_limit: 256m
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 200
     restart: unless-stopped
 
   app:
@@ -35,12 +38,16 @@ services:
       db:
         condition: service_healthy
     environment:
-      ConnectionStrings__Default: "Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__Default: "Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Maximum Pool Size=8"
       DataProtection__KeysPath: /keys
       ReverseProxy__KnownProxies: 172.30.0.10
       OpenRouter__ApiKey: "${OPENROUTER_API_KEY:-}"
       OpenRouter__Model: "${OPENROUTER_MODEL:-}"
       OpenFoodFacts__ContactEmail: "${OFF_CONTACT_EMAIL:-}"
+      AllowedHosts: "gym.peychev.uk;localhost"
+      # Passkeys are bound to this host name; changing it makes existing passkeys stop working.
+      Passkeys__ServerDomain: gym.peychev.uk
+      Security__CspEnforce: "${CSP_ENFORCE:-false}"
     volumes:
       - ../keys:/keys
     # No published ports: cloudflared reaches http://gymtracker-app:8080 over the tunnel network.
@@ -48,6 +55,14 @@ services:
       - default
       - tunnel
     mem_limit: 256m
+    cpus: "1.0"
+    # Nothing in the image is written at runtime; /tmp and the keys mount are the only writable paths.
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 200
     restart: unless-stopped
 
 networks:

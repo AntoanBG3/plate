@@ -18,7 +18,7 @@
         <div class="list">
             <div class="field-row stacked">
                 <label for="email" class="sr-only">@L["Email"]</label>
-                <input id="email" type="email" name="email" value="@Model.Email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="@L["Email"]" required autofocus />
+                <input id="email" type="email" name="email" value="@Model.Email" autocomplete="username webauthn" autocapitalize="none" spellcheck="false" placeholder="@L["Email"]" required autofocus />
             </div>
             <div class="field-row stacked">
                 <label for="password" class="sr-only">@L["Password"]</label>
@@ -27,4 +27,5 @@
         </div>
         <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Sign in"]</button>
     </form>
+    <button type="button" class="btn btn-secondary btn-block" style="margin-top: var(--s-3)" data-module="passkey-login" hidden>@Ui.Icon("key")@L["Sign in with a passkey"]</button>
 </div>

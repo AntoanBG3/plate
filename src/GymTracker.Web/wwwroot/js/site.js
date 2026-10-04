@@ -37,6 +37,15 @@
         }
     });
 
+    // Destructive forms ask first. Capture phase, so it runs before the busy state and soft navigation.
+    document.addEventListener("submit", (event) => {
+        const form = event.target.closest("form[data-confirm]");
+        if (form && !window.confirm(form.dataset.confirm)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+
     // Forms that take a while (the food text parser): show the busy state and stop a second send.
     document.addEventListener("submit", (event) => {
         const form = event.target.closest("form[data-busy]");
@@ -51,6 +60,16 @@
             form.querySelectorAll("button[type=submit]").forEach((b) => { b.disabled = false; });
         });
     });
+
+    // The anti-forgery token for fetch requests: the layout puts it in <body hx-headers>, and nav.js keeps it
+    // current across page swaps. Read it at send time, never store it.
+    window.gymToken = () => {
+        try {
+            return JSON.parse(document.body.getAttribute("hx-headers") || "{}").RequestVerificationToken || "";
+        } catch {
+            return "";
+        }
+    };
 
     if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(() => {});

@@ -2,6 +2,7 @@
 //   node design-samples/tools/screens.mjs <outDir> [light,dark]
 // Needs playwright-core (NODE_PATH or a local install) and Google Chrome. Demo data: seed-demo.sql.
 import { chromium } from "playwright-core";
+import { signIn } from "./app.mjs";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -43,13 +44,6 @@ const screens = [
     ["not-found", "/train/sessions/999999"],
 ];
 
-async function login(page, email) {
-    await page.goto(`${BASE}/account/login`);
-    await page.fill('input[name="email"]', email);
-    await page.fill('input[name="password"]', "demo-password-123");
-    await Promise.all([page.waitForURL(/\/today/), page.click('button[type="submit"]')]);
-}
-
 async function shot(page, file) {
     await page.waitForLoadState("networkidle").catch(() => {});
     await page.waitForTimeout(400);
@@ -73,7 +67,7 @@ for (const scheme of schemes) {
         await page.goto(`${BASE}/offline.html`);
         await shot(page, path.join(dir, "offline.png"));
 
-        await login(page, "demo@example.test");
+        await signIn(page, BASE, "demo@example.test");
         for (const [name, url] of screens) {
             await page.goto(BASE + url);
             await shot(page, path.join(dir, `${name}.png`));
@@ -96,7 +90,7 @@ for (const scheme of schemes) {
 
         // Empty states with a fresh account.
         await ctx.clearCookies();
-        await login(page, "empty@example.test");
+        await signIn(page, BASE, "empty@example.test");
         for (const [name, url] of [["empty-today", "/today"], ["empty-train", "/train"], ["empty-progress", "/progress"], ["empty-food", "/food"], ["empty-history", "/train/history"]]) {
             await page.goto(BASE + url);
             await shot(page, path.join(dir, `${name}.png`));

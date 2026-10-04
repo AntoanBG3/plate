@@ -221,7 +221,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
     position: relative; flex: 1; min-height: 40px; display: grid; place-items: center; padding: 0 var(--s-2);
     border-radius: 7px; color: var(--label); font-size: var(--text-footnote); font-weight: var(--weight-semibold); text-align: center; line-height: 1.15;
 }
-.segment.is-active, .segment:has(:checked) { background: var(--surface-2); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); view-transition-name: segment-thumb; }
+.segment.is-active, .segment:has(:checked) { background: var(--surface-2); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); }
+/* One sliding thumb per page: a view-transition-name must be unique, or the whole transition is skipped. */
+.segmented[data-thumb] .segment.is-active, .segmented[data-thumb] .segment:has(:checked) { view-transition-name: segment-thumb; }
 :root[data-theme="light"] .segment.is-active, :root[data-theme="light"] .segment:has(:checked) { background: var(--surface); }
 @media (prefers-color-scheme: light) { :root[data-theme="system"] .segment.is-active, :root[data-theme="system"] .segment:has(:checked) { background: var(--surface); } }
 .segment input { position: absolute; opacity: 0; pointer-events: none; }
@@ -555,20 +557,44 @@ body.sheet-open .app-scale {
 .done-btn.is-pressed, .icon-btn.is-pressed, .tab.is-pressed { transform: scale(0.88); }
 
 /* Page transitions between documents: tabs crossfade, deeper pages push in from the right, going up pops back. */
+/* Page changes animate the content and the top bar; the tab bar and the rest of the shell stay still.
+   html[data-nav] is "tab", "forward" or "back" (nav.js for soft navigation, motion.js for full loads). */
 @view-transition { navigation: auto; }
+/* Opaque, so a sliding page never shows the one behind it through its gutters. */
+#main { view-transition-name: page; background: var(--bg); min-height: 100dvh; box-sizing: border-box; }
 .large-title { view-transition-name: large-title; }
 .topbar { view-transition-name: topbar; }
 ::view-transition-group(*) { animation-duration: var(--dur-page); animation-timing-function: var(--ease-gentle); }
-::view-transition-old(root) { animation: 160ms var(--ease-out) both vt-fade-out; }
-::view-transition-new(root) { animation: 240ms var(--ease-out) 40ms both vt-fade-in; }
-html[data-nav="forward"]::view-transition-old(root) { animation: var(--dur-page) var(--ease-gentle) both vt-push-out; }
-html[data-nav="forward"]::view-transition-new(root) { animation: var(--dur-page) var(--ease-gentle) both vt-push-in; }
-html[data-nav="back"]::view-transition-old(root) { animation: var(--dur-page) var(--ease-gentle) both vt-pop-out; z-index: 2; }
-html[data-nav="back"]::view-transition-new(root) { animation: var(--dur-page) var(--ease-gentle) both vt-pop-in; }
+/* The shell swaps instantly; showing both root snapshots at once would add them into a washed-out frame. */
+::view-transition-group(root), ::view-transition-new(root) { animation: none; }
+::view-transition-old(root) { display: none; }
+
+/* Tabs: quick out, springy in. */
+html[data-nav="tab"]::view-transition-group(page) { animation: none; }
+html[data-nav="tab"]::view-transition-old(page) { animation: var(--dur-tab-out) var(--ease-in-out) both vt-tab-out; }
+html[data-nav="tab"]::view-transition-new(page) { animation: var(--dur-tab-in) var(--ease-snappy) 40ms both vt-tab-in; }
+
+/* Push and pop: the page slides like a navigation stack; titles crossfade. */
+html[data-nav="forward"]::view-transition-group(page), html[data-nav="back"]::view-transition-group(page) { animation: none; }
+html[data-nav="forward"]::view-transition-old(page) { animation: var(--dur-page) var(--ease-gentle) both vt-push-out; }
+html[data-nav="forward"]::view-transition-new(page) { animation: var(--dur-page) var(--ease-gentle) both vt-push-in; }
+html[data-nav="back"]::view-transition-old(page) { animation: var(--dur-page) var(--ease-gentle) both vt-pop-out; z-index: 2; }
+html[data-nav="back"]::view-transition-new(page) { animation: var(--dur-page) var(--ease-gentle) both vt-pop-in; }
+html[data-nav]::view-transition-old(topbar) { animation: 120ms var(--ease-out) both vt-fade-out; }
+html[data-nav]::view-transition-new(topbar) { animation: 200ms var(--ease-out) 60ms both vt-fade-in; }
 html[data-nav="forward"]::view-transition-group(large-title), html[data-nav="back"]::view-transition-group(large-title) { animation: none; }
-html[data-nav="forward"]::view-transition-old(large-title), html[data-nav="back"]::view-transition-old(large-title) { animation: 160ms var(--ease-out) both vt-fade-out; }
-html[data-nav="forward"]::view-transition-new(large-title), html[data-nav="back"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-push-in; }
-html[data-nav="back"]::view-transition-new(large-title) { animation-name: vt-fade-in; }
+html[data-nav="forward"]::view-transition-old(large-title), html[data-nav="back"]::view-transition-old(large-title) { animation: 120ms var(--ease-out) both vt-fade-out; }
+html[data-nav="forward"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-push-in; }
+html[data-nav="back"]::view-transition-new(large-title) { animation: 200ms var(--ease-out) both vt-fade-in; }
+@keyframes vt-tab-out { to { opacity: 0; transform: scale(0.985); } }
+@keyframes vt-tab-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* The tapped tab's icon gives a small spring the moment it becomes active. */
+.tab.is-active .icon { animation: tab-pop 360ms var(--ease-snappy); }
+@keyframes tab-pop { 0% { transform: scale(1); } 35% { transform: scale(0.86); } 100% { transform: scale(1); } }
+
+/* The first blocks of a newly shown page rise in, staggered; motion.js sets --i. */
+#main.is-entering > * { animation: appear 320ms var(--ease-snappy) both; animation-delay: calc(var(--i, 0) * 24ms); }
 @keyframes vt-fade-out { to { opacity: 0; } }
 @keyframes vt-fade-in { from { opacity: 0; } }
 @keyframes vt-push-out { to { transform: translateX(-28%); opacity: 0.5; } }
@@ -591,6 +617,7 @@ html[data-nav="back"]::view-transition-new(large-title) { animation-name: vt-fad
     ::view-transition-group(*) { animation-duration: 1ms !important; }
     ::view-transition-old(*) { animation: 150ms linear both vt-fade-out !important; }
     ::view-transition-new(*) { animation: 150ms linear both vt-fade-in !important; }
+    .tab.is-active .icon, #main.is-entering > * { animation: none; }
 }
 
 /* Compact controls get a 44 px hit area without changing how they look. */
@@ -598,3 +625,14 @@ html[data-nav="back"]::view-transition-new(large-title) { animation-name: vt-fad
 .set-row.warmup .set-field::before, .result-amount .grams::before, .portion-line .grams::before { content: ""; position: absolute; inset: -4px 0; }
 .send-btn::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 .section-title .section-aside { padding: 12px 10px; margin: 0 -10px; }
+
+/* Soft navigation (nav.js): a hairline at the top when a page takes longer than 120 ms. */
+html.is-navigating::before {
+    content: ""; position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 1000;
+    background: var(--accent); transform-origin: 0 50%;
+    animation: nav-progress 1.2s var(--ease-out) forwards;
+}
+html.is-navigating #main { opacity: 0.72; transition: opacity 160ms var(--ease-out) 60ms; }
+@keyframes nav-progress { from { transform: scaleX(0); } to { transform: scaleX(0.85); } }
+#main:focus { outline: none; }
+@media (prefers-reduced-motion: reduce) { html.is-navigating::before { animation: none; transform: scaleX(1); opacity: 0.6; } }

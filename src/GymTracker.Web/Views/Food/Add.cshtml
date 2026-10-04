@@ -15,7 +15,7 @@
     <h1 class="large-title">@title</h1>
 </header>
 
-<nav class="segmented tall" aria-label="@L["How to add"]" style="margin-bottom: var(--s-5)">
+<nav class="segmented tall" data-thumb aria-label="@L["How to add"]" style="margin-bottom: var(--s-5)">
     <a class="@TabClass("text")" href="@TabUrl("text")" aria-current="@Current("text")">@L["Type"]</a>
     <a class="@TabClass("barcode")" href="@TabUrl("barcode")" aria-current="@Current("barcode")">@L["Scan"]</a>
     <a class="@TabClass("search")" href="@TabUrl("search")" aria-current="@Current("search")">@L["Search"]</a>
@@ -194,7 +194,7 @@
 @section Overlays {
     @if (Model.Tab == "barcode")
     {
-        <div class="sheet" id="scanner" hidden>
+        <div class="sheet" id="scanner" data-module="scanner" hidden>
             <div class="sheet-scrim"></div>
             <div class="sheet-panel full scanner-panel" role="dialog" aria-modal="true" aria-labelledby="scanner-title">
                 <div class="sheet-grabber" aria-hidden="true" style="background: rgb(255 255 255 / 0.4)"></div>

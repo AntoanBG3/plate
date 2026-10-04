@@ -11,7 +11,7 @@
 @section TopbarTrailing {
     @if (session.IsActive)
     {
-        <form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/finish" onsubmit="return confirm(this.dataset.confirm)" data-confirm="@L["Finish this workout?"]">
+        <form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/finish" data-confirm="@L["Finish this workout?"]">
             <button type="submit" class="topbar-action">@L["Finish"]</button>
         </form>
     }
@@ -61,14 +61,14 @@
                 @Ui.Icon("chevron", "row-chevron")
             </a>
         </div>
-        <form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/delete" onsubmit="return confirm(this.dataset.confirm)" data-confirm="@L["Delete this workout and all its sets? This can't be undone."]" style="margin-top: var(--s-4)">
+        <form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/delete" data-confirm="@L["Delete this workout and all its sets? This can't be undone."]" style="margin-top: var(--s-4)">
             <button type="submit" class="btn btn-destructive btn-block">@L["Delete workout"]</button>
         </form>
     </div>
 }
 
 @* session.js reads these: which session pending sets belong to, and where the rest timer and queue state show. *@
-<div id="session" data-session-id="@session.Id" data-active="@(session.IsActive ? "true" : "false")" hidden></div>
+<div id="session" data-module="session" data-session-id="@session.Id" data-active="@(session.IsActive ? "true" : "false")" hidden></div>
 
 @section Overlays {
     @if (session.IsActive)

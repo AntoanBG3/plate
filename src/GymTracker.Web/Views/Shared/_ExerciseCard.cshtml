@@ -17,7 +17,7 @@
             <div class="menu" role="menu">
                 <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="-1" /><button type="submit" role="menuitem">@L["Move up"]@Ui.Icon("up")</button></form>
                 <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" role="menuitem">@L["Move down"]@Ui.Icon("down")</button></form>
-                <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/remove" onsubmit="return confirm(this.dataset.confirm)" data-confirm="@L["Remove this exercise and its sets from the workout?"]"><button type="submit" role="menuitem" class="danger">@L["Remove exercise"]@Ui.Icon("trash")</button></form>
+                <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/remove" data-confirm="@L["Remove this exercise and its sets from the workout?"]"><button type="submit" role="menuitem" class="danger">@L["Remove exercise"]@Ui.Icon("trash")</button></form>
             </div>
         </div>
     </div>

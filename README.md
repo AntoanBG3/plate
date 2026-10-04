@@ -96,11 +96,39 @@ Public registration does not exist. Create each account once:
 docker exec -it gymtracker-app dotnet GymTracker.Web.dll create-user --email someone@example.com --name "Display name"
 ```
 
-Passwords need at least 12 characters. Five wrong passwords lock the account for 15 minutes.
+Passwords need at least 12 characters. Five wrong passwords lock the account for 15 minutes. Sign-in attempts are also limited per address (10 per 5 minutes) and across all addresses together (30 per 15 minutes); failed attempts are logged with the reason and address (`docker logs gymtracker-app | grep "Failed sign-in"`).
+
+After signing in on each iPhone, add a passkey under Settings → Passkeys; from then on "Sign in with a passkey" (or the keyboard's autofill bar) signs in with Face ID. Passwords keep working. Passkeys are bound to `gym.peychev.uk` (`Passkeys__ServerDomain` in the compose file); changing the host name makes them stop working.
+
+The data protection keys in `~/docker/gymtracker/keys` can forge sign-in cookies and decrypt the stored OpenRouter key. Keep the folder private (once, on wizard):
+
+```sh
+sudo chown -R 1000:1000 ~/docker/gymtracker/keys
+sudo chmod 700 ~/docker/gymtracker/keys
+```
+
+The nightly backup copies it to the HDD and the PC, so keep those private too.
 
 ### Cloudflare
 
 In the Zero Trust dashboard, add a public hostname to the "wizard" tunnel: `gym.peychev.uk` → `http://gymtracker-app:8080`. Do not add a Cloudflare Access application for it (SPEC section 9 explains why).
+
+In the zone settings for `peychev.uk`, for this host:
+
+- Speed → Optimization: turn off Rocket Loader. Scrape Shield: turn off Email Address Obfuscation. Web Analytics: no automatic injection for `gym.peychev.uk`. Each one injects scripts the Content Security Policy blocks.
+- Caching → Configuration: set Browser Cache TTL to "Respect Existing Headers".
+
+The app only answers requests addressed to `gym.peychev.uk` or `localhost` (`AllowedHosts` in the compose file). After the first deploy, `curl -sI https://gym.peychev.uk/account/login | head -1` must print `HTTP/2 200`; a 400 means the tunnel sends another Host header, which then needs adding to `AllowedHosts`.
+
+### Content Security Policy
+
+The app sends its CSP report-only at first and logs what it would block. After a few days of normal use on both phones, check the log:
+
+```sh
+docker logs gymtracker-app 2>&1 | grep "CSP violation"
+```
+
+If it is empty, set `CSP_ENFORCE=true` in `docker/.env` and run `docker compose -f docker/docker-compose.yml up -d`.
 
 ### Backups
 
@@ -144,7 +172,7 @@ tools/restore-drill.sh nightly    # uses /mnt/storage/backups/latest/gymtracker-
 
 ### Memory limits
 
-Both containers start with `mem_limit: 256m`. Right after deployment the app used about 115 MB and Postgres about 38 MB. After a week of real use, read the peaks in Beszel and set each limit to roughly twice its peak in `docker/docker-compose.yml`.
+Both containers start with `mem_limit: 256m`. The app uses workstation garbage collection (one heap; server GC on wizard's 4 cores held about 200 MB) and has `cpus: "1.0"`. After a week of real use, read the peaks in Beszel and set each limit to roughly twice its peak in `docker/docker-compose.yml`. `docker logs gymtracker-app | grep "GC:"` shows the GC mode the app started with.
 
 ### Updating
 
@@ -156,6 +184,18 @@ docker compose -f docker/docker-compose.yml up -d --build && docker builder prun
 ```
 
 Migrations run automatically when the app starts.
+
+### Updating base images
+
+The Dockerfile and compose file pin the .NET and Postgres images by digest, so a rebuild never pulls a different image by surprise. About once a month, look up the current digests and replace the `@sha256:...` parts:
+
+```sh
+docker buildx imagetools inspect mcr.microsoft.com/dotnet/sdk:10.0 --format '{{json .Manifest.Digest}}'
+docker buildx imagetools inspect mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra --format '{{json .Manifest.Digest}}'
+docker buildx imagetools inspect postgres:18 --format '{{json .Manifest.Digest}}'
+```
+
+The build also fails when a NuGet package has a known high or critical advisory; update that package when it does.
 
 ## Installing on iPhone
 

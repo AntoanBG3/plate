@@ -17,24 +17,24 @@
     var message = Notices.Read(TempData[Notices.MessageKey]);
 }
 <!DOCTYPE html>
-<html lang="@prefs.LangAttribute" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth">
+<html lang="@prefs.LangAttribute" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth" data-shell="@prefs.LangAttribute-@(Context.User.Identity?.IsAuthenticated == true ? "in" : "out")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     @switch (prefs.Theme)
     {
         case Theme.Light:
-            <meta name="theme-color" content="#f5f5f7" />
-            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+            <meta data-page-head name="theme-color" content="#f5f5f7" />
+            <meta data-page-head name="apple-mobile-web-app-status-bar-style" content="default" />
             break;
         case Theme.System:
-            <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
-            <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
-            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+            <meta data-page-head name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
+            <meta data-page-head name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+            <meta data-page-head name="apple-mobile-web-app-status-bar-style" content="default" />
             break;
         default:
-            <meta name="theme-color" content="#000000" />
-            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+            <meta data-page-head name="theme-color" content="#000000" />
+            <meta data-page-head name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
             break;
     }
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -43,17 +43,20 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icons/icon-32.png" type="image/png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML","historyCacheSize":0}' />
+    <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML","historyCacheSize":0,"allowEval":false,"includeIndicatorStyles":false,"selfRequestsOnly":true}' />
     <title>@(title is not null ? $"{title} · Gym" : "Gym")</title>
     <link rel="stylesheet" href="~/lib/fonts/fonts.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
     <script type="application/json" id="i18n">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(ScriptText.For(L)))</script>
     <script src="~/js/i18n.js" asp-append-version="true"></script>
+    <script src="~/js/pages.js" asp-append-version="true"></script>
     <script src="~/lib/htmx/htmx.min.js" asp-append-version="true" defer></script>
     <script src="~/js/motion.js" asp-append-version="true" defer></script>
     <script src="~/js/site.js" asp-append-version="true" defer></script>
     <script src="~/js/session.js" asp-append-version="true" defer></script>
+    <script src="~/js/passkey.js" asp-append-version="true" defer></script>
+    <script src="~/js/nav.js" asp-append-version="true" defer></script>
 </head>
 <body class="@(showTabs ? null : "no-tabs")" hx-headers='{"RequestVerificationToken": "@token"}'>
     <partial name="_Icons" />
@@ -68,7 +71,7 @@
             <span class="topbar-title" aria-hidden="true">@title</span>
             <div class="topbar-trailing">@await RenderSectionAsync("TopbarTrailing", required: false)</div>
         </header>
-        <main class="page" id="main">
+        <main class="page" id="main" tabindex="-1">
             @if (error is not null)
             {
                 <div class="banner is-error" role="alert">@Ui.Icon("alert")<span>@L[error]</span></div>
@@ -91,6 +94,6 @@
         }
     </div>
     <div id="toast" class="toast" role="alert" hidden></div>
-    @await RenderSectionAsync("Overlays", required: false)
+    <div id="overlays">@await RenderSectionAsync("Overlays", required: false)</div>
 </body>
 </html>
