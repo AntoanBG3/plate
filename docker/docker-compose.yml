@@ -22,6 +22,8 @@ services:
       timeout: 5s
       retries: 10
     mem_limit: 256m
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 200
     restart: unless-stopped
 
   app:
@@ -52,6 +54,13 @@ services:
       - tunnel
     mem_limit: 256m
     cpus: "1.0"
+    # Nothing in the image is written at runtime; /tmp and the keys mount are the only writable paths.
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 200
     restart: unless-stopped
 
 networks:
