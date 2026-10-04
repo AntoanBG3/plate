@@ -53,6 +53,8 @@ services:
       Security__CspEnforce: "${CSP_ENFORCE:-false}"
       Telegram__BotToken: "${TELEGRAM_BOT_TOKEN:-}"
       Telegram__ChatId: "${TELEGRAM_CHAT_ID:-}"
+      Admin__CloudflareAccess__TeamDomain: "${CF_ACCESS_TEAM_DOMAIN:-}"
+      Admin__CloudflareAccess__Audience: "${CF_ACCESS_AUD:-}"
     volumes:
       - ../keys:/keys
     # No published ports: cloudflared reaches http://gymtracker-app:8080 over the tunnel network.

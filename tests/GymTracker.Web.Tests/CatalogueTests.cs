@@ -62,7 +62,7 @@ public partial class CatalogueTests(ITestOutputHelper output)
         var files = Directory.EnumerateFiles(Web, "*.cshtml", SearchOption.AllDirectories)
             .Concat(Directory.EnumerateFiles(Web, "*.cs", SearchOption.AllDirectories))
             .Concat(Directory.EnumerateFiles(Path.Combine(Repo, "src", "GymTracker.Core"), "*.cs", SearchOption.AllDirectories))
-            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}") && !f.Contains("Migrations") && !f.Contains($"{Path.DirectorySeparatorChar}Cli{Path.DirectorySeparatorChar}"));
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}") && !f.Contains("Migrations") && !f.Contains($"{Path.DirectorySeparatorChar}Cli{Path.DirectorySeparatorChar}") && !IsAdmin(f));
         foreach (var file in files)
         {
             var where = Path.GetRelativePath(Repo, file);
@@ -115,6 +115,14 @@ public partial class CatalogueTests(ITestOutputHelper output)
         }
 
         return keys;
+    }
+
+    // The admin area is English only: only the developer sees it (SPEC 12).
+    private static bool IsAdmin(string file)
+    {
+        var sep = Path.DirectorySeparatorChar;
+        return file.Contains($"{sep}Views{sep}Admin") || file.Contains($"{sep}Features{sep}Admin{sep}")
+            || (file.Contains($"{sep}Controllers{sep}") && Path.GetFileName(file).StartsWith("Admin", StringComparison.Ordinal));
     }
 
     [Fact]

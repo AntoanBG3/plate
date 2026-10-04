@@ -14,6 +14,8 @@ public static class RateLimits
     public const string PasskeyOptions = "passkey-options";
     public const string Feedback = "feedback";
     public const string ClientError = "client-error";
+    public const string Admin = "admin";
+    public const string AdminUnlock = "admin-unlock";
 }
 
 /// <summary>Maps service exceptions to HTTP responses so controllers stay thin.</summary>

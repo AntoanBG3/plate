@@ -1,0 +1,54 @@
+@model AdminFeedbackList
+@{
+    ViewData["Title"] = "Reports";
+    ViewData["BackUrl"] = "/admin";
+    ViewData["BackLabel"] = "Admin";
+    var f = Model.Filter;
+}
+<header class="page-head">
+    <h1 class="large-title">Reports</h1>
+</header>
+<partial name="_AdminNav" />
+
+<form method="get" action="/admin/feedback" class="section" data-autosubmit>
+    <div class="list">
+        <div class="field-row">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                @foreach (var s in new[] { "open", "all" }.Concat(Enum.GetNames<FeedbackStatus>()))
+                {
+                    <option value="@s" selected="@(string.Equals(s, f.Status, StringComparison.OrdinalIgnoreCase))">@s</option>
+                }
+            </select>
+        </div>
+        <div class="field-row">
+            <label for="since">Since</label>
+            <select id="since" name="since">
+                @foreach (var s in new[] { "7d", "30d", "90d", "365d" })
+                {
+                    <option value="@s" selected="@(s == f.Since)">@s</option>
+                }
+            </select>
+        </div>
+        <div class="field-row">
+            <label for="area">Area</label>
+            <select id="area" name="area">
+                <option value="">Any</option>
+                @foreach (var a in Enum.GetValues<FeedbackArea>())
+                {
+                    <option value="@a" selected="@(a == f.Area)">@a</option>
+                }
+            </select>
+        </div>
+        <div class="field-row">
+            <label for="ratings">Include thumbs up</label>
+            <input id="ratings" class="check-input" type="checkbox" name="ratings" value="true" checked="@f.Ratings" />
+        </div>
+    </div>
+    <noscript><button type="submit" class="btn btn-plain">Filter</button></noscript>
+</form>
+
+<section class="section">
+    <partial name="_ReportRows" model="Model.Rows.ToList()" />
+    <p class="section-footer">@Model.Rows.Count reports.</p>
+</section>

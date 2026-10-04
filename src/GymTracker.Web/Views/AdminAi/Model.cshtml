@@ -3,8 +3,8 @@
 @{
     var title = Model.Task == AiTask.Parser ? L["Food parser"] : L["Food matcher"];
     ViewData["Title"] = title;
-    ViewData["BackUrl"] = "/settings";
-    ViewData["BackLabel"] = L["Settings"];
+    ViewData["BackUrl"] = "/admin/ai";
+    ViewData["BackLabel"] = "AI";
 }
 <header class="page-head">
     <h1 class="large-title">@title</h1>
@@ -33,7 +33,7 @@ else
                     @foreach (var m in group)
                     {
                         var current = m.Id == Model.Current;
-                        <form method="post" asp-antiforgery="true" action="/settings/model/@AiTasks.Slug(Model.Task)" class="row row-link" data-filter-item="@group.Key @m.Name @m.Id">
+                        <form method="post" asp-antiforgery="true" action="/admin/ai/model/@AiTasks.Slug(Model.Task)" class="row row-link" data-filter-item="@group.Key @m.Name @m.Id">
                             <input type="hidden" name="modelId" value="@m.Id" />
                             <button type="submit" class="row-main" style="text-align: left; display: flex; justify-content: space-between; gap: var(--s-3); align-items: center; min-height: 22px" aria-current="@(current ? "true" : null)">
                                 <span style="min-width: 0">

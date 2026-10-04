@@ -7,39 +7,51 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Features.Feedback;
 
-/// <summary>
-/// <c>feedback eval</c>: re-runs the live parser and matcher on confirmed parses and compares the result with what
-/// the user saved (SPEC 11). It spends OpenRouter credit, so it is only run by hand, never by the tests.
-/// Each case runs as its own user, so their saved foods are in the matching as they were.
-/// </summary>
-public static class ParseEvaluation
+/// <param name="ParserModel">Null for the model picked in the admin area.</param>
+/// <param name="MatcherModel">"off", a decision model id, or null for the one picked in the admin area.</param>
+public record EvalRequest(DateTimeOffset Since, bool FlaggedOnly, int Limit, string? ParserModel, string? MatcherModel);
+
+public record EvalFresh(string Description, decimal Grams, int? FoodItemId, string? MatchedName);
+
+public record EvalCaseResult(int RunId, string Text, AgreementResult Score, int RepeatedWrongFoods, string? Error, IReadOnlyList<EvalFresh> Fresh);
+
+public record EvalReport(string ParserModel, string MatcherModel, AgreementResult Total, int RepeatedWrongFoods, IReadOnlyList<EvalCaseResult> Cases)
 {
-    public static async Task<int> RunAsync(IServiceProvider services, FeedbackAdmin admin, string[] args, TextWriter o, bool json, CancellationToken ct)
+    public static string Percent(int n, int of) => of == 0 ? "-" : $"{100.0 * n / of:0}%";
+}
+
+/// <summary>
+/// Re-runs the live parser and matcher on confirmed parses and compares the result with what the user saved
+/// (SPEC 11). It spends OpenRouter credit, so it only runs by hand: <c>feedback eval</c> or the admin area's Eval page,
+/// never the tests. Each case runs as its own user, so their saved foods are in the matching as they were.
+/// </summary>
+public interface IParseEvaluator
+{
+    /// <param name="onCase">Called after each case with the result and the number done out of the total.</param>
+    Task<EvalReport> RunAsync(EvalRequest request, Action<EvalCaseResult, int, int>? onCase, CancellationToken ct);
+}
+
+public class ParseEvaluator(
+    OpenRouterSettings settings,
+    FeedbackAdmin admin,
+    OpenRouterFoodParser parser,
+    JevFoodMatchDecider jev,
+    DbContextOptions<AppDbContext> options,
+    IFoodDatabase foodDatabase,
+    AppDbContext rootDb) : IParseEvaluator
+{
+    public async Task<EvalReport> RunAsync(EvalRequest request, Action<EvalCaseResult, int, int>? onCase, CancellationToken ct)
     {
-        var settings = services.GetRequiredService<OpenRouterSettings>();
-        if (await settings.GetKeyAsync(ct) is not { } key)
-        {
-            Console.Error.WriteLine("No OpenRouter key is set, so there is nothing to evaluate against.");
-            return 1;
-        }
-
-        var parserModel = Option(args, "--parser") ?? await settings.GetModelAsync(AiTask.Parser, ct);
-        var matcherModel = Option(args, "--matcher") is { } m ? (m.Equals("jev", StringComparison.OrdinalIgnoreCase) ? JevFoodMatchDecider.Jev113 : m.ToLowerInvariant())
+        var key = await settings.GetKeyAsync(ct) ?? throw new ValidationException("No OpenRouter key is set.");
+        var parserModel = request.ParserModel ?? await settings.GetModelAsync(AiTask.Parser, ct);
+        var matcherModel = request.MatcherModel is { } m
+            ? m.Equals("jev", StringComparison.OrdinalIgnoreCase) ? JevFoodMatchDecider.Jev113 : m.ToLowerInvariant()
             : await settings.GetModelAsync(AiTask.Matcher, ct);
-        var since = Cli.FeedbackCommand.Since(Option(args, "--since"), TimeSpan.FromDays(365))!.Value;
-        var limit = int.TryParse(Option(args, "--limit"), CultureInfo.InvariantCulture, out var l) && l > 0 ? l : 20;
 
-        var cases = (await admin.EvalCasesAsync(since, args.Contains("--flagged"), ct)).TakeLast(limit).ToList();
-        var parser = services.GetRequiredService<OpenRouterFoodParser>();
-        var jev = services.GetRequiredService<JevFoodMatchDecider>();
-        var options = services.GetRequiredService<DbContextOptions<AppDbContext>>();
-        var foodDatabase = services.GetRequiredService<IFoodDatabase>();
-        var rootDb = services.GetRequiredService<AppDbContext>();
-
-        o.WriteLine($"Evaluating {cases.Count} parses with parser {parserModel} and matcher {matcherModel}.");
+        var cases = (await admin.EvalCasesAsync(request.Since, request.FlaggedOnly, ct)).TakeLast(request.Limit).ToList();
         var total = AgreementResult.Zero;
         var repeats = 0;
-        var results = new List<object>();
+        var results = new List<EvalCaseResult>();
         foreach (var c in cases)
         {
             var userId = await rootDb.ParseRuns.IgnoreQueryFilters().Where(r => r.Id == c.RunId).Select(r => r.UserId).SingleAsync(ct);
@@ -58,35 +70,13 @@ public static class ParseEvaluation
             var repeated = c.Items.Count(i => i.Verdict == EvalVerdict.WrongFood && i.FoodItemId is { } bad && fresh.Any(f => f.FoodItemId == bad));
             repeats += repeated;
             total += score;
-            results.Add(new { c.RunId, c.Text, score, repeatedWrongFoods = repeated, error = parsed.Error?.ToString(), fresh = fresh.Select(f => new { f.Description, f.Grams, f.FoodItemId, f.MatchedName }) });
-            if (!json)
-            {
-                o.WriteLine($"run {c.RunId,-5} food {score.FoodAgreed}/{score.Expected}, grams {score.GramsAgreed}/{score.Expected}, extra {score.Extra}{(repeated > 0 ? $", picked a rejected food {repeated}x" : "")}  \"{Clip(c.Text)}\""
-                    + (parsed.Error is { } error ? $"  [{error}]" : ""));
-            }
+            var result = new EvalCaseResult(c.RunId, c.Text, score, repeated, parsed.Error?.ToString(),
+                fresh.Select(f => new EvalFresh(f.Description, f.Grams, f.FoodItemId, f.MatchedName)).ToList());
+            results.Add(result);
+            onCase?.Invoke(result, results.Count, cases.Count);
         }
 
-        if (json)
-        {
-            Cli.FeedbackCommand.WriteJson(o, new { parserModel, matcherModel, total, repeatedWrongFoods = repeats, cases = results });
-        }
-        else
-        {
-            o.WriteLine($"Total: food {total.FoodAgreed}/{total.Expected} ({Percent(total.FoodAgreed, total.Expected)}), grams {total.GramsAgreed}/{total.Expected} ({Percent(total.GramsAgreed, total.Expected)}), extra items {total.Extra}, rejected foods picked again {repeats}.");
-            o.WriteLine("Cost is not reported here; check the OpenRouter activity page.");
-        }
-
-        return 0;
-    }
-
-    private static string Percent(int n, int of) => of == 0 ? "-" : $"{100.0 * n / of:0}%";
-
-    private static string Clip(string text) => text.Length > 60 ? text[..60] + "…" : text;
-
-    private static string? Option(string[] args, string name)
-    {
-        var index = Array.IndexOf(args, name);
-        return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
+        return new EvalReport(parserModel, matcherModel, total, repeats, results);
     }
 
     private sealed class NoDecider : IFoodMatchDecider
@@ -98,5 +88,69 @@ public static class ParseEvaluation
     {
         public Task<MatchDecisions?> DecideAsync(string text, IReadOnlyList<MatchQuestion> questions, CancellationToken ct) =>
             jev.DecideAsync(text, questions, key, model, ct);
+    }
+}
+
+/// <summary><c>feedback eval</c>: the evaluation with text or JSON output.</summary>
+public static class ParseEvaluation
+{
+    public static async Task<int> RunAsync(IServiceProvider services, string[] args, TextWriter o, bool json, CancellationToken ct)
+    {
+        var request = new EvalRequest(
+            Cli.FeedbackCommand.Since(Option(args, "--since"), TimeSpan.FromDays(365))!.Value,
+            args.Contains("--flagged"),
+            int.TryParse(Option(args, "--limit"), CultureInfo.InvariantCulture, out var l) && l > 0 ? l : 20,
+            Option(args, "--parser"),
+            Option(args, "--matcher"));
+        if (await services.GetRequiredService<OpenRouterSettings>().GetKeyAsync(ct) is null)
+        {
+            Console.Error.WriteLine("No OpenRouter key is set, so there is nothing to evaluate against.");
+            return 1;
+        }
+
+        var started = false;
+        var report = await services.GetRequiredService<IParseEvaluator>().RunAsync(request, (c, done, total) =>
+        {
+            if (json)
+            {
+                return;
+            }
+
+            if (!started)
+            {
+                started = true;
+                o.WriteLine($"Evaluating {total} parses.");
+            }
+
+            o.WriteLine(CaseLine(c));
+        }, ct);
+
+        if (json)
+        {
+            Cli.FeedbackCommand.WriteJson(o, new { report.ParserModel, report.MatcherModel, total = report.Total, repeatedWrongFoods = report.RepeatedWrongFoods, cases = report.Cases });
+        }
+        else
+        {
+            o.WriteLine($"Parser {report.ParserModel}, matcher {report.MatcherModel}.");
+            o.WriteLine(TotalLine(report));
+            o.WriteLine("Cost is not reported here; check the OpenRouter activity page.");
+        }
+
+        return 0;
+    }
+
+    public static string CaseLine(EvalCaseResult c) =>
+        $"run {c.RunId,-5} food {c.Score.FoodAgreed}/{c.Score.Expected}, grams {c.Score.GramsAgreed}/{c.Score.Expected}, extra {c.Score.Extra}{(c.RepeatedWrongFoods > 0 ? $", picked a rejected food {c.RepeatedWrongFoods}x" : "")}  \"{Clip(c.Text)}\""
+        + (c.Error is { } error ? $"  [{error}]" : "");
+
+    public static string TotalLine(EvalReport r) =>
+        $"Total: food {r.Total.FoodAgreed}/{r.Total.Expected} ({EvalReport.Percent(r.Total.FoodAgreed, r.Total.Expected)}), grams {r.Total.GramsAgreed}/{r.Total.Expected} ({EvalReport.Percent(r.Total.GramsAgreed, r.Total.Expected)}), extra items {r.Total.Extra}, rejected foods picked again {r.RepeatedWrongFoods}.";
+
+    private static string Clip(string text) => text.Length > 60 ? text[..60] + "…" : text;
+
+    private static string? Option(string[] args, string name)
+    {
+        var index = Array.IndexOf(args, name);
+        return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
     }
 }

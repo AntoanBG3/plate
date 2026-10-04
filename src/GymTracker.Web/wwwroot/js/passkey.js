@@ -123,6 +123,28 @@
         }
     }
 
+    // The admin area's unlock (SPEC 12): one of this account's own passkeys, with Face ID or Touch ID.
+    async function unlock(button) {
+        button.disabled = true;
+        try {
+            const options = await (await post("/admin/unlock/options")).json();
+            const credential = await navigator.credentials.get({ publicKey: requestOptions(options) });
+            const returnUrl = new URLSearchParams(location.search).get("returnUrl");
+            const result = await (await post("/admin/unlock", { credential: credentialJson(credential), returnUrl })).json();
+            location.href = result.redirect;
+        } catch (e) {
+            if (!cancelled(e)) {
+                window.gymToast(t("That passkey didn't work. Try again."));
+            }
+            button.disabled = false;
+        }
+    }
+
+    window.gymModule("passkey-unlock", (button) => {
+        button.hidden = false;
+        button.addEventListener("click", () => unlock(button));
+    });
+
     window.gymModule("passkey-add", (button) => {
         button.hidden = false;
         button.addEventListener("click", () => register(button));

@@ -115,3 +115,20 @@ public record ModelPickerViewModel(GymTracker.Web.Integrations.AiTask Task, IRea
     IReadOnlyDictionary<string, GymTracker.Core.Nutrition.ModelStats>? Accuracy = null);
 
 public record FeedbackFormViewModel(GymTracker.Web.Features.Feedback.ReportDraft Draft, Guid ClientId, string? TraceId, string? Page);
+
+public record AdminDashboard(GymTracker.Web.Features.Feedback.Digest Digest, GymTracker.Web.Integrations.OpenRouterKeyStatus Key, IReadOnlyList<AiTaskStatus> Models,
+    DateTimeOffset? UnlockEnds);
+
+public record AdminUserRow(string Name, string Email, bool Dev, int Passkeys, DateTimeOffset? LastReport);
+
+public record AdminAuditRow(GymTracker.Web.Data.AdminAudit Entry, string? Email);
+
+public record AdminFeedbackFilter(string Status, string Since, GymTracker.Core.Domain.FeedbackArea? Area, bool Ratings);
+
+public record AdminFeedbackList(AdminFeedbackFilter Filter, IReadOnlyList<GymTracker.Web.Features.Feedback.FeedbackRow> Rows);
+
+public record AdminParseList(bool Flagged, string Since, IReadOnlyList<GymTracker.Web.Features.Feedback.ParseRunDetail> Runs);
+
+public record AdminErrorList(string Since, IReadOnlyList<GymTracker.Core.Domain.ErrorEvent> Errors);
+
+public record AdminEvalPage(GymTracker.Web.Features.Admin.EvalJob? Job, string ParserModel, string MatcherModel, bool HasKey);

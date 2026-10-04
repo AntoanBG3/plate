@@ -1,0 +1,63 @@
+@model OpenRouterStatus
+@using GymTracker.Web.Integrations
+@{
+    ViewData["Title"] = "AI";
+    ViewData["BackUrl"] = "/admin";
+    ViewData["BackLabel"] = "Admin";
+}
+<header class="page-head">
+    <h1 class="large-title">AI</h1>
+</header>
+<partial name="_AdminNav" />
+
+<section class="section">
+    <h2 class="section-title">OpenRouter key</h2>
+    <div class="list">
+        <div class="row">
+            <span class="row-main">
+                <span class="row-title">@(Model.Key.Source switch { KeySource.Settings => "Saved in the app (encrypted)", KeySource.Environment => "From the server's .env", _ => "No key" })</span>
+                @if (Model.Key.Last4 is not null)
+                {
+                    <span class="row-sub" style="display: block">ending @Model.Key.Last4</span>
+                }
+            </span>
+        </div>
+        <form method="post" asp-antiforgery="true" action="/admin/ai/key">
+            <div class="field-row stacked">
+                <label for="apiKey" class="sr-only">New key</label>
+                <input id="apiKey" type="password" name="apiKey" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="@OpenRouterSettings.MaxLength" required placeholder="Paste a new key" />
+            </div>
+            <div class="row" style="padding-top: 0; padding-bottom: 0"><button type="submit" class="btn btn-plain" style="padding: 0">Save and test key</button></div>
+        </form>
+        @if (Model.Key.Source != KeySource.None)
+        {
+            <form method="post" asp-antiforgery="true" action="/admin/ai/key/test" class="row" style="padding-top: 0; padding-bottom: 0">
+                <button type="submit" class="btn btn-plain" style="padding: 0">Test key</button>
+            </form>
+        }
+        @if (Model.Key.Source == KeySource.Settings)
+        {
+            <form method="post" asp-antiforgery="true" action="/admin/ai/key/remove" class="row" style="padding-top: 0; padding-bottom: 0" data-confirm="Remove the saved key? Food parsing falls back to the server's key, or the simple parser.">
+                <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--destructive)">Remove key</button>
+            </form>
+        }
+    </div>
+    <p class="section-footer">A key saved here wins over OPENROUTER_API_KEY. Only its last four characters are ever shown. Changes are audited and sent to Telegram.</p>
+</section>
+
+<section class="section">
+    <h2 class="section-title">Models</h2>
+    <div class="list">
+        @foreach (var task in Model.Tasks)
+        {
+            <a class="row row-link" href="/admin/ai/model/@AiTasks.Slug(task.Task)">
+                <span class="row-main">
+                    <span class="row-title">@(task.Task == AiTask.Parser ? "Food parser" : "Food matcher")</span>
+                    <span class="row-sub admin-text" style="display: block">@(task.Model == AiTasks.Off ? "Off: database ranking only" : task.ModelInfo?.Name ?? task.Model)@(task.ModelInfo is { } info && task.Model != AiTasks.Off ? " · " + L[info.Price] : "")</span>
+                </span>
+                @Ui.Icon("chevron", "row-chevron")
+            </a>
+        }
+    </div>
+    <p class="section-footer">Shared by both accounts. The other account sees the model names in Settings, read-only.</p>
+</section>

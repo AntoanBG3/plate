@@ -116,7 +116,7 @@ The nightly backup copies it to the HDD and the PC, so keep those private too.
 
 ### Cloudflare
 
-In the Zero Trust dashboard, add a public hostname to the "wizard" tunnel: `gym.peychev.uk` → `http://gymtracker-app:8080`. Do not add a Cloudflare Access application for it (SPEC section 9 explains why).
+In the Zero Trust dashboard, add a public hostname to the "wizard" tunnel: `gym.peychev.uk` → `http://gymtracker-app:8080`. Do not add a Cloudflare Access application for the whole host (SPEC section 9 explains why); only `/admin` gets one (Admin, below).
 
 In the zone settings for `peychev.uk`, for this host:
 
@@ -208,6 +208,43 @@ ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll feedback status 
 For a Telegram message on each new report and each new kind of error, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `docker/.env` (the backup script's bot works) and restart the app. Only a report's number, the reporter's name, kind, area and first 80 characters are sent.
 
 The feedback CLI starts a second .NET process in the app container. If `docker stats gymtracker-app` shows the 256 MB limit being approached while it runs, use `docker compose -f docker/docker-compose.yml run --rm --no-deps app feedback ...` from `~/docker/gymtracker` instead.
+
+### Admin
+
+The developer's account has an admin area at `/admin` (Settings → Admin): reports with status and reply, parse runs, errors, What's new, the OpenRouter key and AI models, the parse evaluation, users and an audit log (SPEC section 12). The other account sees the AI models read-only and gets a 404 there. Getting in takes three things:
+
+1. The `Dev` role, given only over SSH:
+
+   ```sh
+   ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll role grant dev --email <your account email>
+   ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll role list
+   ```
+
+   It shows up in a signed-in session within 5 minutes, or at the next sign-in. `role revoke dev --email ...` closes the area at once.
+
+2. Cloudflare Access in front of `/admin`. In the Zero Trust dashboard: Access → Applications → Add an application → Self-hosted. Name it "GymTracker admin", with the public hostname `gym.peychev.uk` and the path `admin`. Set the session duration to 24 hours. Add a policy "Developer" with the action Allow, and include Emails → `<your account email>`. Use the One-time PIN login method. Save it, then open the application's Overview and copy the Application Audience (AUD) tag. The team domain is under Settings → Custom Pages (`<team>.cloudflareaccess.com`). Put both in `~/docker/gymtracker/docker/.env`:
+
+   ```sh
+   CF_ACCESS_TEAM_DOMAIN=<team>.cloudflareaccess.com
+   CF_ACCESS_AUD=<the AUD tag>
+   ```
+
+   Then restart with `docker compose -f docker/docker-compose.yml up -d`. Until both are set, the admin area stays off in production (a warning at startup says so). The app checks the token Access adds to each request, so the area can't be reached around Access. Afterwards, `curl -sI https://gym.peychev.uk/admin` should be answered by Cloudflare (a redirect to its login), not by the app.
+
+3. A passkey unlock with Face ID on `/admin/unlock`, using a passkey of this account (Settings → Passkeys). It lasts 30 minutes after the last admin page, and 4 hours at most. Lock now, log out and Log out everywhere end it. Each unlock sends a Telegram message.
+
+If the Access login doesn't hand back to the installed home-screen app, open `https://gym.peychev.uk/admin` in Safari instead.
+
+The same things work over SSH:
+
+```sh
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll ai show
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll ai set-model matcher off
+ssh -t wizard docker exec -it gymtracker-app dotnet GymTracker.Web.dll ai set-key     # asks for the key without echoing it
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll admin audit --since 30d
+```
+
+`ai set-key` reads the key from standard input and never from an argument, so it stays out of shell history and the process list.
 
 ### Updating base images
 

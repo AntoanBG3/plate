@@ -1,0 +1,12 @@
+@model string
+@{
+    ViewData["Title"] = "Unlock admin";
+    ViewData["BackUrl"] = "/settings";
+    ViewData["BackLabel"] = "Settings";
+}
+<header class="page-head">
+    <h1 class="large-title">Unlock admin</h1>
+    <p class="subhead">Confirm it's you with one of this account's passkeys. The admin area stays open for 30 minutes after the last page, and 4 hours at most.</p>
+</header>
+<button type="button" class="btn btn-tinted btn-block" data-module="passkey-unlock" hidden>@Ui.Icon("key")Unlock with Face ID</button>
+<noscript><p class="section-footer">Unlocking needs JavaScript.</p></noscript>

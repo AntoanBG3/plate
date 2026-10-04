@@ -33,9 +33,9 @@ Build in the phases at the end of this document. Each phase must be usable on it
 | CSS | Tailwind via the standalone CLI (no Node build pipeline) or plain CSS; mobile-first, large touch targets |
 | Front-end delivery | No CDNs. Pinned copies of every library (htmx, Alpine, Chart.js, the barcode scanner and its `.wasm`) are vendored into `wwwroot/lib` and precached by the service worker |
 | Database | PostgreSQL 18, EF Core with Npgsql provider |
-| Auth | ASP.NET Core Identity, cookie auth, sliding 30-day persistent login, lockout and login rate limiting on (section 9). No Cloudflare Access in front of the app. Passkeys (WebAuthn, built into Identity in .NET 10) alongside passwords |
-| LLM | OpenRouter chat completions API (`openai/gpt-6-luna` by default, model picked in Settings) via typed HttpClient, behind an interface. It extracts foods and grams; nutrition values come from the food database (section 6.1) |
-| Food matching | Optionally TypeSafe's Jev decision model (`typesafe/jev-1.13`) through OpenRouter's Decisions API, chosen in Settings: it picks which shortlisted database food each parsed item is, or that none fits (section 6.1) |
+| Auth | ASP.NET Core Identity, cookie auth, sliding 30-day persistent login, lockout and login rate limiting on (section 9). No Cloudflare Access in front of the app, except the admin area (section 12), whose Access token is checked with `Microsoft.IdentityModel.JsonWebTokens`. Passkeys (WebAuthn, built into Identity in .NET 10) alongside passwords |
+| LLM | OpenRouter chat completions API (`openai/gpt-6-luna` by default, model picked in the admin area) via typed HttpClient, behind an interface. It extracts foods and grams; nutrition values come from the food database (section 6.1) |
+| Food matching | Optionally TypeSafe's Jev decision model (`typesafe/jev-1.13`) through OpenRouter's Decisions API, chosen in the admin area: it picks which shortlisted database food each parsed item is, or that none fits (section 6.1) |
 | Food database | Users' own and shared `FoodItem`s, a locally imported subset of USDA FoodData Central for generic foods, and Open Food Facts API v3 for barcodes |
 | Barcode scanning | `barcode-detector` ponyfill (ZXing-C++ compiled to WASM), self-hosted. Safari on iOS ships the native `BarcodeDetector` API disabled, and `@zxing/browser` sits on a library in maintenance mode |
 | Tests | xUnit, FluentAssertions; Testcontainers (`postgres:18`) for PostgreSQL integration tests |
@@ -351,7 +351,8 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Profile fields from section 4, with validation including the safety limits in 5.6.
 - Custom exercises.
 - Bar and plates: the profile bar weight and which plates the gym has.
-- AI models (shared by both accounts): the OpenRouter key, the food parser model and the food matcher model (Off or Jev).
+- AI models: the current food parser and food matcher models, read-only. Only the developer changes the key and models, in the admin area (section 12).
+- Admin: a row shown only to accounts with the `Dev` role, linking to `/admin`.
 - Export all of the user's data as CSV files in a zip.
 - Feedback: Send feedback and Your feedback (section 11).
 - Change password, log out.
@@ -382,21 +383,22 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Every controller action requires authentication except login.
 - Global EF query filters plus explicit ownership checks on every write; integration tests must verify that user A cannot read or modify user B's sessions, sets, food entries or weigh-ins by ID.
 - Anti-forgery tokens on all POSTs, including htmx requests (send the token via `hx-headers`) and the set queue's `fetch` calls.
-- Secrets only from environment variables. Provide `.env.example`; `.env` is in `.gitignore`.
+- Secrets only from environment variables, except the OpenRouter key, which the developer may also save from the admin area (encrypted with Data Protection). Provide `.env.example`; `.env` is in `.gitignore`.
+- Roles: one Identity role, `Dev`, granted and revoked only with the CLI over SSH (section 12). No web page grants a role or creates an account.
 
 **Exposure.** The app is reachable at `https://gym.peychev.uk` through wizard's Cloudflare Tunnel, with no Cloudflare Access in front of it (decided 2026-10-02). Access would add a second login with an emailed code about monthly, and an expired Access session turns htmx and queue requests into failed cross-origin redirects. The app's own login is therefore the only gate and must be hardened:
 - Lockout on: `PasswordSignInAsync(..., lockoutOnFailure: true)` (the template default is `false`), 5 failed attempts, 15-minute lockout.
 - ASP.NET Core rate limiting middleware on the login POST, partitioned by client IP.
 - Forwarded headers: behind cloudflared every request comes from 172.30.0.10, so configure `ForwardedHeadersOptions` with that address as the only known proxy, read the client IP from `CF-Connecting-IP` and the scheme from `X-Forwarded-Proto`. Without this, rate limiting puts every client in one bucket.
 - Passwords: minimum 12 characters, no composition rules. An unknown email costs one password hash like a known one, so timing does not reveal which accounts exist.
-- A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes) and on AI food parsing (30 per 10 minutes).
+- A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes), admin unlock requests (10 per 15 minutes, two per unlock), AI food parsing (30 per 10 minutes) and admin writes (60 per 10 minutes).
 - Passkeys alongside passwords: registered in Settings, usernameless sign-in on the login page (button and autofill), relying party `gym.peychev.uk`.
 - Response headers: Content-Security-Policy (`script-src 'self' 'wasm-unsafe-eval'`, no inline scripts or event handlers; sent report-only with a `/csp-report` log until `CSP_ENFORCE=true`), HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `Permissions-Policy` (camera only), COOP. `AllowedHosts` limited to the public host name. Request bodies over 1 MB are refused.
 - Cookie: `Secure`, `HttpOnly`, `SameSite=Lax`, `__Host-` prefix, sliding 30-day expiration. "Log out everywhere" in Settings updates the security stamp.
 - Data Protection keys persisted to a bind-mounted directory, so rebuilding the container does not log both users out.
 - The container publishes no host port. cloudflared reaches it by container name on the external `tunnel` Docker network. An optional LAN-only port may be added for testing (pick one that is free on wizard; 8080 is AdGuard's).
 
-If Cloudflare Access is ever added in front of the app, the spec must also require: a one-month Access session, `X-Requested-With: XMLHttpRequest` on every htmx and queue request (so Access returns 401 instead of redirecting), 401 handled as in section 8, and a Bypass policy for the manifest, icons and static assets.
+If Cloudflare Access is ever added in front of the whole app (it covers only `/admin*`, section 12), the spec must also require: a one-month Access session, `X-Requested-With: XMLHttpRequest` on every htmx and queue request (so Access returns 401 instead of redirecting), 401 handled as in section 8, and a Bypass policy for the manifest, icons and static assets.
 
 ---
 
@@ -462,7 +464,7 @@ Both users report problems and ideas from their phones, food parsing collects ra
 
 ### Model accuracy
 
-- The AI model pages in Settings show, for each model used in the last 90 days, the number of parses, the thumbs-down rate and the correction rate, pooled across both accounts because the model setting is shared. Under 20 parses shows "not enough data".
+- The AI model pages in the admin area show, for each model used in the last 90 days, the number of parses, the thumbs-down rate and the correction rate, pooled across both accounts because the model setting is shared. Under 20 parses shows "not enough data".
 
 ### CLI
 
@@ -475,7 +477,44 @@ Both users report problems and ideas from their phones, food parsing collects ra
 
 ---
 
-## 12. Build phases and acceptance criteria
+## 12. Admin
+
+The developer's account (Antoan) has an admin area at `/admin` that does what the feedback CLI does, plus the AI settings. Everything else stays per user.
+
+### Access
+
+Every `/admin` request needs all of these; anything short of the role gets a 404, so the area is not discoverable.
+- Signed in, with the `Dev` role. `role grant|revoke dev --email ...` and `role list` in the CLI. The role is checked in the database on every admin request, so a revoke takes effect at once; a grant shows up in a live session within 5 minutes, when the sign-in cookie is refreshed, or at the next sign-in.
+- A valid Cloudflare Access token. Cloudflare Access protects `gym.peychev.uk/admin*` (one-time email code, only the developer's address). The app still checks `Cf-Access-Jwt-Assertion` itself: RS256 against the team's certs (cached an hour, refetched for an unknown key id), `aud` equal to `Admin:CloudflareAccess:Audience`, `iss` equal to the team domain, expiry with one minute of skew, and the token's email equal to the account's. In Production the area is off until `Admin:CloudflareAccess:TeamDomain` and `Audience` are set; Development and Testing skip the check unless they are set.
+- A passkey unlock: `/admin/unlock` asks for one of the account's own passkeys with user verification required, then sets `__Host-gym.admin` (HttpOnly, Secure, SameSite=Lax like the sign-in cookie, so arriving back from Cloudflare's login keeps the unlock; every admin write is a POST with an anti-forgery token) holding the user id, security stamp and unlock time. It lasts 30 minutes from the last admin request and 4 hours at most, and ends on Lock now, log out, Log out everywhere or a password change. A signed-in `Dev` account without it is sent to the unlock page.
+
+Admin responses are `Cache-Control: no-store`. When the Access session has expired, an admin page change falls back to a full page load (soft navigation already does this when a fetch fails), which shows Cloudflare's login; the eval progress poll reloads the page when a request fails.
+
+### Pages
+
+- Dashboard: the digest, server version, key status and models, and the unlock's expiry with Lock now.
+- Reports: list with the CLI's filters; a report shows everything `feedback show` does with the screenshot inline, and sets status, reply and fixed-in version (defaulting to the running version). Opening a new report marks it Seen.
+- Parses and errors as in the CLI; regression cases download as JSONL.
+- What's new: list, add and remove.
+- AI: the OpenRouter key (set, test, remove; only its last 4 characters are ever shown) and the parser and matcher model pickers with model accuracy.
+- Eval: the CLI's `eval` as a background job, one at a time, limit at most 20, with progress and the result kept in memory until the next job.
+- Users: name, email, created date, role, passkey count, last report. Read-only. The admin area shows what users sent as feedback and the parse and error records; it never browses another account's food log, weights or workouts.
+- Audit: the latest entries.
+
+### Audit and alerts
+
+- `AdminAudit` rows record unlocks (and failed ones), key and model changes, status and reply changes, changelog changes, eval runs and regression-case downloads, from the web or the CLI, with the time, user, client IP and a short detail. Never a secret. Kept a year; `admin audit [--since 30d]` in the CLI.
+- With Telegram configured, each unlock and each key change sends a message.
+
+### CLI additions
+
+- `role grant|revoke dev --email <email>`, `role list`.
+- `ai show`, `ai set-model parser|matcher <id>`, `ai set-key` (the key is read from standard input, never an argument), `ai clear-key`, `ai test`.
+- `feedback changelog list|remove <id>`, `admin audit [--since 30d]`.
+
+---
+
+## 13. Build phases and acceptance criteria
 
 ### Phase 1: Foundation and workout logging
 - Solution structure, Docker setup, PostgreSQL, migrations, Identity with the create-user CLI.
@@ -505,3 +544,7 @@ Both users report problems and ideas from their phones, food parsing collects ra
 ### Phase 6: Feedback
 - Section 11: parse runs and corrections, ratings, reports with screenshots and contextual snapshots, error capture, the offline queue, Telegram, What's new, model accuracy, and the CLI with its project skill.
 - **Done when:** a rating, a report with a screenshot and a browser error each reach `feedback digest` over SSH from the Mac; a status and reply set from the CLI show on the reporter's phone; user isolation tests cover runs, reports and attachments; and a report sent in airplane mode arrives once when back online.
+
+### Phase 7: Admin
+- Section 12: the `Dev` role, Cloudflare Access check, passkey unlock, the admin pages, the audit log, AI settings moved out of Settings, and the CLI additions.
+- **Done when:** the other account sees read-only AI models and gets a 404 at `/admin`; the developer reaches `/admin` from the iPhone only through the Access code and Face ID; a status and reply set from the admin area show on the reporter's phone; an eval runs from the admin area; and the unlock shows in `admin audit` and on Telegram.

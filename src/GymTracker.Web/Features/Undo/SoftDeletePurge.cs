@@ -12,6 +12,7 @@ public sealed class SoftDeletePurge(IServiceScopeFactory scopes, TimeProvider ti
     public static readonly TimeSpan Keep = TimeSpan.FromHours(24);
     public static readonly TimeSpan KeepParseRuns = TimeSpan.FromDays(180);
     public static readonly TimeSpan KeepErrors = TimeSpan.FromDays(90);
+    public static readonly TimeSpan KeepAdminAudit = TimeSpan.FromDays(365);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -62,6 +63,7 @@ public sealed class SoftDeletePurge(IServiceScopeFactory scopes, TimeProvider ti
         var errorCutoff = now - KeepErrors;
         var linked = db.Feedback.IgnoreQueryFilters().Where(f => f.ErrorEventId != null).Select(f => f.ErrorEventId);
         count += await db.ErrorEvents.Where(e => e.LastSeenAt < errorCutoff && !linked.Contains(e.Id)).ExecuteDeleteAsync(ct);
+        count += await db.AdminAudit.Where(a => a.At < now - KeepAdminAudit).ExecuteDeleteAsync(ct);
         return count;
     }
 }

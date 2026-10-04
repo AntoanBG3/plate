@@ -16,6 +16,16 @@
         window.gymToast(t("No connection. That change was not saved; try again when you have signal."));
     });
 
+    // A poll that fails (the admin area's eval progress, when the Cloudflare Access session has run out) reloads the
+    // page, so the browser follows Access's login instead of polling into the void.
+    for (const name of ["htmx:sendError", "htmx:responseError"]) {
+        document.body.addEventListener(name, (event) => {
+            if (event.target.closest && event.target.closest("[data-reload-on-error]")) {
+                location.reload();
+            }
+        });
+    }
+
     // Settings that apply as soon as they change. A theme change previews at once with a crossfade, then saves.
     document.addEventListener("change", (event) => {
         const form = event.target.closest("form[data-autosubmit]");

@@ -51,7 +51,7 @@ public static class CreateUserCommand
         return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
     }
 
-    private static string ReadPassword(string prompt)
+    internal static string ReadPassword(string prompt)
     {
         if (Console.IsInputRedirected)
         {

@@ -98,69 +98,29 @@
 <section class="section">
     <h2 class="section-title">@L["AI models"]</h2>
     <div class="list">
-        <div class="row">
-            <span class="row-icon neutral">@Ui.Icon("key")</span>
-            <span class="row-main">
-                <span class="row-title">
-                    @switch (openRouter.Key.Source)
-                    {
-                        case KeySource.Settings:
-                            @L["OpenRouter, with the key saved here"]
-                            break;
-                        case KeySource.Environment:
-                            @L["OpenRouter, with the key from the server"]
-                            break;
-                        default:
-                            @L["No OpenRouter key"]
-                            break;
-                    }
-                </span>
-                @if (openRouter.Key.Last4 is not null)
-                {
-                    <span class="row-sub" style="display: block">@L["Key ending {0}", openRouter.Key.Last4]</span>
-                }
-            </span>
-        </div>
         @foreach (var task in openRouter.Tasks)
         {
-            <a class="row row-link" href="/settings/model/@AiTasks.Slug(task.Task)">
+            <div class="row">
                 <span class="row-icon neutral">@Ui.Icon(task.Task == AiTask.Parser ? "text" : "search")</span>
                 <span class="row-main">
                     <span class="row-title">@(task.Task == AiTask.Parser ? L["Food parser"] : L["Food matcher"])</span>
-                    <span class="row-sub" style="display: block">@(task.Model == AiTasks.Off ? L["Off: database ranking only"] : task.ModelInfo?.Name ?? task.Model)@(task.ModelInfo is { } info && task.Model != AiTasks.Off ? " · " + L[info.Price] : "")</span>
+                    <span class="row-sub" style="display: block">@(openRouter.Key.Source == KeySource.None
+                        ? (task.Task == AiTask.Parser ? L["Simple built-in parser"] : L["Off: database ranking only"])
+                        : task.Model == AiTasks.Off ? L["Off: database ranking only"] : task.ModelInfo?.Name ?? task.Model)</span>
                 </span>
+            </div>
+        }
+        @if (User.IsInRole(GymTracker.Web.Features.Admin.AdminPolicy.Role))
+        {
+            @* Presentation only: the admin policy decides who gets in. *@
+            <a class="row row-link" href="/admin">
+                <span class="row-icon neutral">@Ui.Icon("key")</span>
+                <span class="row-main">@L["Admin"]</span>
                 @Ui.Icon("chevron", "row-chevron")
             </a>
         }
-        <form method="post" asp-antiforgery="true" action="/settings/openrouter-key">
-            <div class="field-row stacked">
-                <label for="apiKey" class="sr-only">@L["New key"]</label>
-                <input id="apiKey" type="password" name="apiKey" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="@OpenRouterSettings.MaxLength" required placeholder="@L["Paste a new key"]" />
-            </div>
-            <div class="row" style="padding-top: 0; padding-bottom: 0"><button type="submit" class="btn btn-plain" style="padding: 0">@L["Save and test key"]</button></div>
-        </form>
-        @if (openRouter.Key.Source != KeySource.None)
-        {
-            <form method="post" asp-antiforgery="true" action="/settings/openrouter-key/test" class="row" style="padding-top: 0; padding-bottom: 0">
-                <button type="submit" class="btn btn-plain" style="padding: 0">@L["Test key"]</button>
-            </form>
-            @if (openRouter.Key.Source == KeySource.Settings)
-            {
-                <form method="post" asp-antiforgery="true" action="/settings/openrouter-key/remove" class="row" style="padding-top: 0; padding-bottom: 0">
-                    <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--destructive)">@L["Remove key"]</button>
-                </form>
-            }
-        }
     </div>
-    <p class="section-footer">
-        @(openRouter.Key.Source switch
-        {
-            KeySource.Environment => L["A key saved here replaces the one from the server's .env file."],
-            KeySource.None => L["Without a key, typed food is split up by a simple built-in parser."],
-            _ => L["The parser reads typed food; the matcher picks which database food each item is, or says none fits. The numbers come from the food database."],
-        })
-        @L["The key and models are shared by both accounts; the key is stored encrypted."]
-    </p>
+    <p class="section-footer">@L["The parser reads typed food; the matcher picks which database food each item is, or says none fits. The numbers come from the food database."] @L["The developer manages the AI models."]</p>
 </section>
 
 @{

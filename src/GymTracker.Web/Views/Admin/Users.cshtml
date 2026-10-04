@@ -1,0 +1,25 @@
+@model List<AdminUserRow>
+@{
+    ViewData["Title"] = "Users";
+    ViewData["BackUrl"] = "/admin";
+    ViewData["BackLabel"] = "Admin";
+}
+<header class="page-head">
+    <h1 class="large-title">Users</h1>
+</header>
+<partial name="_AdminNav" />
+
+<section class="section">
+    <div class="list">
+        @foreach (var u in Model)
+        {
+            <div class="row">
+                <span class="row-main">
+                    <span class="row-title">@u.Name@(u.Dev ? " · Dev" : "")</span>
+                    <span class="row-sub admin-text" style="display: block">@u.Email · @(u.Passkeys == 1 ? "1 passkey" : $"{u.Passkeys} passkeys")@(u.LastReport is { } last ? $" · last report {last.ToUniversalTime():d MMM}" : "")</span>
+                </span>
+            </div>
+        }
+    </div>
+    <p class="section-footer">Accounts and roles change only over SSH: create-user, role grant|revoke dev --email ...</p>
+</section>
