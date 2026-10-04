@@ -6,6 +6,7 @@ using GymTracker.Web.Data;
 using GymTracker.Web.Data.Seed;
 using GymTracker.Web.Features;
 using GymTracker.Web.Features.Analytics;
+using GymTracker.Web.Features.Diagnostics;
 using GymTracker.Web.Features.Food;
 using GymTracker.Web.Features.Localization;
 using GymTracker.Web.Integrations;
@@ -29,8 +30,10 @@ CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
-builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseNpgsql(config.GetConnectionString("Default") ?? throw new InvalidOperationException("ConnectionStrings:Default is not set.")));
+builder.Services.AddSingleton<DbTimingInterceptor>();
+builder.Services.AddDbContext<AppDbContext>((sp, o) => o
+    .UseNpgsql(config.GetConnectionString("Default") ?? throw new InvalidOperationException("ConnectionStrings:Default is not set."))
+    .AddInterceptors(sp.GetRequiredService<DbTimingInterceptor>()));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
@@ -199,6 +202,7 @@ if (args.Length > 0 && args[0] == CreateUserCommand.Name)
 }
 
 app.UseForwardedHeaders();
+app.UseMiddleware<ServerTimingMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {
