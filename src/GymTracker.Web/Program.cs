@@ -13,6 +13,7 @@ using GymTracker.Web.Integrations;
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Features.Body;
 using GymTracker.Web.Features.Profile;
+using GymTracker.Web.Features.Security;
 using GymTracker.Web.Features.Training;
 using GymTracker.Web.Features.Users;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,13 @@ CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
+
+builder.WebHost.ConfigureKestrel(k =>
+{
+    k.AddServerHeader = false;
+    // Nothing in the app uploads files; barcode photos are decoded in the browser.
+    k.Limits.MaxRequestBodySize = 1024 * 1024;
+});
 
 builder.Services.AddSingleton<DbTimingInterceptor>();
 builder.Services.AddDbContext<AppDbContext>((sp, o) => o
@@ -174,6 +182,9 @@ builder.Services.AddRateLimiter(o =>
             Window = TimeSpan.FromMinutes(5),
             QueueLimit = 0,
         }));
+    o.AddPolicy(RateLimits.CspReport, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 
 builder.Services.AddAuthorization(o => o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
@@ -183,7 +194,11 @@ builder.Services.AddControllersWithViews(o =>
     o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
     o.Filters.Add<FeatureExceptionFilter>();
 });
-builder.Services.AddAntiforgery(o => o.HeaderName = "RequestVerificationToken");
+builder.Services.AddAntiforgery(o =>
+{
+    o.HeaderName = "RequestVerificationToken";
+    o.SuppressXFrameOptionsHeader = true; // SecurityHeadersMiddleware sends DENY
+});
 
 var app = builder.Build();
 app.Logger.LogInformation("GC: server={Server}, latency={Latency}, heap limit={Limit} MiB",
@@ -206,6 +221,7 @@ if (args.Length > 0 && args[0] == CreateUserCommand.Name)
 
 app.UseForwardedHeaders();
 app.UseMiddleware<ServerTimingMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {

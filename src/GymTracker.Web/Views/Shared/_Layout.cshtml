@@ -43,7 +43,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icons/icon-32.png" type="image/png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML","historyCacheSize":0}' />
+    <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML","historyCacheSize":0,"allowEval":false,"includeIndicatorStyles":false,"selfRequestsOnly":true}' />
     <title>@(title is not null ? $"{title} · Gym" : "Gym")</title>
     <link rel="stylesheet" href="~/lib/fonts/fonts.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />

@@ -8,6 +8,7 @@ namespace GymTracker.Web.Features;
 public static class RateLimits
 {
     public const string Login = "login";
+    public const string CspReport = "csp-report";
 }
 
 /// <summary>Maps service exceptions to HTTP responses so controllers stay thin.</summary>

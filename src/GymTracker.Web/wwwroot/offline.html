@@ -5,15 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>Offline · Gym</title>
-<script>
-    // Static page served by the service worker: take language and theme from the cookies the app sets.
-    (function () {
-        var c = document.cookie;
-        var theme = (c.match(/(?:^|; )gym\.theme=(\w+)/) || [])[1];
-        if (theme) document.documentElement.setAttribute("data-theme", theme);
-        if ((c.match(/(?:^|; )gym\.lang=(\w+)/) || [])[1] === "bg") document.documentElement.lang = "bg";
-    })();
-</script>
+<script src="/js/offline.js"></script>
 <link rel="stylesheet" href="/lib/fonts/fonts.css">
 <link rel="stylesheet" href="/css/tokens.css">
 <link rel="stylesheet" href="/css/app.css">
@@ -31,7 +23,7 @@
             <span lang="en">This page needs the server. Sets you already logged are saved on this phone and will send when you're back online.</span>
             <span lang="bg">Тази страница има нужда от сървъра. Записаните серии са на телефона и ще се изпратят, щом връзката се върне.</span>
         </p>
-        <button type="button" class="btn btn-primary" onclick="location.reload()"><span lang="en">Try again</span><span lang="bg">Опитай пак</span></button>
+        <button type="button" class="btn btn-primary" data-reload><span lang="en">Try again</span><span lang="bg">Опитай пак</span></button>
     </div>
 </main>
 </body>

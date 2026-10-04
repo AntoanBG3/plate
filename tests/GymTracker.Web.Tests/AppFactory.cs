@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The real app on the test Postgres, in a non-Development environment like production.</summary>
-public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000) : WebApplicationFactory<Program>
+public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDictionary<string, string?>? settings = null) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -17,6 +17,10 @@ public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000) : WebA
         builder.UseSetting("RateLimits:LoginPerWindow", loginLimit.ToString());
         // Never reach the real OpenRouter from tests: nothing listens on the discard port.
         builder.UseSetting("OpenRouter:BaseUrl", "http://127.0.0.1:9/");
+        foreach (var (key, value) in settings ?? new Dictionary<string, string?>())
+        {
+            builder.UseSetting(key, value);
+        }
     }
 
     public HttpClient NewClient() => CreateClient(new WebApplicationFactoryClientOptions

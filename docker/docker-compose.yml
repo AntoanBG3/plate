@@ -42,6 +42,8 @@ services:
       OpenRouter__ApiKey: "${OPENROUTER_API_KEY:-}"
       OpenRouter__Model: "${OPENROUTER_MODEL:-}"
       OpenFoodFacts__ContactEmail: "${OFF_CONTACT_EMAIL:-}"
+      AllowedHosts: "gym.peychev.uk;localhost"
+      Security__CspEnforce: "${CSP_ENFORCE:-false}"
     volumes:
       - ../keys:/keys
     # No published ports: cloudflared reaches http://gymtracker-app:8080 over the tunnel network.
