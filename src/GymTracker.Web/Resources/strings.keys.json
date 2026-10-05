@@ -1999,6 +1999,9 @@
   "Triceps pushdown": [
     "exercise"
   ],
+  "Try again": [
+    "wwwroot/js"
+  ],
   "Try again shortly": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
@@ -2015,6 +2018,9 @@
     "src/GymTracker.Core/Training/Progression.cs"
   ],
   "Undo": [
+    "wwwroot/js"
+  ],
+  "Undo didn't go through.": [
     "wwwroot/js"
   ],
   "Unknown time zone.": [

@@ -25,6 +25,8 @@ public static class ScriptText
         // motion.js
         "Undo",
         "Set deleted.",
+        "Undo didn't go through.",
+        "Try again",
         // scanner.js
         "This browser can't open the camera. Type the digits or take a photo instead.",
         "Camera access was refused. Type the digits or take a photo instead.",

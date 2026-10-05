@@ -773,5 +773,7 @@
   "Saved": "Запазено",
   "Not saved. Tap ✓ to try again.": "Не е запазено. Натисни ✓, за да опиташ пак.",
   "There is no empty warm-up row to remove.": "Няма празен ред за загрявка, който да се махне.",
-  "An exercise keeps at least one set.": "Всяко упражнение запазва поне една серия."
+  "An exercise keeps at least one set.": "Всяко упражнение запазва поне една серия.",
+  "Undo didn't go through.": "Връщането не мина.",
+  "Try again": "Опитай пак"
 }

@@ -79,6 +79,10 @@ public sealed class Phone : IAsyncDisposable
 
     public Task TapAsync(string selector) => Page.Locator(selector).First.TapAsync();
 
+    /// <summary>Waits for the element's running animations (an entrance, say) so its box is where it will stay.</summary>
+    public Task AnimationsDoneAsync(string selector) =>
+        Page.Locator(selector).First.EvaluateAsync("e => Promise.all(e.getAnimations({ subtree: true }).map(a => a.finished))");
+
     public int Count(string requestPrefix) => Requests.Count(r => r.StartsWith(requestPrefix, StringComparison.Ordinal));
 
     public static async Task<LocatorBoundingBoxResult> BoxAsync(ILocator locator) =>

@@ -442,54 +442,102 @@
     });
 
     // ---- toast ----
+    // A toast with an action (Undo) belongs to the page it was shown on and goes away on another one. Its timer pauses
+    // while it is pressed. The action is posted through nav.js, which shows the page again (keeping the scroll
+    // position); when it fails, a new toast says so and offers to try again.
 
+    const toastEl = document.getElementById("toast");
     let toastTimer;
-    // An action ({ label, url }) adds a button that POSTs to url and comes back to this page (nav.js swaps it in).
+    let toastMs = 0;
+    let lastToast = null;
+
+    function hideToast(animate) {
+        clearTimeout(toastTimer);
+        if (!toastEl || toastEl.hidden) {
+            return;
+        }
+        const done = () => {
+            if (toastEl.dataset.path) {
+                // Remembered so a tap meant for it, landing just after it went, doesn't reach what was under it.
+                lastToast = { at: performance.now(), rect: toastEl.getBoundingClientRect() };
+            }
+            toastEl.hidden = true;
+            delete toastEl.dataset.path;
+        };
+        if (!animate || reduce.matches) {
+            done();
+            return;
+        }
+        toastEl.animate([{ opacity: 1 }, { opacity: 0, transform: "translateY(12px)" }], { duration: 220, easing: "ease-in" })
+            .finished.then(done, done);
+    }
+
+    function armToast() {
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => hideToast(true), toastMs);
+    }
+
+    if (toastEl) {
+        toastEl.addEventListener("pointerdown", () => clearTimeout(toastTimer));
+        for (const name of ["pointerup", "pointercancel", "pointerleave"]) {
+            toastEl.addEventListener(name, () => {
+                if (!toastEl.hidden) {
+                    armToast();
+                }
+            });
+        }
+    }
+
+    document.addEventListener("click", (event) => {
+        const r = lastToast && lastToast.rect;
+        if (r && performance.now() - lastToast.at < 400
+            && event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+
+    function runAction(action, button) {
+        button.disabled = true;
+        hideToast(false);
+        const body = new URLSearchParams({
+            __RequestVerificationToken: window.gymToken ? window.gymToken() : "",
+            returnUrl: location.pathname + location.search,
+        });
+        const retry = () => window.gymToast(t("Undo didn't go through."), { label: t("Try again"), url: action.url });
+        if (window.gymNav) {
+            window.gymNav(action.url, { init: { method: "POST", body }, push: false, scrollY: window.scrollY, fallback: retry });
+            return;
+        }
+        fetch(action.url, { method: "POST", credentials: "same-origin", body })
+            .then((response) => (response.ok ? location.reload() : retry()), retry);
+    }
+
+    // An action ({ label, url }) adds a button that posts to url and comes back to this page.
     window.gymToast = function (text, action) {
-        const el = document.getElementById("toast");
-        if (!el) {
+        if (!toastEl) {
             return;
         }
         const message = document.createElement("span");
         message.textContent = text;
-        el.replaceChildren(message);
+        toastEl.replaceChildren(message);
         if (action) {
-            const form = document.createElement("form");
-            form.method = "post";
-            form.action = action.url;
-            form.className = "toast-action";
-            const field = (name) => {
-                const input = document.createElement("input");
-                input.type = "hidden";
-                input.name = name;
-                form.appendChild(input);
-                return input;
-            };
-            const token = field("__RequestVerificationToken");
-            const returnUrl = field("returnUrl");
+            const wrap = document.createElement("div");
+            wrap.className = "toast-action";
             const button = document.createElement("button");
-            button.type = "submit";
+            button.type = "button";
             button.textContent = action.label;
-            form.appendChild(button);
-            // Both are read when sent: site.js (gymToken) loads after this script, nav.js keeps the token current,
-            // and the toast outlives soft navigation, so undo returns to the page it was pressed on.
-            form.addEventListener("submit", () => {
-                token.value = window.gymToken ? window.gymToken() : "";
-                returnUrl.value = location.pathname + location.search;
-                el.hidden = true;
-            });
-            el.appendChild(form);
+            button.addEventListener("click", () => runAction(action, button));
+            wrap.appendChild(button);
+            toastEl.appendChild(wrap);
+            toastEl.dataset.path = location.pathname + location.search;
+        } else {
+            delete toastEl.dataset.path;
         }
-        el.hidden = false;
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => {
-            if (reduce.matches) {
-                el.hidden = true;
-                return;
-            }
-            el.animate([{ opacity: 1 }, { opacity: 0, transform: "translateY(12px)" }], { duration: 220, easing: "ease-in" })
-                .finished.then(() => { el.hidden = true; });
-        }, action ? 6000 : 5000);
+        toastEl.getAnimations().forEach((a) => a.cancel());
+        toastEl.hidden = false;
+        toastMs = action ? 6000 : 5000;
+        armToast();
     };
 
     // Undo offered by the server: after a redirect (data in #main) or by an htmx response (gym:undo event).
@@ -500,7 +548,12 @@
         }
     }
     offerUndo(document.getElementById("main"));
-    document.addEventListener("gym:page", () => offerUndo(document.getElementById("main")));
+    document.addEventListener("gym:page", () => {
+        if (toastEl && toastEl.dataset.path && toastEl.dataset.path !== location.pathname + location.search) {
+            hideToast(false);
+        }
+        offerUndo(document.getElementById("main"));
+    });
     document.body.addEventListener("gym:undo", (event) => {
         window.gymToast(t(event.detail.text), { label: t("Undo"), url: event.detail.url });
     });
