@@ -838,5 +838,12 @@
   "The weight jump is how much is added when every set reaches the top of its range.": "Увеличението на тежестта е колко се добавя, когато всички серии стигнат горната граница на диапазона.",
   "Days for food and weigh-ins start at midnight in this time zone.": "Денят за храната и теглото започва в полунощ в тази часова зона.",
   "Enter a weekly rate for a cut or bulk.": "Въведи темпо на седмица за отслабване или качване на маса.",
-  "Region": "Регион"
+  "Region": "Регион",
+  "Add a passkey in Settings first": "Първо добави ключ за достъп в Настройки",
+  "Confirm it's you with one of this account's passkeys. The admin area stays open for 30 minutes after the last page, and 4 hours at most.": "Потвърди, че си ти, с някой от ключовете за достъп на този профил. Администрацията остава отключена 30 минути след последната страница и най-много 4 часа.",
+  "Go to passkeys": "Към ключовете за достъп",
+  "The admin area opens only with a passkey on this account.": "Администрацията се отключва само с ключ за достъп на този профил.",
+  "Unlock admin": "Отключване на администрацията",
+  "Unlock with a passkey": "Отключи с ключ за достъп",
+  "Unlocking needs JavaScript.": "Отключването изисква JavaScript."
 }

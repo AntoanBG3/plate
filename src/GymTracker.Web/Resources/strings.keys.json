@@ -118,6 +118,9 @@
   "Add a passkey": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Add a passkey in Settings first": [
+    "src/GymTracker.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
   "Add a screenshot": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
@@ -428,6 +431,9 @@
   "Closest you can load: {0} kg (you asked for {1})": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
+  "Confirm it's you with one of this account's passkeys. The admin area stays open for 30 minutes after the last page, and 4 hours at most.": [
+    "src/GymTracker.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
   "Copied 1 item.": [
     "src/GymTracker.Web/Controllers/FoodController.cs"
   ],
@@ -628,7 +634,9 @@
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Enter a weekly rate for a cut or bulk.": [
-    "src/GymTracker.Core/Domain/ProfileRules.cs"
+    "src/GymTracker.Core/Domain/ProfileRules.cs",
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Enter a weight.": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
@@ -801,6 +809,9 @@
   "Go back": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
+  ],
+  "Go to passkeys": [
+    "src/GymTracker.Web/Views/AdminUnlock/Unlock.cshtml"
   ],
   "Goal": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
@@ -1745,6 +1756,7 @@
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
   "Settings": [
+    "src/GymTracker.Web/Views/AdminUnlock/Unlock.cshtml",
     "src/GymTracker.Web/Views/Feedback/Index.cshtml",
     "src/GymTracker.Web/Views/Feedback/New.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
@@ -1971,6 +1983,9 @@
   "The OpenRouter account is out of credits. Top it up, or enter the food by hand.": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
+  "The admin area opens only with a passkey on this account.": [
+    "src/GymTracker.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
   "The assistant is busy. Try again in a minute, or use the form.": [
     "src/GymTracker.Web/Integrations/OpenRouterOnboardingAssistant.cs"
   ],
@@ -2184,6 +2199,15 @@
   ],
   "Unknown time zone.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
+  ],
+  "Unlock admin": [
+    "src/GymTracker.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
+  "Unlock with a passkey": [
+    "src/GymTracker.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
+  "Unlocking needs JavaScript.": [
+    "src/GymTracker.Web/Views/AdminUnlock/Unlock.cshtml"
   ],
   "Untick anything wrong and fix the grams. Nothing is saved until you tap Save.": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"

@@ -252,7 +252,7 @@
 @{
     var passkeys = ViewData["Passkeys"] as IList<Microsoft.AspNetCore.Identity.UserPasskeyInfo> ?? [];
 }
-<section class="section">
+<section class="section" id="passkeys">
     <h2 class="section-title">@L["Passkeys"]</h2>
     <div class="list">
         @foreach (var passkey in passkeys)

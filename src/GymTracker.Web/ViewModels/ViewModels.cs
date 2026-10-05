@@ -143,6 +143,8 @@ public record TemplateExerciseFormViewModel(
     GymTracker.Core.Text.LocalText? Error = null,
     bool Saved = false);
 
+public record AdminUnlockViewModel(string ReturnUrl, bool HasPasskey);
+
 /// <summary>Settings' protein note with today's numbers; sent out of band after the profile saves itself.</summary>
 public record ProteinNoteViewModel(UserProfile Profile, GymTracker.Web.Features.Food.DailyTargets? Targets, bool OutOfBand = false);
 
