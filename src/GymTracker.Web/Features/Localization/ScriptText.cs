@@ -13,6 +13,8 @@ public static class ScriptText
         "No connection. That change was not saved; try again when you have signal.",
         "{0} kcal · {1} g protein",
         "OK",
+        "Add",
+        "Add {0}",
         // session.js
         "1 set is saved on this phone and will send when the connection is back.",
         "{0} sets are saved on this phone and will send when the connection is back.",

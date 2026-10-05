@@ -116,7 +116,20 @@ public record TemplateEditViewModel(WorkoutTemplate Template, IReadOnlyDictionar
 
 public record ExerciseSettingsFormViewModel(Exercise Exercise, UserExerciseSettings? Settings, decimal ProfileBarKg, string ReturnUrl);
 
-public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises);
+/// <param name="Multi">Several can be picked at once (adding); Swap picks one.</param>
+/// <param name="AlreadyIn">Exercises already in the template or session, marked "Added".</param>
+/// <param name="AddTo">"template:{id}" or "session:{id}": where a custom exercise created from here goes.</param>
+public record ExercisePickerViewModel(
+    GymTracker.Core.Text.LocalText Title,
+    string PostUrl,
+    string BackUrl,
+    IReadOnlyList<Exercise> Exercises,
+    bool Multi = false,
+    IReadOnlySet<int>? AlreadyIn = null,
+    string? AddTo = null);
+
+/// <summary>A custom exercise's form: new (Id null) or existing. AddTo is where a new one goes after it is made.</summary>
+public record CustomExerciseViewModel(int? Id, string Name, Muscle PrimaryMuscle, Equipment Equipment, IReadOnlyList<Muscle> SecondaryMuscles, (string Kind, int Id)? AddTo);
 
 /// <summary>One exercise's fields in the template editor; after a refused change, what was typed and why.</summary>
 public record TemplateExerciseFormViewModel(

@@ -16,7 +16,7 @@ public sealed class UserScope : IAsyncDisposable
         Templates = new TemplateService(Db, currentUser, TimeProvider.System);
         Sessions = new SessionService(Db, currentUser, new ProfileLookup(Db), TimeProvider.System);
         Bodyweights = new BodyweightService(Db, currentUser);
-        Exercises = new ExerciseService(Db);
+        Exercises = new ExerciseService(Db, currentUser);
         ExerciseSettings = new ExerciseSettingsService(Db, currentUser);
         FoodDatabase = new FakeFoodDatabase();
         Foods = new GymTracker.Web.Features.Food.FoodItemService(Db, currentUser, FoodDatabase);

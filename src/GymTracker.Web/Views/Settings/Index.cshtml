@@ -162,6 +162,16 @@
 </form>
 
 <section class="section">
+    <div class="list">
+        <a class="row row-link" href="/settings/exercises">
+            <span class="row-icon neutral">@Ui.Icon("train")</span>
+            <span class="row-main">@L["Custom exercises"]</span>
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+    </div>
+</section>
+
+<section class="section">
     <h2 class="section-title">@L["AI models"]</h2>
     <div class="list">
         @foreach (var task in openRouter.Tasks)

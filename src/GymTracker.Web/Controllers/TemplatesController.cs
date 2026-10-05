@@ -76,14 +76,39 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     {
         var template = await templates.GetAsync(id, ct);
         return View("ExercisePicker", new ExercisePickerViewModel(
-            new GymTracker.Core.Text.LocalText("Add to {0}", template.Name), $"/train/templates/{id}/exercises", $"/train/templates/{id}", await exercises.ListAsync(ct)));
+            new GymTracker.Core.Text.LocalText("Add to {0}", template.Name), $"/train/templates/{id}/exercises", $"/train/templates/{id}", await exercises.ListAsync(ct),
+            Multi: true, AlreadyIn: template.Exercises.Select(e => e.ExerciseId).ToHashSet(), AddTo: $"template:{id}"));
     }
 
     [HttpPost("{id:int}/exercises")]
-    public async Task<IActionResult> AddExercise(int id, int exerciseId, CancellationToken ct)
+    /// <summary>Adds the picked exercises in the order they were picked (one, from older pages, as exerciseId).</summary>
+    public async Task<IActionResult> AddExercise(int id, int? exerciseId, List<int>? exerciseIds, CancellationToken ct)
     {
-        TempData.Focus($"te-{await templates.AddExerciseAsync(id, exerciseId, ct)}");
+        var picked = exerciseIds is { Count: > 0 } ? exerciseIds : exerciseId is { } one ? [one] : [];
+        var before = (await templates.GetAsync(id, ct)).Exercises.Select(e => e.ExerciseId).ToHashSet();
+        int? first = null;
+        foreach (var pick in picked)
+        {
+            var added = await templates.AddExerciseAsync(id, pick, ct);
+            first ??= added;
+        }
+
+        await NoteSecondCopyAsync(picked, before, ct);
+        if (first is { } f)
+        {
+            TempData.Focus($"te-{f}");
+        }
+
         return Redirect($"/train/templates/{id}");
+    }
+
+    /// <summary>Picking an exercise that is already there adds a second one; say so, as that may be a slip.</summary>
+    private async Task NoteSecondCopyAsync(List<int> picked, HashSet<int> before, CancellationToken ct)
+    {
+        if (picked.FirstOrDefault(before.Contains) is var again and > 0)
+        {
+            TempData.Notice(new LocalText("Added a second {0}.", localizer.Exercise(await exercises.GetAsync(again, ct))));
+        }
     }
 
     [HttpPost("exercises/{id:int}")]

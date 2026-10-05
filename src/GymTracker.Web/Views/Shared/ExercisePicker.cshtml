@@ -3,6 +3,7 @@
     ViewData["Title"] = L[Model.Title];
     ViewData["BackUrl"] = Model.BackUrl;
     ViewData["BackLabel"] = L["Cancel"];
+    var added = Model.AlreadyIn ?? new HashSet<int>();
 }
 <header class="page-head">
     <h1 class="large-title">@L[Model.Title]</h1>
@@ -13,25 +14,66 @@
     <input type="search" class="input" placeholder="@L["Search exercises"]" aria-label="@L["Search exercises"]" data-filter="#exercise-groups" autocomplete="off" />
 </div>
 
-<div id="exercise-groups">
-    @* Groups appear in the order the controller listed the exercises (ForSwap puts the same muscle first). *@
-    @foreach (var group in Model.Exercises.GroupBy(e => e.PrimaryMuscle))
-    {
-        <section class="section" data-filter-group style="margin-top: var(--s-5)">
-            <h2 class="section-header">@L.Enum(group.Key)</h2>
-            <div class="list">
-                @foreach (var exercise in group.OrderBy(e => L.Exercise(e)))
-                {
-                    <form method="post" asp-antiforgery="true" action="@Model.PostUrl" class="row row-link" data-filter-item="@L.Exercise(exercise) @exercise.Name">
-                        <input type="hidden" name="exerciseId" value="@exercise.Id" />
-                        <button type="submit" class="row-main" style="text-align: left; display: flex; justify-content: space-between; gap: var(--s-3); align-items: center; min-height: 22px">
-                            <span class="row-title">@L.Exercise(exercise)</span>
+@if (Model.Multi)
+{
+    @* Adding: tick several, then add them in the order ticked (site.js keeps the order). *@
+    <form method="post" asp-antiforgery="true" action="@Model.PostUrl" id="exercise-groups" data-pick-multi>
+        @foreach (var group in Model.Exercises.GroupBy(e => e.PrimaryMuscle))
+        {
+            <section class="section" data-filter-group style="margin-top: var(--s-5)">
+                <h2 class="section-header">@L.Enum(group.Key)</h2>
+                <div class="list">
+                    @foreach (var exercise in group.OrderBy(e => L.Exercise(e)))
+                    {
+                        <label class="row row-link pick-row" data-filter-item="@L.Exercise(exercise) @exercise.Name">
+                            <input type="checkbox" class="check-input" name="exerciseIds" value="@exercise.Id" />
+                            <span class="row-main">
+                                <span class="row-title">@L.Exercise(exercise)</span>
+                                @if (added.Contains(exercise.Id))
+                                {
+                                    <span class="chip muted pick-added" data-added>@Ui.Icon("check", "icon-sm")@L["Added"]</span>
+                                }
+                            </span>
                             <span class="row-value subhead">@L.Enum(exercise.Equipment)</span>
-                        </button>
-                    </form>
-                }
-            </div>
-        </section>
-    }
-    <p class="empty" data-filter-empty hidden>@L["No exercise matches."]</p>
-</div>
+                        </label>
+                    }
+                </div>
+            </section>
+        }
+        <div class="empty" data-filter-empty hidden>
+            <p>@L["No exercise matches."]</p>
+            @if (Model.AddTo is not null)
+            {
+                <a class="btn btn-tinted" href="/settings/exercises/new?addTo=@Model.AddTo" data-create-exercise>@Ui.Icon("plus")@L["Create a custom exercise"]</a>
+            }
+        </div>
+        <div class="pick-bar">
+            <button type="submit" class="btn btn-primary btn-block" data-pick-submit disabled>@L["Add"]</button>
+        </div>
+    </form>
+}
+else
+{
+    <div id="exercise-groups">
+        @* Groups appear in the order the controller listed the exercises (ForSwap puts the same muscle first). *@
+        @foreach (var group in Model.Exercises.GroupBy(e => e.PrimaryMuscle))
+        {
+            <section class="section" data-filter-group style="margin-top: var(--s-5)">
+                <h2 class="section-header">@L.Enum(group.Key)</h2>
+                <div class="list">
+                    @foreach (var exercise in group.OrderBy(e => L.Exercise(e)))
+                    {
+                        <form method="post" asp-antiforgery="true" action="@Model.PostUrl" class="row row-link" data-filter-item="@L.Exercise(exercise) @exercise.Name">
+                            <input type="hidden" name="exerciseId" value="@exercise.Id" />
+                            <button type="submit" class="row-main" style="text-align: left; display: flex; justify-content: space-between; gap: var(--s-3); align-items: center; min-height: 22px">
+                                <span class="row-title">@L.Exercise(exercise)</span>
+                                <span class="row-value subhead">@L.Enum(exercise.Equipment)</span>
+                            </button>
+                        </form>
+                    }
+                </div>
+            </section>
+        }
+        <p class="empty" data-filter-empty hidden>@L["No exercise matches."]</p>
+    </div>
+}

@@ -1,0 +1,37 @@
+@model List<GymTracker.Core.Domain.Exercise>
+@{
+    ViewData["Title"] = L["Custom exercises"];
+    ViewData["BackUrl"] = "/settings";
+    ViewData["BackLabel"] = L["Settings"];
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Custom exercises"]</h1>
+</header>
+
+@if (Model.Count == 0)
+{
+    <div class="card empty">
+        <div class="empty-icon">@Ui.Icon("train")</div>
+        <h2>@L["No custom exercises"]</h2>
+        <p>@L["Add an exercise the library doesn't have. Only you see it."]</p>
+    </div>
+}
+else
+{
+    <div class="list">
+        @foreach (var exercise in Model)
+        {
+            <a class="row row-link" href="/settings/exercises/@exercise.Id">
+                <span class="row-main">
+                    <span class="row-title" style="display: block">@exercise.Name</span>
+                    <span class="row-sub" style="display: block">@L.Enum(exercise.PrimaryMuscle) · @L.Enum(exercise.Equipment)</span>
+                </span>
+                @Ui.Icon("chevron", "row-chevron")
+            </a>
+        }
+    </div>
+}
+
+<div class="btn-stack" style="margin-top: var(--s-5)">
+    <a class="btn btn-secondary" href="/settings/exercises/new">@Ui.Icon("plus")@L["New exercise"]</a>
+</div>

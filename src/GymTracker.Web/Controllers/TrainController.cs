@@ -78,15 +78,35 @@ public class TrainController(
     [HttpGet("sessions/{id:int}/add-exercise")]
     public async Task<IActionResult> AddExercise(int id, CancellationToken ct)
     {
-        await sessions.GetAsync(id, ct);
+        var session = await sessions.GetAsync(id, ct);
         return View("ExercisePicker", new ExercisePickerViewModel(
-            "Add exercise", $"/train/sessions/{id}/exercises", $"/train/sessions/{id}", await exercises.ListAsync(ct)));
+            "Add exercise", $"/train/sessions/{id}/exercises", $"/train/sessions/{id}", await exercises.ListAsync(ct),
+            Multi: true, AlreadyIn: session.Exercises.Select(e => e.ExerciseId).ToHashSet(), AddTo: $"session:{id}"));
     }
 
     [HttpPost("sessions/{id:int}/exercises")]
-    public async Task<IActionResult> AddExercise(int id, int exerciseId, CancellationToken ct)
+    /// <summary>Adds the picked exercises in the order they were picked (one, from older pages, as exerciseId).</summary>
+    public async Task<IActionResult> AddExercise(int id, int? exerciseId, List<int>? exerciseIds, CancellationToken ct)
     {
-        TempData.Focus($"ex-{await sessions.AddExerciseAsync(id, exerciseId, ct)}");
+        var picked = exerciseIds is { Count: > 0 } ? exerciseIds : exerciseId is { } one ? [one] : [];
+        var before = (await sessions.GetAsync(id, ct)).Exercises.Select(e => e.ExerciseId).ToHashSet();
+        int? first = null;
+        foreach (var pick in picked)
+        {
+            var added = await sessions.AddExerciseAsync(id, pick, ct);
+            first ??= added;
+        }
+
+        if (picked.FirstOrDefault(before.Contains) is var again and > 0)
+        {
+            TempData.Notice(new LocalText("Added a second {0}.", localizer.Exercise(await exercises.GetAsync(again, ct))));
+        }
+
+        if (first is { } f)
+        {
+            TempData.Focus($"ex-{f}");
+        }
+
         return Redirect($"/train/sessions/{id}");
     }
 

@@ -179,6 +179,57 @@
         }
     });
 
+    // ---- exercise picker: tick several, add them in the order ticked (Phase 11) ----
+
+    document.addEventListener("change", (event) => {
+        const box = event.target.closest("form[data-pick-multi] input[name='exerciseIds']");
+        if (!box) {
+            return;
+        }
+        const form = box.form;
+        const order = (form.dataset.order || "").split(",").filter((id) => id && id !== box.value);
+        if (box.checked) {
+            order.push(box.value);
+        }
+        form.dataset.order = order.join(",");
+        const button = form.querySelector("[data-pick-submit]");
+        button.disabled = order.length === 0;
+        button.textContent = order.length ? t("Add {0}", order.length) : t("Add");
+    });
+
+    // Capture phase, before nav.js reads the form: the ticked boxes are sent as hidden fields in the order ticked.
+    document.addEventListener("submit", (event) => {
+        const form = event.target.closest("form[data-pick-multi]");
+        if (!form) {
+            return;
+        }
+        form.querySelectorAll("input[data-pick-order]").forEach((input) => input.remove());
+        const boxes = form.querySelectorAll("input[name='exerciseIds']:not([data-pick-order])");
+        boxes.forEach((box) => { box.disabled = true; });
+        (form.dataset.order || "").split(",").filter(Boolean).forEach((id) => {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = "exerciseIds";
+            input.value = id;
+            input.dataset.pickOrder = "";
+            form.appendChild(input);
+        });
+        // Usable again if the page stays (no connection).
+        setTimeout(() => boxes.forEach((box) => { box.disabled = false; }), 0);
+    }, true);
+
+    // "Create a custom exercise" from a search with no match takes the search text as the name.
+    document.addEventListener("click", (event) => {
+        const link = event.target.closest("[data-create-exercise]");
+        if (!link) {
+            return;
+        }
+        const search = document.querySelector("[data-filter]");
+        const url = new URL(link.getAttribute("href"), location.href);
+        url.searchParams.set("name", search ? search.value.trim() : "");
+        link.setAttribute("href", url.pathname + url.search);
+    }, true);
+
     // A template renamed in place: its titles follow (the large title, the compact one, the tab's).
     document.body.addEventListener("gym:renamed", (event) => {
         const name = event.detail.name;
