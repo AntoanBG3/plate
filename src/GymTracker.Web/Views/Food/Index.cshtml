@@ -166,7 +166,7 @@
             {
                 <a href="/food/entries/@e.Id" class="row row-link">
                     <span class="row-main">
-                        <span class="row-title" style="display: block">@e.Description</span>
+                        <span class="row-title" style="display: block">@L.Entry(e.Description)</span>
                         <span class="row-sub num" style="display: block">@(e.Source == EntrySource.Quick
                             ? L["{0} kcal · {1} g protein", Math.Round(e.Kcal), e.ProteinG.Kg(1)]
                             : L["{0} g · {1} kcal · {2} g protein", e.Grams.Kg(), Math.Round(e.Kcal), e.ProteinG.Kg(1)])</span>

@@ -21,8 +21,7 @@ public class FoodController(
     NutritionTargets targets,
     ProfileService profiles,
     UserTime userTime,
-    TimeProvider time,
-    Localizer localizer) : Controller
+    TimeProvider time) : Controller
 {
     private static readonly string[] Tabs = ["text", "barcode", "search", "recent", "manual"];
 
@@ -178,22 +177,33 @@ public class FoodController(
     [HttpPost("quick")]
     public async Task<IActionResult> Quick(DateOnly date, Meal meal, string? description, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
-        await log.AddQuickAsync(date, meal, string.IsNullOrWhiteSpace(description) ? localizer["Quick add"] : description, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
+        // Left empty, the name is shown as "Quick add" in whichever language is reading it (Localizer.Entry).
+        await log.AddQuickAsync(date, meal, description ?? "", kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
         FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
     [HttpPost("entries/{id:int}/quick")]
-    public async Task<IActionResult> UpdateQuick(int id, string description, Meal meal, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
+    public async Task<IActionResult> UpdateQuick(int id, string? description, Meal meal, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
-        await log.UpdateQuickAsync(id, description, meal, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
+        await log.UpdateQuickAsync(id, description ?? "", meal, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
         var entry = await log.GetAsync(id, ct);
         FocusMeal(entry.Meal);
         return Redirect($"/food?date={entry.Date:yyyy-MM-dd}");
     }
 
     [HttpGet("entries/{id:int}")]
-    public async Task<IActionResult> Entry(int id, CancellationToken ct) => View(await log.GetAsync(id, ct));
+    public async Task<IActionResult> Entry(int id, CancellationToken ct)
+    {
+        var entry = await log.GetAsync(id, ct);
+        if (entry.FoodItemId is { } foodId)
+        {
+            // Another user's food stays hidden: the name is then left out rather than shown.
+            ViewData["MatchedName"] = await foods.DisplayNameOrNullAsync(foodId, ct);
+        }
+
+        return View(entry);
+    }
 
     [HttpPost("entries/{id:int}")]
     public async Task<IActionResult> UpdateEntry(int id, string description, decimal grams, Meal meal, CancellationToken ct)

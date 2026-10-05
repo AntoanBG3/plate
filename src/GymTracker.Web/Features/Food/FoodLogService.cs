@@ -123,7 +123,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
             UserId = userId,
             Date = date,
             Meal = meal,
-            Description = CleanDescription(description),
+            Description = CleanQuickName(description),
             Grams = 0,
             Kcal = Math.Round(kcal, 1),
             ProteinG = Math.Round(protein, 1),
@@ -151,7 +151,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
             throw new ValidationException(error);
         }
 
-        entry.Description = CleanDescription(description);
+        entry.Description = CleanQuickName(description);
         entry.Meal = meal;
         (entry.Kcal, entry.ProteinG, entry.CarbsG, entry.FatG) = (Math.Round(kcal, 1), Math.Round(protein, 1), Math.Round(carbs, 1), Math.Round(fat, 1));
         (entry.FiberG, entry.SaturatedFatG) = (Round(fiber), Round(saturatedFat));
@@ -260,10 +260,23 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
 
     private static decimal? Round(decimal? value, int decimals = 1) => value is { } v ? Math.Round(v, decimals) : null;
 
+    /// <summary>A trimmed name without a leading amount ("150 g rice" is "rice"; the grams are stored apart).</summary>
     private static string CleanDescription(string? description)
     {
-        var d = description?.Trim() ?? "";
+        var d = FoodText.StripAmount(description?.Trim() ?? "");
         if (d.Length is 0 or > 200)
+        {
+            throw new ValidationException("Description must be 1 to 200 characters.");
+        }
+
+        return d;
+    }
+
+    /// <summary>A quick entry's name may be left empty; it then reads "Quick add" in the reader's language.</summary>
+    private static string CleanQuickName(string? description)
+    {
+        var d = description?.Trim() ?? "";
+        if (d.Length > 200)
         {
             throw new ValidationException("Description must be 1 to 200 characters.");
         }

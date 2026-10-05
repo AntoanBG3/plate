@@ -37,7 +37,8 @@ public partial class FakeFoodParser : IFoodParser
                 : piece.Contains("raw", StringComparison.OrdinalIgnoreCase) ? FoodState.Raw
                 : FoodState.NotApplicable;
 
-            items.Add(new ParsedFoodItem(piece, part.Trim(), grams, state, null, assumption, new Per100g(100, 5, 15, 3)));
+            // The name is what was written without its amount; the amount is in grams.
+            items.Add(new ParsedFoodItem(piece, piece, grams, state, null, assumption, new Per100g(100, 5, 15, 3)));
         }
 
         return Task.FromResult(items.Count == 0

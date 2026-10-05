@@ -273,7 +273,7 @@ else if (Model.Weekly.CanWrite)
                 <span class="row-title">@L["Log food"]</span>
                 @if (Model.LastFood is not null)
                 {
-                    <span class="row-sub row-ellipsis" style="display: block">@L["Last: {0}", Model.LastFood]</span>
+                    <span class="row-sub row-ellipsis" style="display: block">@L["Last: {0}", L.Entry(Model.LastFood)]</span>
                 }
             </span>
             @Ui.Icon("chevron", "row-chevron")

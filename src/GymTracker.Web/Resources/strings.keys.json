@@ -205,6 +205,9 @@
   "Amount": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml"
   ],
+  "An estimate, no database food": [
+    "src/GymTracker.Web/Views/Food/Entry.cshtml"
+  ],
   "An exercise keeps at least one set.": [
     "src/GymTracker.Web/Controllers/TrainController.cs"
   ],
@@ -1445,8 +1448,25 @@
     "enum"
   ],
   "Quick add": [
+    "src/GymTracker.Web/Features/Localization/Localizer.cs",
+    "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Quick add a snack": [
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Quick add to breakfast": [
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Quick add to dinner": [
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Quick add to lunch": [
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Quick add, typed in": [
+    "src/GymTracker.Web/Views/Food/Entry.cshtml"
   ],
   "RPE must be between 5 and 10 in steps of 0.5.": [
     "src/GymTracker.Core/Training/SetRules.cs"

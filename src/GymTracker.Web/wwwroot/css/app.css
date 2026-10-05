@@ -347,6 +347,7 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .stat { padding: var(--s-4); text-align: center; position: relative; }
 .stat + .stat::before { content: ""; position: absolute; left: 0; top: var(--s-4); bottom: var(--s-4); border-left: 0.5px solid var(--separator); }
 .stat-value { font-size: var(--text-title-2); font-weight: var(--weight-semibold); }
+.stat-value small { font-size: var(--text-footnote); color: var(--label-2); font-weight: var(--weight-regular); }
 .stat-label { font-size: var(--text-footnote); color: var(--label-2); margin-top: 2px; }
 
 /* ---------- sign in ---------- */

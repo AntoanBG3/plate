@@ -1,27 +1,35 @@
 @model FoodLogEntry
 @{
     var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-    ViewData["Title"] = Model.Description;
+    ViewData["Title"] = L.Entry(Model.Description);
     ViewData["BackUrl"] = $"/food?date={date}";
     ViewData["BackLabel"] = L["Food"];
 }
 <header class="page-head">
     <p class="eyebrow">@Ui.ShortDate(Model.Date) · @L.Enum(Model.Meal)</p>
-    <h1 class="large-title" style="font-size: var(--text-title-1)">@Model.Description</h1>
+    <h1 class="large-title" style="font-size: var(--text-title-1)">@L.Entry(Model.Description)</h1>
 </header>
 
 <div class="card stat-grid" style="grid-template-columns: repeat(4, 1fr)">
     <div class="stat"><div class="stat-value num">@Math.Round(Model.Kcal)</div><div class="stat-label">@L["kcal"]</div></div>
-    <div class="stat"><div class="stat-value num">@Model.ProteinG.Kg(0)</div><div class="stat-label">@L["protein"]</div></div>
-    <div class="stat"><div class="stat-value num">@Model.CarbsG.Kg(0)</div><div class="stat-label">@L["carbs"]</div></div>
-    <div class="stat"><div class="stat-value num">@Model.FatG.Kg(0)</div><div class="stat-label">@L["fat"]</div></div>
+    <div class="stat"><div class="stat-value num">@Model.ProteinG.Kg(0)<small> @L["g"]</small></div><div class="stat-label">@L["protein"]</div></div>
+    <div class="stat"><div class="stat-value num">@Model.CarbsG.Kg(0)<small> @L["g"]</small></div><div class="stat-label">@L["carbs"]</div></div>
+    <div class="stat"><div class="stat-value num">@Model.FatG.Kg(0)<small> @L["g"]</small></div><div class="stat-label">@L["fat"]</div></div>
+</div>
+
+@* Where the numbers come from: the database food it was matched to, or that there is none (Phase 11). *@
+<div class="list section">
+    <div class="row">
+        <span class="row-main">@L["Food"]</span>
+        <span class="row-value" data-matched>@(ViewData["MatchedName"] as string ?? (Model.Source == EntrySource.Quick ? L["Quick add, typed in"] : L["An estimate, no database food"]))</span>
+    </div>
 </div>
 
 @if (Model.Source != EntrySource.Quick)
 {
     <form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id" class="section">
         <div class="list">
-            <div class="field-row"><label for="description">@L["Description"]</label><input id="description" type="text" name="description" value="@Model.Description" maxlength="200" required /></div>
+            <div class="field-row"><label for="description">@L["Description"]</label><input id="description" type="text" name="description" value="@GymTracker.Core.Text.FoodText.StripAmount(Model.Description)" maxlength="200" required /></div>
             <div class="field-row"><label for="grams">@L["Amount"]</label><input id="grams" class="num" type="number" name="grams" value="@Model.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" required /><span class="unit">@L["g"]</span></div>
             <div class="field-row">
                 <label for="meal">@L["Meal"]</label>
@@ -41,7 +49,7 @@ else
 {
     <form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id/quick" class="section">
         <div class="list">
-            <div class="field-row"><label for="description">@L["Description"]</label><input id="description" type="text" name="description" value="@Model.Description" maxlength="200" required /></div>
+            <div class="field-row"><label for="description">@L["Description"]</label><input id="description" type="text" name="description" value="@Model.Description" maxlength="200" placeholder="@L["Quick add"]" /></div>
             <div class="field-row"><label for="kcal">@L["Calories"]</label><input id="kcal" class="num" type="number" name="kcal" value="@Model.Kcal.Kg()" min="1" max="5000" step="any" inputmode="decimal" required /><span class="unit">@L["kcal"]</span></div>
             <div class="field-row"><label for="protein">@L["Protein"]</label><input id="protein" class="num" type="number" name="protein" value="@Model.ProteinG.Kg()" min="0" max="500" step="any" inputmode="decimal" /><span class="unit">@L["g"]</span></div>
             <div class="field-row"><label for="carbs">@L["Carbs"]</label><input id="carbs" class="num" type="number" name="carbs" value="@Model.CarbsG.Kg()" min="0" max="500" step="any" inputmode="decimal" /><span class="unit">@L["g"]</span></div>

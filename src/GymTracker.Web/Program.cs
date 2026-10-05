@@ -339,6 +339,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ExerciseSeed.SeedAsync(db, CancellationToken.None);
     await UsdaSeed.SeedAsync(db, UsdaSeed.DefaultPath, CancellationToken.None);
     await BgFoodSeed.SeedAsync(db, BgFoodSeed.DefaultPath, CancellationToken.None);
+    await DataFixups.RunAsync(db, CancellationToken.None);
 }
 
 if (args.Length > 0 && args[0] == CreateUserCommand.Name)

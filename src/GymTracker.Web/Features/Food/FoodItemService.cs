@@ -44,6 +44,10 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             """).ToListAsync(ct);
     }
 
+    /// <summary>The food's name as shown (Bulgarian when the reader uses it), or null when it isn't visible to this user.</summary>
+    public async Task<string?> DisplayNameOrNullAsync(int id, CancellationToken ct) =>
+        (await db.FoodItems.SingleOrDefaultAsync(f => f.Id == id, ct)) is { } item ? Localization.FoodNames.DisplayName(item) : null;
+
     public async Task<FoodItem> GetAsync(int id, CancellationToken ct) =>
         await db.FoodItems.SingleOrDefaultAsync(f => f.Id == id, ct) ?? throw new NotFoundException("Food not found.");
 

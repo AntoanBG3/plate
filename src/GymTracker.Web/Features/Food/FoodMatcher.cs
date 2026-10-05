@@ -232,7 +232,8 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
 
     private static string Description(ParsedFoodItem item)
     {
-        var text = item.NameOriginal.Length > 0 ? item.NameOriginal : item.NameEn;
+        // A model sometimes repeats the amount in the name; the grams are shown beside it, so it goes.
+        var text = GymTracker.Core.Text.FoodText.StripAmount(item.NameOriginal.Length > 0 ? item.NameOriginal : item.NameEn);
         if (!string.IsNullOrEmpty(item.Preparation) && !text.Contains(item.Preparation, StringComparison.OrdinalIgnoreCase))
         {
             text = $"{text}, {item.Preparation}";
