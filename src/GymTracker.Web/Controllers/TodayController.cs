@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymTracker.Web.Controllers;
 
 [Route("today")]
-public class TodayController(ProfileService profiles, BodyweightService bodyweights, BodyAnalytics body, TemplateService templates, SessionService sessions, FoodLogService food, NutritionTargets targets, GymTracker.Web.Features.Summary.WeeklySummaryService summaries, GymTracker.Web.Features.Feedback.Changelog changelog, TimeProvider time) : Controller
+public class TodayController(ProfileService profiles, BodyweightService bodyweights, BodyAnalytics body, TemplateService templates, SessionService sessions, FoodLogService food, NutritionTargets targets, GymTracker.Web.Features.Summary.WeeklySummaryService summaries, GymTracker.Web.Features.Feedback.Changelog changelog) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -31,12 +31,14 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
             : [];
         var active = await sessions.GetActiveAsync(ct);
         var list = await templates.ListAsync(ct);
-        var nextId = NextWorkout.Pick(
-            list.Select(t => new TemplateOrder(t.Id, t.SortOrder)).ToList(),
-            await sessions.LastCompletedTemplateIdAsync(ct));
+        // One query serves both the next template (after the last one finished) and "Done today" (finished on the
+        // user's day, in their time zone). Only when the recent ones are all freestyle is the last template looked up.
+        var recent = await sessions.RecentFinishedAsync(5, ct);
+        var lastTemplateId = recent.FirstOrDefault(s => s.TemplateId is not null)?.TemplateId
+            ?? (recent.Count < 5 ? null : await sessions.LastCompletedTemplateIdAsync(ct));
+        var nextId = NextWorkout.Pick(list.Select(t => new TemplateOrder(t.Id, t.SortOrder)).ToList(), lastTemplateId);
         var day = await food.DayAsync(today, ct);
-        // Finished on the user's day, in their time zone; two days back covers any offset.
-        var doneToday = active is not null ? [] : (await sessions.FinishedSinceAsync(time.GetUtcNow().AddDays(-2), ct))
+        var doneToday = active is not null ? [] : recent
             .Where(s => GymTracker.Core.Time.UserClock.Today(s.EndedAt!.Value, profile.TimeZoneId) == today)
             .ToList();
         var weights = await body.WeightAsync("4w", today, ct);

@@ -18,7 +18,7 @@ public record LogSetInput(
 
 public record SessionSummary(WorkoutSession Session, TimeSpan Duration, int WorkingSets);
 
-public record HistoryItem(int Id, string Name, DateTimeOffset StartedAt, DateTimeOffset? EndedAt, int WorkingSets);
+public record HistoryItem(int Id, string Name, DateTimeOffset StartedAt, DateTimeOffset? EndedAt, int WorkingSets, int? TemplateId = null);
 
 public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLookup profiles, TimeProvider time)
 {
@@ -343,17 +343,22 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
                 s.Exercises.SelectMany(e => e.Sets).Count(x => !x.IsWarmup)))
             .ToListAsync(ct);
 
-    /// <summary>Sessions finished since <paramref name="since"/>, newest first (Today's "Done today").</summary>
-    public Task<List<HistoryItem>> FinishedSinceAsync(DateTimeOffset since, CancellationToken ct) =>
+    /// <summary>
+    /// The last few finished sessions, newest started first: Today picks "Done today" and the next template from them
+    /// in one query.
+    /// </summary>
+    public Task<List<HistoryItem>> RecentFinishedAsync(int take, CancellationToken ct) =>
         db.Sessions
-            .Where(s => s.EndedAt != null && s.EndedAt >= since)
-            .OrderByDescending(s => s.EndedAt)
+            .Where(s => s.EndedAt != null)
+            .OrderByDescending(s => s.StartedAt)
+            .Take(take)
             .Select(s => new HistoryItem(
                 s.Id,
                 s.Template != null ? s.Template.Name : "Freestyle",
                 s.StartedAt,
                 s.EndedAt,
-                s.Exercises.SelectMany(e => e.Sets).Count(x => !x.IsWarmup)))
+                s.Exercises.SelectMany(e => e.Sets).Count(x => !x.IsWarmup),
+                s.TemplateId))
             .ToListAsync(ct);
 
     public Task<int?> LastCompletedTemplateIdAsync(CancellationToken ct) =>
