@@ -23,6 +23,15 @@ public class ViewHygieneTests
     public void Pages_have_no_inline_scripts() =>
         Offenders(@"<script(?![^>]*(\bsrc=|type=""application/json""))[^>]*>").Should().BeEmpty();
 
+    // The sliding segment thumb has one view-transition-name; two on a page make the browser skip the whole transition
+    // and log an error (app.css). Settings got a second one once (Phase 11).
+    [Fact]
+    public void A_view_has_at_most_one_sliding_segment_thumb() =>
+        Directory.EnumerateFiles(Path.Combine(RepoPaths.Web, "Views"), "*.cshtml", SearchOption.AllDirectories)
+            .Where(f => Regex.Matches(File.ReadAllText(f), @"\bdata-thumb\b").Count > 1)
+            .Select(Path.GetFileName)
+            .Should().BeEmpty();
+
     // The admin area shows what users typed and what the parser made of it; all of it must go through Razor's encoding.
     [Fact]
     public void Admin_views_never_write_raw_html() =>

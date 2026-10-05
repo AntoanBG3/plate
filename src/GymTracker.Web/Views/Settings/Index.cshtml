@@ -86,7 +86,7 @@
         <h2 class="section-title">@L["Goal"]</h2>
         <div class="list">
             <div class="field-row stacked">
-                <div class="segmented tall" data-thumb role="radiogroup" aria-label="@L["Goal"]">
+                <div class="segmented tall" role="radiogroup" aria-label="@L["Goal"]">
                     @foreach (var goal in Enum.GetValues<Goal>())
                     {
                         <label class="segment"><input type="radio" name="goal" value="@goal" checked="@(Model.Goal == goal)" />@L.Enum(goal)</label>
