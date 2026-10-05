@@ -151,6 +151,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.ProteinPer100g).HasPrecision(6, 2);
             e.Property(x => x.CarbsPer100g).HasPrecision(6, 2);
             e.Property(x => x.FatPer100g).HasPrecision(6, 2);
+            e.Property(x => x.FiberPer100g).HasPrecision(6, 2);
+            e.Property(x => x.SaturatedFatPer100g).HasPrecision(6, 2);
             e.Property(x => x.DefaultServingGrams).HasPrecision(7, 1);
             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.Barcode).IsUnique().HasFilter("\"Barcode\" IS NOT NULL");
@@ -171,6 +173,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.ProteinG).HasPrecision(6, 1);
             e.Property(x => x.CarbsG).HasPrecision(6, 1);
             e.Property(x => x.FatG).HasPrecision(6, 1);
+            e.Property(x => x.FiberG).HasPrecision(6, 1);
+            e.Property(x => x.SaturatedFatG).HasPrecision(6, 1);
             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.FoodItem).WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne<ParseRun>().WithMany().HasForeignKey(x => x.ParseRunId).OnDelete(DeleteBehavior.SetNull);
@@ -198,6 +202,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.ProteinG).HasPrecision(6, 1);
             e.Property(x => x.CarbsG).HasPrecision(6, 1);
             e.Property(x => x.FatG).HasPrecision(6, 1);
+            e.Property(x => x.FiberG).HasPrecision(6, 1);
+            e.Property(x => x.SaturatedFatG).HasPrecision(6, 1);
             e.HasQueryFilter(x => x.SavedMeal.UserId == CurrentUserId);
         });
 

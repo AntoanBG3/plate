@@ -21,7 +21,7 @@ public class SavedMealTests(PostgresFixture fixture)
             new NewEntry(Day, Meal.Breakfast, "Milk", 250, new Per100g(64, 3.4m, 4.8m, 3.6m), null, EntrySource.Manual),
             new NewEntry(Day, Meal.Lunch, "Rice", 200, new Per100g(130, 2.7m, 28, 0.3m), null, EntrySource.Manual),
         ], default);
-        await s.FoodLog.AddQuickAsync(Day, Meal.Breakfast, "Coffee out", 120, 4, 12, 6, default);
+        await s.FoodLog.AddQuickAsync(Day, Meal.Breakfast, "Coffee out", 120, 4, 12, 6, null, null, default);
         return s;
     }
 
@@ -114,7 +114,7 @@ public class SavedMealTests(PostgresFixture fixture)
         var userId = await system.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
         await using var s = new UserScope(fixture, userId);
         await s.FoodLog.AddAsync([new NewEntry(Day, Meal.Breakfast, "Oats", 80, new Per100g(380, 13, 60, 7), null, EntrySource.Manual)], default);
-        await s.FoodLog.AddQuickAsync(Day, Meal.Breakfast, "Coffee out", 120, 4, 12, 6, default);
+        await s.FoodLog.AddQuickAsync(Day, Meal.Breakfast, "Coffee out", 120, 4, 12, 6, null, null, default);
         await s.FoodLog.AddAsync([new NewEntry(Day, Meal.Breakfast, "Milk", 250, new Per100g(64, 3.4m, 4.8m, 3.6m), null, EntrySource.Manual)], default);
         var saved = await s.SavedMeals.SaveFromMealAsync(Day, Meal.Breakfast, "Usual", default);
         var token = await AppFactory.TokenAsync(client, "/food");

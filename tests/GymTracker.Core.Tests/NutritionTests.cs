@@ -15,6 +15,38 @@ public class FoodMathTests
         FoodMath.For(chicken, 33).Should().Be(new Totals(39.6m, 7.4m, 0, 0.9m));
     }
 
+    [Fact]
+    public void Fiber_and_saturated_fat_scale_when_known_and_stay_unknown_otherwise()
+    {
+        FoodMath.For(new Per100g(350, 13, 60, 7, Fiber: 10, SaturatedFat: 1.2m), 50).Should().Be(new Totals(175, 6.5m, 30, 3.5m, 5, 0.6m));
+        FoodMath.For(new Per100g(120, 22.5m, 0, 2.6m), 200).FiberG.Should().BeNull();
+    }
+
+    [Fact]
+    public void Totals_add_known_fiber_and_keep_unknown_as_null()
+    {
+        var known = new Totals(100, 5, 10, 2, FiberG: 3, SaturatedFatG: 1);
+        var unknown = new Totals(200, 10, 20, 4);
+
+        known.Add(unknown).Should().Be(new Totals(300, 15, 30, 6, 3, 1));
+        unknown.Add(unknown).FiberG.Should().BeNull();
+        Totals.Zero.Add(known).FiberG.Should().Be(3);
+    }
+
+    [Fact]
+    public void Rescaling_keeps_fiber_in_proportion() =>
+        FoodMath.Scale(new Totals(200, 10, 30, 5, 4, null), 100, 150).Should().Be(new Totals(300, 15, 45, 7.5m, 6, null));
+
+    [Theory]
+    [InlineData(5.0, 1.0, true)]
+    [InlineData(null, null, true)]
+    [InlineData(-1.0, null, false)]
+    [InlineData(101.0, null, false)]
+    [InlineData(null, 3.4, true)]   // fat 3, within 0.5 g of rounding
+    [InlineData(null, 3.6, false)]  // more saturated fat than fat
+    public void Validates_fiber_and_saturated_fat(double? fiber, double? saturatedFat, bool valid) =>
+        (FoodMath.Validate(100, new Per100g(100, 5, 10, 3, (decimal?)fiber, (decimal?)saturatedFat)) is null).Should().Be(valid);
+
     [Theory]
     [InlineData(120, 22.5, 0, 2.6, false)]    // chicken: 113.4 from macros, within 15%
     [InlineData(130, 2.7, 28, 0.3, false)]    // cooked rice

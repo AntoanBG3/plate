@@ -16,7 +16,7 @@ public record DayLog(DateOnly Date, IReadOnlyList<FoodLogEntry> Entries, Totals 
     public IEnumerable<FoodLogEntry> For(Meal meal) => Entries.Where(e => e.Meal == meal);
 
     public Totals TotalsFor(Meal meal) =>
-        For(meal).Aggregate(Totals.Zero, (t, e) => t.Add(new Totals(e.Kcal, e.ProteinG, e.CarbsG, e.FatG)));
+        For(meal).Aggregate(Totals.Zero, (t, e) => t.Add(FoodMath.TotalsOf(e)));
 }
 
 public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvider time)
@@ -28,7 +28,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
             .Where(e => e.Date == date)
             .OrderBy(e => e.CreatedAt).ThenBy(e => e.Id)
             .ToListAsync(ct);
-        var totals = entries.Aggregate(Totals.Zero, (t, e) => t.Add(new Totals(e.Kcal, e.ProteinG, e.CarbsG, e.FatG)));
+        var totals = entries.Aggregate(Totals.Zero, (t, e) => t.Add(FoodMath.TotalsOf(e)));
         return new DayLog(date, entries, totals);
     }
 
@@ -63,6 +63,8 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 ProteinG = totals.ProteinG,
                 CarbsG = totals.CarbsG,
                 FatG = totals.FatG,
+                FiberG = totals.FiberG,
+                SaturatedFatG = totals.SaturatedFatG,
                 FoodItemId = e.FoodItemId,
                 Source = e.Source,
                 AiModel = e.AiModel,
@@ -76,10 +78,10 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
     }
 
     /// <summary>Logs calories and macros typed directly, with no food item and no grams.</summary>
-    public async Task AddQuickAsync(DateOnly date, Meal meal, string description, decimal kcal, decimal protein, decimal carbs, decimal fat, CancellationToken ct)
+    public async Task AddQuickAsync(DateOnly date, Meal meal, string description, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
         var userId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.");
-        if (FoodMath.ValidateQuick(kcal, protein, carbs, fat) is { } error)
+        if (FoodMath.ValidateQuick(kcal, protein, carbs, fat, fiber, saturatedFat) is { } error)
         {
             throw new ValidationException(error);
         }
@@ -95,6 +97,8 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
             ProteinG = Math.Round(protein, 1),
             CarbsG = Math.Round(carbs, 1),
             FatG = Math.Round(fat, 1),
+            FiberG = Round(fiber),
+            SaturatedFatG = Round(saturatedFat),
             Source = EntrySource.Quick,
             CreatedAt = time.GetUtcNow(),
         });
@@ -102,7 +106,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
     }
 
     /// <summary>Changes a quick entry's name, meal and numbers. Quick entries have no amount to scale.</summary>
-    public async Task UpdateQuickAsync(int id, string description, Meal meal, decimal kcal, decimal protein, decimal carbs, decimal fat, CancellationToken ct)
+    public async Task UpdateQuickAsync(int id, string description, Meal meal, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
         var entry = await GetAsync(id, ct);
         if (entry.Source != EntrySource.Quick)
@@ -110,7 +114,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
             throw new ValidationException("Change this entry's amount instead.");
         }
 
-        if (FoodMath.ValidateQuick(kcal, protein, carbs, fat) is { } error)
+        if (FoodMath.ValidateQuick(kcal, protein, carbs, fat, fiber, saturatedFat) is { } error)
         {
             throw new ValidationException(error);
         }
@@ -118,6 +122,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
         entry.Description = CleanDescription(description);
         entry.Meal = meal;
         (entry.Kcal, entry.ProteinG, entry.CarbsG, entry.FatG) = (Math.Round(kcal, 1), Math.Round(protein, 1), Math.Round(carbs, 1), Math.Round(fat, 1));
+        (entry.FiberG, entry.SaturatedFatG) = (Round(fiber), Round(saturatedFat));
         await db.SaveChangesAsync(ct);
     }
 
@@ -141,6 +146,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
         entry.Meal = meal;
         entry.Grams = Math.Round(grams, 1);
         (entry.Kcal, entry.ProteinG, entry.CarbsG, entry.FatG) = (totals.Kcal, totals.ProteinG, totals.CarbsG, totals.FatG);
+        (entry.FiberG, entry.SaturatedFatG) = (totals.FiberG, totals.SaturatedFatG);
         await db.SaveChangesAsync(ct);
     }
 
@@ -159,7 +165,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
         var rows = await db.FoodLog
             .Where(e => e.Date >= since && e.Grams > 0)
             .OrderByDescending(e => e.Date).ThenByDescending(e => e.CreatedAt)
-            .Select(e => new { e.Description, e.FoodItemId, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG })
+            .Select(e => new { e.Description, e.FoodItemId, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG })
             .ToListAsync(ct);
 
         return rows
@@ -169,7 +175,8 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 var last = g.First();
                 var f = 100m / last.Grams;
                 return new RecentFood(last.Description, last.FoodItemId, last.Grams,
-                    new Per100g(Math.Round(last.Kcal * f, 1), Math.Round(last.ProteinG * f, 2), Math.Round(last.CarbsG * f, 2), Math.Round(last.FatG * f, 2)),
+                    new Per100g(Math.Round(last.Kcal * f, 1), Math.Round(last.ProteinG * f, 2), Math.Round(last.CarbsG * f, 2), Math.Round(last.FatG * f, 2),
+                        Round(last.FiberG * f, 2), Round(last.SaturatedFatG * f, 2)),
                     g.Count());
             })
             .OrderByDescending(r => r.Times).ThenBy(r => r.Description)
@@ -195,6 +202,8 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 ProteinG = e.ProteinG,
                 CarbsG = e.CarbsG,
                 FatG = e.FatG,
+                FiberG = e.FiberG,
+                SaturatedFatG = e.SaturatedFatG,
                 FoodItemId = e.FoodItemId,
                 Source = e.Source == EntrySource.Quick ? EntrySource.Quick : EntrySource.Recent,
                 CreatedAt = now,
@@ -213,8 +222,10 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
         }
 
         var f = 100m / e.Grams;
-        return new Per100g(e.Kcal * f, e.ProteinG * f, e.CarbsG * f, e.FatG * f);
+        return new Per100g(e.Kcal * f, e.ProteinG * f, e.CarbsG * f, e.FatG * f, e.FiberG * f, e.SaturatedFatG * f);
     }
+
+    private static decimal? Round(decimal? value, int decimals = 1) => value is { } v ? Math.Round(v, decimals) : null;
 
     private static string CleanDescription(string? description)
     {

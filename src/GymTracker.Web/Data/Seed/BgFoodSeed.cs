@@ -25,9 +25,10 @@ public static class BgFoodSeed
         var references = (await foods.Where(f => f.Source == FoodSource.Reference && f.NameBg != null).Select(f => f.NameBg!).ToListAsync(ct)).ToHashSet();
 
         var items = new List<FoodItem>();
+        var extras = new Dictionary<string, (decimal? Fiber, decimal? Saturated)>(StringComparer.Ordinal);
         foreach (var line in File.ReadLines(path).Skip(1))
         {
-            // kind,barcode,name_bg,name_en,brand,kcal,protein,carbs,fat,serving_g,source
+            // kind,barcode,name_bg,name_en,brand,kcal,protein,carbs,fat,serving_g,source,fiber,satfat
             var f = UsdaSeed.ParseCsvLine(line);
             if (f.Count < 10 || f[2].Length == 0)
             {
@@ -35,6 +36,12 @@ public static class BgFoodSeed
             }
 
             var product = f[0] == "product";
+            var (fiber, saturated) = (Optional(f, 11), Optional(f, 12));
+            if (product && (fiber is not null || saturated is not null))
+            {
+                extras.TryAdd(f[1], (fiber, saturated));
+            }
+
             if (product ? !barcodes.Add(f[1]) : !references.Add(f[2]))
             {
                 continue;
@@ -50,6 +57,8 @@ public static class BgFoodSeed
                 ProteinPer100g = D(f[6]),
                 CarbsPer100g = D(f[7]),
                 FatPer100g = D(f[8]),
+                FiberPer100g = fiber,
+                SaturatedFatPer100g = saturated,
                 DefaultServingGrams = f[9].Length == 0 ? null : D(f[9]),
                 Source = product ? FoodSource.OpenFoodFacts : FoodSource.Reference,
             });
@@ -64,7 +73,26 @@ public static class BgFoodSeed
         }
 
         db.ChangeTracker.AutoDetectChangesEnabled = true;
+        await AddFiberAndSaturatedFatAsync(db, extras, ct);
     }
+
+    /// <summary>Products seeded before the CSV had fiber and saturated fat get them, by barcode, where both are still unknown.</summary>
+    private static async Task AddFiberAndSaturatedFatAsync(AppDbContext db, Dictionary<string, (decimal? Fiber, decimal? Saturated)> extras, CancellationToken ct)
+    {
+        var codes = extras.Keys.ToList();
+        var missing = await db.FoodItems.IgnoreQueryFilters()
+            .Where(f => f.Barcode != null && codes.Contains(f.Barcode) && f.FiberPer100g == null && f.SaturatedFatPer100g == null)
+            .ToListAsync(ct);
+        foreach (var item in missing)
+        {
+            (item.FiberPer100g, item.SaturatedFatPer100g) = extras[item.Barcode!];
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static decimal? Optional(List<string> fields, int index) =>
+        fields.Count > index && fields[index].Length > 0 ? D(fields[index]) : null;
 
     private static string Cut(string s) => s.Length > 200 ? s[..200] : s;
 

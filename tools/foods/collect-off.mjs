@@ -39,6 +39,7 @@ while (page <= pages && page <= 100) {
             brand: (p.brands || [])[0] || "",
             kcal: n["energy-kcal_100g"] ?? (n["energy_100g"] ? +(n["energy_100g"] / 4.184).toFixed(0) : undefined),
             protein: n.proteins_100g, carbs: n.carbohydrates_100g, fat: n.fat_100g,
+            fiber: n.fiber_100g ?? "", satfat: n["saturated-fat_100g"] ?? "",
             serving_g: p.serving_quantity && +p.serving_quantity > 0 && +p.serving_quantity <= 2000 ? +p.serving_quantity : "",
         };
         if (row.name_bg && row.name_bg.length <= 200 && validEan(row.barcode) && plausible(row)) {
@@ -49,5 +50,5 @@ while (page <= pages && page <= 100) {
     page++;
     await new Promise((r) => setTimeout(r, 1000));
 }
-writeCsv(path.join(raw, "off-bg.csv"), ["barcode", "name_bg", "brand", "kcal", "protein", "carbs", "fat", "serving_g"], [...rows.values()]);
+writeCsv(path.join(raw, "off-bg.csv"), ["barcode", "name_bg", "brand", "kcal", "protein", "carbs", "fat", "serving_g", "fiber", "satfat"], [...rows.values()]);
 console.log(`\noff: ${rows.size} products`);

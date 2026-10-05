@@ -77,10 +77,10 @@ public class FoodController(
         }
 
         var runId = await parseRuns.ConfirmAsync(parseRunId,
-            items.Select(i => new SavedItem(i.Include, i.Description ?? "", i.Grams, new Per100g(i.Kcal, i.Protein, i.Carbs, i.Fat), i.FoodItemId)).ToList(), ct);
+            items.Select(i => new SavedItem(i.Include, i.Description ?? "", i.Grams, i.Per100, i.FoodItemId)).ToList(), ct);
         var entries = items
             .Where(i => i.Include)
-            .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, new Per100g(i.Kcal, i.Protein, i.Carbs, i.Fat), i.FoodItemId, EntrySource.Ai, aiModel, string.IsNullOrWhiteSpace(i.MatchModel) ? null : i.MatchModel.Trim(), runId))
+            .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, i.Per100, i.FoodItemId, EntrySource.Ai, aiModel, string.IsNullOrWhiteSpace(i.MatchModel) ? null : i.MatchModel.Trim(), runId))
             .ToList();
         await log.AddAsync(entries, ct);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
@@ -99,22 +99,22 @@ public class FoodController(
         var item = await foods.GetAsync(foodItemId, ct);
         var name = item.DisplayName();
         var description = item.Brand is null ? name : $"{name} ({item.Brand})";
-        await log.AddAsync([new NewEntry(date, meal, description, grams, Per100(item), item.Id, source)], ct);
+        await log.AddAsync([new NewEntry(date, meal, description, grams, item.Per100(), item.Id, source)], ct);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
     [HttpPost("items")]
-    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? servingGrams, decimal grams, CancellationToken ct)
+    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, CancellationToken ct)
     {
-        var item = await foods.CreateManualAsync(name, barcode, new Per100g(kcal, protein, carbs, fat), servingGrams, ct);
-        await log.AddAsync([new NewEntry(date, meal, item.Name, grams, Per100(item), item.Id, barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
+        var item = await foods.CreateManualAsync(name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, ct);
+        await log.AddAsync([new NewEntry(date, meal, item.Name, grams, item.Per100(), item.Id, barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
     [HttpPost("log-recent")]
-    public async Task<IActionResult> LogRecent(DateOnly date, Meal meal, string description, int? foodItemId, decimal grams, decimal kcal, decimal protein, decimal carbs, decimal fat, CancellationToken ct)
+    public async Task<IActionResult> LogRecent(DateOnly date, Meal meal, string description, int? foodItemId, decimal grams, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
-        await log.AddAsync([new NewEntry(date, meal, description, grams, new Per100g(kcal, protein, carbs, fat), foodItemId, EntrySource.Recent)], ct);
+        await log.AddAsync([new NewEntry(date, meal, description, grams, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), foodItemId, EntrySource.Recent)], ct);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -141,16 +141,16 @@ public class FoodController(
     public IActionResult QuickForm(DateOnly date, Meal meal) => PartialView("_QuickAddForm", new QuickAddViewModel(date, meal));
 
     [HttpPost("quick")]
-    public async Task<IActionResult> Quick(DateOnly date, Meal meal, string? description, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, CancellationToken ct)
+    public async Task<IActionResult> Quick(DateOnly date, Meal meal, string? description, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
-        await log.AddQuickAsync(date, meal, string.IsNullOrWhiteSpace(description) ? localizer["Quick add"] : description, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, ct);
+        await log.AddQuickAsync(date, meal, string.IsNullOrWhiteSpace(description) ? localizer["Quick add"] : description, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
     [HttpPost("entries/{id:int}/quick")]
-    public async Task<IActionResult> UpdateQuick(int id, string description, Meal meal, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, CancellationToken ct)
+    public async Task<IActionResult> UpdateQuick(int id, string description, Meal meal, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
-        await log.UpdateQuickAsync(id, description, meal, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, ct);
+        await log.UpdateQuickAsync(id, description, meal, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
         var entry = await log.GetAsync(id, ct);
         return Redirect($"/food?date={entry.Date:yyyy-MM-dd}");
     }
@@ -173,8 +173,6 @@ public class FoodController(
         TempData.Undo("Entry deleted.", $"/undo/entry/{id}");
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
-
-    private static Per100g Per100(FoodItem f) => new(f.KcalPer100g, f.ProteinPer100g, f.CarbsPer100g, f.FatPer100g);
 
     /// <summary>The meal that fits the user's local time of day.</summary>
     private async Task<Meal> DefaultMealAsync()
@@ -199,7 +197,11 @@ public class FoodController(
         public decimal Protein { get; set; }
         public decimal Carbs { get; set; }
         public decimal Fat { get; set; }
+        public decimal? Fiber { get; set; }
+        public decimal? SaturatedFat { get; set; }
         public int? FoodItemId { get; set; }
         public string? MatchModel { get; set; }
+
+        public Per100g Per100 => new(Kcal, Protein, Carbs, Fat, Fiber, SaturatedFat);
     }
 }

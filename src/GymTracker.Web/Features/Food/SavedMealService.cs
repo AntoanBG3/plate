@@ -40,6 +40,8 @@ public class SavedMealService(AppDbContext db, ICurrentUser currentUser, TimePro
                 ProteinG = e.ProteinG,
                 CarbsG = e.CarbsG,
                 FatG = e.FatG,
+                FiberG = e.FiberG,
+                SaturatedFatG = e.SaturatedFatG,
                 FoodItemId = e.FoodItemId,
                 Source = e.Source,
             }).ToList(),
@@ -72,7 +74,7 @@ public class SavedMealService(AppDbContext db, ICurrentUser currentUser, TimePro
                 throw new ValidationException(new LocalText("{0}: {1}", item.Description, FoodMath.Validate(to, new Per100g(0, 0, 0, 0))!));
             }
 
-            var totals = FoodMath.Scale(new Totals(item.Kcal, item.ProteinG, item.CarbsG, item.FatG), item.Grams, to);
+            var totals = FoodMath.Scale(new Totals(item.Kcal, item.ProteinG, item.CarbsG, item.FatG, item.FiberG, item.SaturatedFatG), item.Grams, to);
             db.FoodLog.Add(new FoodLogEntry
             {
                 UserId = userId,
@@ -84,6 +86,8 @@ public class SavedMealService(AppDbContext db, ICurrentUser currentUser, TimePro
                 ProteinG = totals.ProteinG,
                 CarbsG = totals.CarbsG,
                 FatG = totals.FatG,
+                FiberG = totals.FiberG,
+                SaturatedFatG = totals.SaturatedFatG,
                 FoodItemId = item.FoodItemId is { } f && visible.Contains(f) ? f : null,
                 Source = quick ? EntrySource.Quick : EntrySource.Recent,
                 CreatedAt = now,

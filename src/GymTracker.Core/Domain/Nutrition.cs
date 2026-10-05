@@ -44,6 +44,13 @@ public class FoodItem
     public decimal ProteinPer100g { get; set; }
     public decimal CarbsPer100g { get; set; }
     public decimal FatPer100g { get; set; }
+
+    /// <summary>Null when the source has no value; unknown is not zero.</summary>
+    public decimal? FiberPer100g { get; set; }
+
+    /// <summary>Null when the source has no value; unknown is not zero.</summary>
+    public decimal? SaturatedFatPer100g { get; set; }
+
     public decimal? DefaultServingGrams { get; set; }
     public FoodSource Source { get; set; }
 }
@@ -61,6 +68,13 @@ public class FoodLogEntry
     public decimal ProteinG { get; set; }
     public decimal CarbsG { get; set; }
     public decimal FatG { get; set; }
+
+    /// <summary>Null when the food has no value; unknown is not zero.</summary>
+    public decimal? FiberG { get; set; }
+
+    /// <summary>Null when the food has no value; unknown is not zero.</summary>
+    public decimal? SaturatedFatG { get; set; }
+
     public int? FoodItemId { get; set; }
     public FoodItem? FoodItem { get; set; }
     public EntrySource Source { get; set; }
@@ -106,6 +120,8 @@ public class SavedMealItem
     public decimal ProteinG { get; set; }
     public decimal CarbsG { get; set; }
     public decimal FatG { get; set; }
+    public decimal? FiberG { get; set; }
+    public decimal? SaturatedFatG { get; set; }
     public int? FoodItemId { get; set; }
     public EntrySource Source { get; set; }
 }

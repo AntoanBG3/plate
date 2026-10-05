@@ -23,6 +23,7 @@ public static class UsdaSeed
         if (await db.FoodItems.IgnoreQueryFilters().AnyAsync(f => f.Source == FoodSource.Usda, ct))
         {
             await AddBulgarianNamesAsync(db, path, ct);
+            await AddFiberAndSaturatedFatAsync(db, path, ct);
             return;
         }
 
@@ -43,6 +44,8 @@ public static class UsdaSeed
                 CarbsPer100g = D(f[4]),
                 FatPer100g = D(f[5]),
                 NameBg = f.Count > 6 && f[6].Length > 0 ? Cut(f[6]) : null,
+                FiberPer100g = Optional(f, 7),
+                SaturatedFatPer100g = Optional(f, 8),
                 Source = FoodSource.Usda,
             });
         }
@@ -95,6 +98,47 @@ public static class UsdaSeed
 
         await db.SaveChangesAsync(ct);
     }
+
+    /// <summary>
+    /// Databases seeded before the CSV had fiber and saturated fat get them once, matched by English name.
+    /// Once any USDA row has either value this has run, so later starts skip it.
+    /// </summary>
+    private static async Task AddFiberAndSaturatedFatAsync(AppDbContext db, string path, CancellationToken ct)
+    {
+        var usda = db.FoodItems.IgnoreQueryFilters().Where(f => f.Source == FoodSource.Usda);
+        if (await usda.AnyAsync(f => f.FiberPer100g != null || f.SaturatedFatPer100g != null, ct))
+        {
+            return;
+        }
+
+        var values = new Dictionary<string, (decimal? Fiber, decimal? Saturated)>(StringComparer.Ordinal);
+        foreach (var line in File.ReadLines(path).Skip(1))
+        {
+            var f = ParseCsvLine(line);
+            if (Optional(f, 7) is not null || Optional(f, 8) is not null)
+            {
+                values.TryAdd(Cut(f[1]), (Optional(f, 7), Optional(f, 8)));
+            }
+        }
+
+        if (values.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var item in await usda.ToListAsync(ct))
+        {
+            if (values.TryGetValue(item.Name, out var v))
+            {
+                (item.FiberPer100g, item.SaturatedFatPer100g) = v;
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static decimal? Optional(List<string> fields, int index) =>
+        fields.Count > index && fields[index].Length > 0 ? D(fields[index]) : null;
 
     private static string Cut(string s) => s.Length > 200 ? s[..200] : s;
 

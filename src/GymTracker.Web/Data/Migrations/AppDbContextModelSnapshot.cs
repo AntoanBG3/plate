@@ -353,6 +353,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");
 
+                    b.Property<decimal?>("FiberPer100g")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
                     b.Property<decimal>("KcalPer100g")
                         .HasPrecision(7, 2)
                         .HasColumnType("numeric(7,2)");
@@ -370,6 +374,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<decimal>("ProteinPer100g")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<decimal?>("SaturatedFatPer100g")
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");
 
@@ -433,6 +441,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasPrecision(6, 1)
                         .HasColumnType("numeric(6,1)");
 
+                    b.Property<decimal?>("FiberG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
                     b.Property<int?>("FoodItemId")
                         .HasColumnType("integer");
 
@@ -457,6 +469,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("ProteinG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
+                    b.Property<decimal?>("SaturatedFatG")
                         .HasPrecision(6, 1)
                         .HasColumnType("numeric(6,1)");
 
@@ -679,6 +695,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasPrecision(6, 1)
                         .HasColumnType("numeric(6,1)");
 
+                    b.Property<decimal?>("FiberG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
                     b.Property<int?>("FoodItemId")
                         .HasColumnType("integer");
 
@@ -691,6 +711,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasColumnType("numeric(7,1)");
 
                     b.Property<decimal>("ProteinG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
+                    b.Property<decimal?>("SaturatedFatG")
                         .HasPrecision(6, 1)
                         .HasColumnType("numeric(6,1)");
 

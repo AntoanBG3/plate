@@ -367,7 +367,7 @@ Generic foods (chicken breast, cooked rice, banana) come from USDA FoodData Cent
 - A one-off script, committed to the repository, converts the Foundation and SR Legacy downloads into a trimmed CSV (name, kcal, protein, carbs, fat, fiber and saturated fat per 100 g, the last two blank where USDA has no value, raw/cooked where the name states it) under `src/GymTracker.Web/Data/Seed/`.
 - On startup, if no `Usda` items exist, the app imports the CSV as shared `FoodItem`s with `Source = Usda`. No runtime calls to the USDA API.
 - Databases seeded before the CSV had fiber and saturated fat get them once, matched by English name, the way Bulgarian names were added. Rows that already have a value are left alone.
-- The Bulgarian foods CSV (`bg-foods.csv`) has the same two optional columns, filled where its source tables give them.
+- The Bulgarian foods CSV (`bg-foods.csv`) has the same two optional columns. Products get them from Open Food Facts by barcode (`tools/foods/add-fiber.mjs`), and existing databases get them on the next start where both are still unknown. Dishes stay blank, since their source pages don't give them.
 
 ### 6.4 Setup chat (onboarding)
 

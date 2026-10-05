@@ -61,7 +61,7 @@ public class FeedbackSnapshots(AppDbContext db, TrainingAnalytics training, Prof
         {
             kind = "foodItem",
             food.Id, food.Name, food.NameBg, food.Brand, food.Barcode, food.Source, shared = food.OwnerUserId is null,
-            food.KcalPer100g, food.ProteinPer100g, food.CarbsPer100g, food.FatPer100g, food.DefaultServingGrams,
+            food.KcalPer100g, food.ProteinPer100g, food.CarbsPer100g, food.FatPer100g, food.FiberPer100g, food.SaturatedFatPer100g, food.DefaultServingGrams,
         });
         return new AboutSnapshot(snapshot, new LocalText("About: {0}", food.DisplayName()), null);
     }

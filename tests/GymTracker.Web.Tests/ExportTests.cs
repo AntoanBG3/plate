@@ -63,8 +63,8 @@ public class ExportTests(PostgresFixture fixture)
             "profile.csv", "bodyweight.csv", "workouts.csv", "sets.csv", "templates.csv",
             "custom_exercises.csv", "food_log.csv", "maintenance_estimates.csv", "feedback.csv");
         files["bodyweight.csv"].Should().Be("date,weight_kg\r\n2026-10-01,82.4\r\n");
-        files["food_log.csv"].Should().StartWith("date,meal,description,grams,kcal,protein_g,carbs_g,fat_g,source,ai_model,match_model,created_at_utc\r\n");
-        files["food_log.csv"].Should().Contain("2026-10-01,Breakfast,\"Баница, 2 парчета\",200,640,20,60,35,Ai,test,typesafe/jev-1.13-20260917,");
+        files["food_log.csv"].Should().StartWith("date,meal,description,grams,kcal,protein_g,carbs_g,fat_g,fiber_g,saturated_fat_g,source,ai_model,match_model,created_at_utc\r\n");
+        files["food_log.csv"].Should().Contain("2026-10-01,Breakfast,\"Баница, 2 парчета\",200,640,20,60,35,,,Ai,test,typesafe/jev-1.13-20260917,");
     }
 
     /// <summary>File name to text, after checking each file starts with the UTF-8 byte order mark.</summary>

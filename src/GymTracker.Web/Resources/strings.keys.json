@@ -76,6 +76,9 @@
   "About: {0}": [
     "src/GymTracker.Web/Features/Feedback/FeedbackSnapshots.cs"
   ],
+  "Above a BMI of 27, protein uses the weight at BMI 27 for your height, since grams per kg of total weight overshoots.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Abs": [
     "enum"
   ],
@@ -185,8 +188,15 @@
   "Archive this template? Past workouts keep their history.": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
+  "At least {0} g protein in this meal": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
   "Attach a screenshot or photo (JPEG, PNG or WebP).": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "Auto": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Average on logged days, last 4 weeks": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
@@ -236,6 +246,9 @@
   ],
   "Barcode {0}. Saved for both of you, so it only needs entering once.": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Based on {0} kg, a healthy weight for your height.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Bench press": [
     "exercise"
@@ -313,7 +326,11 @@
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
-    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "Carbs: whatever calories are left after protein and fat.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Change a quick entry's calories instead of its amount.": [
     "src/GymTracker.Web/Features/Food/FoodLogService.cs"
@@ -491,6 +508,9 @@
   "Eaten {0} of {1} kcal and {2} of {3} g protein": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
+  "Eaten {0} of {1} kcal and {2} of {3} g protein (minimum {4} g)": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "Edit": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml"
@@ -561,7 +581,11 @@
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
-    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "Fat: at least 20% of calories and 0.5 g per kg, up to 35%. Very low fat lowers testosterone. Whittaker 2021, ACSM.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Feedback": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -569,6 +593,18 @@
   "Female": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Fiber": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml",
+    "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Fiber can't be over 100 g, and saturated fat can't be more than fat.": [
+    "src/GymTracker.Core/Nutrition/FoodMath.cs"
+  ],
+  "Fiber must be between 0 and 200 g, and saturated fat between 0 and the fat.": [
+    "src/GymTracker.Core/Nutrition/FoodMath.cs"
   ],
   "Fill in every field to finish, or skip for now.": [
     "src/GymTracker.Web/Features/Onboarding/OnboardingService.cs"
@@ -636,6 +672,9 @@
     "src/GymTracker.Web/Views/Train/Session.cshtml",
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
+  "From 65, under 1.2 g per kg is below what keeps muscle when you train.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "From a starting maintenance of about {0} kcal, with {1} g of protein. It adapts as you log food and weight.": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
   ],
@@ -698,6 +737,9 @@
   ],
   "How to add": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
+  "How your targets are set": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Idea": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -766,6 +808,9 @@
   ],
   "Layout and design": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Leave protein empty for Auto: 1.8 g per kg, 2.2 on a cut and 2.4 on a cut faster than 0.75% a week.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Leave starting maintenance empty to estimate it from sex, age, height, weight and activity. It adapts to your logged data later.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -1107,7 +1152,9 @@
     "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
   "Optional": [
-    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+    "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
   ],
   "Or type the digits": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
@@ -1149,6 +1196,9 @@
   ],
   "Per 100 g, from the label": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Per meal: about 0.3 g of protein per kg at breakfast, lunch and dinner; 0.4 g and at least 25 g from 65. Morton 2018.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Per side": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
@@ -1216,11 +1266,20 @@
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Protein and fat fill your whole calorie target.": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "Protein at least {0} g, aiming for {1} g; fat {2}–{3} g; carbs {4}–{5} g.": [
+    "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
   "Protein must be between {0} and {1} g per kg.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Protein, carbs and fat must be between 0 and 500 g.": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
+  ],
+  "Protein: at least 1.6 g per kg (1.2 from age 65), aiming higher on a cut to keep muscle. Morton 2018, Nunes 2022, Helms 2014.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Pull-up": [
     "exercise"
@@ -1344,6 +1403,11 @@
   ],
   "Run the setup chat again": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Saturated fat": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml",
+    "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
   ],
   "Save": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
@@ -1595,6 +1659,9 @@
   "Targets and progress": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
+  "Targets are ranges because the evidence is. Judge them over a week, not a single day.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Template name": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
@@ -1805,6 +1872,9 @@
   ],
   "Today's weight": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "Today: at least {0} g, aiming for {1} g.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Too large": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
@@ -2113,6 +2183,12 @@
   "logged {0}× in 30 days": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "min {0} g": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "of which saturated": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
   "of {0}": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
@@ -2133,11 +2209,25 @@
   "s": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
+  "to your protein minimum": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "{0} (copy)": [
     "src/GymTracker.Web/Controllers/TemplatesController.cs"
   ],
   "{0} exercises": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
+  ],
+  "{0} g": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "{0} g carbs, range {1} to {2} g": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "{0} g fat, range {1} to {2} g": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "{0} g · {1} kcal · {2} g protein": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
@@ -2153,7 +2243,6 @@
   ],
   "{0} kcal": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
-    "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
     "wwwroot/js"
   ],
@@ -2191,6 +2280,9 @@
   "{0} new replies": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "{0} of {1} g protein, minimum {2} g": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
   "{0} of {1} kcal": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
@@ -2201,6 +2293,10 @@
   ],
   "{0} sets are saved on this phone and will send when the connection is back.": [
     "wwwroot/js"
+  ],
+  "{0}–{1} g": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "{0}–{1} reps · {2} · rest {3}": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
