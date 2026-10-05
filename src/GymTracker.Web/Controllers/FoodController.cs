@@ -85,6 +85,7 @@ public class FoodController(
             .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, i.Per100, i.FoodItemId, EntrySource.Ai, aiModel, string.IsNullOrWhiteSpace(i.MatchModel) ? null : i.MatchModel.Trim(), runId))
             .ToList();
         await log.AddAsync(entries, ct);
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -102,6 +103,7 @@ public class FoodController(
         var name = item.DisplayName();
         var description = item.Brand is null ? name : $"{name} ({item.Brand})";
         await log.AddAsync([new NewEntry(date, meal, description, grams, item.Per100(), item.Id, source)], ct);
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -110,6 +112,7 @@ public class FoodController(
     {
         var item = await foods.CreateManualAsync(name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, ct);
         await log.AddAsync([new NewEntry(date, meal, item.Name, grams, item.Per100(), item.Id, barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -117,6 +120,7 @@ public class FoodController(
     public async Task<IActionResult> LogRecent(DateOnly date, Meal meal, string description, int? foodItemId, decimal grams, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
         await log.AddAsync([new NewEntry(date, meal, description, grams, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), foodItemId, EntrySource.Recent)], ct);
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -127,6 +131,7 @@ public class FoodController(
         TempData.Notice(copied == 0
             ? new LocalText(NothingToCopy[meal])
             : LocalText.Count(copied, "Copied 1 item.", "Copied {0} items."));
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -146,6 +151,7 @@ public class FoodController(
     public async Task<IActionResult> Quick(DateOnly date, Meal meal, string? description, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
         await log.AddQuickAsync(date, meal, string.IsNullOrWhiteSpace(description) ? localizer["Quick add"] : description, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -154,6 +160,7 @@ public class FoodController(
     {
         await log.UpdateQuickAsync(id, description, meal, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
         var entry = await log.GetAsync(id, ct);
+        FocusMeal(entry.Meal);
         return Redirect($"/food?date={entry.Date:yyyy-MM-dd}");
     }
 
@@ -165,16 +172,22 @@ public class FoodController(
     {
         await log.UpdateAsync(id, description, grams, meal, ct);
         var entry = await log.GetAsync(id, ct);
+        FocusMeal(entry.Meal);
         return Redirect($"/food?date={entry.Date:yyyy-MM-dd}");
     }
 
     [HttpPost("entries/{id:int}/delete")]
     public async Task<IActionResult> DeleteEntry(int id, CancellationToken ct)
     {
+        var meal = (await log.GetAsync(id, ct)).Meal;
         var date = await log.DeleteAsync(id, ct);
         TempData.Undo("Entry deleted.", $"/undo/entry/{id}");
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
+
+    /// <summary>The day view scrolls to the meal a change was made in (Phase 11).</summary>
+    private void FocusMeal(Meal meal) => TempData.Focus($"meal-{meal.ToString().ToLowerInvariant()}");
 
     /// <summary>The meal that fits the user's local time of day.</summary>
     private async Task<Meal> DefaultMealAsync()

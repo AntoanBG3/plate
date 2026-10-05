@@ -485,6 +485,7 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 /* ---------- workout session ---------- */
 
 .exercise { margin-top: var(--s-6); scroll-margin-top: 60px; }
+.meal-section { scroll-margin-top: 60px; }
 .ex-head { display: flex; align-items: flex-end; gap: var(--s-2); padding: 0 0 var(--s-2) var(--s-1); }
 .ex-head > div:first-child { flex: 1; min-width: 0; }
 .ex-name { font-size: var(--text-title-2); line-height: 1.27; font-weight: var(--weight-bold); letter-spacing: 0.016em; overflow-wrap: anywhere; }
@@ -706,6 +707,8 @@ body.sheet-open .app-scale {
 /* Page changes animate the content and the top bar; the tab bar and the rest of the shell stay still.
    html[data-nav] is "next", "prev", "forward", "back" or "tab" (nav.js for soft navigation, motion.js for full loads). */
 @view-transition { navigation: auto; }
+/* Taps during a transition go to the new page underneath; the overlay used to swallow them for ~340 ms. */
+::view-transition { pointer-events: none; }
 /* Opaque, so a sliding page never shows the one behind it through its gutters. */
 #main { view-transition-name: page; background: var(--bg); min-height: 100dvh; box-sizing: border-box; }
 .large-title { view-transition-name: large-title; }

@@ -298,7 +298,7 @@ builder.Services.AddRateLimiter(o =>
     // A failing weekly model is retried on Today visits; this caps how often (SPEC 6.5).
     o.AddPolicy(RateLimits.AiWeekly, http => PerUser(http, config.GetValue("RateLimits:AiWeeklyPerWindow", 6), TimeSpan.FromHours(1)));
     // The login page asks for passkey options on every view (autofill), so they get their own budget.
-    o.AddPolicy(RateLimits.PasskeyOptions, http => PerIp(http, 30, TimeSpan.FromMinutes(5)));
+    o.AddPolicy(RateLimits.PasskeyOptions, http => PerIp(http, config.GetValue("RateLimits:PasskeyOptionsPerWindow", 30), TimeSpan.FromMinutes(5)));
     o.AddPolicy(RateLimits.CspReport, http => PerIp(http, 20, TimeSpan.FromMinutes(1)));
     // Reports and parse ratings, and browser error reports (SPEC 11).
     o.AddPolicy(RateLimits.Feedback, http => PerUser(http, config.GetValue("RateLimits:FeedbackPerWindow", 30), TimeSpan.FromMinutes(10)));

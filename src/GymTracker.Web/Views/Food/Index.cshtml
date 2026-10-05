@@ -123,7 +123,7 @@
     var entries = day.For(meal).ToList();
     var mealTotals = day.TotalsFor(meal);
     var mealProtein = macros is not null && meal != Meal.Snack && entries.Count > 0 ? macros.MealProteinG : (int?)null;
-    <section class="section">
+    <section class="section meal-section" id="meal-@meal.ToString().ToLowerInvariant()">
         <div class="meal-head">
             <h2 class="section-title">@L.Enum(meal)<span class="section-aside num">@(entries.Count > 0 ? L["{0} kcal · {1} g protein", Math.Round(mealTotals.Kcal), Math.Round(mealTotals.ProteinG)] : "")@if (mealProtein is { } mp && mealTotals.ProteinG >= mp)
                 {

@@ -16,6 +16,7 @@
     var error = Notices.Read(TempData[FeatureExceptionFilter.ErrorKey]);
     var message = Notices.Read(TempData[Notices.MessageKey]);
     var undo = Notices.ReadUndo(TempData);
+    var focus = Notices.ReadFocus(TempData);
 }
 <!DOCTYPE html>
 <html lang="@prefs.LangAttribute" data-version="@GymTracker.Web.Features.Diagnostics.AppVersion.Current" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth" data-shell="@prefs.LangAttribute-@(Context.User.Identity?.IsAuthenticated == true ? "in" : "out")">
@@ -85,6 +86,10 @@
             @if (undo is { } u)
             {
                 <div hidden data-undo-url="@u.Url" data-undo-text="@L[u.Text]"></div>
+            }
+            @if (focus is not null)
+            {
+                <div hidden data-scroll-to="@focus"></div>
             }
             @RenderBody()
         </main>

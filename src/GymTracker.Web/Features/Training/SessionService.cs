@@ -230,14 +230,15 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
             .SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct)
         ?? throw new NotFoundException();
 
-    public async Task AddExerciseAsync(int sessionId, int exerciseId, CancellationToken ct)
+    /// <summary>Adds an exercise at the end of the session. Returns the new session exercise's id.</summary>
+    public async Task<int> AddExerciseAsync(int sessionId, int exerciseId, CancellationToken ct)
     {
         var session = await db.Sessions.Include(s => s.Exercises).SingleOrDefaultAsync(s => s.Id == sessionId, ct)
             ?? throw new NotFoundException();
         var exercise = await db.Exercises.SingleOrDefaultAsync(e => e.Id == exerciseId && !e.IsArchived, ct)
             ?? throw new NotFoundException("Exercise not found.");
 
-        session.Exercises.Add(new SessionExercise
+        var item = new SessionExercise
         {
             ExerciseId = exercise.Id,
             SortOrder = session.Exercises.Count == 0 ? 0 : session.Exercises.Max(e => e.SortOrder) + 1,
@@ -245,8 +246,10 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
             RepMax = 12,
             WorkingSets = 3,
             WeightIncrementKg = await profiles.DefaultIncrementAsync(ct),
-        });
+        };
+        session.Exercises.Add(item);
         await db.SaveChangesAsync(ct);
+        return item.Id;
     }
 
     /// <summary>

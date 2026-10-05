@@ -75,6 +75,14 @@
         }
     }, { passive: true });
 
+    // A tap during a page transition is for the new page, which is already in place under the animation (its
+    // ::view-transition overlay lets taps through, app.css): finish the animation at once so what is seen matches.
+    document.addEventListener("pointerdown", () => {
+        if (current) {
+            current.skipTransition();
+        }
+    }, { capture: true, passive: true });
+
     // The touch became a scroll (iOS cancels the pointer), so the page won't be opened.
     document.addEventListener("pointercancel", dropPrefetch, { passive: true });
 
@@ -158,6 +166,20 @@
         Array.from(from.attributes).forEach((a) => to.setAttribute(a.name, a.value));
     }
 
+    // The server names the element a change was made to (Notices.Focus); bring it into view if it isn't.
+    function scrollToFocus() {
+        const marker = document.querySelector("#main [data-scroll-to]");
+        const target = marker && document.getElementById(marker.dataset.scrollTo);
+        if (!target) {
+            return;
+        }
+        const r = target.getBoundingClientRect();
+        if (r.top < 60 || r.top > window.innerHeight - 160) {
+            target.scrollIntoView({ block: "start" });
+        }
+    }
+    scrollToFocus();
+
     async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant }) {
         const next = doc.documentElement;
         const nextShell = doc.querySelector(".app-scale");
@@ -199,6 +221,7 @@
                 history.replaceState({ gym: true }, "", finalUrl);
             }
             window.scrollTo(0, scrollY || 0);
+            scrollToFocus();
             htmx.process(document.querySelector(".app-scale"));
             htmx.process(document.getElementById("overlays"));
             document.getElementById("main").focus({ preventScroll: true });
@@ -224,7 +247,7 @@
         await transition.updateCallbackDone;
     }
 
-    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, side = null, instant = false, fallback = () => { location.href = url.href; } } = {}) {
+    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, side = null, instant = false, keepScroll = false, fallback = () => { location.href = url.href; } } = {}) {
         // Remember where we were, for Back.
         history.replaceState(Object.assign({}, history.state, { gym: true, scrollY: window.scrollY }), "");
         const slow = setTimeout(() => root.classList.add("is-navigating"), SLOW_MS);
@@ -246,6 +269,10 @@
             }
             const doc = new DOMParser().parseFromString(await response.text(), "text/html");
             const samePage = finalUrl.href === location.href;
+            // A change that comes back to the same page keeps the user's place on it (Phase 11).
+            if (keepScroll && finalUrl.pathname === location.pathname && finalUrl.search === location.search) {
+                scrollY = window.scrollY;
+            }
             await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant });
         } catch (error) {
             if (error instanceof FullLoad) {
@@ -295,6 +322,7 @@
         buttons.forEach((b) => { b.disabled = true; });
         go(action, {
             init: { method: "POST", body },
+            keepScroll: true,
             // No answer: the change may or may not have been saved, so say so instead of sending it again.
             fallback: () => window.gymToast(t("No connection. That change was not saved; try again when you have signal.")),
         }).finally(() => {

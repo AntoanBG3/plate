@@ -23,7 +23,7 @@
 @for (var i = 0; i < items.Count; i++)
 {
     var item = items[i];
-    <section class="exercise">
+    <section class="exercise" id="te-@item.Id">
         <div class="ex-head">
             <div>
                 <h2 class="ex-name">@L.Exercise(item.Exercise)</h2>

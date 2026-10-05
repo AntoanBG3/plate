@@ -86,7 +86,7 @@ public class TrainController(
     [HttpPost("sessions/{id:int}/exercises")]
     public async Task<IActionResult> AddExercise(int id, int exerciseId, CancellationToken ct)
     {
-        await sessions.AddExerciseAsync(id, exerciseId, ct);
+        TempData.Focus($"ex-{await sessions.AddExerciseAsync(id, exerciseId, ct)}");
         return Redirect($"/train/sessions/{id}");
     }
 
@@ -102,12 +102,20 @@ public class TrainController(
     }
 
     [HttpPost("session-exercises/{id:int}/swap")]
-    public async Task<IActionResult> Swap(int id, int exerciseId, CancellationToken ct) =>
-        Redirect($"/train/sessions/{await sessions.SwapExerciseAsync(id, exerciseId, ct)}");
+    public async Task<IActionResult> Swap(int id, int exerciseId, CancellationToken ct)
+    {
+        var sessionId = await sessions.SwapExerciseAsync(id, exerciseId, ct);
+        TempData.Focus($"ex-{id}");
+        return Redirect($"/train/sessions/{sessionId}");
+    }
 
     [HttpPost("session-exercises/{id:int}/move")]
-    public async Task<IActionResult> MoveExercise(int id, int direction, CancellationToken ct) =>
-        Redirect($"/train/sessions/{await sessions.MoveExerciseAsync(id, direction, ct)}");
+    public async Task<IActionResult> MoveExercise(int id, int direction, CancellationToken ct)
+    {
+        var sessionId = await sessions.MoveExerciseAsync(id, direction, ct);
+        TempData.Focus($"ex-{id}");
+        return Redirect($"/train/sessions/{sessionId}");
+    }
 
     [HttpPost("session-exercises/{id:int}/remove")]
     public async Task<IActionResult> RemoveExercise(int id, CancellationToken ct)

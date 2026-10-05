@@ -16,6 +16,13 @@ public static class Notices
 
     public static void Error(this ITempDataDictionary temp, LocalText text) => temp[FeatureExceptionFilter.ErrorKey] = Pack(text);
 
+    public const string FocusKey = "Focus";
+
+    /// <summary>The element (by id) the next page scrolls to, so a change made far down the page stays in view.</summary>
+    public static void Focus(this ITempDataDictionary temp, string elementId) => temp[FocusKey] = elementId;
+
+    public static string? ReadFocus(ITempDataDictionary temp) => temp[FocusKey] as string;
+
     public const string UndoKey = "Undo";
 
     /// <summary>Shows text with an Undo button on the next page; url is the POST that restores the row.</summary>

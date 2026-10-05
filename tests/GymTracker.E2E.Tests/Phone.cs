@@ -30,6 +30,8 @@ public sealed class Phone : IAsyncDisposable
         };
         page.PageError += (_, error) => Errors.Add(error);
         page.Request += (_, request) => Requests.Add($"{request.Method} {new Uri(request.Url).PathAndQuery}");
+        page.Response += (_, response) => Responses.Add($"{response.Status} {new Uri(response.Url).PathAndQuery}");
+        page.RequestFailed += (_, request) => Responses.Add($"FAILED {request.Failure} {new Uri(request.Url).PathAndQuery}");
     }
 
     public string Browser { get; }
@@ -44,9 +46,21 @@ public sealed class Phone : IAsyncDisposable
 
     public List<string> Requests { get; } = [];
 
+    public List<string> Responses { get; } = [];
+
     public async Task SignInAsync(string email, string password)
     {
-        await Page.GotoAsync("/account/login");
+        try
+        {
+            await Page.GotoAsync("/account/login");
+        }
+        catch (TimeoutException ex)
+        {
+            // Name what the page was still waiting for, so a hang can be traced.
+            var finished = Responses.Count == 0 ? "none" : string.Join("\n", Responses);
+            throw new TimeoutException($"{ex.Message}\nRequests:\n{string.Join("\n", Requests)}\nResponses:\n{finished}", ex);
+        }
+
         await Page.FillAsync("#email", email);
         await Page.FillAsync("#password", password);
         await Page.ClickAsync("button[type=submit]");

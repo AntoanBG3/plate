@@ -91,18 +91,21 @@ public class TemplateService(AppDbContext db, ICurrentUser currentUser, TimeProv
         }
     }
 
-    public async Task AddExerciseAsync(int templateId, int exerciseId, CancellationToken ct)
+    /// <summary>Adds an exercise at the end of the template. Returns the new template exercise's id.</summary>
+    public async Task<int> AddExerciseAsync(int templateId, int exerciseId, CancellationToken ct)
     {
         var template = await GetAsync(templateId, ct);
         var exercise = await db.Exercises.SingleOrDefaultAsync(e => e.Id == exerciseId && !e.IsArchived, ct)
             ?? throw new NotFoundException("Exercise not found.");
 
-        template.Exercises.Add(new TemplateExercise
+        var item = new TemplateExercise
         {
             ExerciseId = exercise.Id,
             SortOrder = template.Exercises.Count == 0 ? 0 : template.Exercises.Max(e => e.SortOrder) + 1,
-        });
+        };
+        template.Exercises.Add(item);
         await db.SaveChangesAsync(ct);
+        return item.Id;
     }
 
     public async Task UpdateExerciseAsync(int templateExerciseId, TemplateExerciseInput input, CancellationToken ct)

@@ -65,7 +65,7 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     [HttpPost("{id:int}/exercises")]
     public async Task<IActionResult> AddExercise(int id, int exerciseId, CancellationToken ct)
     {
-        await templates.AddExerciseAsync(id, exerciseId, ct);
+        TempData.Focus($"te-{await templates.AddExerciseAsync(id, exerciseId, ct)}");
         return Redirect($"/train/templates/{id}");
     }
 
@@ -73,6 +73,7 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     public async Task<IActionResult> UpdateExercise(int id, int workingSets, int repMin, int repMax, decimal? weightIncrementKg, int restSeconds, CancellationToken ct)
     {
         await templates.UpdateExerciseAsync(id, new TemplateExerciseInput(workingSets, repMin, repMax, weightIncrementKg, restSeconds), ct);
+        TempData.Focus($"te-{id}");
         return Redirect($"/train/templates/{await templates.TemplateIdOfExerciseAsync(id, ct)}");
     }
 
@@ -80,6 +81,7 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     public async Task<IActionResult> MoveExercise(int id, int direction, CancellationToken ct)
     {
         await templates.MoveExerciseAsync(id, direction, ct);
+        TempData.Focus($"te-{id}");
         return Redirect($"/train/templates/{await templates.TemplateIdOfExerciseAsync(id, ct)}");
     }
 
