@@ -899,3 +899,6 @@ details.feedback-item > summary::-webkit-details-marker { display: none; }
 details > summary.section-title { cursor: pointer; }
 a.feedback-item { color: var(--label); text-decoration: none; }
 .field-row input.check-input { flex: none; width: 24px; height: 24px; min-height: 0; margin: 0; padding: 0; }
+
+/* The weekly rate only applies to a cut or bulk (SPEC 10); site.js also disables it so it isn't sent. */
+form:has(:is(input, option)[name="goal"][value="Maintain"]:checked, select[name="goal"] option[value="Maintain"]:checked) [data-rate-row] { display: none; }

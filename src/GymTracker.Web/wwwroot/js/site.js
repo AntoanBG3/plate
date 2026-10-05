@@ -342,6 +342,28 @@
         document.title = name + " · Gym";
     });
 
+    // The weekly rate only applies to a cut or bulk (SPEC 10): for Maintain the row is hidden (app.css) and the field
+    // disabled, so it is neither required nor sent; otherwise it is required, with a typical rate as the hint.
+    const syncRate = (form) => {
+        const rate = form.querySelector("[data-rate-row] input");
+        const goal = form.elements.goal && form.elements.goal.value;
+        if (!rate || !goal) {
+            return;
+        }
+        rate.disabled = goal === "Maintain";
+        rate.required = !rate.disabled;
+        rate.placeholder = rate.dataset["hint" + goal] || "";
+    };
+    const syncRates = () => document.querySelectorAll("form:has([data-rate-row])").forEach(syncRate);
+    document.addEventListener("change", (event) => {
+        if (event.target.name === "goal" && event.target.form) {
+            syncRate(event.target.form);
+        }
+    });
+    document.addEventListener("gym:page", syncRates);
+    document.body.addEventListener("htmx:afterSettle", syncRates); // the setup card redrawn from the chat
+    syncRates();
+
     // Forms that take a while (the food text parser): show the busy state and stop a second send.
     document.addEventListener("submit", (event) => {
         const form = event.target.closest("form[data-busy]");
