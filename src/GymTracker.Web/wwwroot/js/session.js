@@ -262,6 +262,89 @@
         }
     });
 
+    // ---- row numbers and values typed into rows not logged yet (SPEC 7 and 8) ----
+    // The server numbers a whole card; a row that arrives alone (logged, deleted, added, removed) is put back in order here.
+    // What is typed into a row before it is logged is kept on the phone by the row's place in its card, so a reload or
+    // a page swap (Move up, Swap) puts it back.
+
+    const DRAFTS_KEY = "gym.setDrafts.v1";
+    const DRAFT_DAYS = 2;
+
+    function renumber(rows) {
+        Array.from(rows.children).forEach((row, i) => {
+            const n = row.querySelector(".set-n");
+            if (n) {
+                n.textContent = String(i + 1);
+            }
+        });
+    }
+
+    function draftKey(rows, index) {
+        return `${sessionId}:${rows.id}:${index}`;
+    }
+
+    // Rewrites one card's drafts from what is on screen, so they follow the rows when one is removed.
+    function saveDrafts(rows) {
+        if (!sessionId || !rows.id) {
+            return;
+        }
+        const drafts = read(DRAFTS_KEY, {});
+        const prefix = `${sessionId}:${rows.id}:`;
+        Object.keys(drafts).filter((k) => k.startsWith(prefix)).forEach((k) => { delete drafts[k]; });
+        Array.from(rows.children).forEach((row, i) => {
+            if (!row.matches("form[data-log-set]:not(.pending)")) {
+                return;
+            }
+            const kg = row.querySelector('input[name="weightKg"]').value;
+            const reps = row.querySelector('input[name="reps"]').value;
+            if (kg !== "" || reps !== "") {
+                drafts[draftKey(rows, i)] = { kg, reps, at: Date.now() };
+            }
+        });
+        write(DRAFTS_KEY, Object.keys(drafts).length ? drafts : null);
+    }
+
+    function restoreDrafts() {
+        const drafts = read(DRAFTS_KEY, {});
+        const cutoff = Date.now() - DRAFT_DAYS * 86400000;
+        Object.keys(drafts).filter((k) => !(drafts[k].at > cutoff)).forEach((k) => { delete drafts[k]; });
+        write(DRAFTS_KEY, Object.keys(drafts).length ? drafts : null);
+        document.querySelectorAll(".rows.working, .rows.warmups").forEach((rows) => {
+            Array.from(rows.children).forEach((row, i) => {
+                const draft = drafts[draftKey(rows, i)];
+                if (!draft || !row.matches("form[data-log-set]:not(.pending)")) {
+                    return;
+                }
+                const kg = row.querySelector('input[name="weightKg"]');
+                const reps = row.querySelector('input[name="reps"]');
+                kg.value = kg.value || draft.kg;
+                reps.value = reps.value || draft.reps;
+            });
+        });
+    }
+
+    document.addEventListener("input", (event) => {
+        const row = event.target.closest("form[data-log-set]");
+        if (row && row.parentElement) {
+            saveDrafts(row.parentElement);
+        }
+    });
+
+    // Rows come and go through htmx swaps whose events fire on elements that may already be gone, so watch the cards.
+    let rowsObserver = null;
+    function watchRows() {
+        rowsObserver = new MutationObserver((records) => {
+            const changed = new Set(records.map((r) => r.target.closest && r.target.closest(".rows")).filter(Boolean));
+            changed.forEach((rows) => {
+                if (rows.classList.contains("working")) {
+                    renumber(rows);
+                }
+                saveDrafts(rows);
+            });
+        });
+        document.querySelectorAll(".rows").forEach((rows) => rowsObserver.observe(rows, { childList: true }));
+    }
+
     // ---- editing a logged set (SPEC 7): it saves on change ----
     // The row is "dirty" from the first keystroke until its request starts, "saving" while it runs, and "unsaved" when it
     // failed; the server marks the row it returns as saved. What is still dirty is sent before the page is left.
@@ -562,10 +645,16 @@
         sessionId = Number(el.dataset.sessionId);
         sessionActive = el.dataset.active === "true";
         restorePending();
+        restoreDrafts();
+        watchRows();
         flush();
         keepAwake();
         ensureTicking();
         return () => {
+            if (rowsObserver) {
+                rowsObserver.disconnect();
+                rowsObserver = null;
+            }
             sessionId = null;
             sessionActive = false;
             stopTicking();

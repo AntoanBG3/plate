@@ -28,7 +28,8 @@ public record TrainViewModel(WorkoutSession? ActiveSession, IReadOnlyList<Workou
 
 /// <summary>One row in an exercise card: a logged set, or an empty row to fill in, pre-filled from the suggestion when there is one.</summary>
 /// <param name="JustSaved">The row comes back from an in-place edit, so it shows "Saved" for a moment.</param>
-public record SetRowViewModel(int SessionExerciseId, bool IsWarmup, SetEntry? Logged, Guid ClientId, SetTarget? Target = null, bool JustSaved = false)
+/// <param name="Number">The working set's position in its card; rows sent alone get theirs from session.js.</param>
+public record SetRowViewModel(int SessionExerciseId, bool IsWarmup, SetEntry? Logged, Guid ClientId, SetTarget? Target = null, bool JustSaved = false, int? Number = null)
 {
     public static SetRowViewModel Blank(int sessionExerciseId, bool isWarmup, SetTarget? target = null) =>
         new(sessionExerciseId, isWarmup, null, Guid.NewGuid(), target);

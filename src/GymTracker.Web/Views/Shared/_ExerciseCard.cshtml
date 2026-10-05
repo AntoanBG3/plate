@@ -4,6 +4,7 @@
     var warmups = Ex.Sets.Where(s => s.IsWarmup).OrderBy(s => s.SetNumber).ToList();
     var working = Ex.Sets.Where(s => !s.IsWarmup).OrderBy(s => s.SetNumber).ToList();
     var blanks = Math.Max(0, Ex.WorkingSets - working.Count);
+    var warmupBlanks = Math.Max(0, Ex.WarmupSlots - warmups.Count);
     var name = L.Exercise(Ex.Exercise);
 }
 <section class="exercise" id="ex-@Ex.Id" data-rest="@Ex.RestSeconds" data-name="@name">
@@ -44,20 +45,24 @@
             {
                 <partial name="_SetRow" model="SetRowViewModel.For(set)" />
             }
+            @for (var i = 0; i < warmupBlanks; i++)
+            {
+                <partial name="_SetRow" model="SetRowViewModel.Blank(Ex.Id, true)" />
+            }
         </div>
         <div class="rows working" id="rows-@Ex.Id">
-            @foreach (var set in working)
+            @for (var i = 0; i < working.Count; i++)
             {
-                <partial name="_SetRow" model="SetRowViewModel.For(set)" />
+                <partial name="_SetRow" model="SetRowViewModel.For(working[i]) with { Number = i + 1 }" />
             }
             @for (var i = 0; i < blanks; i++)
             {
-                <partial name="_SetRow" model="SetRowViewModel.Blank(Ex.Id, false, Model.TargetFor(working.Count + i))" />
+                <partial name="_SetRow" model="SetRowViewModel.Blank(Ex.Id, false, Model.TargetFor(working.Count + i)) with { Number = working.Count + i + 1 }" />
             }
         </div>
         <div class="ex-actions">
-            <button type="button" hx-get="/train/session-exercises/@Ex.Id/row?warmup=false" hx-target="#rows-@Ex.Id" hx-swap="beforeend">@Ui.Icon("plus")@L["Add set"]</button>
-            <button type="button" hx-get="/train/session-exercises/@Ex.Id/row?warmup=true" hx-target="#warmups-@Ex.Id" hx-swap="beforeend">@Ui.Icon("plus")@L["Warm-up"]</button>
+            <button type="button" data-add-slot="working" hx-post="/train/session-exercises/@Ex.Id/slots?warmup=false" hx-target="#rows-@Ex.Id" hx-swap="beforeend">@Ui.Icon("plus")@L["Add set"]</button>
+            <button type="button" data-add-slot="warmup" hx-post="/train/session-exercises/@Ex.Id/slots?warmup=true" hx-target="#warmups-@Ex.Id" hx-swap="beforeend">@Ui.Icon("plus")@L["Warm-up"]</button>
             @if (Model.BarKg is not null)
             {
                 <button type="button" hx-get="/train/session-exercises/@Ex.Id/plates?suggested=@(Model.TargetFor(0)?.WeightKg.Kg())" hx-target="#plates-body" hx-swap="innerHTML" data-sheet-open="plates-sheet">@Ui.Icon("list")@L["Plates"]</button>

@@ -180,6 +180,9 @@
   "Amount": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml"
   ],
+  "An exercise keeps at least one set.": [
+    "src/GymTracker.Web/Controllers/TrainController.cs"
+  ],
   "Anything else?": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
@@ -1398,6 +1401,7 @@
   "Remove": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
+    "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
   "Remove exercise": [
@@ -1916,6 +1920,9 @@
   ],
   "Theme": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "There is no empty warm-up row to remove.": [
+    "src/GymTracker.Web/Controllers/TrainController.cs"
   ],
   "Thinking…": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"

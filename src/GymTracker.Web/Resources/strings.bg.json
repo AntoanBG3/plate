@@ -771,5 +771,7 @@
   "Model saved: the weekly summary works.": "Моделът е запазен: седмичното обобщение работи.",
   "Saving…": "Запазва се…",
   "Saved": "Запазено",
-  "Not saved. Tap ✓ to try again.": "Не е запазено. Натисни ✓, за да опиташ пак."
+  "Not saved. Tap ✓ to try again.": "Не е запазено. Натисни ✓, за да опиташ пак.",
+  "There is no empty warm-up row to remove.": "Няма празен ред за загрявка, който да се махне.",
+  "An exercise keeps at least one set.": "Всяко упражнение запазва поне една серия."
 }

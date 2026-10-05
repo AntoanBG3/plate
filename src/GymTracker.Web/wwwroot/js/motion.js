@@ -353,12 +353,13 @@
         }
     });
 
-    // ---- swipe a logged set left to reveal Delete; vertical drags still scroll ----
+    // ---- swipe a set row left to reveal its button (Delete on a logged set, Remove on an empty one); vertical drags still scroll ----
 
     let swipe = null;
     document.addEventListener("pointerdown", (event) => {
-        const content = event.target.closest(".set-row.done .set-content");
-        if (!content || event.target.closest("input, button")) {
+        // A swipe may start on a field: the fields fill most of the row, and a touch that moves sideways doesn't focus one.
+        const content = event.target.closest(".set-row:not(.pending) > .set-content");
+        if (!content || !content.parentElement.querySelector(":scope > .set-delete") || event.target.closest("button")) {
             return;
         }
         swipe = { content, row: content.closest(".set-row"), x: event.clientX, y: event.clientY, dx: 0, active: false };
@@ -380,6 +381,10 @@
             swipe.active = true;
             swipe.row.classList.add("is-swiping");
             swipe.content.style.transition = "none";
+            // A mouse press focuses the field it started on; a swipe isn't meant to edit it.
+            if (swipe.row.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
         }
         const base = swipe.row.classList.contains("is-open") ? -88 : 0;
         swipe.dx = Math.min(0, Math.max(-120, base + dx));

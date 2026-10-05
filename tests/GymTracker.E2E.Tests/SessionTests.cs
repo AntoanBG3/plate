@@ -30,6 +30,86 @@ public class SessionTests(E2EFixture app)
         phone.ShouldHaveNoErrors();
     }
 
+    private static ILocator Warmups(IPage page, int card = 0) => page.Locator(".exercise").Nth(card).Locator(".rows.warmups .set-row");
+
+    /// <summary>Drags a row's content to the left, as a finger does, to reveal its action button.</summary>
+    private static async Task SwipeLeftAsync(IPage page, ILocator row)
+    {
+        var box = await Phone.BoxAsync(row.Locator(".set-n"));
+        var y = box.Y + box.Height / 2;
+        await page.Mouse.MoveAsync(box.X + 200, y);
+        await page.Mouse.DownAsync();
+        for (var dx = 20; dx <= 160; dx += 20)
+        {
+            await page.Mouse.MoveAsync(box.X + 200 - dx, y);
+        }
+
+        await page.Mouse.UpAsync();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Added_rows_and_values_typed_into_them_survive_a_reload(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press");
+        await phone.StartSessionAsync(template);
+        (await Rows(phone.Page).CountAsync()).Should().Be(3);
+
+        await phone.TapAsync(".exercise .ex-actions [data-add-slot='working']");
+        await Rows(phone.Page).Nth(3).WaitForAsync();
+        await phone.TapAsync(".exercise .ex-actions [data-add-slot='warmup']");
+        await Warmups(phone.Page).First.WaitForAsync();
+        await Rows(phone.Page).Nth(1).Locator("input[name=weightKg]").FillAsync("70");
+
+        await phone.GoAsync(phone.Page.Url);
+        (await Rows(phone.Page).CountAsync()).Should().Be(4);
+        (await Warmups(phone.Page).CountAsync()).Should().Be(1);
+        (await Rows(phone.Page).Nth(1).Locator("input[name=weightKg]").InputValueAsync()).Should().Be("70");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task An_empty_row_can_be_swiped_away_and_stays_gone(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press");
+        await phone.StartSessionAsync(template);
+
+        await SwipeLeftAsync(phone.Page, Rows(phone.Page).Nth(2));
+        await Rows(phone.Page).Nth(2).Locator(".set-delete").TapAsync();
+        await phone.Page.WaitForFunctionAsync("() => document.querySelectorAll('.exercise .rows.working .set-row').length === 2");
+
+        await phone.GoAsync(phone.Page.Url);
+        (await Rows(phone.Page).CountAsync()).Should().Be(2);
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Set_numbers_stay_consecutive_after_a_set_is_deleted(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press");
+        await phone.StartSessionAsync(template);
+        await phone.LogSetAsync(Rows(phone.Page).Nth(0), "60", "10");
+        await phone.Page.Locator(".rows.working .set-row.done").Nth(0).WaitForAsync();
+        await phone.LogSetAsync(Rows(phone.Page).Nth(1), "60", "9");
+        await phone.Page.Locator(".rows.working .set-row.done").Nth(1).WaitForAsync();
+
+        await SwipeLeftAsync(phone.Page, Rows(phone.Page).Nth(1));
+        await Rows(phone.Page).Nth(1).Locator(".set-delete").TapAsync();
+        await phone.Page.WaitForFunctionAsync("() => document.querySelectorAll('.rows.working .set-row.done').length === 1");
+
+        var numbers = await Rows(phone.Page).Locator(".set-n").AllInnerTextsAsync();
+        numbers.Select(n => n.Trim()).Should().Equal("1", "2", "3");
+        phone.ShouldHaveNoErrors();
+    }
+
     [Theory]
     [InlineData(E2EFixture.Chromium)]
     [InlineData(E2EFixture.WebKit)]

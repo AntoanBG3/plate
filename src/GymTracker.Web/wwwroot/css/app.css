@@ -521,10 +521,8 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 }
 .rows > .set-row + .set-row .set-content::before { content: ""; position: absolute; top: 0; left: calc(var(--s-4) + 1.6rem + var(--s-3)); right: 0; border-top: 0.5px solid var(--separator); }
 .warmups:not(:empty) + .working > .set-row:first-child .set-content::before { content: ""; position: absolute; top: 0; left: calc(var(--s-4) + 1.6rem + var(--s-3)); right: 0; border-top: 0.5px solid var(--separator); }
-.set-n { font-size: var(--text-subhead); font-weight: var(--weight-semibold); color: var(--label-2); counter-increment: set; }
-.working { counter-reset: set; }
-.working .set-n::before { content: counter(set); }
-.warmups .set-n { counter-increment: none; }
+/* Numbers are written by the server and kept in order by session.js; a CSS counter went stale after htmx swaps. */
+.set-n { font-size: var(--text-subhead); font-weight: var(--weight-semibold); color: var(--label-2); }
 .set-field {
     display: flex; align-items: baseline; justify-content: flex-end; gap: 4px;
     min-height: 44px; padding: 9px var(--s-3) 6px; border-radius: var(--r-sm); background: var(--fill); cursor: text;

@@ -132,17 +132,24 @@ public class TrainController(
         return PartialView("_Plates", new PlatesViewModel(id, bar, target, load));
     }
 
-    /// <summary>An empty row for an extra working set or a warmup, appended by htmx.</summary>
-    [HttpGet("session-exercises/{id:int}/row")]
-    public async Task<IActionResult> BlankRow(int id, bool warmup, CancellationToken ct)
+    /// <summary>Adds an empty row for an extra working set or a warmup, stored on the session exercise; htmx appends it.</summary>
+    [HttpPost("session-exercises/{id:int}/slots")]
+    public async Task<IActionResult> AddSlot(int id, bool warmup, CancellationToken ct)
     {
-        var exercise = await sessions.GetExerciseAsync(id, ct);
+        var exercise = await sessions.AddSlotAsync(id, warmup, ct);
 
         // An extra working set starts from the last one logged.
         var last = warmup ? null : exercise.Sets.Where(s => !s.IsWarmup).MaxBy(s => s.SetNumber);
         var target = last is null ? null : new GymTracker.Core.Training.SetTarget(last.WeightKg, last.Reps);
         return PartialView("_SetRow", SetRowViewModel.Blank(id, warmup, target));
     }
+
+    /// <summary>Removes an empty row (swiped away). An empty response takes the row off the page; 400 when it can't go.</summary>
+    [HttpPost("session-exercises/{id:int}/slots/remove")]
+    public async Task<IActionResult> RemoveSlot(int id, bool warmup, CancellationToken ct) =>
+        await sessions.RemoveSlotAsync(id, warmup, ct)
+            ? Content("")
+            : throw new ValidationException(warmup ? "There is no empty warm-up row to remove." : "An exercise keeps at least one set.");
 
     [HttpPost("sets")]
     public async Task<IActionResult> LogSet(LogSetForm form, CancellationToken ct)

@@ -124,6 +124,18 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         };
         db.Sets.Add(set);
 
+        // A set beyond the rows the server knows of (sent by an older page from the offline queue) grows the count,
+        // so the row it was logged in stays on screen.
+        var logged = await db.Sets.CountAsync(s => s.SessionExerciseId == exercise.Id && s.IsWarmup == input.IsWarmup, ct) + 1;
+        if (input.IsWarmup)
+        {
+            exercise.WarmupSlots = Math.Max(exercise.WarmupSlots, logged);
+        }
+        else
+        {
+            exercise.WorkingSets = Math.Max(exercise.WorkingSets, logged);
+        }
+
         try
         {
             await db.SaveChangesAsync(ct);
@@ -155,6 +167,52 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         set.DeletedAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
         return set;
+    }
+
+    public const int MaxWorkingSets = 20;
+    public const int MaxWarmupSlots = 10;
+
+    /// <summary>Adds an empty working-set or warm-up row to a session exercise. Stored, so a reload keeps it (SPEC 7).</summary>
+    public async Task<SessionExercise> AddSlotAsync(int sessionExerciseId, bool warmup, CancellationToken ct)
+    {
+        var exercise = await GetExerciseAsync(sessionExerciseId, ct);
+        var logged = exercise.Sets.Count(s => s.IsWarmup == warmup);
+        if (warmup)
+        {
+            exercise.WarmupSlots = Math.Min(MaxWarmupSlots, Math.Max(exercise.WarmupSlots, logged) + 1);
+        }
+        else
+        {
+            exercise.WorkingSets = Math.Min(MaxWorkingSets, Math.Max(exercise.WorkingSets, logged) + 1);
+        }
+
+        await db.SaveChangesAsync(ct);
+        return exercise;
+    }
+
+    /// <summary>
+    /// Removes one empty row. False when every row of that kind holds a logged set, or when it would leave no working set.
+    /// </summary>
+    public async Task<bool> RemoveSlotAsync(int sessionExerciseId, bool warmup, CancellationToken ct)
+    {
+        var exercise = await GetExerciseAsync(sessionExerciseId, ct);
+        var logged = exercise.Sets.Count(s => s.IsWarmup == warmup);
+        if (warmup ? exercise.WarmupSlots <= logged : exercise.WorkingSets <= Math.Max(1, logged))
+        {
+            return false;
+        }
+
+        if (warmup)
+        {
+            exercise.WarmupSlots--;
+        }
+        else
+        {
+            exercise.WorkingSets--;
+        }
+
+        await db.SaveChangesAsync(ct);
+        return true;
     }
 
     /// <summary>The weight of the last working set logged on this session exercise, or null.</summary>
