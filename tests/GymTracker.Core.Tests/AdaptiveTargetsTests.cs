@@ -272,22 +272,24 @@ public class AdaptiveMaintenanceTests
 
 public class GoalTargetsTests
 {
+    private static readonly DateOnly Today = new(2026, 10, 5);
+
     private static UserProfile Profile(Goal goal, decimal rate = 0, Sex? sex = Sex.Male) =>
         new() { Goal = goal, TargetRatePercentPerWeek = rate, Sex = sex, ProteinGramsPerKg = 2.0m };
 
     [Fact]
     public void Maintain_targets_the_maintenance_estimate() =>
-        GoalTargets.Calculate(2500, Profile(Goal.Maintain), 80m).Should().Be(new GoalTarget(2500, 160, false));
+        GoalTargets.Calculate(2500, Profile(Goal.Maintain), 80m, Today).Should().BeEquivalentTo(new { Kcal = (int?)2500, ProteinG = (int?)160, FloorApplied = false });
 
     [Fact]
     public void A_cut_subtracts_the_rate_times_trend_weight_in_kcal_per_day() =>
         // 80 kg * 0.5% = 0.4 kg/week * 7700 / 7 = 440 kcal/day
-        GoalTargets.Calculate(2500, Profile(Goal.Cut, 0.5m), 80m).Kcal.Should().Be(2060);
+        GoalTargets.Calculate(2500, Profile(Goal.Cut, 0.5m), 80m, Today).Kcal.Should().Be(2060);
 
     [Fact]
     public void A_bulk_adds_it() =>
         // 80 kg * 0.25% = 0.2 kg/week = 220 kcal/day
-        GoalTargets.Calculate(2500, Profile(Goal.Bulk, 0.25m), 80m).Kcal.Should().Be(2720);
+        GoalTargets.Calculate(2500, Profile(Goal.Bulk, 0.25m), 80m, Today).Kcal.Should().Be(2720);
 
     [Theory]
     [InlineData(Sex.Male, 1800)]
@@ -296,7 +298,7 @@ public class GoalTargetsTests
     public void The_target_never_goes_below_the_floor(Sex? sex, int floor)
     {
         // 1.0% of 90 kg is 990 kcal/day off a 2000 kcal maintenance.
-        var target = GoalTargets.Calculate(2000, Profile(Goal.Cut, 1.0m, sex), 90m);
+        var target = GoalTargets.Calculate(2000, Profile(Goal.Cut, 1.0m, sex), 90m, Today);
 
         target.Kcal.Should().Be(floor);
         target.FloorApplied.Should().BeTrue();
@@ -304,20 +306,34 @@ public class GoalTargetsTests
 
     [Fact]
     public void A_target_above_the_floor_is_left_alone() =>
-        GoalTargets.Calculate(2300, Profile(Goal.Cut, 0.5m, Sex.Female), 60m).Should().Be(new GoalTarget(1970, 120, false));
+        GoalTargets.Calculate(2300, Profile(Goal.Cut, 0.5m, Sex.Female), 60m, Today).Should().BeEquivalentTo(new { Kcal = (int?)1970, ProteinG = (int?)120, FloorApplied = false });
 
     [Fact]
     public void The_floor_applies_to_maintenance_too() =>
-        GoalTargets.Calculate(1400, Profile(Goal.Maintain, sex: Sex.Female), 50m).Should().Be(new GoalTarget(1500, 100, true));
+        GoalTargets.Calculate(1400, Profile(Goal.Maintain, sex: Sex.Female), 50m, Today).Should().BeEquivalentTo(new { Kcal = (int?)1500, ProteinG = (int?)100, FloorApplied = true });
 
     [Fact]
     public void A_cut_or_bulk_needs_a_trend_weight()
     {
-        GoalTargets.Calculate(2500, Profile(Goal.Cut, 0.5m), null).Should().Be(new GoalTarget(null, null, false));
-        GoalTargets.Calculate(2500, Profile(Goal.Maintain), null).Should().Be(new GoalTarget(2500, null, false));
+        GoalTargets.Calculate(2500, Profile(Goal.Cut, 0.5m), null, Today).Should().BeEquivalentTo(new { Kcal = (int?)null, ProteinG = (int?)null, FloorApplied = false });
+        GoalTargets.Calculate(2500, Profile(Goal.Maintain), null, Today).Should().BeEquivalentTo(new { Kcal = (int?)2500, ProteinG = (int?)null, FloorApplied = false });
     }
 
     [Fact]
     public void Protein_uses_the_trend_weight_rounded_to_5_grams() =>
-        GoalTargets.Calculate(2500, Profile(Goal.Maintain), 82.1m).ProteinG.Should().Be(165);
+        GoalTargets.Calculate(2500, Profile(Goal.Maintain), 82.1m, Today).ProteinG.Should().Be(165);
+
+    [Fact]
+    public void Macros_are_computed_from_the_target_after_the_floor()
+    {
+        var target = GoalTargets.Calculate(1400, Profile(Goal.Maintain, sex: Sex.Female), 50m, Today);
+
+        target.Macros!.FiberMinG.Should().Be(25);
+        target.Macros.SaturatedFatMaxG.Should().Be(17, "10% of 1,500 kcal / 9 = 16.7");
+        target.ProteinG.Should().Be(target.Macros.ProteinAimG);
+    }
+
+    [Fact]
+    public void Without_a_trend_weight_there_are_no_macros_but_auto_protein_needs_one_too() =>
+        GoalTargets.Calculate(2500, new UserProfile { Goal = Goal.Maintain }, null, Today).Macros.Should().BeNull();
 }

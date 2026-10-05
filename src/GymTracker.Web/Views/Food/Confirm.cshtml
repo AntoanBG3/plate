@@ -76,6 +76,8 @@
                         <label>@L["Protein"]<input class="input num" type="number" name="items[@i].Protein" value="@item.Per100.Protein.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
                         <label>@L["Carbs"]<input class="input num" type="number" name="items[@i].Carbs" value="@item.Per100.Carbs.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
                         <label>@L["Fat"]<input class="input num" type="number" name="items[@i].Fat" value="@item.Per100.Fat.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
+                        <label>@L["Fiber"]<input class="input num" type="number" name="items[@i].Fiber" value="@item.Per100.Fiber?.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
+                        <label>@L["Saturated fat"]<input class="input num" type="number" name="items[@i].SaturatedFat" value="@item.Per100.SaturatedFat?.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
                     </div>
                 </details>
                 <input type="hidden" name="items[@i].FoodItemId" value="@item.FoodItemId" />

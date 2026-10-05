@@ -8,7 +8,7 @@ public record WeightChart(string Range, IReadOnlyList<TrendPoint> Points);
 
 /// <param name="Kcal">Logged kcal, or null when nothing was logged that day.</param>
 /// <param name="TargetKcal">The target from the estimate in force that day.</param>
-public record CalorieDay(DateOnly Date, decimal? Kcal, int? TargetKcal, int? MaintenanceKcal);
+public record CalorieDay(DateOnly Date, decimal? Kcal, int? TargetKcal, int? MaintenanceKcal, decimal? ProteinG = null, int? TargetProteinG = null);
 
 /// <summary>Bodyweight and calorie history for the Progress charts.</summary>
 public class BodyAnalytics(AppDbContext db, BodyweightService bodyweights)
@@ -40,23 +40,26 @@ public class BodyAnalytics(AppDbContext db, BodyweightService bodyweights)
         var intake = await db.FoodLog
             .Where(e => e.Date >= from && e.Date <= today)
             .GroupBy(e => e.Date)
-            .Select(g => new { Date = g.Key, Kcal = g.Sum(e => e.Kcal) })
-            .ToDictionaryAsync(x => x.Date, x => x.Kcal, ct);
+            .Select(g => new { Date = g.Key, Kcal = g.Sum(e => e.Kcal), ProteinG = g.Sum(e => e.ProteinG) })
+            .ToDictionaryAsync(x => x.Date, ct);
         var estimates = await db.MaintenanceEstimates
             .Where(e => e.CalculatedOn <= today)
             .OrderBy(e => e.CalculatedOn)
-            .Select(e => new { e.CalculatedOn, e.TargetKcal, e.EstimatedTdeeKcal })
+            .Select(e => new { e.CalculatedOn, e.TargetKcal, e.EstimatedTdeeKcal, e.TargetProteinG })
             .ToListAsync(ct);
 
         var days = new List<CalorieDay>(CalorieDays);
         for (var day = from; day <= today; day = day.AddDays(1))
         {
             var estimate = estimates.LastOrDefault(e => e.CalculatedOn <= day);
+            var eaten = intake.GetValueOrDefault(day);
             days.Add(new CalorieDay(
                 day,
-                intake.TryGetValue(day, out var kcal) ? decimal.Round(kcal) : null,
+                eaten is null ? null : decimal.Round(eaten.Kcal),
                 estimate?.TargetKcal,
-                estimate?.EstimatedTdeeKcal));
+                estimate?.EstimatedTdeeKcal,
+                eaten is null ? null : decimal.Round(eaten.ProteinG),
+                estimate?.TargetProteinG));
         }
 
         return days;

@@ -32,6 +32,7 @@ public class ServerTimingTests(PostgresFixture db) : IDisposable
 
         var header = string.Join(",", response.Headers.GetValues("Server-Timing"));
         var queries = int.Parse(Regex.Match(header, "desc=\"(\\d+) queries\"").Groups[1].Value);
-        queries.Should().BeLessThanOrEqualTo(10, header);
+        // 10 before the weekly summary (SPEC 6.5), which adds its stored-summary lookup and the AI settings read.
+        queries.Should().BeLessThanOrEqualTo(12, header);
     }
 }

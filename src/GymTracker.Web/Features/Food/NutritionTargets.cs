@@ -18,7 +18,8 @@ public record DailyTargets(
     MaintenanceEstimate? Estimate = null,
     decimal? TrendWeightKg = null,
     bool FloorApplied = false,
-    int FloorKcal = 0);
+    int FloorKcal = 0,
+    MacroTarget? Macros = null);
 
 /// <summary>
 /// Keeps the weekly maintenance estimate (SPEC 5.5) and turns it into today's targets (SPEC 5.6).
@@ -39,10 +40,10 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
             var missing = trend is null
                 ? "Log your weight and fill in your profile to get a calorie target."
                 : "Fill in sex, height and birth year (or a starting maintenance) in Settings to get a calorie target.";
-            return new DailyTargets(null, Maintenance.ProteinTarget(profile, trend), missing, TrendWeightKg: trend);
+            return new DailyTargets(null, MacroTargets.ProteinAim(profile, trend, today), missing, TrendWeightKg: trend);
         }
 
-        var target = GoalTargets.Calculate(estimate.EstimatedTdeeKcal, profile, trend);
+        var target = GoalTargets.Calculate(estimate.EstimatedTdeeKcal, profile, trend, today);
 
         // Keep the stored targets in line with profile changes made since the estimate, so the calories chart matches.
         if (estimate.TargetKcal != target.Kcal || estimate.TargetProteinG != target.ProteinG)
@@ -60,7 +61,8 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
             estimate,
             trend,
             target.FloorApplied,
-            GoalTargets.MinKcal(profile.Sex));
+            GoalTargets.MinKcal(profile.Sex),
+            target.Macros);
     }
 
     /// <summary>The latest estimate if it is less than a week old, otherwise a new one, stored. Null when no estimate is possible.</summary>
@@ -100,7 +102,7 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
             return null;
         }
 
-        var target = GoalTargets.Calculate(result.TdeeKcal, profile, trend);
+        var target = GoalTargets.Calculate(result.TdeeKcal, profile, trend, today);
         var estimate = new MaintenanceEstimate
         {
             UserId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user."),

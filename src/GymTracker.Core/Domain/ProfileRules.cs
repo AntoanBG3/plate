@@ -65,8 +65,8 @@ public static class ProfileRules
         };
     }
 
-    public static LocalText? ProteinError(decimal gramsPerKg) =>
-        gramsPerKg < ProfileLimits.MinProteinGramsPerKg || gramsPerKg > ProfileLimits.MaxProteinGramsPerKg
+    public static LocalText? ProteinError(decimal? gramsPerKg) =>
+        gramsPerKg is { } g && (g < ProfileLimits.MinProteinGramsPerKg || g > ProfileLimits.MaxProteinGramsPerKg)
             ? new LocalText("Protein must be between {0} and {1} g per kg.", Number(ProfileLimits.MinProteinGramsPerKg), Number(ProfileLimits.MaxProteinGramsPerKg))
             : null;
 

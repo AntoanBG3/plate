@@ -43,8 +43,6 @@ public sealed record OnboardingRejection(OnboardingField Field, LocalText Reason
 /// </summary>
 public sealed record OnboardingDraft
 {
-    public const decimal DefaultProteinGramsPerKg = 2.0m;
-
     public string? Name { get; init; }
     public Sex? Sex { get; init; }
     public int? BirthYear { get; init; }
@@ -177,7 +175,7 @@ public sealed record OnboardingDraft
         ActivityLevel = ActivityLevel,
         Goal = Goal ?? Domain.Goal.Maintain,
         TargetRatePercentPerWeek = Goal is Domain.Goal.Maintain or null ? 0 : RatePercentPerWeek ?? 0,
-        ProteinGramsPerKg = ProteinGramsPerKg ?? DefaultProteinGramsPerKg,
+        ProteinGramsPerKg = ProteinGramsPerKg,
         InitialMaintenanceKcal = StartingMaintenanceKcal,
         DefaultWeightIncrementKg = profile.DefaultWeightIncrementKg,
         BarWeightKg = profile.BarWeightKg,

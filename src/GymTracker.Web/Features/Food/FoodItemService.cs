@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Features.Food;
 
 /// <summary>A food from a name search, with how closely it matched (0 to 1).</summary>
-public record FoodMatch(int Id, string Name, string? NameBg, string? Brand, decimal KcalPer100g, decimal ProteinPer100g, decimal CarbsPer100g, decimal FatPer100g, decimal? DefaultServingGrams, bool Own, double Score)
+public record FoodMatch(int Id, string Name, string? NameBg, string? Brand, decimal KcalPer100g, decimal ProteinPer100g, decimal CarbsPer100g, decimal FatPer100g, decimal? FiberPer100g, decimal? SaturatedFatPer100g, decimal? DefaultServingGrams, bool Own, double Score)
 {
-    public Per100g Per100 => new(KcalPer100g, ProteinPer100g, CarbsPer100g, FatPer100g);
+    public Per100g Per100 => new(KcalPer100g, ProteinPer100g, CarbsPer100g, FatPer100g, FiberPer100g, SaturatedFatPer100g);
 
     /// <summary>The Bulgarian name for a Bulgarian interface when there is one.</summary>
     public string DisplayName => Localization.Localizer.IsBulgarian && !string.IsNullOrEmpty(NameBg) ? NameBg : Name;
@@ -34,7 +34,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
         var userId = currentUser.UserId ?? "";
         return await db.Database.SqlQuery<FoodMatch>($"""
             SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
-                   f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
+                   f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
                    GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')))::float8 AS "Score"
             FROM "FoodItems" f
             WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {userId})
@@ -90,6 +90,8 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             ProteinPer100g = p.Per100.Protein,
             CarbsPer100g = p.Per100.Carbs,
             FatPer100g = p.Per100.Fat,
+            FiberPer100g = p.Per100.Fiber,
+            SaturatedFatPer100g = p.Per100.SaturatedFat,
             DefaultServingGrams = p.ServingGrams,
             Source = FoodSource.OpenFoodFacts,
         };
@@ -135,6 +137,8 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             ProteinPer100g = per100.Protein,
             CarbsPer100g = per100.Carbs,
             FatPer100g = per100.Fat,
+            FiberPer100g = per100.Fiber,
+            SaturatedFatPer100g = per100.SaturatedFat,
             DefaultServingGrams = servingGrams,
             Source = FoodSource.Manual,
         };

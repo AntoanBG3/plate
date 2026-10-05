@@ -2,7 +2,9 @@
 """Builds src/GymTracker.Web/Data/Seed/usda-foods.csv from USDA FoodData Central (public domain, CC0).
 
 Uses the Foundation Foods and SR Legacy CSV downloads and keeps, per food, energy (kcal), protein,
-carbohydrate and fat per 100 g. Run once when updating the subset:
+carbohydrate, fat, fiber and saturated fat per 100 g (the last two blank where USDA has no value).
+Bulgarian names already in the CSV (added by tools/foods/translate-usda.mjs) are kept by fdc_id.
+Run once when updating the subset:
 
     python3 tools/usda/build_usda_subset.py
 """
@@ -24,6 +26,8 @@ ENERGY = ["1008", "2048", "2047"]   # Energy kcal; Atwater specific; Atwater gen
 PROTEIN = ["1003"]
 FAT = ["1004"]
 CARBS = ["1005", "1050"]            # by difference; by summation
+FIBER = ["1079"]                    # total dietary fiber
+SATURATED = ["1258"]                # total saturated fatty acids
 
 
 def read_zip(url):
@@ -46,7 +50,11 @@ def first(values, ids):
 
 
 def main():
-    wanted = set(ENERGY + PROTEIN + FAT + CARBS)
+    wanted = set(ENERGY + PROTEIN + FAT + CARBS + FIBER + SATURATED)
+    names_bg = {}
+    if OUT.exists():
+        with OUT.open(encoding="utf-8") as f:
+            names_bg = {r["fdc_id"]: r.get("name_bg") or "" for r in csv.DictReader(f)}
     rows = {}
     for url in SOURCES:
         archive = read_zip(url)
@@ -65,12 +73,16 @@ def main():
             key = name.lower()
             if key in rows:
                 continue  # Foundation comes first and wins over the older SR Legacy entry
-            rows[key] = (fdc_id, name, round(kcal, 1), round(protein, 2), round(max(carbs or 0.0, 0.0), 2), round(fat, 2))  # carbs "by difference" can dip below 0
+            fiber, saturated = first(values, FIBER), first(values, SATURATED)
+            if saturated is not None and saturated > fat + 0.5:
+                saturated = None  # a data error; unknown is better than impossible
+            rows[key] = (fdc_id, name, round(kcal, 1), round(protein, 2), round(max(carbs or 0.0, 0.0), 2), round(fat, 2),  # carbs "by difference" can dip below 0
+                         names_bg.get(fdc_id, ""), "" if fiber is None else round(fiber, 2), "" if saturated is None else round(saturated, 2))
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["fdc_id", "name", "kcal", "protein", "carbs", "fat"])
+        writer.writerow(["fdc_id", "name", "kcal", "protein", "carbs", "fat", "name_bg", "fiber", "satfat"])
         for row in sorted(rows.values(), key=lambda r: r[1].lower()):
             writer.writerow(row)
     print(f"wrote {len(rows)} foods to {OUT}", file=sys.stderr)

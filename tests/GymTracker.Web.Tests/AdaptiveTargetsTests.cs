@@ -84,7 +84,8 @@ public class AdaptiveTargetsTests(PostgresFixture fixture)
         first.Estimate.EstimatedTdeeKcal.Should().Be(2440);
         first.Estimate.DaysOfData.Should().Be(21);
         first.Kcal.Should().Be(2440);
-        first.ProteinG.Should().Be(160);
+        first.ProteinG.Should().Be(145, "Auto protein on Maintain is 1.8 g/kg of 80 kg");
+        first.Macros!.ProteinMinG.Should().Be(130);
         first.TrendWeightKg.Should().Be(80m);
 
         x.Clock.Day = Today.AddDays(6);

@@ -93,7 +93,9 @@ Units: weights in kilograms (`decimal(6,2)`), energy in kcal, macros in grams. D
 - `OnboardedAt` (nullable; set when the user finishes or skips the setup chat, section 6.4)
 - `Goal` (Cut, Maintain, Bulk)
 - `TargetRatePercentPerWeek` (decimal, e.g. 0.5 means 0.5% of bodyweight per week; ignored for Maintain)
-- `ProteinGramsPerKg` (default 2.0)
+- `ProteinGramsPerKg` (nullable; null is Auto, the default by goal in 5.6)
+- `WeeklySummaryEnabled` (default true; 6.5)
+- `CutStartedOn` (nullable `DateOnly`; set when the goal changes to Cut and after a diet break, cleared when it changes away; 5.9), `DietBreakUntil` (nullable `DateOnly`, the last day of a diet break), `CutCheckDismissedUntil` (nullable `DateOnly`; check-ins are hidden through this day)
 - `DefaultWeightIncrementKg` (default 2.5)
 - `BarWeightKg` (default 20) and `PlatesKg` (the plates the gym has; default 25, 20, 15, 10, 5, 2.5, 1.25), used by the plate calculator
 
@@ -151,6 +153,7 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Id`, `OwnerUserId` (nullable for shared items: the Open Food Facts cache, the USDA subset, and manual items created for a barcode)
 - `Name`, `NameBg` (nullable, Bulgarian name), `Brand` (nullable), `Barcode` (nullable, unique where not null)
 - `KcalPer100g`, `ProteinPer100g`, `CarbsPer100g`, `FatPer100g`
+- `FiberPer100g`, `SaturatedFatPer100g` (nullable; null means unknown, not zero)
 - `DefaultServingGrams` (nullable)
 - `Source` (OpenFoodFacts, Usda, Manual, Ai)
 - Manual items created from a barcode scan are shared (`OwnerUserId` null) so the other user doesn't re-enter the same product; Open Food Facts coverage of Bulgarian products is thin, so this path will be common. Manual items without a barcode stay private.
@@ -159,7 +162,7 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Id`, `UserId`, `Name` (up to 60 characters), `CreatedAt`
 
 **SavedMealItem**
-- `Id`, `SavedMealId`, `SortOrder`, `Description`, `Grams` (0 for a quick entry), stored `Kcal`, `ProteinG`, `CarbsG`, `FatG`, `FoodItemId` (nullable), `Source`
+- `Id`, `SavedMealId`, `SortOrder`, `Description`, `Grams` (0 for a quick entry), stored `Kcal`, `ProteinG`, `CarbsG`, `FatG`, `FiberG` and `SaturatedFatG` (both nullable), `FoodItemId` (nullable), `Source`
 - A snapshot of a logged entry, so later food edits don't change the saved meal.
 
 **FoodLogEntry**
@@ -167,6 +170,7 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Description` (what is shown in the log, e.g. "Chicken breast, grilled")
 - `Grams`
 - `Kcal`, `ProteinG`, `CarbsG`, `FatG` (stored totals, so the entry is stable even if the FoodItem changes)
+- `FiberG`, `SaturatedFatG` (nullable stored totals; null when the food has no value)
 - `FoodItemId` (nullable), `Source` (Barcode, Search, Ai, Manual, Recent, Quick). A Quick entry is calories and macros typed directly: no food, `Grams` 0, edited by its numbers and never scaled.
 - `AiModel` (nullable; the OpenRouter model id for AI-parsed entries, so a shift in estimates after a model change can be traced)
 - `MatchModel` (nullable; the decision model version that chose the matched food or decided there is none, for the same reason; null when the database ranking decided)
@@ -176,6 +180,11 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Id`, `UserId`, `CalculatedOn` (DateOnly)
 - `EstimatedTdeeKcal`, `TargetKcal`, `TargetProteinG`
 - `TrendWeightKg`, `DaysOfData`, `LoggingCompleteness` (0 to 1), `Method` (Initial, Adaptive)
+
+**WeeklySummary** (6.5)
+- `Id`, `UserId`, `WeekStart` (the Monday of the week it describes; unique per user and week)
+- `Summary` (up to 400 characters), `Tips` (up to three, each up to 160), `Motivation` (up to 160)
+- `Language` (the account's language when written), `Model`, `CreatedAt`
 
 ---
 
@@ -242,8 +251,21 @@ Test with synthetic data: stable weight at known intake returns that intake; ste
 - **Maintain:** `TargetKcal = TDEE`.
 - **Cut / Bulk:** daily adjustment = `TrendWeight * TargetRatePercentPerWeek / 100 * 7700 / 7`, subtracted for Cut, added for Bulk.
 - **Safety limits:** `TargetRatePercentPerWeek` is capped at 1.0 for Cut and 0.5 for Bulk in profile validation. `TargetKcal` is never below 1,800 for men or 1,500 for women; if the limit applies, show a short note on the Today page.
-- `TargetProteinG = TrendWeight * ProteinGramsPerKg`, rounded to 5 g.
-- Carbs and fat are displayed but not targeted.
+- **Diet break:** while today is on or before `DietBreakUntil`, a Cut uses `TargetKcal = TDEE` and keeps its protein aim (5.9).
+
+**Macro targets.** Computed from `TargetKcal` (after the floor), trend weight, height, age and goal. Without a trend weight there are no macro targets, as for protein today. Targets are a minimum and an aim, or a range, never one exact number, because the evidence behind them is a range.
+
+- **Reference weight:** `refKg = TrendWeight`, or `27 * heightM²` when height is known and BMI is over 27. Grams per kg of total weight overshoots for people carrying a lot of fat (WHO bases the safe protein level for overweight people on an acceptable weight; Adv Nutr 2021). BMI 27 rather than 25, so muscular lifters keep their full weight. Example: 110 kg at 175 cm gives 82.7 kg.
+- **Protein minimum:** `1.6 * refKg` under 65, `1.2 * refKg` at 65 and over (no birth year counts as under 65). 1.6 g/kg is where added protein stopped adding lean mass in Morton et al. 2018 (upper CI 2.2) and where Nunes et al. 2022 found gains under 65; at 65 and over, Nunes found gains from 1.2 to 1.59, matching PROT-AGE's 1.2 to 1.5 for active older adults.
+- **Protein aim:** `ProteinGramsPerKg * refKg` when set; Auto uses 1.8 for Maintain and Bulk, 2.2 for Cut, and 2.4 for a Cut faster than 0.75% a week. Helms et al. 2014 found 2.3 to 3.1 g/kg of lean mass in a deficit, more for bigger deficits and leaner people; ISSN 2017 calls 1.4 to 2.0 a minimum and says more helps in a deficit. The aim is never below the minimum.
+- **Fat:** floor = the higher of `0.20 * TargetKcal / 9` and `0.5 * refKg`; ceiling = `0.35 * TargetKcal / 9`. Low-fat diets lowered testosterone in men (Whittaker 2021, SMD −0.38); ACSM and Iraki et al. 2019 give 20 to 35% of energy, about 0.5 to 1.5 g/kg.
+- **Carbs:** the rest, as a range from `(TargetKcal − 4 * proteinAim − 9 * fatCeiling) / 4` to `(TargetKcal − 4 * proteinAim − 9 * fatFloor) / 4`, each clamped at 0. If the top of the range would be negative (a high custom g/kg on a calorie floor), the protein aim is lowered, in 5 g steps but not below the minimum, until the top is 0 or more, and the targets carry the note "Protein and fat fill your whole calorie target."
+- **Fiber minimum:** the higher of 25 g and `14 * TargetKcal / 1000` (IOM 14 g per 1,000 kcal; WHO 2023 at least 25 g).
+- **Saturated fat maximum:** `0.10 * TargetKcal / 9` (WHO 2023, Dietary Guidelines).
+- **Per-meal protein** for Breakfast, Lunch and Dinner (not Snack): `0.3 * refKg` under 65, and the higher of `0.4 * refKg` and 25 g at 65 and over. The per-meal protein synthesis breakpoint was 0.24 g/kg in younger and 0.40 g/kg in older people (Morton 2018), rounded up here for mixed meals; older adults need 25 to 30 g a meal (Nowson & O'Connell 2015).
+- **Rounding:** protein, fat, carbs and per-meal protein to the nearest 5 g, fiber and saturated fat to the whole gram. Carbs are computed from the rounded protein aim and fat values.
+
+Test: a 30-year-old man of 180 cm and 80 kg cutting 0.5% a week at a TDEE of 2,500 (target 2,060) gets protein minimum 130 and aim 175, fat 45 to 80, carbs 160 to 240, fiber 29, saturated fat 23 or less, 25 g per meal; on Maintain (2,500) protein 130 and 145, fat 55 to 95, fiber 35, saturated fat 28. 110 kg at 175 cm cutting 0.5% gets a protein aim of 180, not 240. A 70-year-old at 80 kg gets a minimum of 95 and 30 g per meal. A Cut at 1.0% a week aims at 2.4 g/kg. BMI exactly 27 uses the trend weight. No height uses the trend weight. A custom 3.5 g/kg on a 1,500 kcal floor lowers the aim and sets the note.
 
 ### 5.7 Profile limits
 
@@ -258,12 +280,30 @@ One set of limits in Core (`ProfileLimits`), used by profile validation, the wei
 | `InitialMaintenanceKcal` | 1,200 to 6,000 |
 | `Sex`, `Goal`, `ActivityLevel` | a defined value (a posted number outside the enum is refused) |
 | `TargetRatePercentPerWeek` | 0 to 1.0 for Cut, 0 to 0.5 for Bulk (5.6) |
-| `ProteinGramsPerKg` | 0.8 to 3.5 |
+| `ProteinGramsPerKg` | empty (Auto) or 0.8 to 3.5; at 65 and over, a value under 1.2 shows a warning but saves |
 | `DefaultWeightIncrementKg` | 0.25 to 20 |
 | `BarWeightKg` | 0 to 50 |
 | `PlatesKg` | from the plate list |
 
 Tests cover each limit just inside and just outside.
+
+### 5.8 Weekly nutrition
+
+Daily targets are judged over the week, not the day. For the 7 days ending yesterday, over days with food logged (200 kcal or more, as in 5.5): average kcal, protein, fat, carbs, fiber and saturated fat, the number of days protein reached its minimum, and the number of days fat stayed at or above its floor, each against today's targets. With fewer than 3 logged days, show nothing.
+
+Fiber and saturated fat are not known for every food. A day's **coverage** is the share of its kcal from entries that have the value. Under 80%, the day's fiber is shown as "at least" and its saturated fat as incomplete, because a missing value would otherwise read as zero and always pass a maximum. The weekly averages of these two use only days at 80% or more, and say so.
+
+Test: unlogged and under-200 kcal days are skipped; averages over logged days only; coverage just under and at 80%; fewer than 3 logged days returns nothing.
+
+### 5.9 Cut check-ins
+
+Only when the goal is Cut, shown on Today, each hidden for a week with "Dismiss" (`CutCheckDismissedUntil`):
+
+- **Too fast:** trend weight fell more than 1% of bodyweight a week over the last 14 days, and more than 1.5 times the target rate. "You're losing faster than planned. Fast cuts cost more muscle; your target will adjust, or lower the rate in Settings." Helms et al. 2014 recommend 0.5 to 1% a week to keep lean mass. The adaptive estimate already corrects calories, so this only informs.
+- **Protein low:** the 5.8 weekly average protein is under the minimum. "Protein averaged {0} g this week, under your minimum of {1} g."
+- **Diet break:** 12 weeks or more after `CutStartedOn`, offer "Take a 2-week break at maintenance". Accepting sets `DietBreakUntil` to today plus 13 days. During the break the target is maintenance (5.6) and Today shows "Diet break until {date}"; the day after it ends, `CutStartedOn` is set to that day, so the next offer comes 12 weeks later. "End break" ends it early the same way. Evidence is modest: in MATADOR (Byrne 2018, men with obesity) two weeks on and two off lost more fat than a continuous diet, and in ICECAP (Campbell 2020, 27 resistance-trained adults over 7 weeks) two refeed days a week kept more fat-free mass. So the break is offered, never imposed.
+
+Test: the rate check at 1% and just over, and at 1.5 times the target; protein average just under and at the minimum; the break offer at 83 and 84 days; target kcal during and after a break; the reset of `CutStartedOn`; a dismissal hides check-ins through its day only.
 
 ---
 
@@ -286,11 +326,11 @@ LLM nutrition estimates are unreliable on their own (published studies show ener
 - `NameEn` (canonical English name, for matching), `NameOriginal` (as the user wrote it)
 - `Grams`, `State` (Raw, Cooked, NotApplicable), `Preparation` (nullable, e.g. "grilled")
 - `Assumption` (string such as "assumed one medium banana, 120 g")
-- `EstimatedKcalPer100g`, `EstimatedProteinPer100g`, `EstimatedCarbsPer100g`, `EstimatedFatPer100g`: the model's own values, used only as a fallback
+- `EstimatedKcalPer100g`, `EstimatedProteinPer100g`, `EstimatedCarbsPer100g`, `EstimatedFatPer100g`, `EstimatedFiberPer100g`, `EstimatedSaturatedFatPer100g`: the model's own values, used only as a fallback
 
 Implementation `OpenRouterFoodParser`:
 - Typed `HttpClient` calling OpenRouter's `POST /api/v1/chat/completions`.
-- Model: each AI task has its own model setting, shared by both accounts like the key (currently the parser and the matcher below). The parser's is picked from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `openai/gpt-6-luna`; a saved id must be in the catalog.
+- Model: each AI task has its own model setting, shared by both accounts like the key (the parser, the matcher below, the setup chat in 6.4 and the weekly summary in 6.5). The parser's is picked from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `openai/gpt-6-luna`; a saved id must be in the catalog.
 - API key from Settings (encrypted with Data Protection) or configuration `OpenRouter:ApiKey` (environment variable `OPENROUTER_API_KEY` in Docker). Never commit it.
 - Request structured output: `response_format: {type: "json_schema", json_schema: {name, strict: true, schema}}` with a strict-compatible schema (`additionalProperties: false`, every property required, nullable ones typed `["string","null"]`) matching `ParsedFoodItem[]`, and `provider: {require_parameters: true}`. Because that excludes providers lacking any sent parameter, `temperature` and `reasoning.effort` (the model's lowest supported effort) are sent only when the catalog lists them for the model.
 - System prompt: the user writes foods in English or Bulgarian; return one item per food; estimate grams for vague quantities ("a banana", "a plate of rice") and state the assumption; assume raw weight for meat and cooked weight for rice and pasta unless stated; always fill `NameEn`.
@@ -321,6 +361,7 @@ Also provide `FakeFoodParser` for tests and local development without a key (sel
 `IFoodDatabase` with `GetByBarcodeAsync(string barcode)` and `SearchAsync(string query)`.
 - Use API v3 (v2 is deprecated): `GET https://world.openfoodfacts.org/api/v3/product/{barcode}` with a `fields` parameter limited to name, brands, nutriments and serving quantity. Confirm the v3 field names against the current OFF docs before coding.
 - Read `energy-kcal_100g`, `proteins_100g`, `carbohydrates_100g`, `fat_100g`. If kcal is missing but kJ is present, convert by dividing by 4.184.
+- Also read `fiber_100g` and `saturated-fat_100g` when present. They are optional: a product without them still counts as having nutrition data.
 - Set the `User-Agent` OFF requires: `GymTracker/<version> (<contact email from config>)`.
 - Rate limits are 15 product reads and 10 searches per minute per IP, shared by both users because all calls leave from wizard. Call OFF search only on explicit submit (never as-you-type), and treat HTTP 429 as "try again shortly" without breaking the page.
 - Cache every successful lookup as a shared `FoodItem` so repeat scans are instant and work offline from the API.
@@ -329,8 +370,10 @@ Also provide `FakeFoodParser` for tests and local development without a key (sel
 ### 6.3 USDA FoodData Central subset
 
 Generic foods (chicken breast, cooked rice, banana) come from USDA FoodData Central, which is public domain (CC0).
-- A one-off script, committed to the repository, converts the Foundation and SR Legacy downloads into a trimmed CSV (name, kcal, protein, carbs, fat per 100 g, raw/cooked where the name states it) under `src/GymTracker.Web/Data/Seed/`.
+- A one-off script, committed to the repository, converts the Foundation and SR Legacy downloads into a trimmed CSV (name, kcal, protein, carbs, fat, fiber and saturated fat per 100 g, the last two blank where USDA has no value, raw/cooked where the name states it) under `src/GymTracker.Web/Data/Seed/`.
 - On startup, if no `Usda` items exist, the app imports the CSV as shared `FoodItem`s with `Source = Usda`. No runtime calls to the USDA API.
+- Databases seeded before the CSV had fiber and saturated fat get them once, matched by English name, the way Bulgarian names were added. Rows that already have a value are left alone.
+- The Bulgarian foods CSV (`bg-foods.csv`) has the same two optional columns. Products get them from Open Food Facts by barcode (`tools/foods/add-fiber.mjs`), and existing databases get them on the next start where both are still unknown. Dishes stay blank, since their source pages don't give them.
 
 ### 6.4 Setup chat (onboarding)
 
@@ -338,7 +381,7 @@ A new account starts with an empty profile, so on first sign-in the user gets a 
 
 **When it shows.** A signed-in user whose `OnboardedAt` is null is redirected to `/welcome` on any full-page GET navigation (not htmx requests, POSTs, static files, or the account, admin, feedback, passkey, CSP-report and welcome paths), with the page they asked for as the return URL. Finishing or skipping sets `OnboardedAt`. Settings has "Run the setup chat again". Accounts that existed before this feature see it once too, with what is already known filled in.
 
-**Flow.** A splash (greeting, "Let's set you up", "Skip for now", and the line "Your answers are sent to an AI model through OpenRouter. Prefer not to? Use the form.") opens the chat. Each user message (up to 500 characters) goes to the server, which calls the model and shows its reply with up to four quick-reply chips. The server, not the model, decides when everything required is known: sex, birth year, height, current weight, activity level, goal, and the weekly rate unless the goal is Maintain. Starting maintenance is optional; protein defaults to 2.0 g per kg. Then a summary card appears under the chat: every field as an input within the 5.7 limits, the starting maintenance and today's target computed from them, and Save. The user can keep chatting and the card is redrawn. Nothing is saved until Save, which goes through the same profile validation as Settings, writes today's weigh-in if the weight differs from the latest one, saves the browser's time zone, and sets `OnboardedAt`. After 30 turns the chat stops and only the form remains. Without an OpenRouter key, or with the onboarding model set to off, and whenever a call fails, the same form is offered without the chat.
+**Flow.** A splash (greeting, "Let's set you up", "Skip for now", and the line "Your answers are sent to an AI model through OpenRouter. Prefer not to? Use the form.") opens the chat. Each user message (up to 500 characters) goes to the server, which calls the model and shows its reply with up to four quick-reply chips. The server, not the model, decides when everything required is known: sex, birth year, height, current weight, activity level, goal, and the weekly rate unless the goal is Maintain. Starting maintenance is optional; protein defaults to Auto (5.6). Then a summary card appears under the chat: every field as an input within the 5.7 limits, the starting maintenance and today's target computed from them, and Save. The user can keep chatting and the card is redrawn. Nothing is saved until Save, which goes through the same profile validation as Settings, writes today's weigh-in if the weight differs from the latest one, saves the browser's time zone, and sets `OnboardedAt`. After 30 turns the chat stops and only the form remains. Without an OpenRouter key, or with the onboarding model set to off, and whenever a call fails, the same form is offered without the chat.
 
 **State lives on the server.** `OnboardingChat` (one row per user, owner query filter): the draft (the fields gathered so far), the messages, the turn count and the update time. Each turn sends the model the current draft as JSON, the fields still missing, the reasons any value from the last turn was refused, the 5.7 limits, and the last 20 messages. The model's answer only proposes values; each is checked against 5.7 and an out-of-range one is dropped and named in the next turn. The row is deleted when the user finishes or skips.
 
@@ -348,6 +391,20 @@ A new account starts with an empty profile, so on first sign-in the user gets a 
 
 **Limits.** Rate limit of 40 chat messages per 10 minutes per user (section 9).
 
+### 6.5 Weekly summary
+
+A short note on Today about the previous Monday to Sunday: what went well, up to three concrete tips, and one line of encouragement. It is written by a model from the week's numbers, so it can be specific ("protein reached the minimum on 2 of 6 days") instead of generic.
+
+**When.** On the first Today visit from Monday, if the account has it on (`WeeklySummaryEnabled`, a Settings switch, on by default), a key is set and the weekly model isn't off. One summary per user and week is stored and shown all week; it is written again only if the account's language changed since. Today renders a stored summary directly. When none is stored yet, Today shows a placeholder that loads it from `/today/weekly-summary`, so the page never waits for the model. That endpoint is rate-limited to 6 calls per hour per user (section 9); a failed or refused call shows nothing and the next visit tries again.
+
+**Enough to say.** Only with at least 3 days of food logged (200 kcal or more), or a finished workout, or 3 weigh-ins in the week. Otherwise nothing is written for that week.
+
+**The facts sent.** No name, email or notes (exercise names are sent, including custom ones): the goal and weekly rate; food (logged days, averages of kcal, protein, fat, carbs, fiber and saturated fat against the targets in force, the days protein reached its minimum, using 5.8 with the week as its range); body (trend weight at the start and end of the week, weigh-in count); training (finished sessions, working sets, new e1RM records by exercise name, the most trained muscles); and whether a diet break ran. Today's targets stand in for the week's.
+
+**Model call.** `IWeeklySummaryWriter` in Core, `OpenRouterWeeklySummaryWriter` in Integrations, with the same request shape, structured output, timeout, retry and error handling as the setup chat (6.4). Schema: `summary` (string), `tips` (array of strings), `motivation` (string). The answer is trimmed to the lengths above, empty tips are dropped, and an empty summary counts as a failure. A fourth AI task, `weekly`, has its own model setting; unset, it uses the parser's model, and off turns the summary off for both accounts.
+
+**Prompt rules.** Plain and warm, in the account's language, using the informal "ти" in Bulgarian. Mention real numbers from the facts and never invent one. Tips are specific actions for next week drawn from the weakest numbers (for example protein at breakfast when the minimum was missed); when a number has no target or too little data, leave it out. No medical advice, no comments on the user's body or appearance, no praise or blame for weight changes; describe the trend against the goal neutrally.
+
 ---
 
 ## 7. Screens
@@ -355,7 +412,10 @@ A new account starts with an empty profile, so on first sign-in the user gets a 
 Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today, Train, Food, Progress, Settings.** Dark theme by default.
 
 ### Today
-- Calories remaining and protein remaining as two large progress bars, with consumed and target numbers.
+- Calories remaining and protein remaining as two large progress bars, with consumed and target numbers. The protein bar counts toward the aim and marks the minimum.
+- Under them, three small meters: fat (floor to ceiling), carbs (the range) and fiber (the minimum).
+- Cut check-ins (5.9) and a diet break in progress, under the meters.
+- Last week's summary (6.5), with the line "Written by AI from your numbers."
 - Weight entry field (pre-focused if no weigh-in today), with the current trend weight shown next to it.
 - Next suggested workout: the template after the last one completed, in template sort order, with a Start button. If a session is active, a Resume button instead.
 - Small text showing the maintenance estimate and whether it is Initial or Adaptive, with days of data.
@@ -379,13 +439,15 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 
 ### Food
 - Date selector (defaults to today), entries grouped by meal, daily totals at the top.
+- The totals card shows each macro against its target (5.6): protein against the aim with the minimum, fat and carbs against their ranges, fiber against its minimum and saturated fat against its maximum, with the coverage note when a day is under 80% (5.8). Each of Breakfast, Lunch and Dinner shows its protein, with a check once it reaches the per-meal aim.
+- A This week card with the 5.8 averages.
 - Add entry with four methods:
   1. **Text:** a textarea; submit sends to the parser and shows the editable confirmation list; confirm saves all items.
   2. **Barcode:** opens the camera scanner (EAN-13, EAN-8, UPC-A, UPC-E only); on detection, looks up the product and asks for grams (pre-filled with the serving size). Installed iOS web apps do not keep camera permission, so expect a prompt on each launch, and open the scanner without changing the URL (no `hx-push-url`), since route changes can re-prompt or stop the stream. Fallbacks on the same screen: a field to type the digits, and a "take photo" button (`<input type="file" accept="image/*" capture="environment">`) decoded with the same detector.
   3. **Search:** searches the user's own FoodItems and recent entries first, then shared items (including the USDA subset), then Open Food Facts on explicit submit.
   4. **Recent / favourites:** one-tap re-log of the 20 most frequent entries from the last 30 days, with editable grams.
 - Edit or delete any entry. Copy yesterday's meal into today.
-- Quick add per meal: a name (optional), calories, and optional protein, carbs and fat, for restaurant meals and labels not worth saving. Quick entries stay out of Recent.
+- Quick add per meal: a name (optional), calories, and optional protein, carbs, fat, fiber and saturated fat, for restaurant meals and labels not worth saving. Quick entries stay out of Recent.
 - Saved meals: a meal's menu on the Food day saves its entries under a name. Saved meals are listed first on the Recent tab; tapping one opens a sheet with editable grams per item (quick items keep their numbers) and logs them all into the chosen meal. Rename or delete from the same sheet.
 - Deleting a food entry or a set, and removing an exercise from a session or a template, happen at once with an Undo toast for 6 seconds (no confirm). Archiving a template, finishing or deleting a workout, removing a passkey, signing out everywhere and deleting a saved meal still ask first.
 
@@ -394,9 +456,11 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Per-exercise chart of best e1RM per session, with an exercise picker.
 - Weekly volume per muscle group as a bar chart for the current and previous week.
 - Calories: daily intake versus target for the last 4 weeks, with the maintenance estimate as a line.
+- Protein: daily intake against the minimum and aim for the same 4 weeks, and the This week card (5.8).
 
 ### Settings
 - Profile fields from section 4, with the limits in 5.7. Inputs take their `min` and `max` from the same limits.
+- Protein: Auto (by goal) or a custom g/kg. Under it, the current aim in grams, and when the reference weight applies, "Based on {0} kg, a healthy weight for your height." A "How your targets are set" sheet gives each 5.6 rule in one line with its source.
 - Activity level, one line of explanation per choice. The levels follow NASEM 2023 table 7-1, which defines them as activity on top of daily living (about 30 minutes of walking): low active adds 60 to 80 minutes of brisk walking a day, active about two hours including some vigorous activity, very active more than two hours of vigorous activity. The step counts are a rough conversion.
   - Inactive: desk job and everyday errands, up to about 8,000 steps a day.
   - Low active: everyday life plus about an hour of brisk walking or similar every day, roughly 11,000 to 14,000 steps.
@@ -406,7 +470,8 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Run the setup chat again (section 6.4).
 - Custom exercises.
 - Bar and plates: the profile bar weight and which plates the gym has.
-- AI models: the current food parser, food matcher and setup chat models, read-only. Only the developer changes the key and models, in the admin area (section 12).
+- Weekly AI summary: on or off (6.5), with the line "Last week's numbers are sent to an AI model through OpenRouter."
+- AI models: the current food parser, food matcher, setup chat and weekly summary models, read-only. Only the developer changes the key and models, in the admin area (section 12).
 - Admin: a row shown only to accounts with the `Dev` role, linking to `/admin`.
 - Export all of the user's data as CSV files in a zip.
 - Feedback: Send feedback and Your feedback (section 11).
@@ -446,7 +511,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - ASP.NET Core rate limiting middleware on the login POST, partitioned by client IP.
 - Forwarded headers: behind cloudflared every request comes from 172.30.0.10, so configure `ForwardedHeadersOptions` with that address as the only known proxy, read the client IP from `CF-Connecting-IP` and the scheme from `X-Forwarded-Proto`. Without this, rate limiting puts every client in one bucket.
 - Passwords: minimum 12 characters, no composition rules. An unknown email costs one password hash like a known one, so timing does not reveal which accounts exist.
-- A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes), admin unlock requests (10 per 15 minutes, two per unlock), AI food parsing (30 per 10 minutes), setup chat messages (40 per 10 minutes) and admin writes (60 per 10 minutes).
+- A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes), admin unlock requests (10 per 15 minutes, two per unlock), AI food parsing (30 per 10 minutes), setup chat messages (40 per 10 minutes), weekly summaries (6 per hour) and admin writes (60 per 10 minutes).
 - Passkeys alongside passwords: registered in Settings, usernameless sign-in on the login page (button and autofill), relying party `gym.peychev.uk`.
 - Response headers: Content-Security-Policy (`script-src 'self' 'wasm-unsafe-eval'`, no inline scripts or event handlers; sent report-only with a `/csp-report` log until `CSP_ENFORCE=true`), HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `Permissions-Policy` (camera only), COOP. `AllowedHosts` limited to the public host name. Request bodies over 1 MB are refused.
 - Cookie: `Secure`, `HttpOnly`, `SameSite=Lax`, `__Host-` prefix, sliding 30-day expiration. "Log out everywhere" in Settings updates the security stamp.
@@ -564,7 +629,7 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 ### CLI additions
 
 - `role grant|revoke dev --email <email>`, `role list`.
-- `ai show`, `ai set-model parser|matcher|onboarding <id>`, `ai set-key` (the key is read from standard input, never an argument), `ai clear-key`, `ai test`.
+- `ai show`, `ai set-model parser|matcher|onboarding|weekly <id>`, `ai set-key` (the key is read from standard input, never an argument), `ai clear-key`, `ai test`.
 - `feedback changelog list|remove <id>`, `admin audit [--since 30d]`.
 
 ---
@@ -607,3 +672,19 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 ### Phase 8: Activity level and onboarding
 - Activity level and the NASEM 2023 prior (5.5), profile limits in one place (5.7), the setup chat (6.4) with its form fallback, and the onboarding model in the admin area and CLI.
 - **Done when:** the Core tests for 5.5 and 5.7 pass; a new account lands on the splash at first sign-in, finishes the chat in English and Bulgarian at 390 px, and Today shows the target computed from its answers; an existing account sees the chat once with its known values filled in; and the form works without an OpenRouter key.
+
+### Phase 9: Macro and food-quality targets
+- Macro targets with the reference weight and age rules (5.6), fiber and saturated fat stored per food and per entry with their sources (sections 4, 6.1 to 6.3), weekly nutrition with coverage (5.8), cut check-ins and diet breaks (5.9), and the screens in section 7.
+- **Done when:** the Core tests for 5.6, 5.8 and 5.9 pass; the stored protein of 2.0 g/kg (the old default) is migrated to Auto and any other value kept; a USDA, an Open Food Facts, an AI and a quick entry each show fiber and saturated fat or count as unknown; and Today, Food, Settings, Progress and the setup card read correctly at 390 px in English and Bulgarian.
+
+### Phase 10: Weekly summary
+- Section 6.5: the stored summary, the facts it is written from, the weekly AI task in the admin area and CLI, the Settings switch, and the Today card.
+- **Done when:** the Core tests for the enough-data rule, the week's range and the answer trimming pass; Today renders a stored summary without calling the model and loads a missing one without waiting; a failed model call shows nothing and is retried on a later visit; turning the switch off, or the model off, stops the calls; and the card reads correctly at 390 px in English and Bulgarian.
+
+### Later
+Ideas kept for after Phase 9, not planned yet. None should start before real logs show fiber coverage is good.
+- Protein timing around training: the app knows when sessions happen, so it could suggest protein in the meal before or after.
+- Fruit and vegetables in grams, against WHO's 400 g a day.
+- Sodium and free sugars (Open Food Facts has both; USDA has most), against WHO's under 2 g sodium and under 10% of energy from free sugars.
+- Alcohol as its own energy line, since it is neither a macro the targets account for nor visible in the totals.
+- A weekly diet quality score built from protein, fiber, saturated fat and fruit and vegetables.

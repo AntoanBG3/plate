@@ -238,6 +238,19 @@ public class IntegrationParsingTests
     }
 
     [Fact]
+    public void Parser_keeps_sane_fiber_estimates_and_drops_impossible_ones_without_rejecting_the_food()
+    {
+        var result = OpenRouterFoodParser.Read(Response("""
+            {"items":[
+              {"nameEn":"oats","nameOriginal":"oats","grams":50,"state":"raw","kcalPer100g":380,"proteinPer100g":13,"carbsPer100g":60,"fatPer100g":7,"fiberPer100g":10,"saturatedFatPer100g":1.2},
+              {"nameEn":"chicken","nameOriginal":"chicken","grams":200,"state":"raw","kcalPer100g":120,"proteinPer100g":22.5,"carbsPer100g":0,"fatPer100g":2.6,"fiberPer100g":null,"saturatedFatPer100g":9}
+            ]}
+            """), "m");
+
+        result.Items.Select(i => (i.Estimated.Fiber, i.Estimated.SaturatedFat)).Should().Equal((10m, 1.2m), ((decimal?)null, (decimal?)null));
+    }
+
+    [Fact]
     public void Open_food_facts_converts_kilojoules_when_kcal_is_missing()
     {
         var product = JsonNode.Parse("""
@@ -251,6 +264,17 @@ public class IntegrationParsingTests
         info.Brand.Should().Be("Vereia");
         info.ServingGrams.Should().Be(400);
         OpenFoodFactsClient.ReadProduct(JsonNode.Parse("""{"product_name":"x","nutriments":{}}""")!, "1").Should().BeNull();
+    }
+
+    [Fact]
+    public void Open_food_facts_fiber_and_saturated_fat_are_read_when_present_and_sane()
+    {
+        static Per100g Read(string extra) => OpenFoodFactsClient.ReadProduct(JsonNode.Parse(
+            $$$"""{"product_name":"Oats","nutriments":{"energy-kcal_100g":370,"proteins_100g":13,"carbohydrates_100g":60,"fat_100g":7{{{extra}}}}}""")!, "1")!.Per100;
+
+        Read(""","fiber_100g":10,"saturated-fat_100g":1.2""").Should().Be(new Per100g(370, 13, 60, 7, 10, 1.2m));
+        Read("").Should().Be(new Per100g(370, 13, 60, 7), "a product without them still counts as having nutrition data");
+        Read(""","saturated-fat_100g":9,"fiber_100g":-1""").Should().Be(new Per100g(370, 13, 60, 7), "saturated fat above fat and negative fiber are data errors");
     }
 
     [Fact]

@@ -15,6 +15,7 @@ namespace GymTracker.Web.Controllers;
 [Route("settings")]
 public class SettingsController(
     ProfileService profiles,
+    GymTracker.Web.Features.Food.NutritionTargets targets,
     DataExport export,
     OpenRouterSettings openRouter,
     UserManager<AppUser> users,
@@ -29,12 +30,14 @@ public class SettingsController(
         ViewData["Passkeys"] = user is null ? [] : await users.GetPasskeysAsync(user);
         ViewData["OpenRouter"] = await OpenRouterStatusAsync(ct);
         ViewData["UnreadFeedback"] = await feedback.UnreadRepliesAsync(ct);
+        ViewData["Targets"] = await targets.ForTodayAsync(ct);
         return View(await profiles.GetAsync(ct));
     }
 
     [HttpPost("profile")]
     public async Task<IActionResult> Profile(ProfileForm form, CancellationToken ct)
     {
+        var today = await profiles.TodayAsync(ct);
         await profiles.UpdateAsync(p =>
         {
             p.DisplayName = form.DisplayName?.Trim() ?? "";
@@ -44,9 +47,11 @@ public class SettingsController(
             p.BirthYear = form.BirthYear;
             p.ActivityLevel = form.ActivityLevel;
             p.InitialMaintenanceKcal = form.InitialMaintenanceKcal;
+            var previousGoal = p.Goal;
             p.Goal = form.Goal;
+            GymTracker.Core.Nutrition.CutCheck.GoalChanged(p, previousGoal, today);
             p.TargetRatePercentPerWeek = form.TargetRatePercentPerWeek ?? 0;
-            p.ProteinGramsPerKg = form.ProteinGramsPerKg ?? 2.0m;
+            p.ProteinGramsPerKg = form.ProteinGramsPerKg;
             p.DefaultWeightIncrementKg = form.DefaultWeightIncrementKg ?? 2.5m;
             p.BarWeightKg = form.BarWeightKg ?? 20m;
             p.PlatesKg = (form.PlatesKg ?? []).Distinct().OrderDescending().ToList();
@@ -78,6 +83,14 @@ public class SettingsController(
             p.Theme = theme;
             p.Language = language;
         }, ct);
+        return Redirect("/settings");
+    }
+
+    /// <summary>The checkbox posts "true" before its hidden "false", so the first value is the choice.</summary>
+    [HttpPost("weekly-summary")]
+    public async Task<IActionResult> WeeklySummary(bool enabled, CancellationToken ct)
+    {
+        await profiles.UpdateAsync(p => p.WeeklySummaryEnabled = enabled, ct);
         return Redirect("/settings");
     }
 

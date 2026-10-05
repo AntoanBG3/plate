@@ -33,7 +33,7 @@ Tests: `dotnet build && dotnet test`. The integration tests start their own `pos
 
 Three sources are imported on start, each only adding what is missing:
 
-- USDA FoodData Central (public domain): `tools/usda/build_usda_subset.py` rebuilds `src/GymTracker.Web/Data/Seed/usda-foods.csv`. Its `name_bg` column holds Bulgarian names, added by `node tools/foods/translate-usda.mjs` (an LLM through OpenRouter; run it again after a rebuild). Databases seeded before the column existed get the names on the next start.
+- USDA FoodData Central (public domain): `tools/usda/build_usda_subset.py` rebuilds `src/GymTracker.Web/Data/Seed/usda-foods.csv`. Its `name_bg` column holds Bulgarian names, added by `node tools/foods/translate-usda.mjs` (an LLM through OpenRouter; run it again after a rebuild). Databases seeded before the column existed get the names on the next start. The `fiber` and `satfat` columns are blank where USDA has no value, and are added to older databases the same way.
 - Bulgarian foods and dishes (`Data/Seed/bg-foods.csv`, kind `generic`): compiled by `tools/foods` from public Bulgarian calorie tables and per-dish web pages found with firecrawl. Every row lists the pages its values came from; values from several pages are combined by median. Sites whose terms forbid reuse (BB-Team) are excluded.
 - Products sold in Bulgaria from [Open Food Facts](https://world.openfoodfacts.org) (kind `product`), © Open Food Facts contributors, available under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/).
 
@@ -44,7 +44,10 @@ node tools/foods/collect-tables.mjs     # after scraping the two tables, see the
 node tools/foods/collect-dishes.mjs     # one firecrawl search per line of tools/foods/dishes.txt
 node tools/foods/collect-off.mjs        # Open Food Facts search API, one page a second
 node tools/foods/merge.mjs              # an LLM removes duplicates against USDA and between sources
+node tools/foods/add-fiber.mjs          # fiber and saturated fat for the products, by barcode
 ```
+
+Dishes have no fiber or saturated fat: the pages they come from don't give them, so the app treats them as unknown.
 
 ### Language and theme
 

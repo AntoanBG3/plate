@@ -353,6 +353,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");
 
+                    b.Property<decimal?>("FiberPer100g")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
                     b.Property<decimal>("KcalPer100g")
                         .HasPrecision(7, 2)
                         .HasColumnType("numeric(7,2)");
@@ -370,6 +374,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<decimal>("ProteinPer100g")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<decimal?>("SaturatedFatPer100g")
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");
 
@@ -433,6 +441,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasPrecision(6, 1)
                         .HasColumnType("numeric(6,1)");
 
+                    b.Property<decimal?>("FiberG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
                     b.Property<int?>("FoodItemId")
                         .HasColumnType("integer");
 
@@ -457,6 +469,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("ProteinG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
+                    b.Property<decimal?>("SaturatedFatG")
                         .HasPrecision(6, 1)
                         .HasColumnType("numeric(6,1)");
 
@@ -679,6 +695,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasPrecision(6, 1)
                         .HasColumnType("numeric(6,1)");
 
+                    b.Property<decimal?>("FiberG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
                     b.Property<int?>("FoodItemId")
                         .HasColumnType("integer");
 
@@ -691,6 +711,10 @@ namespace GymTracker.Web.Data.Migrations
                         .HasColumnType("numeric(7,1)");
 
                     b.Property<decimal>("ProteinG")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)");
+
+                    b.Property<decimal?>("SaturatedFatG")
                         .HasPrecision(6, 1)
                         .HasColumnType("numeric(6,1)");
 
@@ -893,9 +917,18 @@ namespace GymTracker.Web.Data.Migrations
                     b.Property<DateTimeOffset?>("ChangelogSeenAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateOnly?>("CutCheckDismissedUntil")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("CutStartedOn")
+                        .HasColumnType("date");
+
                     b.Property<decimal>("DefaultWeightIncrementKg")
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");
+
+                    b.Property<DateOnly?>("DietBreakUntil")
+                        .HasColumnType("date");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
@@ -925,7 +958,7 @@ namespace GymTracker.Web.Data.Migrations
                         .IsRequired()
                         .HasColumnType("numeric[]");
 
-                    b.Property<decimal>("ProteinGramsPerKg")
+                    b.Property<decimal?>("ProteinGramsPerKg")
                         .HasPrecision(4, 2)
                         .HasColumnType("numeric(4,2)");
 
@@ -947,9 +980,61 @@ namespace GymTracker.Web.Data.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<bool>("WeeklySummaryEnabled")
+                        .HasColumnType("boolean");
+
                     b.HasKey("UserId");
 
                     b.ToTable("Profiles");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.WeeklySummary", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Motivation")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.PrimitiveCollection<List<string>>("Tips")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("WeekStart")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "WeekStart")
+                        .IsUnique();
+
+                    b.ToTable("WeeklySummaries");
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.WorkoutSession", b =>
@@ -1513,6 +1598,15 @@ namespace GymTracker.Web.Data.Migrations
                     b.HasOne("GymTracker.Web.Data.AppUser", null)
                         .WithOne()
                         .HasForeignKey("GymTracker.Core.Domain.UserProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.WeeklySummary", b =>
+                {
+                    b.HasOne("GymTracker.Web.Data.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

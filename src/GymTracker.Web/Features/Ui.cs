@@ -25,6 +25,18 @@ public static class Ui
 
     public static string Time(DateTime time) => time.ToString("HH:mm", CultureInfo.InvariantCulture);
 
+    /// <summary>
+    /// A thin bar filled to <paramref name="value"/> out of <paramref name="scale"/>, with a notch at each target bound.
+    /// <paramref name="over"/> colours the fill as past a maximum.
+    /// </summary>
+    public static IHtmlContent Meter(decimal value, decimal scale, string label, bool over = false, params int[] notches)
+    {
+        string Pct(decimal v) => (scale > 0 ? Math.Clamp(v / scale, 0m, 1m) : 0m).ToString("0.###", CultureInfo.InvariantCulture);
+        var marks = string.Concat(notches.Where(n => n > 0 && n < scale).Select(n => $"<b style=\"--at: {Pct(n)}\"></b>"));
+        return new HtmlString(
+            $"<div class=\"meter small{(over ? " over" : "")}\" role=\"img\" aria-label=\"{System.Net.WebUtility.HtmlEncode(label)}\"><i style=\"--p: {Pct(value)}\"></i>{marks}</div>");
+    }
+
     /// <summary>The meal most likely being logged at this local time of day.</summary>
     public static GymTracker.Core.Domain.Meal MealAt(DateTimeOffset local) => local.Hour switch
     {

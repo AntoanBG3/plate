@@ -109,9 +109,12 @@ public class OpenFoodFactsClient(HttpClient http, ILogger<OpenFoodFactsClient> l
             barcode,
             string.IsNullOrEmpty(name) ? $"Product {barcode}" : name,
             string.IsNullOrEmpty(brand) ? null : brand,
-            new Per100g(kcal.Value, protein.Value, carbs.Value, fat.Value),
+            new Per100g(kcal.Value, protein.Value, carbs.Value, fat.Value, Optional(n?["fiber_100g"], 100), Optional(n?["saturated-fat_100g"], fat.Value + 0.5m)),
             Num(product["serving_quantity"]) is { } s and > 0 ? s : null);
     }
+
+    /// <summary>A value that is not required to log the product; dropped when it is negative or above <paramref name="max"/>.</summary>
+    private static decimal? Optional(JsonNode? node, decimal max) => Num(node) is { } v && v >= 0 && v <= max ? v : null;
 
     private static decimal? Num(JsonNode? node)
     {

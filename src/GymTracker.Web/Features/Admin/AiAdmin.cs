@@ -8,7 +8,7 @@ namespace GymTracker.Web.Features.Admin;
 /// Changes to the shared OpenRouter key and AI models, for the admin area and the CLI (SPEC 12). Every change is
 /// audited, and a key change also sends a Telegram alert. The key is never returned, logged or audited.
 /// </summary>
-public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, JevFoodMatchDecider matcher, OpenRouterOnboardingAssistant onboarding, AdminAuditLog audit, IFeedbackNotifier notifier)
+public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, JevFoodMatchDecider matcher, OpenRouterOnboardingAssistant onboarding, OpenRouterWeeklySummaryWriter weekly, AdminAuditLog audit, IFeedbackNotifier notifier)
 {
     public async Task SetKeyAsync(string key, CancellationToken ct)
     {
@@ -79,6 +79,25 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
 
         var error = await onboarding.TestAsync(key, model, ct);
         await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Onboarding), error is null ? "works" : "fails", ct);
+        return error;
+    }
+
+    /// <summary>Writes a summary of a made-up week with the weekly model: null when it answers or the summary is off.</summary>
+    public async Task<LocalText?> TestWeeklyAsync(CancellationToken ct)
+    {
+        var model = await settings.GetModelAsync(AiTask.Weekly, ct);
+        if (model == AiTasks.Off)
+        {
+            return null;
+        }
+
+        if (await settings.GetKeyAsync(ct) is not { } key)
+        {
+            return new LocalText("No OpenRouter key is set.");
+        }
+
+        var error = await weekly.TestAsync(key, model, ct);
+        await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Weekly), error is null ? "works" : "fails", ct);
         return error;
     }
 }

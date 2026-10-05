@@ -54,8 +54,4 @@ public static class Maintenance
         var tee = Nasem2023(sex, profile.ActivityLevel ?? ActivityLevel.Inactive, currentYear - born, height, weight);
         return (int)Math.Round(tee, MidpointRounding.AwayFromZero);
     }
-
-    /// <summary>Daily protein target, rounded to 5 g (SPEC 5.6).</summary>
-    public static int? ProteinTarget(UserProfile profile, decimal? weightKg) =>
-        weightKg is { } w ? (int)(Math.Round(w * profile.ProteinGramsPerKg / 5m, MidpointRounding.AwayFromZero) * 5) : null;
 }

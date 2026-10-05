@@ -38,8 +38,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         .Configure<IdentityOptions>(o => o.Stores.SchemaVersion = IdentitySchemaVersions.Version3)
         .BuildServiceProvider();
 
-    public AppDbContext CreateContext(string? userId) =>
-        new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(ConnectionString).UseApplicationServiceProvider(IdentityServices).Options,
+    public AppDbContext CreateContext(string? userId, string? connectionString = null) =>
+        new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connectionString ?? ConnectionString).UseApplicationServiceProvider(IdentityServices).Options,
             new FixedCurrentUser(userId));
 
     /// <summary>Inserts a user and profile directly, bypassing Identity, for service-level tests.</summary>

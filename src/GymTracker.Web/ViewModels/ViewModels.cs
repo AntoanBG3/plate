@@ -18,7 +18,11 @@ public record TodayViewModel(
     GymTracker.Core.Nutrition.Totals Eaten,
     GymTracker.Web.Features.Food.DailyTargets Targets,
     IReadOnlyList<GymTracker.Core.Nutrition.TrendPoint> RecentWeights,
-    string? LastFood);
+    string? LastFood,
+    GymTracker.Core.Nutrition.DayQuality Quality,
+    IReadOnlyList<GymTracker.Core.Nutrition.CutCheckIn> CutChecks,
+    DateOnly? DietBreakUntil,
+    GymTracker.Web.Features.Summary.WeeklySummaryState Weekly);
 
 public record TrainViewModel(WorkoutSession? ActiveSession, IReadOnlyList<WorkoutTemplate> Templates);
 
@@ -70,7 +74,9 @@ public record ProgressViewModel(
     IReadOnlyList<E1rmPoint> E1rm,
     VolumeComparison Volume,
     GymTracker.Web.Features.Body.WeightChart Weight,
-    IReadOnlyList<GymTracker.Web.Features.Body.CalorieDay> Calories);
+    IReadOnlyList<GymTracker.Web.Features.Body.CalorieDay> Calories,
+    GymTracker.Web.Features.Food.WeekCard? Week,
+    int? ProteinMinG);
 
 public record PlatesViewModel(int SessionExerciseId, decimal BarKg, decimal? TargetKg, PlateLoad? Load);
 
@@ -86,7 +92,7 @@ public record SaveMealFormViewModel(DateOnly Date, Meal Meal, string DefaultName
 
 public record SavedMealViewModel(SavedMeal Meal, DateOnly Date, Meal LogTo);
 
-public record FoodDayViewModel(GymTracker.Web.Features.Food.DayLog Day, DateOnly Today, GymTracker.Web.Features.Food.DailyTargets Targets);
+public record FoodDayViewModel(GymTracker.Web.Features.Food.DayLog Day, DateOnly Today, GymTracker.Web.Features.Food.DailyTargets Targets, GymTracker.Web.Features.Food.WeekCard? Week);
 
 public record FoodAddViewModel(
     DateOnly Date,

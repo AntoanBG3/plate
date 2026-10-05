@@ -61,8 +61,8 @@ public class DeletedRowsTests(PostgresFixture fixture)
     {
         var (s, _) = await NextSuggestionAsync((sessions, _, setId) => sessions.DeleteSetAsync(setId, default));
         await using var __ = s;
-        await s.FoodLog.AddQuickAsync(new DateOnly(2026, 9, 1), Meal.Lunch, "Gone wrap", 500, 30, 50, 15, default);
-        await s.FoodLog.AddQuickAsync(new DateOnly(2026, 9, 1), Meal.Lunch, "Kept wrap", 400, 30, 40, 10, default);
+        await s.FoodLog.AddQuickAsync(new DateOnly(2026, 9, 1), Meal.Lunch, "Gone wrap", 500, 30, 50, 15, null, null, default);
+        await s.FoodLog.AddQuickAsync(new DateOnly(2026, 9, 1), Meal.Lunch, "Kept wrap", 400, 30, 40, 10, null, null, default);
         var gone = (await s.FoodLog.DayAsync(new DateOnly(2026, 9, 1), default)).Entries.Single(e => e.Description == "Gone wrap").Id;
         await s.FoodLog.DeleteAsync(gone, default);
 

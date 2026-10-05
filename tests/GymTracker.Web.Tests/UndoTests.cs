@@ -25,7 +25,7 @@ public class UndoTests(PostgresFixture fixture)
 
     private static async Task<int> QuickEntryAsync(UserScope s, string name = "Wrap")
     {
-        await s.FoodLog.AddQuickAsync(Day, Meal.Lunch, name, 500, 30, 50, 15, default);
+        await s.FoodLog.AddQuickAsync(Day, Meal.Lunch, name, 500, 30, 50, 15, null, null, default);
         return (await s.FoodLog.DayAsync(Day, default)).Entries.Single(e => e.Description == name).Id;
     }
 

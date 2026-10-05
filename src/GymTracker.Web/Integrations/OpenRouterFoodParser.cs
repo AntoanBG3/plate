@@ -42,6 +42,7 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
           (e.g. "на скара", "grilled", "пържено в олио"); otherwise null.
         - assumption: a short note on anything you assumed, or null.
         - kcalPer100g, proteinPer100g, carbsPer100g, fatPer100g: standard nutrition database values for that food and state.
+        - fiberPer100g, saturatedFatPer100g: the same, or null when you don't know them.
         Never invent foods that are not in the text. If the text contains no food, return an empty list.
         """;
 
@@ -69,9 +70,11 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                   "kcalPer100g": { "type": "number" },
                   "proteinPer100g": { "type": "number" },
                   "carbsPer100g": { "type": "number" },
-                  "fatPer100g": { "type": "number" }
+                  "fatPer100g": { "type": "number" },
+                  "fiberPer100g": { "type": ["number", "null"] },
+                  "saturatedFatPer100g": { "type": ["number", "null"] }
                 },
-                "required": ["nameEn", "nameOriginal", "grams", "state", "preparation", "assumption", "kcalPer100g", "proteinPer100g", "carbsPer100g", "fatPer100g"],
+                "required": ["nameEn", "nameOriginal", "grams", "state", "preparation", "assumption", "kcalPer100g", "proteinPer100g", "carbsPer100g", "fatPer100g", "fiberPer100g", "saturatedFatPer100g"],
                 "additionalProperties": false
               }
             }
@@ -211,7 +214,7 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                 Str(node["state"]) switch { "raw" => FoodState.Raw, "cooked" => FoodState.Cooked, _ => FoodState.NotApplicable },
                 Str(node["preparation"]),
                 Str(node["assumption"]),
-                new Per100g(Num(node["kcalPer100g"]), Num(node["proteinPer100g"]), Num(node["carbsPer100g"]), Num(node["fatPer100g"])));
+                Estimate(node));
 
             if (item.NameEn.Length == 0 || FoodMath.Validate(item.Grams, item.Estimated) is not null)
             {
@@ -231,6 +234,18 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
         }
 
         return new FoodParseResult(items, error, model);
+    }
+
+    /// <summary>
+    /// The model's per-100 g values. Fiber and saturated fat are optional: an impossible one is dropped as unknown
+    /// rather than rejecting the food.
+    /// </summary>
+    private static Per100g Estimate(JsonNode node)
+    {
+        var fat = Num(node["fatPer100g"]);
+        var fiber = Num(node["fiberPer100g"]) is var f && f is >= 0 and <= 100 ? f : (decimal?)null;
+        var saturated = Num(node["saturatedFatPer100g"]) is var sf && sf >= 0 && sf <= fat + 0.5m ? sf : (decimal?)null;
+        return new Per100g(Num(node["kcalPer100g"]), Num(node["proteinPer100g"]), Num(node["carbsPer100g"]), fat, fiber, saturated);
     }
 
     private static string? Str(JsonNode? node) =>

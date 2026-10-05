@@ -14,7 +14,7 @@ public class QuickAddTests(PostgresFixture fixture)
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
 
-        await s.FoodLog.AddQuickAsync(Day, Meal.Dinner, "Restaurant", 650, 40, 60, 25, default);
+        await s.FoodLog.AddQuickAsync(Day, Meal.Dinner, "Restaurant", 650, 40, 60, 25, null, null, default);
 
         var day = await s.FoodLog.DayAsync(Day, default);
         var entry = day.Entries.Single();
@@ -27,18 +27,18 @@ public class QuickAddTests(PostgresFixture fixture)
     public async Task Invalid_quick_entries_are_rejected()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
-        await s.Invoking(x => x.FoodLog.AddQuickAsync(Day, Meal.Snack, "x", 0, 0, 0, 0, default)).Should().ThrowAsync<ValidationException>();
-        await s.Invoking(x => x.FoodLog.AddQuickAsync(Day, Meal.Snack, "x", 100, 600, 0, 0, default)).Should().ThrowAsync<ValidationException>();
+        await s.Invoking(x => x.FoodLog.AddQuickAsync(Day, Meal.Snack, "x", 0, 0, 0, 0, null, null, default)).Should().ThrowAsync<ValidationException>();
+        await s.Invoking(x => x.FoodLog.AddQuickAsync(Day, Meal.Snack, "x", 100, 600, 0, 0, null, null, default)).Should().ThrowAsync<ValidationException>();
     }
 
     [Fact]
     public async Task Editing_a_quick_entry_changes_its_numbers_and_never_scales_by_grams()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
-        await s.FoodLog.AddQuickAsync(Day, Meal.Lunch, "Wrap", 500, 30, 50, 15, default);
+        await s.FoodLog.AddQuickAsync(Day, Meal.Lunch, "Wrap", 500, 30, 50, 15, null, null, default);
         var id = (await s.FoodLog.DayAsync(Day, default)).Entries.Single().Id;
 
-        await s.FoodLog.UpdateQuickAsync(id, "Big wrap", Meal.Dinner, 700, 35, 70, 25, default);
+        await s.FoodLog.UpdateQuickAsync(id, "Big wrap", Meal.Dinner, 700, 35, 70, 25, null, null, default);
         await s.Invoking(x => x.FoodLog.UpdateAsync(id, "Big wrap", 200, Meal.Dinner, default)).Should().ThrowAsync<ValidationException>();
 
         s.Db.ChangeTracker.Clear();
@@ -50,7 +50,7 @@ public class QuickAddTests(PostgresFixture fixture)
     public async Task Copying_a_meal_keeps_quick_entries_quick()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
-        await s.FoodLog.AddQuickAsync(Day, Meal.Breakfast, "Cafe", 300, 10, 40, 10, default);
+        await s.FoodLog.AddQuickAsync(Day, Meal.Breakfast, "Cafe", 300, 10, 40, 10, null, null, default);
 
         await s.FoodLog.CopyMealAsync(Day, Day.AddDays(1), Meal.Breakfast, default);
 

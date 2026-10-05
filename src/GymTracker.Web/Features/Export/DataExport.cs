@@ -23,6 +23,7 @@ public class DataExport(AppDbContext db)
             ["custom_exercises.csv"] = await CustomExercisesAsync(ct),
             ["food_log.csv"] = await FoodLogAsync(ct),
             ["maintenance_estimates.csv"] = await EstimatesAsync(ct),
+            ["weekly_summaries.csv"] = await WeeklySummariesAsync(ct),
             ["feedback.csv"] = await FeedbackAsync(ct),
         };
 
@@ -147,11 +148,11 @@ public class DataExport(AppDbContext db)
 
     private async Task<Csv> FoodLogAsync(CancellationToken ct)
     {
-        var csv = new Csv("date", "meal", "description", "grams", "kcal", "protein_g", "carbs_g", "fat_g", "source", "ai_model", "match_model", "created_at_utc");
+        var csv = new Csv("date", "meal", "description", "grams", "kcal", "protein_g", "carbs_g", "fat_g", "fiber_g", "saturated_fat_g", "source", "ai_model", "match_model", "created_at_utc");
         var entries = await db.FoodLog.AsNoTracking().OrderBy(e => e.Date).ThenBy(e => e.CreatedAt).ToListAsync(ct);
         foreach (var e in entries)
         {
-            csv.Row(e.Date, e.Meal.ToString(), e.Description, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.Source.ToString(), e.AiModel, e.MatchModel, e.CreatedAt);
+            csv.Row(e.Date, e.Meal.ToString(), e.Description, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG, e.Source.ToString(), e.AiModel, e.MatchModel, e.CreatedAt);
         }
 
         return csv;
@@ -164,6 +165,17 @@ public class DataExport(AppDbContext db)
         foreach (var e in estimates)
         {
             csv.Row(e.CalculatedOn, e.Method.ToString(), e.EstimatedTdeeKcal, e.TargetKcal, e.TargetProteinG, e.TrendWeightKg, e.DaysOfData, e.LoggingCompleteness, e.LowConfidence);
+        }
+
+        return csv;
+    }
+
+    private async Task<Csv> WeeklySummariesAsync(CancellationToken ct)
+    {
+        var csv = new Csv("week_start", "summary", "tips", "motivation", "language", "model", "created_at_utc");
+        foreach (var s in await db.WeeklySummaries.AsNoTracking().OrderBy(s => s.WeekStart).ToListAsync(ct))
+        {
+            csv.Row(s.WeekStart, s.Summary, string.Join(" | ", s.Tips), s.Motivation, s.Language.ToString(), s.Model, s.CreatedAt);
         }
 
         return csv;

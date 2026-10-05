@@ -253,4 +253,20 @@ public class OnboardingTests(PostgresFixture db) : IDisposable
                 .Should().Be(RateLimits.AiOnboarding);
         }
     }
+
+    [Fact]
+    public void The_summary_card_shows_auto_protein_and_the_macro_ranges()
+    {
+        var draft = new OnboardingDraft
+        {
+            Name = "Ivan", Sex = Sex.Male, BirthYear = 1996, HeightCm = 180, WeightKg = 80,
+            ActivityLevel = ActivityLevel.Inactive, Goal = Goal.Cut, RatePercentPerWeek = 0.5m,
+        };
+
+        var preview = GymTracker.Web.Features.Onboarding.OnboardingService.Preview(draft, new UserProfile(), new DateOnly(2026, 10, 5))!;
+
+        preview.Macros!.ProteinMinG.Should().Be(130);
+        preview.ProteinG.Should().Be(175, "Auto on a cut is 2.2 g/kg of 80 kg");
+        preview.Macros.FatMinG.Should().BeLessThan(preview.Macros.FatMaxG);
+    }
 }
