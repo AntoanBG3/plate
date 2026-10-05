@@ -19,7 +19,7 @@
     }
     else
     {
-        <p class="footnote">@L["Per side"]</p>
+        <p class="footnote">@L["Bar {0} kg", Model.BarKg.Kg()] · @L["Per side"]</p>
         <div class="plate-stack">
             @if (load.PerSide.Count == 0)
             {
@@ -30,10 +30,9 @@
                 <span class="plate num" data-plate="@plate.Kg()">@plate.Kg()</span>
             }
         </div>
-        <p class="headline num" data-total="@load.TotalKg.Kg()">@L["{0} kg in total", load.TotalKg.Kg()]</p>
-        @if (!load.Exact)
-        {
-            <p class="footnote">@L["Closest you can load: {0} kg", load.TotalKg.Kg()]</p>
-        }
+        @* One line: the total when it is exact, else what can be loaded and what was asked for. *@
+        <p class="headline num" data-total="@load.TotalKg.Kg()">@(load.Exact
+            ? L["{0} kg in total", load.TotalKg.Kg()]
+            : L["Closest you can load: {0} kg (you asked for {1})", load.TotalKg.Kg(), Model.TargetKg!.Value.Kg()])</p>
     }
 </div>

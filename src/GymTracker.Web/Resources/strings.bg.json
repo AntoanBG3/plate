@@ -775,5 +775,10 @@
   "There is no empty warm-up row to remove.": "Няма празен ред за загрявка, който да се махне.",
   "An exercise keeps at least one set.": "Всяко упражнение запазва поне една серия.",
   "Undo didn't go through.": "Връщането не мина.",
-  "Try again": "Опитай пак"
+  "Try again": "Опитай пак",
+  "Bar {0} kg": "Лост {0} кг",
+  "Closest you can load: {0} kg (you asked for {1})": "Най-близо, което можеш да заредиш: {0} кг (поиска {1})",
+  "Done today: {0}": "Днес: {0}",
+  "First time": "За първи път",
+  "Last time: {0}": "Последно: {0}"
 }

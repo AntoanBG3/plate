@@ -505,8 +505,23 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .plate-choice input:checked + span { background: var(--accent); color: var(--on-accent); }
 .plate-choice input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 .plates-result { padding: var(--s-4) var(--s-1) 0; display: grid; gap: var(--s-2); }
-.plate-stack { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; }
-.plate { display: inline-grid; place-items: center; min-width: 52px; min-height: var(--tap); padding: 0 var(--s-3); border-radius: var(--r-md); background: var(--fill-strong); font-weight: var(--weight-semibold); }
+/* Plates as they look on the sleeve: big plates tall, small ones short, in IWF colours (25 red, 20 blue, 15 yellow,
+   10 green, 5 white; the small change plates repeat them). Colours were checked for 4.5:1 text contrast. */
+.plate-stack { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; padding-left: var(--s-4); position: relative; }
+.plate-stack::before { content: ""; position: absolute; left: 0; top: 50%; width: calc(100% - 4px); max-width: 100%; height: 8px; margin-top: -4px; border-radius: 4px; background: var(--fill-strong); z-index: 0; }
+.plate {
+    position: relative; z-index: 1; display: inline-grid; place-items: center; min-width: 40px; height: 88px; padding: 0 6px;
+    border-radius: 7px; background: var(--fill-strong); color: var(--label); font-weight: var(--weight-semibold); font-size: var(--text-footnote);
+}
+.plate[data-plate="25"], .plate[data-plate="2.5"] { background: #d62d20; color: #fff; }
+.plate[data-plate="20"], .plate[data-plate="2"] { background: #1f57c3; color: #fff; }
+.plate[data-plate="15"], .plate[data-plate="1.5"] { background: #f2c230; color: #000; }
+.plate[data-plate="10"], .plate[data-plate="1"] { background: #1e7b34; color: #fff; }
+.plate[data-plate="5"], .plate[data-plate="0.5"] { background: #f2f2f2; color: #000; }
+.plate[data-plate="1.25"] { background: #8e8e93; color: #000; }
+.plate:is([data-plate="5"]) { height: 64px; }
+.plate:is([data-plate="2.5"], [data-plate="2"]) { height: 52px; }
+.plate:is([data-plate="1.5"], [data-plate="1.25"], [data-plate="1"], [data-plate="0.5"]) { height: 44px; }
 .ex-meta { font-size: var(--text-subhead); color: var(--label-2); margin-top: 2px; }
 .icon-btn { width: var(--tap); height: var(--tap); display: grid; place-items: center; border-radius: 50%; color: var(--accent-text); flex: none; }
 .icon-btn .icon { width: 22px; height: 22px; }

@@ -343,6 +343,19 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
                 s.Exercises.SelectMany(e => e.Sets).Count(x => !x.IsWarmup)))
             .ToListAsync(ct);
 
+    /// <summary>Sessions finished since <paramref name="since"/>, newest first (Today's "Done today").</summary>
+    public Task<List<HistoryItem>> FinishedSinceAsync(DateTimeOffset since, CancellationToken ct) =>
+        db.Sessions
+            .Where(s => s.EndedAt != null && s.EndedAt >= since)
+            .OrderByDescending(s => s.EndedAt)
+            .Select(s => new HistoryItem(
+                s.Id,
+                s.Template != null ? s.Template.Name : "Freestyle",
+                s.StartedAt,
+                s.EndedAt,
+                s.Exercises.SelectMany(e => e.Sets).Count(x => !x.IsWarmup)))
+            .ToListAsync(ct);
+
     public Task<int?> LastCompletedTemplateIdAsync(CancellationToken ct) =>
         db.Sessions
             .Where(s => s.EndedAt != null && s.TemplateId != null)

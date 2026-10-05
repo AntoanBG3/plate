@@ -22,7 +22,8 @@ public record TodayViewModel(
     GymTracker.Core.Nutrition.DayQuality Quality,
     IReadOnlyList<GymTracker.Core.Nutrition.CutCheckIn> CutChecks,
     DateOnly? DietBreakUntil,
-    GymTracker.Web.Features.Summary.WeeklySummaryState Weekly);
+    GymTracker.Web.Features.Summary.WeeklySummaryState Weekly,
+    IReadOnlyList<GymTracker.Web.Features.Training.HistoryItem>? DoneToday = null);
 
 public record TrainViewModel(WorkoutSession? ActiveSession, IReadOnlyList<WorkoutTemplate> Templates);
 
@@ -45,11 +46,13 @@ public record SetRowViewModel(int SessionExerciseId, bool IsWarmup, SetEntry? Lo
         set.DeletedAt is null && set.SessionExercise?.DeletedAt is null ? For(set) : Blank(set.SessionExerciseId, set.IsWarmup);
 }
 
+/// <param name="LastTime">The previous session's working sets per session exercise, for the "Last time" line.</param>
 public record SessionViewModel(
     WorkoutSession Session,
     IReadOnlyDictionary<int, ProgressionSuggestion?> Suggestions,
     IReadOnlyDictionary<int, UserExerciseSettings> Settings,
-    decimal ProfileBarKg)
+    decimal ProfileBarKg,
+    IReadOnlyDictionary<int, IReadOnlyList<LoggedSet>> LastTime)
 {
     /// <param name="index">The card's place in the session, which decides the Move up and Move down items.</param>
     public ExerciseCardViewModel CardFor(SessionExercise exercise, int index)
@@ -61,7 +64,8 @@ public record SessionViewModel(
             settings?.Note,
             PlateMath.BarFor(exercise.Exercise.Equipment, settings?.BarWeightKg, ProfileBarKg),
             IsFirst: index == 0,
-            IsLast: index == Session.Exercises.Count - 1);
+            IsLast: index == Session.Exercises.Count - 1,
+            LastTime: LastTime.GetValueOrDefault(exercise.Id));
     }
 }
 
@@ -71,7 +75,8 @@ public record ExerciseCardViewModel(
     string? Note = null,
     decimal? BarKg = null,
     bool IsFirst = true,
-    bool IsLast = true)
+    bool IsLast = true,
+    IReadOnlyList<LoggedSet>? LastTime = null)
 {
     /// <summary>Targets come from the last set logged in this session rather than a progression suggestion.</summary>
     public bool Carried => Suggestion is not { Sets.Count: > 0 };
@@ -92,7 +97,8 @@ public record ExerciseCardViewModel(
     }
 }
 
-public record SummaryViewModel(SessionSummary Summary, IReadOnlyList<PersonalRecord> Records);
+/// <param name="FirstTimes">Exercises done for the first time: a baseline, listed apart from the records.</param>
+public record SummaryViewModel(SessionSummary Summary, IReadOnlyList<PersonalRecord> Records, IReadOnlyList<PersonalRecord> FirstTimes);
 
 public record ProgressViewModel(
     IReadOnlyList<ExerciseOption> Exercises,

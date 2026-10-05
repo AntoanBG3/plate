@@ -3,8 +3,9 @@
     var session = Model.Summary.Session;
     var name = session.Template?.Name ?? L["Freestyle"];
     ViewData["Title"] = L["Summary"];
-    ViewData["BackUrl"] = $"/train/sessions/{session.Id}";
-    ViewData["BackLabel"] = name;
+    // Back goes to Train; "Edit workout" below is the way into the session.
+    ViewData["BackUrl"] = "/train";
+    ViewData["BackLabel"] = L["Train"];
 }
 <header class="page-head">
     <p class="eyebrow">@L["Workout finished"]</p>
@@ -37,7 +38,27 @@
     </section>
 }
 
-<section class="section">
+@if (Model.FirstTimes.Count > 0)
+{
+    <section class="section" data-first-time>
+        <h2 class="section-title">@L["First time"]</h2>
+        <div class="list">
+            @foreach (var first in Model.FirstTimes)
+            {
+                <div class="row">
+                    <span class="row-icon neutral">@Ui.Icon("trend")</span>
+                    <span class="row-main">
+                        <span class="row-title headline" style="display: block">@L[first.ExerciseName]</span>
+                        <span class="row-sub" style="display: block">@L["Estimated 1RM, first time"]</span>
+                    </span>
+                    <span class="num headline" style="font-size: var(--text-title-3)">@first.E1rmKg.Kg()<span class="muted" style="font-size: var(--text-subhead)"> @L["kg"]</span></span>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+<section class="section" data-exercises>
     <h2 class="section-title">@L["Exercises"]</h2>
     <div class="list">
         @foreach (var exercise in session.Exercises)
@@ -46,7 +67,7 @@
             <div class="row">
                 <span class="row-main">
                     <span class="row-title" style="display: block">@L.Exercise(exercise.Exercise)</span>
-                    <span class="row-sub num" style="display: block">@(sets.Count == 0 ? L["No sets"] : string.Join("   ", sets.Select(s => $"{s.WeightKg.Kg()} × {s.Reps}")))</span>
+                    <span class="row-sub num" style="display: block">@(sets.Count == 0 ? L["No sets"] : string.Join(" · ", sets.Select(s => $"{s.WeightKg.Kg()} × {s.Reps}")))</span>
                 </span>
             </div>
         }

@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymTracker.Web.Controllers;
 
 [Route("today")]
-public class TodayController(ProfileService profiles, BodyweightService bodyweights, BodyAnalytics body, TemplateService templates, SessionService sessions, FoodLogService food, NutritionTargets targets, GymTracker.Web.Features.Summary.WeeklySummaryService summaries, GymTracker.Web.Features.Feedback.Changelog changelog) : Controller
+public class TodayController(ProfileService profiles, BodyweightService bodyweights, BodyAnalytics body, TemplateService templates, SessionService sessions, FoodLogService food, NutritionTargets targets, GymTracker.Web.Features.Summary.WeeklySummaryService summaries, GymTracker.Web.Features.Feedback.Changelog changelog, TimeProvider time) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -35,6 +35,10 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
             list.Select(t => new TemplateOrder(t.Id, t.SortOrder)).ToList(),
             await sessions.LastCompletedTemplateIdAsync(ct));
         var day = await food.DayAsync(today, ct);
+        // Finished on the user's day, in their time zone; two days back covers any offset.
+        var doneToday = active is not null ? [] : (await sessions.FinishedSinceAsync(time.GetUtcNow().AddDays(-2), ct))
+            .Where(s => GymTracker.Core.Time.UserClock.Today(s.EndedAt!.Value, profile.TimeZoneId) == today)
+            .ToList();
         var weights = await body.WeightAsync("4w", today, ct);
         ViewData["WhatsNew"] = await changelog.UnseenAsync(ct);
 
@@ -53,7 +57,8 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
             day.Quality,
             cutChecks,
             CutCheck.OnBreak(profile, today) ? profile.DietBreakUntil : null,
-            await summaries.StateAsync(ct)));
+            await summaries.StateAsync(ct),
+            doneToday));
     }
 
     /// <summary>Writes last week's summary when Today had none to show (SPEC 6.5); empty when it can't.</summary>

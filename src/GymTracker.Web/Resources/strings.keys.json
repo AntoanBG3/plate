@@ -17,6 +17,7 @@
   ],
   "1 set": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/History.cshtml"
   ],
   "1 set is saved on this phone and will send when the connection is back.": [
@@ -239,6 +240,9 @@
   "Bar weight must be between {0} and {1} kg.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
+  "Bar {0} kg": [
+    "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
   "Barbell": [
     "enum"
   ],
@@ -386,7 +390,7 @@
   "Close-grip bench press": [
     "exercise"
   ],
-  "Closest you can load: {0} kg": [
+  "Closest you can load: {0} kg (you asked for {1})": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
   "Copied 1 item.": [
@@ -512,6 +516,9 @@
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml",
     "src/GymTracker.Web/Views/Train/Session.cshtml",
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
+  ],
+  "Done today: {0}": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Dumbbell": [
     "enum"
@@ -656,6 +663,9 @@
   ],
   "Finished workouts show up here, newest first.": [
     "src/GymTracker.Web/Views/Train/History.cshtml"
+  ],
+  "First time": [
+    "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
   "Fixed": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -828,6 +838,9 @@
   ],
   "Language": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Last time: {0}": [
+    "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
   ],
   "Last week": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
@@ -1686,6 +1699,7 @@
     "exercise"
   ],
   "Start": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml"
   ],
   "Start a workout": [
@@ -1978,7 +1992,8 @@
     "src/GymTracker.Web/Views/Templates/Index.cshtml",
     "src/GymTracker.Web/Views/Train/History.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml",
-    "src/GymTracker.Web/Views/Train/Session.cshtml"
+    "src/GymTracker.Web/Views/Train/Session.cshtml",
+    "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
   "Training": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -2447,6 +2462,7 @@
   ],
   "{0} sets": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/History.cshtml",
     "wwwroot/js"
   ],

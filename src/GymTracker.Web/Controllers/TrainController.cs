@@ -43,14 +43,15 @@ public class TrainController(
             session,
             await analytics.SuggestionsAsync(session, ct),
             await settings.ForAsync(session.Exercises.Select(e => e.ExerciseId), ct),
-            (await profiles.GetAsync(ct)).BarWeightKg));
+            (await profiles.GetAsync(ct)).BarWeightKg,
+            await analytics.LastTimeAsync(session, ct)));
     }
 
     [HttpGet("sessions/{id:int}/summary")]
     public async Task<IActionResult> Summary(int id, CancellationToken ct)
     {
         var summary = await sessions.SummaryAsync(id, ct);
-        return View(new SummaryViewModel(summary, await analytics.RecordsAsync(summary.Session, ct)));
+        return View(new SummaryViewModel(summary, await analytics.RecordsAsync(summary.Session, ct), await analytics.FirstTimesAsync(summary.Session, ct)));
     }
 
     [HttpPost("sessions/{id:int}/finish")]

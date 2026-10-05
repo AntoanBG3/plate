@@ -38,6 +38,20 @@ public class PlatesEndpointTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task The_sheet_names_the_bar_and_gives_one_total()
+    {
+        await using var app = new AppFactory(fixture);
+        var (client, id) = await SessionWithAsync(app, "Bench press");
+
+        var exact = await client.GetStringAsync($"/train/session-exercises/{id}/plates?weight=100");
+        exact.Should().Contain("Bar 20 kg").And.Contain("100 kg in total").And.NotContain("Closest you can load");
+
+        // 103 can't be loaded: one line says what can, and what was asked for (QA: the two lines said the same thing).
+        var closest = await client.GetStringAsync($"/train/session-exercises/{id}/plates?weight=103");
+        closest.Should().Contain("Closest you can load: 102.5 kg (you asked for 103)").And.NotContain("kg in total");
+    }
+
+    [Fact]
     public async Task Plates_without_a_weight_asks_for_one()
     {
         await using var app = new AppFactory(fixture);

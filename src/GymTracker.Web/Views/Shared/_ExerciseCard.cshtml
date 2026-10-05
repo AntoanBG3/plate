@@ -16,6 +16,10 @@
                 <p class="ex-note">@note</p>
             }
             <p class="ex-meta">@L["{0}–{1} reps · {2} · rest {3}", Ex.RepMin, Ex.RepMax, L.Count(Ex.WorkingSets, "1 set", "{0} sets"), Format.Rest(Ex.RestSeconds)]</p>
+            @if (Model.LastTime is { Count: > 0 } last)
+            {
+                <p class="ex-meta num" data-last-time>@L["Last time: {0}", string.Join(" · ", last.Select(s => $"{s.WeightKg.Kg()} × {s.Reps}"))]</p>
+            }
         </div>
         <div class="menu-wrap">
             <button type="button" class="icon-btn" data-menu-trigger aria-expanded="false" aria-label="@L["Actions for {0}", name]">@Ui.Icon("more")</button>

@@ -169,9 +169,37 @@ else if (Model.Weekly.CanWrite)
             <a class="btn btn-primary btn-block" href="/train/sessions/@active.Id">@Ui.Icon("play")@L["Resume workout"]</a>
         </div>
     }
+    else if (Model.DoneToday is { Count: > 0 } done)
+    {
+        @* A workout finished today comes first; the next one is a smaller row under it (SPEC 7). *@
+        <div class="list">
+            @foreach (var d in done)
+            {
+                <a class="row row-link" href="/train/sessions/@d.Id/summary" data-done-today>
+                    <span class="row-icon">@Ui.Icon("check")</span>
+                    <span class="row-main">
+                        <span class="row-title" style="display: block">@L["Done today: {0}", d.Name == "Freestyle" ? L["Freestyle"] : d.Name]</span>
+                        <span class="row-sub num" style="display: block">@L.Duration((d.EndedAt ?? d.StartedAt) - d.StartedAt) · @L.Count(d.WorkingSets, "1 set", "{0} sets")</span>
+                    </span>
+                    @Ui.Icon("chevron", "row-chevron")
+                </a>
+            }
+            @if (Model.NextTemplate is { } after)
+            {
+                <form method="post" asp-antiforgery="true" action="/train/start" class="row" data-up-next>
+                    <input type="hidden" name="templateId" value="@after.Id" />
+                    <span class="row-main">
+                        <span class="footnote" style="display: block">@L["Up next"]</span>
+                        <span class="row-title row-ellipsis" style="display: block">@after.Name</span>
+                    </span>
+                    <button type="submit" class="btn btn-tinted btn-small">@L["Start"]</button>
+                </form>
+            }
+        </div>
+    }
     else if (Model.NextTemplate is { } next)
     {
-        <div class="card card-pad">
+        <div class="card card-pad" data-up-next>
             <p class="footnote">@L["Up next"]</p>
             <p class="large-title" style="font-size: var(--text-title-1); margin: 4px 0 2px; view-transition-name: none">@next.Name</p>
             <p class="subhead row-ellipsis" style="margin-bottom: var(--s-4)">@string.Join(", ", next.Exercises.OrderBy(e => e.SortOrder).Select(e => L.Exercise(e.Exercise)))</p>
