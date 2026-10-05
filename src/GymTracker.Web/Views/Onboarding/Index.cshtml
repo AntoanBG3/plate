@@ -46,62 +46,64 @@
     }
     else
     {
-        <header class="setup-head">
-            <h1 class="large-title">@L["Set up"]</h1>
-            <form method="post" asp-antiforgery="true" action="/welcome/skip">
-                <input type="hidden" name="returnUrl" value="@returnUrl" />
-                <button type="submit" class="btn btn-plain">@L["Skip for now"]</button>
-            </form>
-        </header>
-        <div class="chat" aria-live="polite" data-chat>
-            @foreach (var line in Model.Messages)
+        <div class="setup-chat">
+            <header class="setup-head">
+                <h1 class="large-title">@L["Set up"]</h1>
+                <form method="post" asp-antiforgery="true" action="/welcome/skip">
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <button type="submit" class="btn btn-plain">@L["Skip for now"]</button>
+                </form>
+            </header>
+            @if (!Model.Complete)
             {
-                <p class="msg @(line.FromUser ? "from-me" : "from-app")">@line.Text</p>
+                <p class="chat-caption"><a href="@formUrl">@L["Use the form instead"]</a></p>
             }
-        </div>
-
-        @if (Model.LimitReached)
-        {
-            <p class="footnote setup-limit">@L["That's the end of the chat. Check the summary and save, or use the form."]</p>
-        }
-        else
-        {
-            @if (Model.QuickReplies.Count > 0)
-            {
-                <div class="reply-chips">
-                    @foreach (var reply in Model.QuickReplies)
-                    {
-                        <form method="post" asp-antiforgery="true" action="/welcome/message" data-busy data-quick-reply>
-                            <input type="hidden" name="returnUrl" value="@returnUrl" />
-                            <input type="hidden" name="text" value="@reply" />
-                            <button type="submit" class="reply-chip">@reply</button>
-                        </form>
-                    }
-                </div>
-            }
-
-            <form method="post" asp-antiforgery="true" action="/welcome/message" class="setup-composer" data-busy data-composer>
-                <input type="hidden" name="returnUrl" value="@returnUrl" />
-                <div class="composer">
-                    <label for="setup-text" class="sr-only">@L["Your answer"]</label>
-                    <textarea id="setup-text" name="text" rows="1" maxlength="@OnboardingService.MaxMessageLength" placeholder="@L["Your answer"]" required enterkeyhint="send"></textarea>
-                    <button type="submit" class="send-btn" aria-label="@L["Send"]">@Ui.Icon("send")</button>
-                </div>
-                <p class="thinking" role="status"><i></i><i></i><i></i><span>@L["Thinking…"]</span></p>
-            </form>
-        }
-
-        @if (Model.Complete)
-        {
-            <partial name="_SetupForm" model="new SetupFormModel(Model.Draft, Model.Preview, Model.CurrentYear, returnUrl, Summary: true)" />
-        }
-
-        @if (!Model.Complete)
-        {
-            <div class="setup-links">
-                <a class="btn btn-plain" href="@formUrl">@L["Use the form instead"]</a>
+            <div class="chat" aria-live="polite" data-chat>
+                @foreach (var line in Model.Messages)
+                {
+                    <p class="msg @(line.FromUser ? "from-me" : "from-app")">@line.Text</p>
+                }
             </div>
-        }
+
+            @if (Model.Complete)
+            {
+                <partial name="_SetupForm" model="new SetupFormModel(Model.Draft, Model.Preview, Model.CurrentYear, returnUrl, Summary: true)" />
+            }
+
+            @* Pinned to the bottom of the screen, as in Messages: suggested answers above the text field. *@
+            <div class="setup-dock">
+                @if (Model.LimitReached)
+                {
+                    <p class="footnote setup-limit">@L["That's the end of the chat. Check the summary and save, or use the form."]</p>
+                }
+                else
+                {
+                    @if (Model.QuickReplies.Count > 0)
+                    {
+                        <div class="reply-chips">
+                            @foreach (var reply in Model.QuickReplies)
+                            {
+                                <form method="post" asp-antiforgery="true" action="/welcome/message" data-busy data-quick-reply>
+                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                    <input type="hidden" name="text" value="@reply" />
+                                    <button type="submit" class="reply-chip">@reply</button>
+                                </form>
+                            }
+                        </div>
+                    }
+
+                    <form method="post" asp-antiforgery="true" action="/welcome/message" class="setup-composer" data-busy data-composer>
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        <div class="composer">
+                            <label for="setup-text" class="sr-only">@L["Your answer"]</label>
+                            <textarea id="setup-text" name="text" rows="1" maxlength="@OnboardingService.MaxMessageLength" placeholder="@L["Your answer"]" required enterkeyhint="send"></textarea>
+                            <button type="submit" class="send-btn" aria-label="@L["Send"]">@Ui.Icon("send")</button>
+                        </div>
+                        <p class="thinking" role="status"><i></i><i></i><i></i><span>@L["Thinking…"]</span></p>
+                    </form>
+                }
+            </div>
+        </div>
     }
 </div>
 <script src="~/js/onboarding.js" asp-append-version="true"></script>

@@ -373,11 +373,21 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .setup-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin: var(--s-2) 0 var(--s-6); }
 .setup-head .large-title { margin: 0; }
 .setup-head .btn-plain { margin-right: calc(-1 * var(--s-2)); font-weight: var(--weight-regular); }
-.setup-links { display: flex; justify-content: center; margin-top: var(--s-5); }
+/* The chat fills the screen: messages sit just above the text field, which stays at the bottom like in Messages. */
+.page:has(.setup-chat) { padding-bottom: 0; }
+.setup-chat { display: flex; flex-direction: column; min-height: calc(100dvh - env(safe-area-inset-top) - 44px); }
+.setup-chat .chat { flex: 1; justify-content: flex-end; }
+.chat-caption { margin: 0 0 var(--s-4); text-align: center; font-size: var(--text-footnote); }
+.setup-dock { position: sticky; bottom: 0; z-index: 5; margin-top: var(--s-4); padding: var(--s-2) 0 calc(env(safe-area-inset-bottom) + var(--s-2)); background: var(--bg); }
+/* One swipeable row, so the bar stays short. It runs to the screen edges. */
+.setup-dock .reply-chips { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)) var(--s-3); padding: 0 var(--gutter); }
+.setup-dock .reply-chips::-webkit-scrollbar { display: none; }
+.setup-dock .reply-chip { white-space: nowrap; }
+.setup-dock .setup-limit { margin: var(--s-2) var(--s-4); }
 
 /* Messages, iMessage style: runs from one side sit 2px apart, a change of side gets a gap, and the last bubble of a run
    has a tail. The tail is a bubble-coloured curve masked by a page-coloured one, both behind the bubble. */
-.chat { display: flex; flex-direction: column; gap: 2px; padding: 0 var(--s-2); isolation: isolate; }
+.chat { display: flex; flex-direction: column; gap: 2px; padding: 0 var(--s-2); isolation: isolate; overflow-x: clip; }
 .msg { position: relative; max-width: 78%; width: fit-content; margin: 0; padding: 8px 14px; border-radius: 18px; font-size: var(--text-body); line-height: 1.32; overflow-wrap: anywhere; }
 .msg.from-app { margin-right: auto; background: var(--bubble-them); color: var(--label); }
 .msg.from-me { margin-left: auto; background: var(--bubble-me); color: var(--on-bubble-me); }
@@ -395,13 +405,11 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .msg.typing i:nth-child(3) { animation-delay: 0.3s; }
 
 /* Suggested answers are things the user would say, so they sit on the user's side. */
-.reply-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--s-2); margin: var(--s-4) var(--s-2) 0; }
+.reply-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--s-2); }
 .reply-chip { min-height: var(--tap); padding: 0 var(--s-4); border-radius: 999px; background: none; color: var(--accent-text); box-shadow: inset 0 0 0 1.5px var(--accent-text); font-weight: var(--weight-semibold); font-size: var(--text-subhead); text-align: left; }
 .reply-chip:disabled { opacity: 0.4; }
-.setup-composer { margin-top: var(--s-5); }
 /* The typing bubble shows progress; the status line stays for screen readers only. */
 .setup-composer .thinking { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.setup-limit { margin: var(--s-5) var(--s-4) 0; }
 .setup-form { margin-top: var(--s-7); }
 .setup-form > .btn { margin-top: var(--s-6); }
 .setup-preview-main { margin: 0 0 var(--s-1); font-size: var(--text-title-1); font-weight: var(--weight-semibold); }

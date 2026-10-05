@@ -1,13 +1,24 @@
 // The setup chat (SPEC 6.4): shows the user's message at once while the server asks the model, keeps the newest
-// message in view, sends on Enter, and passes the phone's time zone with the summary.
+// message in view above the pinned text field, sends on Enter, and passes the phone's time zone with the summary.
 window.gymModule("setup", (root) => {
     "use strict";
 
     const chat = root.querySelector("[data-chat]");
-    const last = chat && chat.lastElementChild;
-    if (last) {
-        requestAnimationFrame(() => last.scrollIntoView({ block: "center" }));
+    // Messages sit above the pinned text field, so the newest is at the bottom of the page. Once the summary
+    // follows the chat, the newest message is centred instead.
+    const summary = root.querySelector("[data-setup-form]");
+    function showNewest(smooth) {
+        const last = chat && chat.lastElementChild;
+        if (!last) {
+            return;
+        }
+        if (summary) {
+            last.scrollIntoView({ block: "center", behavior: smooth ? "smooth" : "auto" });
+        } else {
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+        }
     }
+    requestAnimationFrame(() => showNewest(false));
 
     // Shows the user's message and a typing bubble at once; the server's page replaces both when the reply is in.
     function echo(text) {
@@ -26,7 +37,7 @@ window.gymModule("setup", (root) => {
         if (chips) {
             chips.hidden = true;
         }
-        typing.scrollIntoView({ block: "center", behavior: "smooth" });
+        showNewest(true);
     }
 
     const onSubmit = (event) => {
