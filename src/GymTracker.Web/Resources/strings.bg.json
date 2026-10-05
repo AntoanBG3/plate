@@ -736,5 +736,18 @@
   "saturated fat": "наситени мазнини",
   "{0} g saturated fat, up to {1} g": "{0} г наситени мазнини, до {1} г",
   "Incomplete: some foods have no value": "Непълно: някои храни нямат стойност",
-  "at least · min {0} g": "поне · мин. {0} г"
+  "at least · min {0} g": "поне · мин. {0} г",
+  "average of 1 logged day": "средно от 1 записан ден",
+  "average of {0} logged days": "средно от {0} записани дни",
+  "minimum reached {0} of {1} days": "минимумът е достигнат {0} от {1} дни",
+  "{0} of {1} g": "{0} от {1} г",
+  "at least the floor {0} of {1} days": "поне минимума {0} от {1} дни",
+  "{0} g · {1}–{2}": "{0} г · {1}–{2}",
+  "from {0} days with enough known": "от {0} дни с достатъчно данни",
+  "not enough known": "няма достатъчно данни",
+  "{0} g, up to {1}": "{0} г, до {1}",
+  "Judged on the 7 days before today, against today's targets.": "За 7-те дни преди днес, спрямо днешните цели.",
+  "Aim": "Цел",
+  "Minimum": "Минимум",
+  "Daily protein against the aim and minimum for the last 4 weeks": "Дневен протеин спрямо целта и минимума за последните 4 седмици"
 }

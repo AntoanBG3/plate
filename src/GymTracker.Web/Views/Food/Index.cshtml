@@ -170,6 +170,11 @@
     </section>
 }
 
+@if (Model.Week is { } week)
+{
+    <partial name="_WeekCard" model="week" />
+}
+
 @section Overlays {
     <div class="sheet" id="food-sheet" hidden>
         <div class="sheet-scrim"></div>

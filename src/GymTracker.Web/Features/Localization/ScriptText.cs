@@ -44,6 +44,9 @@ public static class ScriptText
         "{0} kg",
         "{0} kcal",
         "{0} sets",
+        "Aim",
+        "Minimum",
+        "{0} g",
         // feedback.js
         "Report",
         "Thanks!",

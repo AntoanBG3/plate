@@ -161,6 +161,10 @@
   "Admin": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Aim": [
+    "src/GymTracker.Web/Views/Progress/Index.cshtml",
+    "wwwroot/js"
+  ],
   "All": [
     "range"
   ],
@@ -306,7 +310,8 @@
   "Calories": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
-    "src/GymTracker.Web/Views/Progress/Index.cshtml"
+    "src/GymTracker.Web/Views/Progress/Index.cshtml",
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
   ],
   "Calories must be between 1 and 5000.": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
@@ -330,6 +335,7 @@
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Carbs: whatever calories are left after protein and fat.": [
@@ -421,6 +427,9 @@
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
   ],
   "Daily calories against target for the last 4 weeks": [
+    "src/GymTracker.Web/Views/Progress/Index.cshtml"
+  ],
+  "Daily protein against the aim and minimum for the last 4 weeks": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
   "Dark": [
@@ -585,6 +594,7 @@
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Fat: at least 20% of calories and 0.5 g per kg, up to 35%. Very low fat lowers testosterone. Whittaker 2021, ACSM.": [
@@ -602,6 +612,7 @@
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Fiber can't be over 100 g, and saturated fat can't be more than fat.": [
@@ -779,6 +790,9 @@
   "It's too late to undo that.": [
     "src/GymTracker.Web/Features/Undo/UndoService.cs"
   ],
+  "Judged on the 7 days before today, against today's targets.": [
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
   "Just the bar": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
@@ -937,6 +951,10 @@
   ],
   "Message": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
+  "Minimum": [
+    "src/GymTracker.Web/Views/Progress/Index.cshtml",
+    "wwwroot/js"
   ],
   "Minimum reps": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
@@ -1271,7 +1289,9 @@
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+    "src/GymTracker.Web/Views/Progress/Index.cshtml",
+    "src/GymTracker.Web/Views/Settings/Index.cshtml",
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
   ],
   "Protein and fat fill your whole calorie target.": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
@@ -1414,7 +1434,8 @@
   "Saturated fat": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
-    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
   ],
   "Save": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
@@ -1861,6 +1882,7 @@
   ],
   "This week": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml",
     "wwwroot/js"
   ],
   "Tick at least one food to save.": [
@@ -2117,8 +2139,17 @@
   "assumed 100 g": [
     "extra"
   ],
+  "at least the floor {0} of {1} days": [
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
   "at least · min {0} g": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "average of 1 logged day": [
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "average of {0} logged days": [
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
   ],
   "carbs": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
@@ -2143,6 +2174,9 @@
   "finished": [
     "src/GymTracker.Web/Views/Train/Session.cshtml"
   ],
+  "from {0} days with enough known": [
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
   "g": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
@@ -2152,6 +2186,7 @@
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
+    "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "g per kg": [
@@ -2203,6 +2238,12 @@
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
+  "minimum reached {0} of {1} days": [
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "not enough known": [
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
   "of which saturated": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
@@ -2242,7 +2283,8 @@
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
   "{0} g": [
-    "src/GymTracker.Web/Views/Today/Index.cshtml"
+    "src/GymTracker.Web/Views/Today/Index.cshtml",
+    "wwwroot/js"
   ],
   "{0} g carbs, range {1} to {2} g": [
     "src/GymTracker.Web/Views/Food/Index.cshtml",
@@ -2257,6 +2299,12 @@
   ],
   "{0} g · {1} kcal · {2} g protein": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "{0} g · {1}–{2}": [
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "{0} g, up to {1}": [
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
   ],
   "{0} h {1} min": [
     "src/GymTracker.Web/Features/Localization/Localizer.cs"
@@ -2306,6 +2354,9 @@
   "{0} new replies": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "{0} of {1} g": [
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
   "{0} of {1} g fiber": [
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
@@ -2314,7 +2365,8 @@
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "{0} of {1} kcal": [
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
   ],
   "{0} sets": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",

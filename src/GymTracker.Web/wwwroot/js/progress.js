@@ -153,6 +153,27 @@ window.gymModule("progress", () => {
             }));
         }
 
+        const protein = data("protein-data");
+        if (protein && document.getElementById("protein-chart")) {
+            charts.push(new Chart(document.getElementById("protein-chart"), {
+                type: "bar",
+                data: {
+                    labels: protein.labels,
+                    datasets: [
+                        { type: "bar", label: t("Eaten"), data: protein.eaten, backgroundColor: fill, hoverBackgroundColor: label3, borderRadius: 4, borderSkipped: false, barPercentage: 0.7, order: 3 },
+                        { type: "line", label: t("Aim"), data: protein.aim, borderColor: label, borderWidth: 2, pointRadius: 0, stepped: true, order: 1 },
+                        { type: "line", label: t("Minimum"), data: protein.minimum, borderColor: label2, borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, order: 2 },
+                    ],
+                },
+                options: {
+                    animation: motion,
+                    interaction: { mode: "index", intersect: false },
+                    plugins: { tooltip: { callbacks: { label: (c) => c.raw == null ? null : `${c.dataset.label}: ${t("{0} g", Math.round(c.raw))}` } } },
+                    scales: { x: xAxis, y: yAxis({ beginAtZero: true }) },
+                },
+            }));
+        }
+
         const volume = data("volume-data");
         if (volume && document.getElementById("volume-chart")) {
             charts.push(new Chart(document.getElementById("volume-chart"), {

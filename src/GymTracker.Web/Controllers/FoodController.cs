@@ -31,7 +31,9 @@ public class FoodController(
     {
         var today = await profiles.TodayAsync(ct);
         var day = await log.DayAsync(date ?? today, ct);
-        return View(new FoodDayViewModel(day, today, await targets.ForTodayAsync(ct)));
+        var dailyTargets = await targets.ForTodayAsync(ct);
+        var week = day.Date == today ? await log.WeekCardAsync(today, dailyTargets, ct) : null;
+        return View(new FoodDayViewModel(day, today, dailyTargets, week));
     }
 
     [HttpGet("add")]

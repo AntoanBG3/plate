@@ -66,4 +66,23 @@ public class FiberTests(PostgresFixture fixture)
         (await db.FoodItems.IgnoreQueryFilters().Where(f => f.Barcode == "3800102751490").Select(f => f.SaturatedFatPer100g).SingleAsync())
             .Should().Be(1m, "Bulgarian products are filled by barcode");
     }
+
+    [Fact]
+    public async Task The_week_counts_only_this_users_logged_days()
+    {
+        await using var me = new UserScope(fixture, await fixture.CreateUserAsync());
+        await using var other = new UserScope(fixture, await fixture.CreateUserAsync());
+        foreach (var daysAgo in new[] { 1, 2, 3 })
+        {
+            await me.FoodLog.AddQuickAsync(Day.AddDays(-daysAgo), Meal.Lunch, "Bowl", 2000, 140, 200, 60, 30, 15, default);
+            await other.FoodLog.AddQuickAsync(Day.AddDays(-daysAgo), Meal.Lunch, "Feast", 5000, 10, 500, 200, null, null, default);
+        }
+
+        await me.FoodLog.AddQuickAsync(Day, Meal.Lunch, "Today, not counted yet", 900, 50, 90, 30, null, null, default);
+
+        var days = await me.FoodLog.WeekBeforeAsync(Day, default);
+
+        days.Should().HaveCount(3);
+        days.Should().OnlyContain(d => d.Totals.Kcal == 2000 && d.Quality.FiberG == 30);
+    }
 }

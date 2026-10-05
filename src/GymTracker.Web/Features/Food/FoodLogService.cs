@@ -11,6 +11,9 @@ public record NewEntry(DateOnly Date, Meal Meal, string Description, decimal Gra
 /// <summary>A frequently logged food for one-tap re-logging.</summary>
 public record RecentFood(string Description, int? FoodItemId, decimal LastGrams, Per100g Per100, int Times);
 
+/// <summary>The This week card: averages and the targets they are judged against.</summary>
+public record WeekCard(WeekSummary Week, MacroTarget Targets, int? TargetKcal);
+
 public record DayLog(DateOnly Date, IReadOnlyList<FoodLogEntry> Entries, Totals Totals)
 {
     public IEnumerable<FoodLogEntry> For(Meal meal) => Entries.Where(e => e.Meal == meal);
@@ -34,6 +37,23 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
         var totals = entries.Aggregate(Totals.Zero, (t, e) => t.Add(FoodMath.TotalsOf(e)));
         return new DayLog(date, entries, totals);
     }
+
+    /// <summary>Each logged day of the week before <paramref name="today"/>, for the weekly averages (SPEC 5.8).</summary>
+    public async Task<List<DaySummary>> WeekBeforeAsync(DateOnly today, CancellationToken ct)
+    {
+        var from = today.AddDays(-WeeklyNutrition.Days);
+        var entries = await db.FoodLog.AsNoTracking().Where(e => e.Date >= from && e.Date < today).ToListAsync(ct);
+        return entries
+            .GroupBy(e => e.Date)
+            .Select(g => new DaySummary(g.Key, g.Aggregate(Totals.Zero, (t, e) => t.Add(FoodMath.TotalsOf(e))), DayQuality.Of(g.ToList())))
+            .ToList();
+    }
+
+    /// <summary>The weekly averages against today's targets; null without targets or with too few logged days.</summary>
+    public async Task<WeekCard?> WeekCardAsync(DateOnly today, DailyTargets targets, CancellationToken ct) =>
+        targets.Macros is { } macros && WeeklyNutrition.Calculate(await WeekBeforeAsync(today, ct), macros, today) is { } week
+            ? new WeekCard(week, macros, targets.Kcal)
+            : null;
 
     public async Task<FoodLogEntry> GetAsync(int id, CancellationToken ct) =>
         await db.FoodLog.SingleOrDefaultAsync(e => e.Id == id, ct) ?? throw new NotFoundException();
