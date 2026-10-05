@@ -86,6 +86,12 @@
                     @Ui.Meter(eaten.CarbsG, Math.Max(1, macros.CarbsMaxG) * 1.15m, L["{0} g carbs, range {1} to {2} g", Math.Round(eaten.CarbsG), macros.CarbsMinG, macros.CarbsMaxG], notches: [macros.CarbsMinG, macros.CarbsMaxG])
                     <div class="caption num">@L["{0}–{1} g", macros.CarbsMinG, macros.CarbsMaxG]</div>
                 </div>
+                <div>
+                    @{ var fiberG = Model.Quality.FiberG ?? 0; }
+                    <div class="footnote">@L["Fiber"] <span class="num">@L["{0} g", Math.Round(fiberG)]</span></div>
+                    @Ui.Meter(fiberG, macros.FiberMinG, L["{0} of {1} g fiber", Math.Round(fiberG), macros.FiberMinG])
+                    <div class="caption num">@(Model.Quality.FiberComplete ? L["min {0} g", macros.FiberMinG] : L["at least · min {0} g", macros.FiberMinG])</div>
+                </div>
             </div>
         }
         <p class="gauges-foot footnote">@(macros is not null && macros.ProteinMinG < protein

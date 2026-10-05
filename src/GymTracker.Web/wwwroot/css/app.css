@@ -309,8 +309,9 @@ body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
 .gauge-value small { font-size: var(--text-body); }
 .gauge-label { font-size: var(--text-footnote); line-height: 1.2; color: var(--label-2); margin-top: 4px; }
 .gauge .notch { stroke: var(--surface); stroke-width: 3; stroke-linecap: butt; }
-.mini-macros { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); padding: var(--s-2) var(--s-5) 0; }
+.mini-macros { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--s-4); padding: var(--s-2) var(--s-5) 0; }
 .mini-macros .caption { margin-top: 2px; }
+.mini-macros > div { display: flex; flex-direction: column; justify-content: flex-end; }
 .gauges-foot { padding: var(--s-2) var(--s-4) var(--s-4); text-align: center; }
 
 .spark { width: 128px; height: 52px; overflow: visible; flex: none; }
@@ -350,6 +351,8 @@ body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
 @keyframes meter-in { from { transform: scaleX(0); } }
 .macro-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
 .macro-value { font-size: var(--text-title-3); font-weight: var(--weight-semibold); }
+.quality-grid { grid-template-columns: 1fr 1fr; margin-top: var(--s-4); padding-top: var(--s-4); border-top: 0.5px solid var(--separator); }
+.unknown .meter i { background: var(--label-3); }
 .meal-check { display: inline-block; margin-left: 4px; color: var(--success); vertical-align: -2px; }
 .macro-value small { font-size: var(--text-footnote); color: var(--label-2); font-weight: var(--weight-regular); }
 

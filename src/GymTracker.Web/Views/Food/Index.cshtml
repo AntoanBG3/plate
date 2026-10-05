@@ -81,6 +81,37 @@
             }
         </div>
     </div>
+    @{
+        var q = day.Quality;
+        var fiber = q.FiberG ?? 0;
+        var saturated = q.SaturatedFatG ?? 0;
+    }
+    <div class="macro-grid quality-grid">
+        <div>
+            <div class="macro-value num">@(q.FiberG is null && day.Entries.Count > 0 ? "—" : Math.Round(fiber).ToString())<small> @L["g"]</small></div>
+            <div class="footnote">@(macros is not null ? L["fiber of {0} g", macros.FiberMinG] : L["fiber"])</div>
+            @if (macros is not null)
+            {
+                <text>@Ui.Meter(fiber, macros.FiberMinG, L["{0} of {1} g fiber", Math.Round(fiber), macros.FiberMinG])</text>
+            }
+            @if (!q.FiberComplete)
+            {
+                <div class="caption">@L["At least: some foods have no value"]</div>
+            }
+        </div>
+        <div>
+            <div class="macro-value num">@(q.SaturatedFatG is null && day.Entries.Count > 0 ? "—" : Math.Round(saturated).ToString())<small> @L["g"]</small></div>
+            <div class="footnote">@(macros is not null ? L["saturated fat, up to {0} g", macros.SaturatedFatMaxG] : L["saturated fat"])</div>
+            @if (macros is not null)
+            {
+                <div class="@(q.SaturatedFatComplete ? "" : "unknown")"><text>@Ui.Meter(saturated, macros.SaturatedFatMaxG * 1.15m, L["{0} g saturated fat, up to {1} g", Math.Round(saturated), macros.SaturatedFatMaxG], over: q.SaturatedFatComplete && saturated > macros.SaturatedFatMaxG, notches: [macros.SaturatedFatMaxG])</text></div>
+            }
+            @if (!q.SaturatedFatComplete)
+            {
+                <div class="caption">@L["Incomplete: some foods have no value"]</div>
+            }
+        </div>
+    </div>
     @if (macros is { ProteinLowered: true })
     {
         <p class="footnote" style="margin-top: var(--s-3)">@L["Protein and fat fill your whole calorie target."]</p>

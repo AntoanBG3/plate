@@ -727,5 +727,14 @@
   "Fiber can't be over 100 g, and saturated fat can't be more than fat.": "Фибрите не може да са над 100 г, а наситените мазнини не може да са повече от мазнините.",
   "Fiber must be between 0 and 200 g, and saturated fat between 0 and the fat.": "Фибрите трябва да са между 0 и 200 г, а наситените мазнини между 0 и мазнините.",
   "Saturated fat": "Наситени мазнини",
-  "of which saturated": "от които наситени"
+  "of which saturated": "от които наситени",
+  "fiber of {0} g": "фибри от {0} г",
+  "fiber": "фибри",
+  "{0} of {1} g fiber": "{0} от {1} г фибри",
+  "At least: some foods have no value": "Поне толкова: някои храни нямат стойност",
+  "saturated fat, up to {0} g": "наситени мазнини, до {0} г",
+  "saturated fat": "наситени мазнини",
+  "{0} g saturated fat, up to {1} g": "{0} г наситени мазнини, до {1} г",
+  "Incomplete: some foods have no value": "Непълно: някои храни нямат стойност",
+  "at least · min {0} g": "поне · мин. {0} г"
 }

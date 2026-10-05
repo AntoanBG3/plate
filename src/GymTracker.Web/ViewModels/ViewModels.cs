@@ -18,7 +18,8 @@ public record TodayViewModel(
     GymTracker.Core.Nutrition.Totals Eaten,
     GymTracker.Web.Features.Food.DailyTargets Targets,
     IReadOnlyList<GymTracker.Core.Nutrition.TrendPoint> RecentWeights,
-    string? LastFood);
+    string? LastFood,
+    GymTracker.Core.Nutrition.DayQuality Quality);
 
 public record TrainViewModel(WorkoutSession? ActiveSession, IReadOnlyList<WorkoutTemplate> Templates);
 

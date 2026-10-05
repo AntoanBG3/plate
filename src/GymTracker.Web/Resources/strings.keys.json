@@ -191,6 +191,9 @@
   "At least {0} g protein in this meal": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
+  "At least: some foods have no value": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
   "Attach a screenshot or photo (JPEG, PNG or WebP).": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
   ],
@@ -598,7 +601,8 @@
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
-    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
+    "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Fiber can't be over 100 g, and saturated fat can't be more than fat.": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
@@ -759,6 +763,9 @@
   ],
   "Include {0}": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Incomplete: some foods have no value": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "Increment must be above 0 and at most 50 kg.": [
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
@@ -2110,6 +2117,9 @@
   "assumed 100 g": [
     "extra"
   ],
+  "at least · min {0} g": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "carbs": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
@@ -2122,6 +2132,12 @@
   "fat": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "fiber": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "fiber of {0} g": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "finished": [
@@ -2184,7 +2200,8 @@
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "min {0} g": [
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "of which saturated": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
@@ -2209,6 +2226,12 @@
   "s": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
+  "saturated fat": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "saturated fat, up to {0} g": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
   "to your protein minimum": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
@@ -2228,6 +2251,9 @@
   "{0} g fat, range {1} to {2} g": [
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "{0} g saturated fat, up to {1} g": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "{0} g · {1} kcal · {2} g protein": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
@@ -2279,6 +2305,10 @@
   ],
   "{0} new replies": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "{0} of {1} g fiber": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "{0} of {1} g protein, minimum {2} g": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"

@@ -36,7 +36,8 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
             day.Totals,
             await targets.ForTodayAsync(ct),
             weights.Points.TakeLast(15).ToList(),
-            day.Entries.MaxBy(e => e.CreatedAt)?.Description));
+            day.Entries.MaxBy(e => e.CreatedAt)?.Description,
+            day.Quality));
     }
 
     [HttpPost("whats-new/dismiss")]

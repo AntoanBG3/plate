@@ -15,6 +15,9 @@ public record DayLog(DateOnly Date, IReadOnlyList<FoodLogEntry> Entries, Totals 
 {
     public IEnumerable<FoodLogEntry> For(Meal meal) => Entries.Where(e => e.Meal == meal);
 
+    /// <summary>Fiber and saturated fat with how much of each is known (SPEC 5.8).</summary>
+    public DayQuality Quality { get; } = DayQuality.Of(Entries);
+
     public Totals TotalsFor(Meal meal) =>
         For(meal).Aggregate(Totals.Zero, (t, e) => t.Add(FoodMath.TotalsOf(e)));
 }
