@@ -10,7 +10,7 @@ namespace GymTracker.Web.Tests;
 [Collection(PostgresCollection.Name)]
 public class SavedMealTests(PostgresFixture fixture)
 {
-    private static readonly DateOnly Day = new(2026, 10, 4);
+    private static readonly DateOnly Day = new(2026, 9, 28);
 
     private static async Task<UserScope> WithBreakfastAsync(PostgresFixture fixture)
     {
@@ -122,13 +122,13 @@ public class SavedMealTests(PostgresFixture fixture)
         // The sheet sends one grams field per item, empty for the quick one.
         var response = await client.PostAsync($"/food/saved-meals/{saved.Id}/log", new FormUrlEncodedContent(
         [
-            new("date", "2026-10-06"), new("meal", "Snack"),
+            new("date", "2026-09-30"), new("meal", "Snack"),
             new("grams", "100"), new("grams", ""), new("grams", "300"),
             new("__RequestVerificationToken", token),
         ]));
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.Redirect);
-        var entries = (await s.FoodLog.DayAsync(new DateOnly(2026, 10, 6), default)).Entries;
+        var entries = (await s.FoodLog.DayAsync(new DateOnly(2026, 9, 30), default)).Entries;
         entries.Select(e => (e.Description, e.Grams)).Should().BeEquivalentTo([("Oats", 100m), ("Coffee out", 0m), ("Milk", 300m)]);
     }
 
@@ -147,7 +147,7 @@ public class SavedMealTests(PostgresFixture fixture)
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"/food/saved-meals/{saved.Id}/log")
         {
-            Content = new FormUrlEncodedContent([new("date", "2026-10-07"), new("meal", "Snack"), new("grams", "0"), new("__RequestVerificationToken", token)]),
+            Content = new FormUrlEncodedContent([new("date", "2026-10-01"), new("meal", "Snack"), new("grams", "0"), new("__RequestVerificationToken", token)]),
         };
         request.Headers.Referrer = new Uri("https://localhost/food");
         var response = await client.SendAsync(request);

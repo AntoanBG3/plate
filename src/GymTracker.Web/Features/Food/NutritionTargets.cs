@@ -65,6 +65,25 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
             target.Macros);
     }
 
+    /// <summary>
+    /// The targets in force on a past day: the maintenance estimate of that day with the profile's goal rules (SPEC 5.5,
+    /// 5.6). Null before the first estimate; <paramref name="firstEstimate"/> then says when targets start.
+    /// </summary>
+    public async Task<(DailyTargets? Targets, DateOnly? FirstEstimate)> ForDateAsync(DateOnly date, CancellationToken ct)
+    {
+        var estimate = await db.MaintenanceEstimates.Where(e => e.CalculatedOn <= date).OrderByDescending(e => e.CalculatedOn).FirstOrDefaultAsync(ct);
+        if (estimate is null)
+        {
+            var first = await db.MaintenanceEstimates.OrderBy(e => e.CalculatedOn).Select(e => (DateOnly?)e.CalculatedOn).FirstOrDefaultAsync(ct);
+            return (null, first);
+        }
+
+        var profile = await profiles.GetAsync(ct);
+        var trend = TrendWeight.On(await bodyweights.WeighInsAsync(ct), date);
+        var target = GoalTargets.Calculate(estimate.EstimatedTdeeKcal, profile, trend, date);
+        return (new DailyTargets(target.Kcal, target.ProteinG, null, estimate, trend, target.FloorApplied, GoalTargets.MinKcal(profile.Sex), target.Macros), estimate.CalculatedOn);
+    }
+
     /// <summary>The latest estimate if it is less than a week old, otherwise a new one, stored. Null when no estimate is possible.</summary>
     private async Task<MaintenanceEstimate?> CurrentEstimateAsync(
         UserProfile profile, DateOnly today, IReadOnlyList<WeighIn> weighIns, decimal? trend, CancellationToken ct)

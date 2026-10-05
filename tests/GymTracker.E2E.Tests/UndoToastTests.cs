@@ -10,7 +10,8 @@ public class UndoToastTests(E2EFixture app)
     private static async Task<string> TodayAsync(Phone phone)
     {
         await phone.GoAsync("/food");
-        return await phone.Page.Locator("form[action='/food/copy'] input[name=date]").First.InputValueAsync();
+        var quick = await phone.Page.Locator("[data-sheet-open='quick-sheet']").First.GetAttributeAsync("hx-get");
+        return System.Text.RegularExpressions.Regex.Match(quick!, @"date=([0-9-]+)").Groups[1].Value;
     }
 
     private async Task<int> QuickEntryAsync(Phone phone, string date, string name)

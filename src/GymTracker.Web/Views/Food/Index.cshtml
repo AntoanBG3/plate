@@ -5,9 +5,11 @@
     var isToday = day.Date == Model.Today;
     var inv = System.Globalization.CultureInfo.InvariantCulture;
     string Iso(DateOnly d) => d.ToString("yyyy-MM-dd", inv);
-    var targetKcal = isToday ? Model.Targets.Kcal : null;
-    var targetProtein = isToday ? Model.Targets.ProteinG : null;
-    var macros = isToday ? Model.Targets.Macros : null;
+    // The targets in force on the day shown (today's, or a past day's estimate); none before the first estimate.
+    var targetKcal = Model.Targets?.Kcal;
+    var targetProtein = Model.Targets?.ProteinG;
+    var macros = Model.Targets?.Macros;
+    var isYesterday = day.Date == Model.Today.AddDays(-1);
     string Share(decimal value, int? target) => (target is > 0 ? Math.Min(1m, value / target.Value) : 0m).ToString("0.###", inv);
 }
 <header class="page-head">
@@ -17,17 +19,27 @@
 <nav class="date-stepper card" aria-label="@L["Day"]">
     <a class="icon-btn tap" href="/food?date=@Iso(day.Date.AddDays(-1))" aria-label="@L["Previous day"]">@Ui.Icon("back")</a>
     <div class="date-stepper-label">
-        <span class="headline">@(isToday ? L["Today"] : day.Date == Model.Today.AddDays(-1) ? L["Yesterday"] : Ui.ShortDate(day.Date))</span>
-        @if (!isToday)
-        {
-            <a class="footnote" href="/food" style="color: var(--accent-text)">@L["Back to today"]</a>
-        }
-        else
-        {
-            <span class="footnote">@Ui.LongDate(day.Date)</span>
-        }
+        <span class="headline">@(isToday ? L["Today"] : isYesterday ? L["Yesterday"] : Ui.LongDate(day.Date))</span>
+        <span class="footnote">
+            @if (isToday || isYesterday)
+            {
+                @Ui.LongDate(day.Date)
+            }
+            @if (!isToday)
+            {
+                @(isYesterday ? " · " : "")<a href="/food" style="color: var(--accent-text)">@L["Back to today"]</a>
+            }
+        </span>
     </div>
-    <a class="icon-btn tap" href="/food?date=@Iso(day.Date.AddDays(1))" aria-label="@L["Next day"]">@Ui.Icon("forward")</a>
+    @if (isToday)
+    {
+        @* Future days can't be logged (SPEC 7), so today has no next day. *@
+        <span class="icon-btn" aria-hidden="true"></span>
+    }
+    else
+    {
+        <a class="icon-btn tap" href="/food?date=@Iso(day.Date.AddDays(1))" aria-label="@L["Next day"]">@Ui.Icon("forward")</a>
+    }
 </nav>
 
 <div class="card macro-card">
@@ -112,6 +124,10 @@
             }
         </div>
     </div>
+    @if (Model.Targets is null && !isToday)
+    {
+        <p class="footnote" style="margin-top: var(--s-3)">@(Model.TargetsStart is { } start ? L["Targets start on {0}", Ui.LongDate(start)] : L["No targets for this day yet."])</p>
+    }
     @if (macros is { ProteinLowered: true })
     {
         <p class="footnote" style="margin-top: var(--s-3)">@L["Protein and fat fill your whole calorie target."]</p>
@@ -158,7 +174,7 @@
             <button type="button" class="row row-link" hx-get="/food/quick?date=@Iso(day.Date)&amp;meal=@meal" hx-target="#quick-body" hx-swap="innerHTML" data-sheet-open="quick-sheet" style="width: 100%; color: var(--accent-text); text-align: left">
                 @Ui.Icon("plus", "icon-sm")<span class="row-main">@L["Quick add"]</span>
             </button>
-            @if (entries.Count == 0)
+            @if (entries.Count == 0 && Model.PreviousDayMeals?.Contains(meal) == true)
             {
                 <form method="post" asp-antiforgery="true" action="/food/copy" class="row" style="padding-top: 0; padding-bottom: 0">
                     <input type="hidden" name="date" value="@Iso(day.Date)" />

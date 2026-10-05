@@ -254,6 +254,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .banner.is-error .icon { color: var(--destructive); }
 .banner.is-success .icon { color: var(--success); }
 .banner.is-pending .icon { color: var(--accent); }
+.banner.is-info .icon { color: var(--label-2); }
 
 .toast {
     position: fixed; z-index: 60; left: var(--s-4); right: var(--s-4); bottom: calc(env(safe-area-inset-bottom) + 49px + var(--s-3));

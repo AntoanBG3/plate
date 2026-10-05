@@ -16,6 +16,11 @@ public static class Notices
 
     public static void Error(this ITempDataDictionary temp, LocalText text) => temp[FeatureExceptionFilter.ErrorKey] = Pack(text);
 
+    public const string InfoKey = "Info";
+
+    /// <summary>A neutral note on the next page: nothing went wrong, but nothing happened either ("Nothing was logged…").</summary>
+    public static void Info(this ITempDataDictionary temp, LocalText text) => temp[InfoKey] = Pack(text);
+
     public const string FocusKey = "Focus";
 
     /// <summary>The element (by id) the next page scrolls to, so a change made far down the page stays in view.</summary>

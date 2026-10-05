@@ -65,6 +65,11 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
     public async Task AddAsync(IReadOnlyList<NewEntry> entries, CancellationToken ct)
     {
         var userId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.");
+        foreach (var date in entries.Select(e => e.Date).Distinct())
+        {
+            await FoodDays.EnsureNotFutureAsync(db, time, date, ct);
+        }
+
         foreach (var e in entries)
         {
             if (FoodMath.Validate(e.Grams, e.Per100) is { } error)
@@ -107,6 +112,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
     public async Task AddQuickAsync(DateOnly date, Meal meal, string description, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
         var userId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.");
+        await FoodDays.EnsureNotFutureAsync(db, time, date, ct);
         if (FoodMath.ValidateQuick(kcal, protein, carbs, fat, fiber, saturatedFat) is { } error)
         {
             throw new ValidationException(error);
@@ -213,6 +219,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
     /// <summary>Copies one meal's entries from one day to another. Returns how many were copied.</summary>
     public async Task<int> CopyMealAsync(DateOnly from, DateOnly to, Meal meal, CancellationToken ct)
     {
+        await FoodDays.EnsureNotFutureAsync(db, time, to, ct);
         var source = await db.FoodLog.Where(e => e.Date == from && e.Meal == meal).ToListAsync(ct);
         var now = time.GetUtcNow();
         foreach (var e in source)

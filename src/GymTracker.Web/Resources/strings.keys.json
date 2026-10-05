@@ -1179,6 +1179,9 @@
   "No strength data yet": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
+  "No targets for this day yet.": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
   "No templates yet": [
     "src/GymTracker.Web/Views/Train/Index.cshtml"
   ],
@@ -1845,6 +1848,9 @@
   "Targets are ranges because the evidence is. Judge them over a week, not a single day.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Targets start on {0}": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
   "Template name": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
@@ -2296,6 +2302,9 @@
   ],
   "You ate": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "You can't log food for a future day.": [
+    "src/GymTracker.Web/Features/Food/FoodDays.cs"
   ],
   "You reported this": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"

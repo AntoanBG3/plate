@@ -149,7 +149,16 @@ public record SaveMealFormViewModel(DateOnly Date, Meal Meal, string DefaultName
 
 public record SavedMealViewModel(SavedMeal Meal, DateOnly Date, Meal LogTo);
 
-public record FoodDayViewModel(GymTracker.Web.Features.Food.DayLog Day, DateOnly Today, GymTracker.Web.Features.Food.DailyTargets Targets, GymTracker.Web.Features.Food.WeekCard? Week);
+/// <param name="Targets">The targets in force on the day shown; null on a past day before the first estimate.</param>
+/// <param name="TargetsStart">When that is so, the day targets start (the first estimate).</param>
+/// <param name="PreviousDayMeals">The meals the day before has entries in, which can be copied.</param>
+public record FoodDayViewModel(
+    GymTracker.Web.Features.Food.DayLog Day,
+    DateOnly Today,
+    GymTracker.Web.Features.Food.DailyTargets? Targets,
+    GymTracker.Web.Features.Food.WeekCard? Week,
+    DateOnly? TargetsStart = null,
+    IReadOnlySet<Meal>? PreviousDayMeals = null);
 
 public record FoodAddViewModel(
     DateOnly Date,

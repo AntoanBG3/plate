@@ -15,6 +15,7 @@
     string? Current(string name) => name == tab ? "page" : null;
     var error = Notices.Read(TempData[FeatureExceptionFilter.ErrorKey]);
     var message = Notices.Read(TempData[Notices.MessageKey]);
+    var info = Notices.Read(TempData[Notices.InfoKey]);
     var undo = Notices.ReadUndo(TempData);
     var focus = Notices.ReadFocus(TempData);
 }
@@ -82,6 +83,10 @@
             @if (message is not null)
             {
                 <div class="banner is-success" role="status">@Ui.Icon("done")<span>@L[message]</span></div>
+            }
+            @if (info is not null)
+            {
+                <div class="banner is-info" role="status">@Ui.Icon("info")<span>@L[info]</span></div>
             }
             @if (undo is { } u)
             {

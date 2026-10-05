@@ -11,7 +11,7 @@ namespace GymTracker.Web.Tests;
 [Collection(PostgresCollection.Name)]
 public class FiberTests(PostgresFixture fixture)
 {
-    private static readonly DateOnly Day = new(2026, 10, 5);
+    private static readonly DateOnly Day = new(2026, 9, 28);
 
     [Fact]
     public async Task Entries_store_fiber_scaled_to_the_portion_and_unknown_stays_unknown()

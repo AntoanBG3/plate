@@ -30,22 +30,45 @@ public class FoodController(
     public async Task<IActionResult> Index(DateOnly? date, CancellationToken ct)
     {
         var today = await profiles.TodayAsync(ct);
-        var day = await log.DayAsync(date ?? today, ct);
-        var dailyTargets = await targets.ForTodayAsync(ct);
-        var week = day.Date == today ? await log.WeekCardAsync(today, dailyTargets, ct) : null;
-        return View(new FoodDayViewModel(day, today, dailyTargets, week));
+        if (date > today)
+        {
+            return Redirect("/food"); // future days can't be logged (SPEC 7)
+        }
+
+        var shown = date ?? today;
+        var day = await log.DayAsync(shown, ct);
+        DailyTargets? dayTargets;
+        DateOnly? start = null;
+        if (shown == today)
+        {
+            dayTargets = await targets.ForTodayAsync(ct);
+        }
+        else
+        {
+            (dayTargets, start) = await targets.ForDateAsync(shown, ct);
+        }
+
+        var week = shown == today && dayTargets is not null ? await log.WeekCardAsync(today, dayTargets, ct) : null;
+        var previous = (await log.DayAsync(shown.AddDays(-1), ct)).Entries.Select(e => e.Meal).ToHashSet();
+        return View(new FoodDayViewModel(day, today, dayTargets, week, start, previous));
     }
 
     [HttpGet("add")]
     public async Task<IActionResult> Add(DateOnly? date, Meal? meal, string? tab, string? q, bool off, CancellationToken ct)
     {
-        var d = date ?? await profiles.TodayAsync(ct);
+        var today = await profiles.TodayAsync(ct);
+        if (date > today)
+        {
+            return Redirect("/food");
+        }
+
+        var d = date ?? today;
         var m = meal ?? await DefaultMealAsync();
         tab = Tabs.Contains(tab) ? tab! : "text";
 
         var local = tab == "search" && !string.IsNullOrWhiteSpace(q) ? await foods.SearchAsync(q, 20, 0.3, ct) : [];
         var offResults = tab == "search" && off && !string.IsNullOrWhiteSpace(q) ? await foods.SearchOpenFoodFactsAsync(q, ct) : null;
-        var recents = tab == "recent" ? await log.RecentsAsync(await profiles.TodayAsync(ct), ct) : [];
+        var recents = tab == "recent" ? await log.RecentsAsync(today, ct) : [];
         var saved = tab == "recent" ? await savedMeals.ListAsync(ct) : [];
         return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved));
     }
@@ -128,9 +151,14 @@ public class FoodController(
     public async Task<IActionResult> Copy(DateOnly date, Meal meal, CancellationToken ct)
     {
         var copied = await log.CopyMealAsync(date.AddDays(-1), date, meal, ct);
-        TempData.Notice(copied == 0
-            ? new LocalText(NothingToCopy[meal])
-            : LocalText.Count(copied, "Copied 1 item.", "Copied {0} items."));
+        if (copied == 0)
+        {
+            TempData.Info(new LocalText(NothingToCopy[meal]));
+        }
+        else
+        {
+            TempData.Notice(LocalText.Count(copied, "Copied 1 item.", "Copied {0} items."));
+        }
         FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }

@@ -808,5 +808,8 @@
   "Reorder exercises": "Подреди упражненията",
   "Move {0} up": "Премести „{0}“ нагоре",
   "Move {0} down": "Премести „{0}“ надолу",
-  "The list changed while you were reordering. Try again.": "Списъкът се промени, докато подреждаше. Опитай пак."
+  "The list changed while you were reordering. Try again.": "Списъкът се промени, докато подреждаше. Опитай пак.",
+  "No targets for this day yet.": "За този ден още няма цели.",
+  "Targets start on {0}": "Целите започват от {0}",
+  "You can't log food for a future day.": "Не може да записваш храна за бъдещ ден."
 }
