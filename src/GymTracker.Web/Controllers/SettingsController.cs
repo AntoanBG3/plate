@@ -15,6 +15,7 @@ namespace GymTracker.Web.Controllers;
 [Route("settings")]
 public class SettingsController(
     ProfileService profiles,
+    GymTracker.Web.Features.Food.NutritionTargets targets,
     DataExport export,
     OpenRouterSettings openRouter,
     UserManager<AppUser> users,
@@ -29,6 +30,7 @@ public class SettingsController(
         ViewData["Passkeys"] = user is null ? [] : await users.GetPasskeysAsync(user);
         ViewData["OpenRouter"] = await OpenRouterStatusAsync(ct);
         ViewData["UnreadFeedback"] = await feedback.UnreadRepliesAsync(ct);
+        ViewData["Targets"] = await targets.ForTodayAsync(ct);
         return View(await profiles.GetAsync(ct));
     }
 

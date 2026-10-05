@@ -7,6 +7,7 @@
     string Iso(DateOnly d) => d.ToString("yyyy-MM-dd", inv);
     var targetKcal = isToday ? Model.Targets.Kcal : null;
     var targetProtein = isToday ? Model.Targets.ProteinG : null;
+    var macros = isToday ? Model.Targets.Macros : null;
     string Share(decimal value, int? target) => (target is > 0 ? Math.Min(1m, value / target.Value) : 0m).ToString("0.###", inv);
 }
 <header class="page-head">
@@ -48,23 +49,55 @@
         <div>
             <div class="macro-value num">@Math.Round(day.Totals.ProteinG)<small> @L["g"]</small></div>
             <div class="footnote">@(targetProtein is { } tp ? L["protein of {0} g", tp] : L["protein"])</div>
-            @if (targetProtein is not null)
+            @if (macros is not null)
             {
-                <div class="meter small"><i style="--p: @Share(day.Totals.ProteinG, targetProtein); background: var(--label)"></i></div>
+                <text>@Ui.Meter(day.Totals.ProteinG, macros.ProteinAimG, L["{0} of {1} g protein, minimum {2} g", Math.Round(day.Totals.ProteinG), macros.ProteinAimG, macros.ProteinMinG], notches: [macros.ProteinMinG])</text>
+                @if (macros.ProteinMinG < macros.ProteinAimG)
+                {
+                    <div class="caption num">@L["min {0} g", macros.ProteinMinG]</div>
+                }
+            }
+            else if (targetProtein is not null)
+            {
+                <div class="meter small"><i style="--p: @Share(day.Totals.ProteinG, targetProtein)"></i></div>
             }
         </div>
-        <div><div class="macro-value num">@Math.Round(day.Totals.CarbsG)<small> @L["g"]</small></div><div class="footnote">@L["carbs"]</div></div>
-        <div><div class="macro-value num">@Math.Round(day.Totals.FatG)<small> @L["g"]</small></div><div class="footnote">@L["fat"]</div></div>
+        <div>
+            <div class="macro-value num">@Math.Round(day.Totals.CarbsG)<small> @L["g"]</small></div>
+            <div class="footnote">@L["carbs"]</div>
+            @if (macros is not null && macros.CarbsMaxG > 0)
+            {
+                <text>@Ui.Meter(day.Totals.CarbsG, macros.CarbsMaxG * 1.15m, L["{0} g carbs, range {1} to {2} g", Math.Round(day.Totals.CarbsG), macros.CarbsMinG, macros.CarbsMaxG], notches: [macros.CarbsMinG, macros.CarbsMaxG])</text>
+                <div class="caption num">@L["{0}–{1} g", macros.CarbsMinG, macros.CarbsMaxG]</div>
+            }
+        </div>
+        <div>
+            <div class="macro-value num">@Math.Round(day.Totals.FatG)<small> @L["g"]</small></div>
+            <div class="footnote">@L["fat"]</div>
+            @if (macros is not null)
+            {
+                <text>@Ui.Meter(day.Totals.FatG, macros.FatMaxG * 1.15m, L["{0} g fat, range {1} to {2} g", Math.Round(day.Totals.FatG), macros.FatMinG, macros.FatMaxG], notches: [macros.FatMinG, macros.FatMaxG])</text>
+                <div class="caption num">@L["{0}–{1} g", macros.FatMinG, macros.FatMaxG]</div>
+            }
+        </div>
     </div>
+    @if (macros is { ProteinLowered: true })
+    {
+        <p class="footnote" style="margin-top: var(--s-3)">@L["Protein and fat fill your whole calorie target."]</p>
+    }
 </div>
 
 @foreach (var meal in Enum.GetValues<Meal>())
 {
     var entries = day.For(meal).ToList();
     var mealTotals = day.TotalsFor(meal);
+    var mealProtein = macros is not null && meal != Meal.Snack && entries.Count > 0 ? macros.MealProteinG : (int?)null;
     <section class="section">
         <div class="meal-head">
-            <h2 class="section-title">@L.Enum(meal)<span class="section-aside num">@(entries.Count > 0 ? L["{0} kcal", Math.Round(mealTotals.Kcal)] : "")</span></h2>
+            <h2 class="section-title">@L.Enum(meal)<span class="section-aside num">@(entries.Count > 0 ? L["{0} kcal · {1} g protein", Math.Round(mealTotals.Kcal), Math.Round(mealTotals.ProteinG)] : "")@if (mealProtein is { } mp && mealTotals.ProteinG >= mp)
+                {
+                    <span class="meal-check" title="@L["At least {0} g protein in this meal", mp]">@Ui.Icon("check", "icon-sm")</span>
+                }</span></h2>
             @if (entries.Count > 0)
             {
                 <div class="menu-wrap">

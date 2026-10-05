@@ -7,6 +7,13 @@
     var t = Model.Targets;
     var eaten = Model.Eaten;
     const string Arc = "M31.16 118.84 A62 62 0 1 1 118.84 118.84";
+    // A notch across the gauge arc at a share of the way along it (the arc runs 270° clockwise from 135°).
+    string Notch(decimal share)
+    {
+        var a = (135 + 270 * (double)Math.Clamp(share, 0m, 1m)) * Math.PI / 180;
+        string P(double r) => $"{(75 + r * Math.Cos(a)).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)} {(75 + r * Math.Sin(a)).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}";
+        return $"M{P(53)} L{P(71)}";
+    }
     string Share(decimal value, int target) => (target > 0 ? Math.Min(1m, value / target) : 0m).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
     var spark = Sparkline.From(Model.RecentWeights);
     var trendNow = t.TrendWeightKg;
@@ -43,7 +50,10 @@
     @if (t.Kcal is { } kcal && t.ProteinG is { } protein)
     {
         var left = kcal - (int)Math.Round(eaten.Kcal);
-        var leftP = protein - (int)Math.Round(eaten.ProteinG);
+        var eatenP = (int)Math.Round(eaten.ProteinG);
+        var macros = t.Macros;
+        var belowMin = macros is not null && eatenP < macros.ProteinMinG;
+        var leftP = belowMin ? macros!.ProteinMinG - eatenP : protein - eatenP;
         <div class="gauges">
             <div class="gauge@(left < 0 ? " over" : "")">
                 <svg viewBox="0 0 150 128" aria-hidden="true"><path class="track" d="@Arc"/><path class="bar-kcal" d="@Arc" data-progress="@Share(eaten.Kcal, kcal)"/></svg>
@@ -53,14 +63,34 @@
                 </div>
             </div>
             <div class="gauge">
-                <svg viewBox="0 0 150 128" aria-hidden="true"><path class="track" d="@Arc"/><path class="bar-protein" d="@Arc" data-progress="@Share(eaten.ProteinG, protein)"/></svg>
+                <svg viewBox="0 0 150 128" aria-hidden="true"><path class="track" d="@Arc"/><path class="bar-protein" d="@Arc" data-progress="@Share(eaten.ProteinG, protein)"/>@if (macros is not null && macros.ProteinMinG < protein)
+                    {
+                        <path class="notch" d="@Notch((decimal)macros.ProteinMinG / protein)"/>
+                    }</svg>
                 <div class="gauge-center">
                     <div class="gauge-value num"><span data-count="@Math.Max(0, leftP)">@Math.Max(0, leftP)</span><small> @L["g"]</small></div>
-                    <div class="gauge-label">@L["protein left"]</div>
+                    <div class="gauge-label">@(belowMin ? L["to your protein minimum"] : L["protein left"])</div>
                 </div>
             </div>
         </div>
-        <p class="gauges-foot footnote">@L["Eaten {0} of {1} kcal and {2} of {3} g protein", Math.Round(eaten.Kcal), kcal, Math.Round(eaten.ProteinG), protein]</p>
+        @if (macros is not null)
+        {
+            <div class="mini-macros">
+                <div>
+                    <div class="footnote">@L["Fat"] <span class="num">@L["{0} g", Math.Round(eaten.FatG)]</span></div>
+                    @Ui.Meter(eaten.FatG, macros.FatMaxG * 1.15m, L["{0} g fat, range {1} to {2} g", Math.Round(eaten.FatG), macros.FatMinG, macros.FatMaxG], notches: [macros.FatMinG, macros.FatMaxG])
+                    <div class="caption num">@L["{0}–{1} g", macros.FatMinG, macros.FatMaxG]</div>
+                </div>
+                <div>
+                    <div class="footnote">@L["Carbs"] <span class="num">@L["{0} g", Math.Round(eaten.CarbsG)]</span></div>
+                    @Ui.Meter(eaten.CarbsG, Math.Max(1, macros.CarbsMaxG) * 1.15m, L["{0} g carbs, range {1} to {2} g", Math.Round(eaten.CarbsG), macros.CarbsMinG, macros.CarbsMaxG], notches: [macros.CarbsMinG, macros.CarbsMaxG])
+                    <div class="caption num">@L["{0}–{1} g", macros.CarbsMinG, macros.CarbsMaxG]</div>
+                </div>
+            </div>
+        }
+        <p class="gauges-foot footnote">@(macros is not null && macros.ProteinMinG < protein
+            ? L["Eaten {0} of {1} kcal and {2} of {3} g protein (minimum {4} g)", Math.Round(eaten.Kcal), kcal, eatenP, protein, macros.ProteinMinG]
+            : L["Eaten {0} of {1} kcal and {2} of {3} g protein", Math.Round(eaten.Kcal), kcal, eatenP, protein])</p>
     }
     else
     {

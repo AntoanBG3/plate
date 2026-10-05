@@ -6,6 +6,8 @@
     ViewData["Title"] = L["Settings"];
     var openRouter = (OpenRouterStatus)ViewData["OpenRouter"]!;
     var year = Time.GetUtcNow().Year;
+    var targets = ViewData["Targets"] as GymTracker.Web.Features.Food.DailyTargets;
+    var older = Model.BirthYear is { } born && year - born >= MacroTargets.OlderAdultAge;
 }
 <header class="page-head">
     <h1 class="large-title">@L["Settings"]</h1>
@@ -98,6 +100,31 @@
             <div class="field-row"><label for="timeZoneId">@L["Time zone"]</label><input id="timeZoneId" type="text" name="timeZoneId" value="@Model.TimeZoneId" maxlength="64" autocapitalize="off" spellcheck="false" /></div>
         </div>
         <p class="section-footer">@L["Cuts are capped at 1% and bulks at 0.5% of bodyweight per week. The weight jump is how much is added when every set reaches the top of its range."]</p>
+        <p class="section-footer">@L["Leave protein empty for Auto: 1.8 g per kg, 2.2 on a cut and 2.4 on a cut faster than 0.75% a week."]
+            @if (targets?.Macros is { } m)
+            {
+                @L["Today: at least {0} g, aiming for {1} g.", m.ProteinMinG, m.ProteinAimG]
+                if (targets.TrendWeightKg is { } trend && m.ReferenceKg < trend)
+                {
+                    @(" " + L["Based on {0} kg, a healthy weight for your height.", m.ReferenceKg.Kg(1)])
+                }
+            }
+        </p>
+        @if (older && Model.ProteinGramsPerKg < 1.2m)
+        {
+            <p class="section-footer" style="color: var(--warning)">@L["From 65, under 1.2 g per kg is below what keeps muscle when you train."]</p>
+        }
+        <details class="card card-pad targets-how">
+            <summary>@L["How your targets are set"]</summary>
+            <ul>
+                <li>@L["Protein: at least 1.6 g per kg (1.2 from age 65), aiming higher on a cut to keep muscle. Morton 2018, Nunes 2022, Helms 2014."]</li>
+                <li>@L["Above a BMI of 27, protein uses the weight at BMI 27 for your height, since grams per kg of total weight overshoots."]</li>
+                <li>@L["Fat: at least 20% of calories and 0.5 g per kg, up to 35%. Very low fat lowers testosterone. Whittaker 2021, ACSM."]</li>
+                <li>@L["Carbs: whatever calories are left after protein and fat."]</li>
+                <li>@L["Per meal: about 0.3 g of protein per kg at breakfast, lunch and dinner; 0.4 g and at least 25 g from 65. Morton 2018."]</li>
+                <li>@L["Targets are ranges because the evidence is. Judge them over a week, not a single day."]</li>
+            </ul>
+        </details>
     </section>
 
     <section class="section">

@@ -18,6 +18,10 @@
                     <p class="footnote">@(p.TargetKcal == p.MaintenanceKcal
                         ? L["Your starting maintenance is about {0} kcal, with {1} g of protein. It adapts as you log food and weight.", p.MaintenanceKcal, p.ProteinG ?? 0]
                         : L["From a starting maintenance of about {0} kcal, with {1} g of protein. It adapts as you log food and weight.", p.MaintenanceKcal, p.ProteinG ?? 0])</p>
+                    @if (p.Macros is { } m)
+                    {
+                        <p class="footnote">@L["Protein at least {0} g, aiming for {1} g; fat {2}–{3} g; carbs {4}–{5} g.", m.ProteinMinG, m.ProteinAimG, m.FatMinG, m.FatMaxG, m.CarbsMinG, m.CarbsMaxG]</p>
+                    }
                     @if (p.FloorApplied)
                     {
                         <p class="footnote">@L["Raised to the minimum for your sex."]</p>

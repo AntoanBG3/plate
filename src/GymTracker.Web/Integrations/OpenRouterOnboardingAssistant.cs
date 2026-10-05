@@ -58,8 +58,8 @@ public class OpenRouterOnboardingAssistant(HttpClient http, OpenRouterModels cat
           low active.
           If you are unsure between two levels, ask one follow-up question; if still unsure, pick the lower one.
           Tell the user the level you picked in plain words, and that they can change it later.
-        - proteinGramsPerKg (default 2.0) and startingMaintenanceKcal (only if they know their maintenance from past
-          tracking) are optional. Don't ask about them, but fill them in if the user brings them up.
+        - proteinGramsPerKg (null means Auto: the app sets it by goal, 1.8 g per kg or 2.2 on a cut) and
+          startingMaintenanceKcal (only if they know their maintenance from past tracking) are optional. Don't ask about them, but fill them in if the user brings them up.
         - quickReplies: up to four short answers the user might tap for your question, in the reply language
           (for example "Male", "Female"; or "Lose fat", "Maintain", "Build muscle"). Empty when free text fits better.
         - When "Still missing" is empty, tell the user everything is ready, that they can check the summary below and
