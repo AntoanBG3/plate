@@ -39,10 +39,13 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
     }
 
     /// <summary>Each logged day of the week before <paramref name="today"/>, for the weekly averages (SPEC 5.8).</summary>
-    public async Task<List<DaySummary>> WeekBeforeAsync(DateOnly today, CancellationToken ct)
+    public Task<List<DaySummary>> WeekBeforeAsync(DateOnly today, CancellationToken ct) =>
+        DaysBetweenAsync(today.AddDays(-WeeklyNutrition.Days), today, ct);
+
+    /// <summary>Each logged day from <paramref name="from"/> up to, not including, <paramref name="until"/>.</summary>
+    public async Task<List<DaySummary>> DaysBetweenAsync(DateOnly from, DateOnly until, CancellationToken ct)
     {
-        var from = today.AddDays(-WeeklyNutrition.Days);
-        var entries = await db.FoodLog.AsNoTracking().Where(e => e.Date >= from && e.Date < today).ToListAsync(ct);
+        var entries = await db.FoodLog.AsNoTracking().Where(e => e.Date >= from && e.Date < until).ToListAsync(ct);
         return entries
             .GroupBy(e => e.Date)
             .Select(g => new DaySummary(g.Key, g.Aggregate(Totals.Zero, (t, e) => t.Add(FoodMath.TotalsOf(e))), DayQuality.Of(g.ToList())))

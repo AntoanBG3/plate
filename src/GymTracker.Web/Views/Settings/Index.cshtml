@@ -147,16 +147,30 @@
     </section>
 </form>
 
+<form method="post" asp-antiforgery="true" action="/settings/weekly-summary" data-autosubmit>
+    <section class="section">
+        <h2 class="section-title">@L["Weekly summary"]</h2>
+        <div class="list">
+            <label class="field-row switch-row">
+                <span>@L["AI summary of last week on Today"]</span>
+                <input type="checkbox" class="switch" name="enabled" value="true" checked="@Model.WeeklySummaryEnabled" />
+                <input type="hidden" name="enabled" value="false" />
+            </label>
+        </div>
+        <p class="section-footer">@L["Last week's numbers are sent to an AI model through OpenRouter: calories, macros, weight trend and workouts, without your name."]</p>
+    </section>
+</form>
+
 <section class="section">
     <h2 class="section-title">@L["AI models"]</h2>
     <div class="list">
         @foreach (var task in openRouter.Tasks)
         {
-            var off = task.Task == AiTask.Onboarding ? L["Off: setup form only"] : L["Off: database ranking only"];
+            var off = task.Task switch { AiTask.Onboarding => L["Off: setup form only"], AiTask.Weekly => L["Off: no weekly summary"], _ => L["Off: database ranking only"] };
             <div class="row">
-                <span class="row-icon neutral">@Ui.Icon(task.Task switch { AiTask.Parser => "text", AiTask.Matcher => "search", _ => "feedback" })</span>
+                <span class="row-icon neutral">@Ui.Icon(task.Task switch { AiTask.Parser => "text", AiTask.Matcher => "search", AiTask.Weekly => "list", _ => "feedback" })</span>
                 <span class="row-main">
-                    <span class="row-title">@(task.Task switch { AiTask.Parser => L["Food parser"], AiTask.Matcher => L["Food matcher"], _ => L["Setup chat"] })</span>
+                    <span class="row-title">@(task.Task switch { AiTask.Parser => L["Food parser"], AiTask.Matcher => L["Food matcher"], AiTask.Weekly => L["Weekly summary"], _ => L["Setup chat"] })</span>
                     <span class="row-sub" style="display: block">@(openRouter.Key.Source == KeySource.None
                         ? (task.Task == AiTask.Parser ? L["Simple built-in parser"] : off)
                         : task.Model == AiTasks.Off ? off : task.ModelInfo?.Name ?? task.Model)</span>

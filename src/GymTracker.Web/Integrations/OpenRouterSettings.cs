@@ -54,8 +54,11 @@ public class OpenRouterSettings(
         await SaveAsync(KeySettingName, protector.Protect(key), ct);
     }
 
-    public async Task ClearKeyAsync(CancellationToken ct) =>
+    public async Task ClearKeyAsync(CancellationToken ct)
+    {
         await db.AppSettings.Where(s => s.Name == KeySettingName).ExecuteDeleteAsync(ct);
+        values = null;
+    }
 
     /// <summary>
     /// The model picked for a task in Settings, else its default: the parser's from configuration, the setup chat
@@ -65,7 +68,7 @@ public class OpenRouterSettings(
         await StoredAsync(AiTasks.SettingName(task), ct) ?? task switch
         {
             AiTask.Parser => string.IsNullOrWhiteSpace(options.Value.Model) ? OpenRouterOptions.DefaultModel : options.Value.Model.Trim(),
-            AiTask.Onboarding => await GetModelAsync(AiTask.Parser, ct),
+            AiTask.Onboarding or AiTask.Weekly => await GetModelAsync(AiTask.Parser, ct),
             _ => AiTasks.Off,
         };
 
@@ -74,6 +77,7 @@ public class OpenRouterSettings(
     {
         AiTask.Parser => await catalog.ListAsync(ct),
         AiTask.Onboarding => await catalog.ListAsync(ct) is { } models ? [AiTasks.OnboardingOff, .. models] : null,
+        AiTask.Weekly => await catalog.ListAsync(ct) is { } weekly ? [AiTasks.WeeklyOff, .. weekly] : null,
         _ => AiTasks.MatcherModels,
     };
 
@@ -91,6 +95,7 @@ public class OpenRouterSettings(
             {
                 AiTask.Parser => "That model can't parse food.",
                 AiTask.Matcher => "That model can't match food.",
+                AiTask.Weekly => "That model can't write the weekly summary.",
                 _ => "That model can't run the setup chat.",
             });
         }
@@ -111,10 +116,14 @@ public class OpenRouterSettings(
         setting.UpdatedAt = time.GetUtcNow();
         setting.UpdatedByUserId = currentUser.UserId;
         await db.SaveChangesAsync(ct);
+        values = null;
     }
 
-    private Task<string?> StoredAsync(string name, CancellationToken ct) =>
-        db.AppSettings.AsNoTracking().Where(s => s.Name == name).Select(s => s.Value).SingleOrDefaultAsync(ct);
+    /// <summary>All settings in one query per request: a page asking for the key and several models costs one round trip.</summary>
+    private Dictionary<string, string>? values;
+
+    private async Task<string?> StoredAsync(string name, CancellationToken ct) =>
+        (values ??= await db.AppSettings.AsNoTracking().ToDictionaryAsync(s => s.Name, s => s.Value, ct)).GetValueOrDefault(name);
 
     private async Task<(string? Key, KeySource Source)> ResolveKeyAsync(CancellationToken ct)
     {

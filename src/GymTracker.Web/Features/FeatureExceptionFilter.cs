@@ -12,6 +12,7 @@ public static class RateLimits
     public const string Sensitive = "sensitive";
     public const string AiParse = "ai-parse";
     public const string AiOnboarding = "ai-onboarding";
+    public const string AiWeekly = "ai-weekly";
     public const string PasskeyOptions = "passkey-options";
     public const string Feedback = "feedback";
     public const string ClientError = "client-error";

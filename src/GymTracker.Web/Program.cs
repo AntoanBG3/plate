@@ -132,6 +132,11 @@ builder.Services.AddHttpClient<OpenRouterOnboardingAssistant>(c =>
     OpenRouterClient(c);
     c.Timeout = TimeSpan.FromSeconds(40);
 });
+builder.Services.AddHttpClient<OpenRouterWeeklySummaryWriter>(c =>
+{
+    OpenRouterClient(c);
+    c.Timeout = TimeSpan.FromSeconds(50);
+});
 builder.Services.AddScoped<OpenRouterSettings>();
 
 // OpenRouter when a key is set (in Settings or OPENROUTER_API_KEY), otherwise a simple built-in parser.
@@ -141,6 +146,9 @@ builder.Services.AddScoped<IFoodMatchDecider, SwitchingMatchDecider>();
 // The setup chat's model when a key is set and it isn't off; otherwise the setup page shows only the form.
 builder.Services.AddScoped<GymTracker.Core.Onboarding.IOnboardingAssistant, SwitchingOnboardingAssistant>();
 builder.Services.AddScoped<GymTracker.Web.Features.Onboarding.OnboardingService>();
+// The weekly model when a key is set and it isn't off; otherwise Today has no weekly summary.
+builder.Services.AddScoped<GymTracker.Core.Summary.IWeeklySummaryWriter, SwitchingWeeklySummaryWriter>();
+builder.Services.AddScoped<GymTracker.Web.Features.Summary.WeeklySummaryService>();
 
 builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>
 {
@@ -286,6 +294,8 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy(RateLimits.AiParse, http => PerUser(http, config.GetValue("RateLimits:AiParsePerWindow", 30), TimeSpan.FromMinutes(10)));
     // Setup chat messages spend it too (SPEC 6.4).
     o.AddPolicy(RateLimits.AiOnboarding, http => PerUser(http, config.GetValue("RateLimits:AiOnboardingPerWindow", 40), TimeSpan.FromMinutes(10)));
+    // A failing weekly model is retried on Today visits; this caps how often (SPEC 6.5).
+    o.AddPolicy(RateLimits.AiWeekly, http => PerUser(http, config.GetValue("RateLimits:AiWeeklyPerWindow", 6), TimeSpan.FromHours(1)));
     // The login page asks for passkey options on every view (autofill), so they get their own budget.
     o.AddPolicy(RateLimits.PasskeyOptions, http => PerIp(http, 30, TimeSpan.FromMinutes(5)));
     o.AddPolicy(RateLimits.CspReport, http => PerIp(http, 20, TimeSpan.FromMinutes(1)));

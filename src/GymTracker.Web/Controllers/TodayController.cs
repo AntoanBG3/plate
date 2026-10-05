@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymTracker.Web.Controllers;
 
 [Route("today")]
-public class TodayController(ProfileService profiles, BodyweightService bodyweights, BodyAnalytics body, TemplateService templates, SessionService sessions, FoodLogService food, NutritionTargets targets, GymTracker.Web.Features.Feedback.Changelog changelog) : Controller
+public class TodayController(ProfileService profiles, BodyweightService bodyweights, BodyAnalytics body, TemplateService templates, SessionService sessions, FoodLogService food, NutritionTargets targets, GymTracker.Web.Features.Summary.WeeklySummaryService summaries, GymTracker.Web.Features.Feedback.Changelog changelog) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -25,8 +25,10 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
         }
 
         var dailyTargets = await targets.ForTodayAsync(ct);
-        var cutChecks = CutCheck.For(profile, today, await bodyweights.WeighInsAsync(ct),
-            (await food.WeekCardAsync(today, dailyTargets, ct))?.Week, dailyTargets.Macros);
+        // The week's food is only needed for a cut's check-ins.
+        var cutChecks = profile.Goal == Goal.Cut
+            ? CutCheck.For(profile, today, await bodyweights.WeighInsAsync(ct), (await food.WeekCardAsync(today, dailyTargets, ct))?.Week, dailyTargets.Macros)
+            : [];
         var active = await sessions.GetActiveAsync(ct);
         var list = await templates.ListAsync(ct);
         var nextId = NextWorkout.Pick(
@@ -50,8 +52,15 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
             day.Entries.MaxBy(e => e.CreatedAt)?.Description,
             day.Quality,
             cutChecks,
-            CutCheck.OnBreak(profile, today) ? profile.DietBreakUntil : null));
+            CutCheck.OnBreak(profile, today) ? profile.DietBreakUntil : null,
+            await summaries.StateAsync(ct)));
     }
+
+    /// <summary>Writes last week's summary when Today had none to show (SPEC 6.5); empty when it can't.</summary>
+    [HttpGet("weekly-summary")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(RateLimits.AiWeekly)]
+    public async Task<IActionResult> WeeklySummary(CancellationToken ct) =>
+        await summaries.WriteAsync(ct) is { } summary ? PartialView("_WeeklySummary", summary) : Content("");
 
     [HttpPost("cut/break")]
     public async Task<IActionResult> StartBreak(CancellationToken ct)

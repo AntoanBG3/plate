@@ -21,7 +21,8 @@ public record TodayViewModel(
     string? LastFood,
     GymTracker.Core.Nutrition.DayQuality Quality,
     IReadOnlyList<GymTracker.Core.Nutrition.CutCheckIn> CutChecks,
-    DateOnly? DietBreakUntil);
+    DateOnly? DietBreakUntil,
+    GymTracker.Web.Features.Summary.WeeklySummaryState Weekly);
 
 public record TrainViewModel(WorkoutSession? ActiveSession, IReadOnlyList<WorkoutTemplate> Templates);
 

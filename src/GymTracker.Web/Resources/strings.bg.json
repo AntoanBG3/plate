@@ -757,5 +757,16 @@
   "You've been cutting for 12 weeks. A 2-week break at maintenance can help you keep muscle and stick with it.": "Отслабваш от 12 седмици. Двуседмична почивка на поддържащи калории може да ти помогне да запазиш мускулите и да издържиш.",
   "Take a 2-week break": "Вземи 2 седмици почивка",
   "Dismiss for a week": "Скрий за седмица",
-  "A diet break pauses a cut.": "Почивката от диетата е пауза в отслабването."
+  "A diet break pauses a cut.": "Почивката от диетата е пауза в отслабването.",
+  "Writing your summary of last week…": "Пиша обобщението на миналата ти седмица…",
+  "Last week · {0}–{1}": "Миналата седмица · {0}–{1}",
+  "Written by AI from your numbers. Turn it off in Settings.": "Написано от AI по твоите данни. Изключва се от Настройки.",
+  "Weekly summary": "Седмично обобщение",
+  "AI summary of last week on Today": "AI обобщение на миналата седмица в Днес",
+  "Last week's numbers are sent to an AI model through OpenRouter: calories, macros, weight trend and workouts, without your name.": "Данните от миналата седмица се изпращат на AI модел през OpenRouter: калории, макроси, тренд на теглото и тренировки, без името ти.",
+  "Off: no weekly summary": "Изключено: без седмично обобщение",
+  "The weekly summary isn't available right now.": "Седмичното обобщение не е налично в момента.",
+  "The weekly summary model returned something unreadable.": "Моделът за седмичното обобщение върна нечетим отговор.",
+  "That model can't write the weekly summary.": "Този модел не може да пише седмичното обобщение.",
+  "Model saved: the weekly summary works.": "Моделът е запазен: седмичното обобщение работи."
 }

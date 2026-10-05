@@ -25,10 +25,14 @@ public static class WeeklyNutrition
     public const int MinLoggedDays = 3;
 
     /// <summary>Null with fewer than <see cref="MinLoggedDays"/> logged days in the 7 days ending yesterday.</summary>
-    public static WeekSummary? Calculate(IEnumerable<DaySummary> days, MacroTarget targets, DateOnly today)
+    public static WeekSummary? Calculate(IEnumerable<DaySummary> days, MacroTarget targets, DateOnly today) =>
+        Between(days, targets, today.AddDays(-Days), today);
+
+    /// <summary>The same for the days from <paramref name="from"/> up to, not including, <paramref name="until"/>.</summary>
+    public static WeekSummary? Between(IEnumerable<DaySummary> days, MacroTarget targets, DateOnly from, DateOnly until)
     {
         var logged = days
-            .Where(d => d.Date < today && d.Date >= today.AddDays(-Days) && d.Totals.Kcal >= AdaptiveMaintenance.MinLoggedKcal)
+            .Where(d => d.Date < until && d.Date >= from && d.Totals.Kcal >= AdaptiveMaintenance.MinLoggedKcal)
             .ToList();
         if (logged.Count < MinLoggedDays)
         {

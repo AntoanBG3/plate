@@ -86,6 +86,14 @@ public class SettingsController(
         return Redirect("/settings");
     }
 
+    /// <summary>The checkbox posts "true" before its hidden "false", so the first value is the choice.</summary>
+    [HttpPost("weekly-summary")]
+    public async Task<IActionResult> WeeklySummary(bool enabled, CancellationToken ct)
+    {
+        await profiles.UpdateAsync(p => p.WeeklySummaryEnabled = enabled, ct);
+        return Redirect("/settings");
+    }
+
     private async Task<OpenRouterStatus> OpenRouterStatusAsync(CancellationToken ct)
     {
         var tasks = new List<AiTaskStatus>();

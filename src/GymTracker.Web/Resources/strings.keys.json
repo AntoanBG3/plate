@@ -61,6 +61,9 @@
   "AI models": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "AI summary of last week on Today": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "About": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
@@ -825,7 +828,14 @@
   ],
   "Last week": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
+    "src/GymTracker.Web/Views/Today/Index.cshtml",
     "wwwroot/js"
+  ],
+  "Last week · {0}–{1}": [
+    "src/GymTracker.Web/Views/Today/_WeeklySummary.cshtml"
+  ],
+  "Last week's numbers are sent to an AI model through OpenRouter: calories, macros, weight trend and workouts, without your name.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Last weigh-in: {0} kg on {1}": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
@@ -1147,6 +1157,9 @@
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "Off: database ranking only": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Off: no weekly summary": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Off: setup form only": [
@@ -1751,6 +1764,9 @@
   "That model can't run the setup chat.": [
     "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
+  "That model can't write the weekly summary.": [
+    "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
+  ],
   "That page doesn't exist, or it isn't yours.": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
@@ -1882,6 +1898,12 @@
   ],
   "The trend line appears after a few more weigh-ins.": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
+  ],
+  "The weekly summary isn't available right now.": [
+    "src/GymTracker.Web/Integrations/OpenRouterWeeklySummaryWriter.cs"
+  ],
+  "The weekly summary model returned something unreadable.": [
+    "src/GymTracker.Web/Integrations/OpenRouterWeeklySummaryWriter.cs"
   ],
   "Theme": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -2019,6 +2041,9 @@
   "Weekly sets": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
+  "Weekly summary": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Weigh-in": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "wwwroot/js"
@@ -2107,6 +2132,12 @@
   ],
   "Write a few words about it.": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "Writing your summary of last week…": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "Written by AI from your numbers. Turn it off in Settings.": [
+    "src/GymTracker.Web/Views/Today/_WeeklySummary.cshtml"
   ],
   "Wrong amount": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"

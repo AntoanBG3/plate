@@ -147,6 +147,18 @@ else if (Model.CutChecks.Count > 0)
     </section>
 }
 
+@if (Model.Weekly.Stored is { } weekly)
+{
+    <partial name="_WeeklySummary" model="weekly" />
+}
+else if (Model.Weekly.CanWrite)
+{
+    <section class="card card-pad weekly-summary loading" hx-get="/today/weekly-summary" hx-trigger="load" hx-swap="outerHTML" data-quiet-on-error aria-busy="true">
+        <p class="footnote">@L["Last week"]</p>
+        <p class="subhead">@L["Writing your summary of last week…"]</p>
+    </section>
+}
+
 <section class="section">
     <h2 class="section-title">@L["Workout"]</h2>
     @if (Model.ActiveSession is { } active)

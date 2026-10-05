@@ -3,7 +3,20 @@
 (function () {
     "use strict";
 
+    // Optional content loaded in the background (the weekly summary) just disappears when it can't load.
+    const quiet = (event) => {
+        const el = event.target.closest && event.target.closest("[data-quiet-on-error]");
+        if (el) {
+            el.remove();
+            return true;
+        }
+        return false;
+    };
+
     document.body.addEventListener("htmx:responseError", (event) => {
+        if (quiet(event)) {
+            return;
+        }
         const xhr = event.detail.xhr;
         if (xhr.status === 401 || xhr.responseURL.includes("/account/login")) {
             window.location.href = "/account/login?returnUrl=" + encodeURIComponent(window.location.pathname);
@@ -12,7 +25,10 @@
         window.gymToast(xhr.status === 400 && xhr.responseText ? xhr.responseText : t("Something went wrong ({0}). Try again.", xhr.status));
     });
 
-    document.body.addEventListener("htmx:sendError", () => {
+    document.body.addEventListener("htmx:sendError", (event) => {
+        if (quiet(event)) {
+            return;
+        }
         window.gymToast(t("No connection. That change was not saved; try again when you have signal."));
     });
 

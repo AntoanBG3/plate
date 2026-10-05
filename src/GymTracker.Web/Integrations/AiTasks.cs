@@ -11,6 +11,9 @@ public enum AiTask
 
     /// <summary>Runs the first sign-in setup chat (OpenRouter chat models, SPEC 6.4).</summary>
     Onboarding,
+
+    /// <summary>Writes the weekly summary on Today (OpenRouter chat models, SPEC 6.5).</summary>
+    Weekly,
 }
 
 public static class AiTasks
@@ -31,16 +34,25 @@ public static class AiTasks
     /// <summary>The setup chat can be turned off, which leaves the form.</summary>
     public static readonly OpenRouterModel OnboardingOff = new(Off, "GymTracker", "Off: setup form only", 0, 0, false, null);
 
+    /// <summary>The weekly summary can be turned off for both accounts.</summary>
+    public static readonly OpenRouterModel WeeklyOff = new(Off, "GymTracker", "Off: no weekly summary", 0, 0, false, null);
+
     /// <summary>English name of a task, for the admin area and the CLI.</summary>
     public static string Title(AiTask task) => task switch
     {
         AiTask.Parser => "Food parser",
         AiTask.Matcher => "Food matcher",
-        _ => "Setup chat",
+        AiTask.Onboarding => "Setup chat",
+        _ => "Weekly summary",
     };
 
     /// <summary>What "off" means for a task.</summary>
-    public static string OffLabel(AiTask task) => task == AiTask.Onboarding ? "Off: setup form only" : "Off: database ranking only";
+    public static string OffLabel(AiTask task) => task switch
+    {
+        AiTask.Onboarding => "Off: setup form only",
+        AiTask.Weekly => "Off: no weekly summary",
+        _ => "Off: database ranking only",
+    };
 
     /// <summary>The parser keeps the setting name it had before the split, so a model already picked carries over.</summary>
     public static string SettingName(AiTask task) => task switch
@@ -48,6 +60,7 @@ public static class AiTasks
         AiTask.Parser => "OpenRouter:Model",
         AiTask.Matcher => "OpenRouter:Model:Matcher",
         AiTask.Onboarding => "OpenRouter:Model:Onboarding",
+        AiTask.Weekly => "OpenRouter:Model:Weekly",
         _ => throw new ArgumentOutOfRangeException(nameof(task)),
     };
 

@@ -20,6 +20,9 @@ public class UserProfile
     /// <summary>The protein aim in g per kg of reference weight; null is Auto, set by goal (SPEC 5.6).</summary>
     public decimal? ProteinGramsPerKg { get; set; }
 
+    /// <summary>Whether Today shows an AI-written summary of the previous week (SPEC 6.5).</summary>
+    public bool WeeklySummaryEnabled { get; set; } = true;
+
     /// <summary>When the current cut started, for the diet break offer (SPEC 5.9); null when not cutting.</summary>
     public DateOnly? CutStartedOn { get; set; }
 

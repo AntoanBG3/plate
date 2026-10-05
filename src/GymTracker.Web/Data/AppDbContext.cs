@@ -36,6 +36,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<ChangelogEntry> Changelog => Set<ChangelogEntry>();
     public DbSet<AdminAudit> AdminAudit => Set<AdminAudit>();
     public DbSet<OnboardingChat> OnboardingChats => Set<OnboardingChat>();
+    public DbSet<WeeklySummary> WeeklySummaries => Set<WeeklySummary>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -235,6 +236,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.Messages).HasColumnType("jsonb");
             e.Property(x => x.Rejected).HasColumnType("jsonb");
             e.Property(x => x.QuickReplies).HasColumnType("jsonb");
+            e.Property(x => x.Model).HasMaxLength(100);
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
+        builder.Entity<WeeklySummary>(e =>
+        {
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.UserId, x.WeekStart }).IsUnique();
+            e.Property(x => x.Summary).HasMaxLength(GymTracker.Core.Summary.WeeklySummaryText.MaxSummary);
+            e.Property(x => x.Motivation).HasMaxLength(GymTracker.Core.Summary.WeeklySummaryText.MaxLine);
+            e.Property(x => x.Language).HasConversion<string>().HasMaxLength(12);
             e.Property(x => x.Model).HasMaxLength(100);
             e.HasQueryFilter(x => x.UserId == CurrentUserId);
         });

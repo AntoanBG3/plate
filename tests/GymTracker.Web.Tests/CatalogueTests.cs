@@ -38,7 +38,7 @@ public partial class CatalogueTests(ITestOutputHelper output)
     private static readonly string[] Extra = ["assumed 100 g", "Freestyle", "Dark", "Light", "Match phone", "Entry deleted.", "Exercise removed."];
 
     // Matched by a pattern but never shown: instructions sent to the model.
-    private static readonly string[] Ignore = ["Write assumption in English.", "Reply in English."];
+    private static readonly string[] Ignore = ["Write assumption in English.", "Reply in English.", "Write in English."];
 
     public static SortedDictionary<string, SortedSet<string>> Extract()
     {
