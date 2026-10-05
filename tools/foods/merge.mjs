@@ -135,6 +135,22 @@ for (const g of keptGeneric) {
 for (const p of off) {
     out.push({ kind: "product", barcode: p.barcode, name_bg: clean(p.name_bg), name_en: "", brand: p.brand, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, serving_g: p.serving_g, source: "https://world.openfoodfacts.org/product/" + p.barcode, fiber: p.fiber ?? "", satfat: p.satfat ?? "" });
 }
+// A Latin letter that looks Cyrillic inside a Cyrillic word ("чипc"), or the reverse, takes the alphabet of the rest
+// of its word; the same rule as GymTracker.Core MixedScript, which the app also applies when seeding.
+const LATIN = "aeopcxyAEOPCXBKMHT", CYRILLIC = "аеорсхуАЕОРСХВКМНТ";
+const mixedScript = (text) => (text || "").replace(/\p{L}+/gu, (w) => {
+    const c = [...w].filter((ch) => /[\u0400-\u04FF]/.test(ch)).length;
+    const l = [...w].filter((ch) => /[A-Za-z]/.test(ch)).length;
+    if (!c || !l) return w;
+    const [from, to] = c >= l ? [LATIN, CYRILLIC] : [CYRILLIC, LATIN];
+    return [...w].map((ch) => (from.includes(ch) ? to[from.indexOf(ch)] : ch)).join("");
+});
+for (const row of out) {
+    row.name_bg = mixedScript(row.name_bg);
+    row.name_en = mixedScript(row.name_en);
+    row.brand = mixedScript(row.brand);
+}
+
 writeCsv(path.join(seedDir, "bg-foods.csv"), ["kind", "barcode", "name_bg", "name_en", "brand", "kcal", "protein", "carbs", "fat", "serving_g", "source", "fiber", "satfat"], out);
 writeCsv(path.join(raw, "usda-bg-names.csv"), ["fdc_id", "name_bg"], [...usdaNames].map(([fdc_id, name_bg]) => ({ fdc_id, name_bg })));
 console.log(`kept ${keptGeneric.length} generic (${generic.length - keptGeneric.length} duplicates removed, ${usdaNames.size} of them matched USDA), ${off.length} products`);

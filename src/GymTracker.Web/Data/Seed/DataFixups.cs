@@ -1,4 +1,5 @@
 using GymTracker.Core.Domain;
+using GymTracker.Core.Text;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Data.Seed;
@@ -22,5 +23,24 @@ public static class DataFixups
         await db.SavedMealItems.IgnoreQueryFilters()
             .Where(i => i.Grams == 0 && i.FoodItemId == null && OldQuickNames.Contains(i.Description))
             .ExecuteUpdateAsync(s => s.SetProperty(i => i.Description, ""), ct);
+
+        // Food names with a look-alike letter from the other alphabet inside a word ("чипc", "Мousse"), stored before
+        // the seed normalised them. Postgres finds the candidates; MixedScript decides and fixes.
+        var mixed = await db.FoodItems
+            .FromSqlRaw("""
+                SELECT * FROM "FoodItems"
+                WHERE "Name" ~ '[А-Яа-я][A-Za-z]|[A-Za-z][А-Яа-я]' OR "NameBg" ~ '[А-Яа-я][A-Za-z]|[A-Za-z][А-Яа-я]'
+                   OR "Brand" ~ '[А-Яа-я][A-Za-z]|[A-Za-z][А-Яа-я]'
+                """)
+            .IgnoreQueryFilters()
+            .ToListAsync(ct);
+        foreach (var food in mixed)
+        {
+            food.Name = MixedScript.Normalize(food.Name);
+            food.NameBg = food.NameBg is null ? null : MixedScript.Normalize(food.NameBg);
+            food.Brand = food.Brand is null ? null : MixedScript.Normalize(food.Brand);
+        }
+
+        await db.SaveChangesAsync(ct);
     }
 }

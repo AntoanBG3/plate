@@ -1,3 +1,4 @@
+using GymTracker.Core.Text;
 using System.Globalization;
 using GymTracker.Core.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +23,9 @@ public static class BgFoodSeed
 
         var foods = db.FoodItems.IgnoreQueryFilters();
         var barcodes = (await foods.Where(f => f.Barcode != null).Select(f => f.Barcode!).ToListAsync(ct)).ToHashSet();
-        var references = (await foods.Where(f => f.Source == FoodSource.Reference && f.NameBg != null).Select(f => f.NameBg!).ToListAsync(ct)).ToHashSet();
+        // Compared normalised, so a stored name from before MixedScript (fixed at startup) isn't seeded a second time.
+        var references = (await foods.Where(f => f.Source == FoodSource.Reference && f.NameBg != null).Select(f => f.NameBg!).ToListAsync(ct))
+            .Select(MixedScript.Normalize).ToHashSet();
 
         var items = new List<FoodItem>();
         var extras = new Dictionary<string, (decimal? Fiber, decimal? Saturated)>(StringComparer.Ordinal);
@@ -42,16 +45,17 @@ public static class BgFoodSeed
                 extras.TryAdd(f[1], (fiber, saturated));
             }
 
-            if (product ? !barcodes.Add(f[1]) : !references.Add(f[2]))
+            if (product ? !barcodes.Add(f[1]) : !references.Add(MixedScript.Normalize(f[2])))
             {
                 continue;
             }
 
             items.Add(new FoodItem
             {
-                Name = Cut(product || f[3].Length == 0 ? f[2] : f[3]),
-                NameBg = Cut(f[2]),
-                Brand = f[4].Length == 0 ? null : Cut(f[4]),
+                // Scraped names can hide a Latin letter in a Cyrillic word ("чипc"); searches typed on a keyboard miss them.
+                Name = Cut(MixedScript.Normalize(product || f[3].Length == 0 ? f[2] : f[3])),
+                NameBg = Cut(MixedScript.Normalize(f[2])),
+                Brand = f[4].Length == 0 ? null : Cut(MixedScript.Normalize(f[4])),
                 Barcode = product ? f[1] : null,
                 KcalPer100g = D(f[5]),
                 ProteinPer100g = D(f[6]),
