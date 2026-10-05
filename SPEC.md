@@ -94,6 +94,7 @@ Units: weights in kilograms (`decimal(6,2)`), energy in kcal, macros in grams. D
 - `Goal` (Cut, Maintain, Bulk)
 - `TargetRatePercentPerWeek` (decimal, e.g. 0.5 means 0.5% of bodyweight per week; ignored for Maintain)
 - `ProteinGramsPerKg` (nullable; null is Auto, the default by goal in 5.6)
+- `WeeklySummaryEnabled` (default true; 6.5)
 - `CutStartedOn` (nullable `DateOnly`; set when the goal changes to Cut and after a diet break, cleared when it changes away; 5.9), `DietBreakUntil` (nullable `DateOnly`, the last day of a diet break), `CutCheckDismissedUntil` (nullable `DateOnly`; check-ins are hidden through this day)
 - `DefaultWeightIncrementKg` (default 2.5)
 - `BarWeightKg` (default 20) and `PlatesKg` (the plates the gym has; default 25, 20, 15, 10, 5, 2.5, 1.25), used by the plate calculator
@@ -179,6 +180,11 @@ Seed about 40 common exercises (bench press, incline dumbbell press, squat, Roma
 - `Id`, `UserId`, `CalculatedOn` (DateOnly)
 - `EstimatedTdeeKcal`, `TargetKcal`, `TargetProteinG`
 - `TrendWeightKg`, `DaysOfData`, `LoggingCompleteness` (0 to 1), `Method` (Initial, Adaptive)
+
+**WeeklySummary** (6.5)
+- `Id`, `UserId`, `WeekStart` (the Monday of the week it describes; unique per user and week)
+- `Summary` (up to 400 characters), `Tips` (up to three, each up to 160), `Motivation` (up to 160)
+- `Language` (the account's language when written), `Model`, `CreatedAt`
 
 ---
 
@@ -324,7 +330,7 @@ LLM nutrition estimates are unreliable on their own (published studies show ener
 
 Implementation `OpenRouterFoodParser`:
 - Typed `HttpClient` calling OpenRouter's `POST /api/v1/chat/completions`.
-- Model: each AI task has its own model setting, shared by both accounts like the key (currently the parser and the matcher below). The parser's is picked from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `openai/gpt-6-luna`; a saved id must be in the catalog.
+- Model: each AI task has its own model setting, shared by both accounts like the key (the parser, the matcher below, the setup chat in 6.4 and the weekly summary in 6.5). The parser's is picked from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `openai/gpt-6-luna`; a saved id must be in the catalog.
 - API key from Settings (encrypted with Data Protection) or configuration `OpenRouter:ApiKey` (environment variable `OPENROUTER_API_KEY` in Docker). Never commit it.
 - Request structured output: `response_format: {type: "json_schema", json_schema: {name, strict: true, schema}}` with a strict-compatible schema (`additionalProperties: false`, every property required, nullable ones typed `["string","null"]`) matching `ParsedFoodItem[]`, and `provider: {require_parameters: true}`. Because that excludes providers lacking any sent parameter, `temperature` and `reasoning.effort` (the model's lowest supported effort) are sent only when the catalog lists them for the model.
 - System prompt: the user writes foods in English or Bulgarian; return one item per food; estimate grams for vague quantities ("a banana", "a plate of rice") and state the assumption; assume raw weight for meat and cooked weight for rice and pasta unless stated; always fill `NameEn`.
@@ -385,6 +391,20 @@ A new account starts with an empty profile, so on first sign-in the user gets a 
 
 **Limits.** Rate limit of 40 chat messages per 10 minutes per user (section 9).
 
+### 6.5 Weekly summary
+
+A short note on Today about the previous Monday to Sunday: what went well, up to three concrete tips, and one line of encouragement. It is written by a model from the week's numbers, so it can be specific ("protein reached the minimum on 2 of 6 days") instead of generic.
+
+**When.** On the first Today visit from Monday, if the account has it on (`WeeklySummaryEnabled`, a Settings switch, on by default), a key is set and the weekly model isn't off. One summary per user and week is stored and shown all week; it is written again only if the account's language changed since. Today renders a stored summary directly. When none is stored yet, Today shows a placeholder that loads it from `/today/weekly-summary`, so the page never waits for the model. That endpoint is rate-limited to 6 calls per hour per user (section 9); a failed or refused call shows nothing and the next visit tries again.
+
+**Enough to say.** Only with at least 3 days of food logged (200 kcal or more), or a finished workout, or 3 weigh-ins in the week. Otherwise nothing is written for that week.
+
+**The facts sent.** No name, email or free text: the goal and weekly rate; food (logged days, averages of kcal, protein, fat, carbs, fiber and saturated fat against the targets in force, the days protein reached its minimum, using 5.8 with the week as its range); body (trend weight at the start and end of the week, weigh-in count); training (finished sessions, working sets, new e1RM records by exercise name, the most trained muscles); and whether a diet break ran. Today's targets stand in for the week's.
+
+**Model call.** `IWeeklySummaryWriter` in Core, `OpenRouterWeeklySummaryWriter` in Integrations, with the same request shape, structured output, timeout, retry and error handling as the setup chat (6.4). Schema: `summary` (string), `tips` (array of strings), `motivation` (string). The answer is trimmed to the lengths above, empty tips are dropped, and an empty summary counts as a failure. A fourth AI task, `weekly`, has its own model setting; unset, it uses the parser's model, and off turns the summary off for both accounts.
+
+**Prompt rules.** Plain and warm, in the account's language, using the informal "ти" in Bulgarian. Mention real numbers from the facts and never invent one. Tips are specific actions for next week drawn from the weakest numbers (for example protein at breakfast when the minimum was missed); when a number has no target or too little data, leave it out. No medical advice, no comments on the user's body or appearance, no praise or blame for weight changes; describe the trend against the goal neutrally.
+
 ---
 
 ## 7. Screens
@@ -395,6 +415,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Calories remaining and protein remaining as two large progress bars, with consumed and target numbers. The protein bar counts toward the aim and marks the minimum.
 - Under them, three small meters: fat (floor to ceiling), carbs (the range) and fiber (the minimum).
 - Cut check-ins (5.9) and a diet break in progress, under the meters.
+- Last week's summary (6.5), with the line "Written by AI from your numbers."
 - Weight entry field (pre-focused if no weigh-in today), with the current trend weight shown next to it.
 - Next suggested workout: the template after the last one completed, in template sort order, with a Start button. If a session is active, a Resume button instead.
 - Small text showing the maintenance estimate and whether it is Initial or Adaptive, with days of data.
@@ -449,7 +470,8 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Run the setup chat again (section 6.4).
 - Custom exercises.
 - Bar and plates: the profile bar weight and which plates the gym has.
-- AI models: the current food parser, food matcher and setup chat models, read-only. Only the developer changes the key and models, in the admin area (section 12).
+- Weekly AI summary: on or off (6.5), with the line "Last week's numbers are sent to an AI model through OpenRouter."
+- AI models: the current food parser, food matcher, setup chat and weekly summary models, read-only. Only the developer changes the key and models, in the admin area (section 12).
 - Admin: a row shown only to accounts with the `Dev` role, linking to `/admin`.
 - Export all of the user's data as CSV files in a zip.
 - Feedback: Send feedback and Your feedback (section 11).
@@ -489,7 +511,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - ASP.NET Core rate limiting middleware on the login POST, partitioned by client IP.
 - Forwarded headers: behind cloudflared every request comes from 172.30.0.10, so configure `ForwardedHeadersOptions` with that address as the only known proxy, read the client IP from `CF-Connecting-IP` and the scheme from `X-Forwarded-Proto`. Without this, rate limiting puts every client in one bucket.
 - Passwords: minimum 12 characters, no composition rules. An unknown email costs one password hash like a known one, so timing does not reveal which accounts exist.
-- A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes), admin unlock requests (10 per 15 minutes, two per unlock), AI food parsing (30 per 10 minutes), setup chat messages (40 per 10 minutes) and admin writes (60 per 10 minutes).
+- A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes), admin unlock requests (10 per 15 minutes, two per unlock), AI food parsing (30 per 10 minutes), setup chat messages (40 per 10 minutes), weekly summaries (6 per hour) and admin writes (60 per 10 minutes).
 - Passkeys alongside passwords: registered in Settings, usernameless sign-in on the login page (button and autofill), relying party `gym.peychev.uk`.
 - Response headers: Content-Security-Policy (`script-src 'self' 'wasm-unsafe-eval'`, no inline scripts or event handlers; sent report-only with a `/csp-report` log until `CSP_ENFORCE=true`), HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `Permissions-Policy` (camera only), COOP. `AllowedHosts` limited to the public host name. Request bodies over 1 MB are refused.
 - Cookie: `Secure`, `HttpOnly`, `SameSite=Lax`, `__Host-` prefix, sliding 30-day expiration. "Log out everywhere" in Settings updates the security stamp.
@@ -607,7 +629,7 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 ### CLI additions
 
 - `role grant|revoke dev --email <email>`, `role list`.
-- `ai show`, `ai set-model parser|matcher|onboarding <id>`, `ai set-key` (the key is read from standard input, never an argument), `ai clear-key`, `ai test`.
+- `ai show`, `ai set-model parser|matcher|onboarding|weekly <id>`, `ai set-key` (the key is read from standard input, never an argument), `ai clear-key`, `ai test`.
 - `feedback changelog list|remove <id>`, `admin audit [--since 30d]`.
 
 ---
@@ -654,6 +676,10 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 ### Phase 9: Macro and food-quality targets
 - Macro targets with the reference weight and age rules (5.6), fiber and saturated fat stored per food and per entry with their sources (sections 4, 6.1 to 6.3), weekly nutrition with coverage (5.8), cut check-ins and diet breaks (5.9), and the screens in section 7.
 - **Done when:** the Core tests for 5.6, 5.8 and 5.9 pass; the stored protein of 2.0 g/kg (the old default) is migrated to Auto and any other value kept; a USDA, an Open Food Facts, an AI and a quick entry each show fiber and saturated fat or count as unknown; and Today, Food, Settings, Progress and the setup card read correctly at 390 px in English and Bulgarian.
+
+### Phase 10: Weekly summary
+- Section 6.5: the stored summary, the facts it is written from, the weekly AI task in the admin area and CLI, the Settings switch, and the Today card.
+- **Done when:** the Core tests for the enough-data rule, the week's range and the answer trimming pass; Today renders a stored summary without calling the model and loads a missing one without waiting; a failed model call shows nothing and is retried on a later visit; turning the switch off, or the model off, stops the calls; and the card reads correctly at 390 px in English and Bulgarian.
 
 ### Later
 Ideas kept for after Phase 9, not planned yet. None should start before real logs show fiber coverage is good.
