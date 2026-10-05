@@ -180,7 +180,7 @@
     }
     scrollToFocus();
 
-    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant, same }) {
+    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant, same, posted }) {
         const next = doc.documentElement;
         const nextShell = doc.querySelector(".app-scale");
         const shell = document.querySelector(".app-scale");
@@ -225,7 +225,10 @@
             scrollToFocus();
             htmx.process(document.querySelector(".app-scale"));
             htmx.process(document.getElementById("overlays"));
-            document.getElementById("main").focus({ preventScroll: true });
+            // A form sent back with an error marks the field to fix with autofocus, which a swap doesn't apply by itself.
+            // Pages merely opened keep focus on main, so a link never pops up the keyboard.
+            const field = posted && document.querySelector("#main [autofocus]");
+            (field || document.getElementById("main")).focus({ preventScroll: true });
             document.dispatchEvent(new CustomEvent("gym:page", { detail: { nav } }));
         };
 
@@ -277,7 +280,7 @@
                 scrollY = window.scrollY;
             }
             const same = finalUrl.pathname === location.pathname && finalUrl.search === location.search;
-            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant, same });
+            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant, same, posted: init?.method === "POST" });
         } catch (error) {
             if (error instanceof FullLoad) {
                 location.href = error.url;
