@@ -65,7 +65,8 @@
     // Start loading on touch: on iOS the click arrives 100 to 150 ms after the finger goes down.
     document.addEventListener("pointerdown", (event) => {
         const url = eligibleLink(event.target.closest("a[href]"), event);
-        if (url && !(prefetched && prefetched.url === url.href)) {
+        // An unsaved edit on this page is sent first (go), so a page fetched now could miss it.
+        if (url && !(prefetched && prefetched.url === url.href) && !document.querySelector(".is-dirty")) {
             dropPrefetch();
             const abort = new AbortController();
             const promise = request(url, { signal: abort.signal });
@@ -228,6 +229,10 @@
         history.replaceState(Object.assign({}, history.state, { gym: true, scrollY: window.scrollY }), "");
         const slow = setTimeout(() => root.classList.add("is-navigating"), SLOW_MS);
         try {
+            // A set edit still being typed is saved first, so the next page (or this one again) shows it.
+            if (window.gymFlushEdits) {
+                await window.gymFlushEdits();
+            }
             const response = await ((!init && takePrefetch(url)) || request(url, init || undefined));
             const finalUrl = new URL(response.url);
             const html = (response.headers.get("Content-Type") || "").includes("text/html");

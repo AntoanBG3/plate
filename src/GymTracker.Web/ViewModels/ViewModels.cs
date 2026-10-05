@@ -27,7 +27,8 @@ public record TodayViewModel(
 public record TrainViewModel(WorkoutSession? ActiveSession, IReadOnlyList<WorkoutTemplate> Templates);
 
 /// <summary>One row in an exercise card: a logged set, or an empty row to fill in, pre-filled from the suggestion when there is one.</summary>
-public record SetRowViewModel(int SessionExerciseId, bool IsWarmup, SetEntry? Logged, Guid ClientId, SetTarget? Target = null)
+/// <param name="JustSaved">The row comes back from an in-place edit, so it shows "Saved" for a moment.</param>
+public record SetRowViewModel(int SessionExerciseId, bool IsWarmup, SetEntry? Logged, Guid ClientId, SetTarget? Target = null, bool JustSaved = false)
 {
     public static SetRowViewModel Blank(int sessionExerciseId, bool isWarmup, SetTarget? target = null) =>
         new(sessionExerciseId, isWarmup, null, Guid.NewGuid(), target);

@@ -768,5 +768,8 @@
   "The weekly summary isn't available right now.": "Седмичното обобщение не е налично в момента.",
   "The weekly summary model returned something unreadable.": "Моделът за седмичното обобщение върна нечетим отговор.",
   "That model can't write the weekly summary.": "Този модел не може да пише седмичното обобщение.",
-  "Model saved: the weekly summary works.": "Моделът е запазен: седмичното обобщение работи."
+  "Model saved: the weekly summary works.": "Моделът е запазен: седмичното обобщение работи.",
+  "Saving…": "Запазва се…",
+  "Saved": "Запазено",
+  "Not saved. Tap ✓ to try again.": "Не е запазено. Натисни ✓, за да опиташ пак."
 }

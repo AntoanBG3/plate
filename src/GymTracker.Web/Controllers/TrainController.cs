@@ -155,7 +155,7 @@ public class TrainController(
 
     [HttpPost("sets/{id:int}/update")]
     public async Task<IActionResult> UpdateSet(int id, decimal? weightKg, int? reps, decimal? rpe, CancellationToken ct) =>
-        PartialView("_SetRow", SetRowViewModel.For(await sessions.UpdateSetAsync(id, weightKg ?? 0, reps ?? 0, rpe, ct)));
+        PartialView("_SetRow", SetRowViewModel.For(await sessions.UpdateSetAsync(id, weightKg ?? 0, reps ?? 0, rpe, ct)) with { JustSaved = true });
 
     [HttpPost("sets/{id:int}/delete")]
     public async Task<IActionResult> DeleteSet(int id, CancellationToken ct)

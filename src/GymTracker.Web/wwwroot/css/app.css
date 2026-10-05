@@ -561,6 +561,19 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .set-row.pending.is-waiting .set-status { display: flex; }
 .set-status { display: none; align-items: center; gap: 4px; grid-column: 2 / -1; font-size: var(--text-caption); color: var(--label-2); margin-top: -4px; }
 .set-status .icon { width: 14px; height: 14px; }
+/* A logged set being edited in place (session.js): one status line under the fields while saving, briefly once saved,
+   and until it is sent when saving failed. The check button turns into a hollow "save" until then. */
+.set-save { display: none; align-items: center; gap: 4px; grid-column: 2 / -1; font-size: var(--text-caption); color: var(--label-2); margin-top: -4px; }
+.set-save > span { display: none; align-items: center; gap: 4px; }
+.set-save .icon { width: 14px; height: 14px; }
+.set-row:is(.is-saving, .is-saved, .is-unsaved) .set-save { display: flex; }
+.set-row.is-saving [data-state="saving"], .set-row.is-saved [data-state="saved"], .set-row.is-unsaved [data-state="unsaved"] { display: inline-flex; }
+.set-row.is-saved .set-save { animation: saved-fade 2.4s var(--ease-out) forwards; }
+.set-row.is-saved [data-state="saved"] { color: var(--success); }
+.set-row.is-unsaved [data-state="unsaved"] { color: var(--destructive); }
+.set-row.done:is(.is-dirty, .is-unsaved) .disc { background: var(--accent-soft); }
+.set-row.done:is(.is-dirty, .is-unsaved) .done-btn svg { stroke: var(--accent); }
+@keyframes saved-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 .set-row.warmup .set-content { padding-top: 3px; padding-bottom: 3px; }
 .set-row.warmup .set-field { min-height: 36px; padding-top: 6px; padding-bottom: 4px; }
 .set-row.warmup .set-field input { font-size: var(--text-body); font-weight: var(--weight-regular); color: var(--label-2); }

@@ -1110,6 +1110,9 @@
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
+  "Not saved. Tap ✓ to try again.": [
+    "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
+  ],
   "Not set": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -1505,6 +1508,9 @@
   "Save to lunch": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
+  "Saved": [
+    "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
+  ],
   "Saved as a meal.": [
     "src/GymTracker.Web/Controllers/SavedMealsController.cs"
   ],
@@ -1520,6 +1526,9 @@
   ],
   "Saved on this phone. It will send when you're back online.": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
+  ],
+  "Saving…": [
+    "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
   ],
   "Scan": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
