@@ -101,7 +101,7 @@
                                 <div class="row-title headline">@f.DisplayName</div>
                                 <div class="row-sub">@(f.Brand is null ? "" : f.Brand + " · ")@L["{0} kcal, {1} g protein per 100 g", Math.Round(f.KcalPer100g), f.ProteinPer100g.Kg(1)]</div>
                                 <div class="portion-line">
-                                    <label class="grams"><input type="number" name="grams" value="@((f.DefaultServingGrams ?? 100).Kg())" min="1" max="3000" step="any" inputmode="decimal" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
+                                    <label class="grams"><input type="text" name="grams" value="@((f.DefaultServingGrams ?? 100).Kg())" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
                                     @{ var serving = f.DefaultServingGrams ?? 100; }
                                     <span class="footnote num" data-totals>@L["{0} kcal · {1} g protein", Math.Round(f.KcalPer100g * serving / 100), (f.ProteinPer100g * serving / 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)]</span>
                                     <button type="submit" class="btn btn-tinted btn-small">@L["Add"]</button>
@@ -205,7 +205,7 @@
                         <input type="hidden" name="saturatedFat" value="@r.Per100.SaturatedFat?.Kg()" />
                         <div class="row-title headline">@L.Entry(r.Description)</div>
                         <div class="portion-line">
-                            <label class="grams"><input type="number" name="grams" value="@r.LastGrams.Kg()" min="1" max="3000" step="any" inputmode="decimal" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
+                            <label class="grams"><input type="text" name="grams" value="@r.LastGrams.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
                             <span class="footnote" data-totals>@L.Count(r.Times, "logged once in 30 days", "logged {0}× in 30 days")</span>
                             <button type="submit" class="btn btn-tinted btn-small">@L["Add"]</button>
                         </div>

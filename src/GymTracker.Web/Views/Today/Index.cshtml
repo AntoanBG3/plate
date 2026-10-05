@@ -249,7 +249,7 @@ else if (Model.Weekly.CanWrite)
         }
         <form method="post" asp-antiforgery="true" action="/today/weight" class="field-row">
             <label for="weightKg">@L["Today's weight"]</label>
-            <input id="weightKg" class="num" type="number" name="weightKg" inputmode="decimal" step="any" min="@ProfileLimits.MinWeightKg.Kg()" max="@ProfileLimits.MaxWeightKg.Kg()"
+            <input id="weightKg" class="num" type="text" name="weightKg" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" step="any" min="@ProfileLimits.MinWeightKg.Kg()" max="@ProfileLimits.MaxWeightKg.Kg()"
                    placeholder="—" required value="@(Model.TodayWeight?.WeightKg.Kg())" @(Model.TodayWeight is null ? "autofocus" : "") />
             <span class="unit">@L["kg"]</span>
             <button type="submit" class="btn btn-plain">@(Model.TodayWeight is null ? L["Save"] : L["Update"])</button>

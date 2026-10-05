@@ -94,9 +94,9 @@
                     }
                 </select>
             </div>
-            <div class="field-row"><label for="rate">@L["Rate per week"]</label><input id="rate" class="num" type="number" name="targetRatePercentPerWeek" value="@Model.TargetRatePercentPerWeek.Kg()" min="0" max="@ProfileLimits.MaxCutRatePercent.Kg()" step="0.05" inputmode="decimal" /><span class="unit">@L["% of weight"]</span></div>
-            <div class="field-row"><label for="protein">@L["Protein"]</label><input id="protein" class="num" type="number" name="proteinGramsPerKg" value="@Model.ProteinGramsPerKg?.Kg()" placeholder="@L["Auto"]" min="@ProfileLimits.MinProteinGramsPerKg.Kg()" max="@ProfileLimits.MaxProteinGramsPerKg.Kg()" step="0.1" inputmode="decimal" /><span class="unit">@L["g per kg"]</span></div>
-            <div class="field-row"><label for="increment">@L["Weight jump"]</label><input id="increment" class="num" type="number" name="defaultWeightIncrementKg" value="@Model.DefaultWeightIncrementKg.Kg()" min="@ProfileLimits.MinWeightIncrementKg.Kg()" max="@ProfileLimits.MaxWeightIncrementKg.Kg()" step="any" inputmode="decimal" /><span class="unit">@L["kg"]</span></div>
+            <div class="field-row"><label for="rate">@L["Rate per week"]</label><input id="rate" class="num" type="text" name="targetRatePercentPerWeek" value="@Model.TargetRatePercentPerWeek.Kg()" min="0" max="@ProfileLimits.MaxCutRatePercent.Kg()" step="0.05" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /><span class="unit">@L["% of weight"]</span></div>
+            <div class="field-row"><label for="protein">@L["Protein"]</label><input id="protein" class="num" type="text" name="proteinGramsPerKg" value="@Model.ProteinGramsPerKg?.Kg()" placeholder="@L["Auto"]" min="@ProfileLimits.MinProteinGramsPerKg.Kg()" max="@ProfileLimits.MaxProteinGramsPerKg.Kg()" step="0.1" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /><span class="unit">@L["g per kg"]</span></div>
+            <div class="field-row"><label for="increment">@L["Weight jump"]</label><input id="increment" class="num" type="text" name="defaultWeightIncrementKg" value="@Model.DefaultWeightIncrementKg.Kg()" min="@ProfileLimits.MinWeightIncrementKg.Kg()" max="@ProfileLimits.MaxWeightIncrementKg.Kg()" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /><span class="unit">@L["kg"]</span></div>
             <div class="field-row"><label for="timeZoneId">@L["Time zone"]</label><input id="timeZoneId" type="text" name="timeZoneId" value="@Model.TimeZoneId" maxlength="64" autocapitalize="off" spellcheck="false" /></div>
         </div>
         <p class="section-footer">@L["Cuts are capped at 1% and bulks at 0.5% of bodyweight per week. The weight jump is how much is added when every set reaches the top of its range."]</p>
@@ -130,7 +130,7 @@
     <section class="section">
         <h2 class="section-title">@L["Bar and plates"]</h2>
         <div class="list">
-            <div class="field-row"><label for="bar">@L["Bar weight"]</label><input id="bar" class="num" type="number" name="barWeightKg" value="@Model.BarWeightKg.Kg()" min="@ProfileLimits.MinBarWeightKg.Kg()" max="@ProfileLimits.MaxBarWeightKg.Kg()" step="any" inputmode="decimal" /><span class="unit">@L["kg"]</span></div>
+            <div class="field-row"><label for="bar">@L["Bar weight"]</label><input id="bar" class="num" type="text" name="barWeightKg" value="@Model.BarWeightKg.Kg()" min="@ProfileLimits.MinBarWeightKg.Kg()" max="@ProfileLimits.MaxBarWeightKg.Kg()" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /><span class="unit">@L["kg"]</span></div>
             <fieldset class="field-row stacked" style="border: 0; margin: 0">
                 <legend class="sr-only">@L["Plates you have"]</legend>
                 <span aria-hidden="true">@L["Plates you have"]</span>

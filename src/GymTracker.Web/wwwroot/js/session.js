@@ -201,7 +201,8 @@
             clientId: form.querySelector('input[name="clientId"]').value,
             sessionId,
             sessionExerciseId: Number(form.querySelector('input[name="sessionExerciseId"]').value),
-            weightKg: form.querySelector('input[name="weightKg"]').value,
+            // A comma typed on the Bulgarian keypad is stored with a dot, like every number in the app.
+            weightKg: form.querySelector('input[name="weightKg"]').value.trim().replace(",", "."),
             reps: form.querySelector('input[name="reps"]').value,
             isWarmup: form.querySelector('input[name="isWarmup"]').value === "true",
             completedAt: new Date().toISOString(),

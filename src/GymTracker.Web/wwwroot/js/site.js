@@ -377,7 +377,8 @@
         if (!row) {
             return;
         }
-        const grams = parseFloat((row.querySelector('input[name$="Grams"], input[name="grams"]') || {}).value) || 0;
+        // A decimal field may hold a comma (the Bulgarian keypad).
+        const grams = parseFloat(((row.querySelector('input[name$="Grams"], input[name="grams"]') || {}).value || "").replace(",", ".")) || 0;
         const per = row.dataset.per100.split(",").map(Number);
         const out = row.querySelector("[data-totals]");
         if (out) {

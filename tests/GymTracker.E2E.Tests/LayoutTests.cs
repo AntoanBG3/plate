@@ -62,4 +62,21 @@ public class LayoutTests(E2EFixture app)
         (tops.Max() - tops.Min()).Should().BeLessThan(2, "the protein, carbs and fat meters sit on one line");
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Decimals_show_with_a_dot_under_a_Bulgarian_locale_and_a_typed_comma_is_kept_right(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, locale: "bg-BG");
+        var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press");
+        await phone.StartSessionAsync(template);
+        await phone.LogSetAsync(phone.Page.Locator(".rows.working .set-row").First, "62,5", "10");
+        await phone.Page.Locator(".set-row.done").WaitForAsync();
+
+        (await phone.Page.Locator(".set-row.done input[name=weightKg]").InputValueAsync()).Should().Be("62.5");
+        (await phone.Page.Locator(".set-row.done input[name=weightKg]").GetAttributeAsync("type")).Should().Be("text",
+            "a number input shows the device's decimal comma, unlike the rest of the app");
+        phone.ShouldHaveNoErrors();
+    }
 }
