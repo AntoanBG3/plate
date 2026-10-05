@@ -344,7 +344,7 @@ A new account starts with an empty profile, so on first sign-in the user gets a 
 
 **Model call.** `IOnboardingAssistant` in Core, `OpenRouterOnboardingAssistant` in Integrations, with the same request shape, structured output, timeout, retry and error messages as the food parser (6.1). Schema: `reply` (string), `quick_replies` (up to four short strings), and `fields` with every profile field from the list above, each nullable. A third AI task, `onboarding`, has its own model setting; unset, it uses the parser's model.
 
-**Prompt rules.** Warm and brief; one or two questions per turn; say in a few words why each item is needed; for values already known, confirm instead of asking again; never give medical advice or comment on the user's weight; reply in the account's language. Activity level is classified from the user's job, daily steps and training, using the Settings descriptions (section 7); lifting three or four times a week rarely moves someone up a level on its own; when unsure between two levels, ask one follow-up, and if still unsure pick the lower one.
+**Prompt rules.** Warm and brief; one or two questions per turn; say in a few words why each item is needed; for values already known, confirm instead of asking again; never give medical advice or comment on the user's weight; reply in the account's language. Activity level is classified from the user's job, daily steps and training, using the Settings descriptions (section 7); activity is everything on top of daily living, and three or four one-hour lifting sessions a week count for about half a level, added to walking rather than a level by themselves; when unsure between two levels, ask one follow-up, and if still unsure pick the lower one.
 
 **Limits.** Rate limit of 40 chat messages per 10 minutes per user (section 9).
 
@@ -397,12 +397,12 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 
 ### Settings
 - Profile fields from section 4, with the limits in 5.7. Inputs take their `min` and `max` from the same limits.
-- Activity level, one line of explanation per choice (from the NASEM 2023 examples; the step counts are a rough guide):
-  - Inactive: desk job, up to about 7,500 steps a day, little other exercise.
-  - Low active: about 7,500 to 12,000 steps a day, or an hour of exercise most days.
-  - Active: a physical job, or 1.5 to 2 hours of moderate activity a day.
-  - Very active: 2 hours or more of moderate to hard activity a day (manual work plus training, endurance athletes).
-  Under it: "Lifting 3 to 4 times a week rarely moves you up a level on its own; daily movement matters more. Used only until about three weeks of logs give an adaptive estimate."
+- Activity level, one line of explanation per choice. The levels follow NASEM 2023 table 7-1, which defines them as activity on top of daily living (about 30 minutes of walking): low active adds 60 to 80 minutes of brisk walking a day, active about two hours including some vigorous activity, very active more than two hours of vigorous activity. The step counts are a rough conversion.
+  - Inactive: desk job and everyday errands, up to about 8,000 steps a day.
+  - Low active: everyday life plus about an hour of brisk walking or similar every day, roughly 11,000 to 14,000 steps.
+  - Active: everyday life plus about two hours of activity a day, some of it hard (cycling, a sport), or a job on your feet with lifting and carrying.
+  - Very active: more than two hours of hard activity a day (running, cycling, sport), or heavy manual work plus training.
+  Under it: "Lifting 3 to 4 times a week counts for about half a level; add it to your walking. Used only until about three weeks of logs give an adaptive estimate." (An hour of lifting is about 3.5 to 5 MET, so 200 to 320 kcal above rest for 80 kg; four a week is 115 to 185 kcal a day against about 220 kcal between inactive and low active.)
 - Run the setup chat again (section 6.4).
 - Custom exercises.
 - Bar and plates: the profile bar weight and which plates the gym has.

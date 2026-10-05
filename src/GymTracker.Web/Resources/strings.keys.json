@@ -49,9 +49,6 @@
   "A food with that barcode already exists.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
   ],
-  "A physical job, or 1.5 to 2 hours of moderate activity a day.": [
-    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
-  ],
   "A template is the list of exercises for one workout, like Upper A or Legs.": [
     "src/GymTracker.Web/Views/Train/Index.cshtml"
   ],
@@ -63,9 +60,6 @@
   ],
   "About": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
-  ],
-  "About 7,500 to 12,000 steps a day, or an hour of exercise most days.": [
-    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "About the error on the previous page ({0}).": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
@@ -452,7 +446,7 @@
   "Description must be 1 to 200 characters.": [
     "src/GymTracker.Web/Features/Food/FoodLogService.cs"
   ],
-  "Desk job, up to about 7,500 steps a day, little other exercise.": [
+  "Desk job and everyday errands, up to about 8,000 steps a day.": [
     "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "Did this read your food right?": [
@@ -541,6 +535,12 @@
   ],
   "Estimated one-rep max per session": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
+  ],
+  "Everyday life plus about an hour of brisk walking or similar every day, roughly 11,000 to 14,000 steps.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
+  ],
+  "Everyday life plus about two hours of activity a day, some of it hard (cycling, a sport), or a job on your feet with lifting and carrying.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "Exercise": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
@@ -782,7 +782,7 @@
   "Let's set you up": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
-  "Lifting 3 to 4 times a week rarely moves you up a level on its own; daily movement matters more. Used only until about three weeks of logs give an adaptive estimate.": [
+  "Lifting 3 to 4 times a week counts for about half a level; add it to your walking. Used only until about three weeks of logs give an adaptive estimate.": [
     "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "Light": [
@@ -891,6 +891,9 @@
   ],
   "Missed a food": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "More than two hours of hard activity a day (running, cycling, sport), or heavy manual work plus training.": [
+    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "Move down": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
@@ -1843,9 +1846,6 @@
   ],
   "Try again. If it keeps happening, the server may be restarting.": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
-  ],
-  "Two hours or more of moderate to hard activity a day: manual work plus training, endurance athletes.": [
-    "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
   ],
   "Type": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"

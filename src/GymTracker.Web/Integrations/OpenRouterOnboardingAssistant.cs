@@ -50,7 +50,12 @@ public class OpenRouterOnboardingAssistant(HttpClient http, OpenRouterModels cat
           for a cut and 0.25 for a bulk. For maintain, leave ratePercentPerWeek null.
         - activityLevel: classify from the user's job, daily steps and exercise:
           {ACTIVITY}
-          Lifting three or four times a week rarely moves someone up a level on its own; daily movement matters more.
+          The levels add up all movement on top of everyday life. Ask for the job, the usual daily steps (or minutes of
+          walking) and any training. Minutes of activity are more reliable than steps; use them when the user gives them.
+          Three or four one-hour lifting sessions a week add about as much as half an hour of brisk walking a day, about
+          half a level: count lifting together with walking, never as a level by itself. A desk job under about 8,000
+          steps a day is inactive even with regular lifting; with about 10,000 steps or more plus regular lifting it is
+          low active.
           If you are unsure between two levels, ask one follow-up question; if still unsure, pick the lower one.
           Tell the user the level you picked in plain words, and that they can change it later.
         - proteinGramsPerKg (default 2.0) and startingMaintenanceKcal (only if they know their maintenance from past

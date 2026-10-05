@@ -66,7 +66,7 @@ public class OnboardingAssistantTests
         system.Should().Contain("Still missing: birthYear (age), heightCm, weightKg, activityLevel, goal");
         system.Should().Contain("Refused from the last answer, ask again: heightCm: Height must be between 120 and 230 cm.");
         system.Should().Contain("Bulgarian").And.Contain("age 18 to 100 (born 1926 to 2008)");
-        system.Should().Contain("low_active: About 7,500 to 12,000 steps a day");
+        system.Should().Contain("low_active: Everyday life plus about an hour of brisk walking").And.Contain("never as a level by itself");
     }
 
     [Fact]
