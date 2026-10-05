@@ -42,25 +42,18 @@
         });
     }
 
-    // Settings that apply as soon as they change. A theme change previews at once with a crossfade, then saves.
+    // Settings that apply as soon as they change. A theme change shows at once, then saves: a crossfade between the
+    // two themes passed through a muddy grey with doubled text (Phase 11), so there is none.
     document.addEventListener("change", (event) => {
         const form = event.target.closest("form[data-autosubmit]");
         if (!form) {
             return;
         }
         const theme = event.target.dataset.themePreview;
-        const submit = () => form.requestSubmit();
-        if (!theme) {
-            submit();
-            return;
+        if (theme) {
+            document.documentElement.dataset.theme = theme;
         }
-        const apply = () => { document.documentElement.dataset.theme = theme; };
-        if (document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-            document.startViewTransition(apply).finished.then(submit, submit);
-        } else {
-            apply();
-            submit();
-        }
+        form.requestSubmit();
     });
 
     // Destructive and final forms ask first, in the app's own sheet (SPEC 7). Capture phase, so it runs before the busy

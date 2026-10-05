@@ -156,15 +156,21 @@ a.section-aside { color: var(--accent-text) !important; }
 .row-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
+/* A field the browser scrolls to (a missing value on Save) stops below the top bar and above the tab bar. */
+:where(input, select, textarea, .segmented, fieldset) {
+    scroll-margin-top: calc(env(safe-area-inset-top) + 64px);
+    scroll-margin-bottom: calc(env(safe-area-inset-bottom) + 49px + var(--s-4));
+}
+
 /* Rows that hold a form field: label on the left, the value editable on the right. */
 .field-row { display: flex; align-items: center; gap: var(--s-3); min-height: 44px; padding: 6px var(--s-4); position: relative; }
 .field-row > label, .field-row > .field-label { flex: 1; min-width: 0; }
 .field-row input, .field-row select {
     /* 44 px to tap; the negative margin lets the box reach into the row's padding without making the row taller. */
     flex: 0 1 50%; min-width: 0; min-height: 44px; margin: -6px 0; border: 0; background: none; outline: none; padding: 0;
-    text-align: right; color: var(--label-2); font-size: var(--text-body);
+    /* Typed values in the label colour; placeholders stay grey (--label-3), so an empty field reads as empty. */
+    text-align: right; color: var(--label); font-size: var(--text-body);
 }
-.field-row input:focus { color: var(--label); }
 .field-row input::placeholder { color: var(--label-3); }
 .field-row select { -webkit-appearance: none; appearance: none; color: var(--accent-text); text-align-last: right; cursor: pointer; }
 .field-row input[type="number"] { flex: 0 1 6ch; }
@@ -228,11 +234,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
     position: relative; flex: 1; min-height: 40px; display: grid; place-items: center; padding: 0 var(--s-2);
     border-radius: 7px; color: var(--label); font-size: var(--text-footnote); font-weight: var(--weight-semibold); text-align: center; line-height: 1.15;
 }
-.segment.is-active, .segment:has(:checked) { background: var(--surface-2); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); }
+.segment.is-active, .segment:has(:checked) { background: var(--segment-thumb); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); }
 /* One sliding thumb per page: a view-transition-name must be unique, or the whole transition is skipped. */
 .segmented[data-thumb] .segment.is-active, .segmented[data-thumb] .segment:has(:checked) { view-transition-name: segment-thumb; }
-:root[data-theme="light"] .segment.is-active, :root[data-theme="light"] .segment:has(:checked) { background: var(--surface); }
-@media (prefers-color-scheme: light) { :root[data-theme="system"] .segment.is-active, :root[data-theme="system"] .segment:has(:checked) { background: var(--surface); } }
 .segment input { position: absolute; opacity: 0; pointer-events: none; }
 /* Reaches over the control's 2 px padding so each segment is 44 px tall to tap. */
 .segment::before { content: ""; position: absolute; inset: -2px -1px; }
@@ -309,7 +313,7 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .gauge { position: relative; text-align: center; color: inherit; }
 .gauge svg { width: 100%; max-width: 172px; aspect-ratio: 150 / 128; margin: 0 auto; }
 .gauge path { fill: none; stroke-width: 12; stroke-linecap: round; }
-.gauge .track { stroke: var(--fill); }
+.gauge .track { stroke: var(--meter-track); }
 .gauge .bar-kcal { stroke: var(--accent); }
 .gauge .bar-protein { stroke: var(--label); }
 .gauge.over .bar-kcal { stroke: var(--destructive); }
@@ -368,7 +372,7 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .targets-how ul { margin: var(--s-2) 0 0; padding-left: 1.1em; display: grid; gap: var(--s-2); }
 .macro-card { padding: var(--s-4); }
 .macro-main { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
-.meter { height: 6px; border-radius: 3px; background: var(--fill); margin: var(--s-3) 0 var(--s-4); overflow: hidden; }
+.meter { height: 6px; border-radius: 3px; background: var(--meter-track); margin: var(--s-3) 0 var(--s-4); overflow: hidden; }
 .meter.small { position: relative; height: 4px; margin: var(--s-2) 0 0; }
 .meter.small i { background: var(--label); }
 .meter.over i { background: var(--warning); }
@@ -791,7 +795,8 @@ html[data-nav]::view-transition-new(topbar) { animation: 200ms var(--ease-out) 6
 html[data-nav="forward"]::view-transition-group(large-title), html[data-nav="back"]::view-transition-group(large-title) { animation: none; }
 html[data-nav="forward"]::view-transition-old(large-title), html[data-nav="back"]::view-transition-old(large-title) { animation: 120ms var(--ease-out) both vt-fade-out; }
 html[data-nav="forward"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-push-in; }
-html[data-nav="back"]::view-transition-new(large-title) { animation: 200ms var(--ease-out) both vt-fade-in; }
+/* On Back the returning title travels with its page instead of appearing in place while the page slides in. */
+html[data-nav="back"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-pop-in; }
 @keyframes vt-tab-out { to { opacity: 0; transform: scale(0.985); } }
 @keyframes vt-tab-in { from { opacity: 0; transform: translateY(8px); } }
 

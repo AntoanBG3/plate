@@ -180,7 +180,7 @@
     }
     scrollToFocus();
 
-    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant }) {
+    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant, same }) {
         const next = doc.documentElement;
         const nextShell = doc.querySelector(".app-scale");
         const shell = document.querySelector(".app-scale");
@@ -197,7 +197,8 @@
             await loadScript(s.getAttribute("src"));
         }
 
-        const nav = navType(root.dataset.tab, Number(root.dataset.depth || 0), next.dataset.tab, Number(next.dataset.depth || 0), isBack, side);
+        // The same page shown again after a change on it ("same") isn't arriving anywhere: no entrance (motion.js).
+        const nav = same ? "same" : navType(root.dataset.tab, Number(root.dataset.depth || 0), next.dataset.tab, Number(next.dataset.depth || 0), isBack, side);
         const keepTabbar = !!shell.querySelector(".tabbar") && !!nextShell.querySelector(".tabbar");
 
         const apply = () => {
@@ -273,7 +274,8 @@
             if (keepScroll && finalUrl.pathname === location.pathname && finalUrl.search === location.search) {
                 scrollY = window.scrollY;
             }
-            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant });
+            const same = finalUrl.pathname === location.pathname && finalUrl.search === location.search;
+            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant, same });
         } catch (error) {
             if (error instanceof FullLoad) {
                 location.href = error.url;
@@ -323,6 +325,8 @@
         go(action, {
             init: { method: "POST", body },
             keepScroll: true,
+            // A form that changes the whole look (the theme) comes back without a page transition.
+            instant: form.hasAttribute("data-instant"),
             // No answer: the change may or may not have been saved, so say so instead of sending it again.
             fallback: () => window.gymToast(t("No connection. That change was not saved; try again when you have signal.")),
         }).finally(() => {
