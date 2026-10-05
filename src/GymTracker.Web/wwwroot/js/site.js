@@ -230,6 +230,68 @@
         link.setAttribute("href", url.pathname + url.search);
     }, true);
 
+    // ---- reorder mode: drag a handle, or use the up and down buttons; the hidden ids are sent in screen order ----
+
+    let dragging = null;
+    document.addEventListener("pointerdown", (event) => {
+        const handle = event.target.closest("[data-reorder] .drag-handle");
+        if (!handle) {
+            return;
+        }
+        event.preventDefault();
+        const item = handle.closest("li");
+        handle.setPointerCapture(event.pointerId);
+        dragging = { item, list: item.parentElement, y: event.clientY };
+        item.classList.add("is-dragging");
+    });
+    document.addEventListener("pointermove", (event) => {
+        if (!dragging) {
+            return;
+        }
+        const { item, list } = dragging;
+        const follow = () => { item.style.transform = `translateY(${event.clientY - dragging.y}px)`; };
+        follow();
+        // Swap with a neighbour while the item's middle is past the neighbour's, keeping it under the finger.
+        for (let moved = true; moved;) {
+            moved = false;
+            const mid = item.getBoundingClientRect().top + item.offsetHeight / 2;
+            const prev = item.previousElementSibling;
+            const next = item.nextElementSibling;
+            if (prev && mid < prev.getBoundingClientRect().top + prev.offsetHeight / 2) {
+                list.insertBefore(item, prev);
+                dragging.y -= prev.offsetHeight;
+                moved = true;
+            } else if (next && mid > next.getBoundingClientRect().top + next.offsetHeight / 2) {
+                list.insertBefore(next, item);
+                dragging.y += next.offsetHeight;
+                moved = true;
+            }
+            follow();
+        }
+    });
+    for (const name of ["pointerup", "pointercancel"]) {
+        document.addEventListener(name, () => {
+            if (dragging) {
+                dragging.item.style.transform = "";
+                dragging.item.classList.remove("is-dragging");
+                dragging = null;
+            }
+        });
+    }
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-reorder] [data-move]");
+        if (!button) {
+            return;
+        }
+        const item = button.closest("li");
+        if (button.dataset.move === "-1" && item.previousElementSibling) {
+            item.parentElement.insertBefore(item, item.previousElementSibling);
+        } else if (button.dataset.move === "1" && item.nextElementSibling) {
+            item.parentElement.insertBefore(item.nextElementSibling, item);
+        }
+        button.focus();
+    });
+
     // A template renamed in place: its titles follow (the large title, the compact one, the tab's).
     document.body.addEventListener("gym:renamed", (event) => {
         const name = event.detail.name;

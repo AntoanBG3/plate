@@ -120,6 +120,30 @@ public class TemplateService(AppDbContext db, ICurrentUser currentUser, TimeProv
         await db.SaveChangesAsync(ct);
     }
 
+    /// <summary>Puts the template's exercises in the given order (Reorder mode); the ids must be exactly its exercises.</summary>
+    public async Task ReorderAsync(int templateId, IReadOnlyList<int> orderedIds, CancellationToken ct)
+    {
+        await FindAsync(templateId, ct);
+        var items = await db.TemplateExercises.Where(e => e.TemplateId == templateId).ToListAsync(ct);
+        ApplyOrder(items, orderedIds, e => e.Id, (e, i) => e.SortOrder = i);
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Numbers <paramref name="items"/> in the order of <paramref name="orderedIds"/>, which must name each once.</summary>
+    internal static void ApplyOrder<T>(List<T> items, IReadOnlyList<int> orderedIds, Func<T, int> id, Action<T, int> setOrder)
+    {
+        if (orderedIds.Count != items.Count || orderedIds.Distinct().Count() != items.Count || !items.Select(id).ToHashSet().SetEquals(orderedIds))
+        {
+            throw new ValidationException("The list changed while you were reordering. Try again.");
+        }
+
+        var byId = items.ToDictionary(id);
+        for (var i = 0; i < orderedIds.Count; i++)
+        {
+            setOrder(byId[orderedIds[i]], i);
+        }
+    }
+
     public async Task MoveExerciseAsync(int templateExerciseId, int direction, CancellationToken ct)
     {
         var item = await FindExerciseAsync(templateExerciseId, ct);

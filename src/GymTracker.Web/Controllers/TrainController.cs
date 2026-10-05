@@ -110,6 +110,21 @@ public class TrainController(
         return Redirect($"/train/sessions/{id}");
     }
 
+    [HttpGet("sessions/{id:int}/reorder")]
+    public async Task<IActionResult> Reorder(int id, CancellationToken ct)
+    {
+        var session = await sessions.GetAsync(id, ct);
+        return View("Reorder", new ReorderViewModel($"/train/sessions/{id}/order", $"/train/sessions/{id}",
+            session.Exercises.Select(e => (e.Id, localizer.Exercise(e.Exercise))).ToList()));
+    }
+
+    [HttpPost("sessions/{id:int}/order")]
+    public async Task<IActionResult> Order(int id, List<int> ids, CancellationToken ct)
+    {
+        await sessions.ReorderAsync(id, ids, ct);
+        return Redirect($"/train/sessions/{id}");
+    }
+
     [HttpGet("session-exercises/{id:int}/swap")]
     public async Task<IActionResult> Swap(int id, CancellationToken ct)
     {

@@ -11,6 +11,10 @@
     <div class="menu-wrap">
         <button type="button" class="icon-btn" data-menu-trigger aria-expanded="false" aria-label="@L["Actions for {0}", template.Name]">@Ui.Icon("more")</button>
         <div class="menu" role="menu">
+            @if (template.Exercises.Count > 1)
+            {
+                <a href="/train/templates/@template.Id/reorder" role="menuitem">@L["Reorder exercises"]@Ui.Icon("reorder")</a>
+            }
             <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/duplicate"><button type="submit" role="menuitem">@L["Duplicate"]@Ui.Icon("copy")</button></form>
             <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/archive" data-confirm="@L["Archive this template? Past workouts keep their history."]" data-confirm-action="@L["Archive"]"><button type="submit" role="menuitem" class="danger">@L["Archive template"]@Ui.Icon("trash")</button></form>
         </div>

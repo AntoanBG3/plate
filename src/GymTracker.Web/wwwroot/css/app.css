@@ -644,6 +644,14 @@ form.is-unsaved > .autosave-status [data-state="unsaved"] { color: var(--destruc
 .pick-added { display: inline-flex; align-items: center; gap: 2px; }
 .pick-added .icon { width: 12px; height: 12px; }
 .pick-bar { position: sticky; z-index: 5; bottom: calc(env(safe-area-inset-bottom) + 49px + var(--s-3)); margin-top: var(--s-5); }
+/* Reorder mode: a handle to drag (no scrolling from it), and up and down buttons. */
+.reorder-list { padding: 0; }
+.reorder-item { gap: var(--s-2); padding-right: var(--s-2); touch-action: auto; }
+.reorder-item.is-dragging { z-index: 2; box-shadow: var(--shadow-float); transition: none; }
+.reorder-item:not(.is-dragging) { transition: transform var(--dur-small) var(--ease-out); }
+.drag-handle { display: grid; place-items: center; width: var(--tap); height: var(--tap); margin-left: calc(var(--s-2) * -1); color: var(--label-3); touch-action: none; cursor: grab; }
+.drag-handle .icon { width: 20px; height: 20px; }
+.reorder-item:first-child [data-move="-1"], .reorder-item:last-child [data-move="1"] { visibility: hidden; }
 /* The app's "are you sure" sheet (site.js). */
 .confirm-text { margin: var(--s-2) var(--s-2) var(--s-5); font-size: var(--text-body); text-align: center; color: var(--label); }
 .menu .icon { width: 20px; height: 20px; }

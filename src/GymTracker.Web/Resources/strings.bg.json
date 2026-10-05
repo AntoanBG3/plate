@@ -803,5 +803,10 @@
   "New exercise": "Ново упражнение",
   "No custom exercises": "Няма твои упражнения",
   "Secondary muscles count as half a set in the weekly sets chart.": "Второстепенните мускули се броят за половин серия в графиката на седмичните серии.",
-  "There is already an exercise called {0}.": "Вече има упражнение „{0}“."
+  "There is already an exercise called {0}.": "Вече има упражнение „{0}“.",
+  "Reorder": "Подреди",
+  "Reorder exercises": "Подреди упражненията",
+  "Move {0} up": "Премести „{0}“ нагоре",
+  "Move {0} down": "Премести „{0}“ надолу",
+  "The list changed while you were reordering. Try again.": "Списъкът се промени, докато подреждаше. Опитай пак."
 }

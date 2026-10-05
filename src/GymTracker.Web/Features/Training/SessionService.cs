@@ -276,6 +276,15 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         return item.SessionId;
     }
 
+    /// <summary>Puts the session's exercises in the given order (Reorder mode); the ids must be exactly its exercises.</summary>
+    public async Task ReorderAsync(int sessionId, IReadOnlyList<int> orderedIds, CancellationToken ct)
+    {
+        _ = await db.Sessions.SingleOrDefaultAsync(s => s.Id == sessionId, ct) ?? throw new NotFoundException();
+        var items = await db.SessionExercises.Where(e => e.SessionId == sessionId).ToListAsync(ct);
+        TemplateService.ApplyOrder(items, orderedIds, e => e.Id, (e, i) => e.SortOrder = i);
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task<int> MoveExerciseAsync(int sessionExerciseId, int direction, CancellationToken ct)
     {
         var item = await db.SessionExercises.SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct) ?? throw new NotFoundException();

@@ -128,6 +128,9 @@ public record ExercisePickerViewModel(
     IReadOnlySet<int>? AlreadyIn = null,
     string? AddTo = null);
 
+/// <summary>Reorder mode for a template's or a session's exercises.</summary>
+public record ReorderViewModel(string PostUrl, string BackUrl, IReadOnlyList<(int Id, string Name)> Items);
+
 /// <summary>A custom exercise's form: new (Id null) or existing. AddTo is where a new one goes after it is made.</summary>
 public record CustomExerciseViewModel(int? Id, string Name, Muscle PrimaryMuscle, Equipment Equipment, IReadOnlyList<Muscle> SecondaryMuscles, (string Kind, int Id)? AddTo);
 

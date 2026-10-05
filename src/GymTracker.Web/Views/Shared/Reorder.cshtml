@@ -1,0 +1,26 @@
+@model ReorderViewModel
+@{
+    ViewData["Title"] = L["Reorder"];
+    ViewData["BackUrl"] = Model.BackUrl;
+    ViewData["BackLabel"] = L["Cancel"];
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Reorder"]</h1>
+</header>
+
+@* Drag a handle, or use the up and down buttons; nothing is saved until Done (site.js). *@
+<form method="post" asp-antiforgery="true" action="@Model.PostUrl" data-reorder>
+    <ol class="list reorder-list">
+        @foreach (var item in Model.Items)
+        {
+            <li class="row reorder-item">
+                <input type="hidden" name="ids" value="@item.Id" />
+                <span class="drag-handle" aria-hidden="true">@Ui.Icon("reorder")</span>
+                <span class="row-main row-title">@item.Name</span>
+                <button type="button" class="icon-btn" data-move="-1" aria-label="@L["Move {0} up", item.Name]">@Ui.Icon("up")</button>
+                <button type="button" class="icon-btn" data-move="1" aria-label="@L["Move {0} down", item.Name]">@Ui.Icon("down")</button>
+            </li>
+        }
+    </ol>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Done"]</button>
+</form>

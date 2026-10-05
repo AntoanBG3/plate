@@ -71,6 +71,21 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
         return Redirect($"/train/templates/{copy.Id}");
     }
 
+    [HttpGet("{id:int}/reorder")]
+    public async Task<IActionResult> Reorder(int id, CancellationToken ct)
+    {
+        var template = await templates.GetAsync(id, ct);
+        return View("Reorder", new ReorderViewModel($"/train/templates/{id}/order", $"/train/templates/{id}",
+            template.Exercises.OrderBy(e => e.SortOrder).Select(e => (e.Id, localizer.Exercise(e.Exercise))).ToList()));
+    }
+
+    [HttpPost("{id:int}/order")]
+    public async Task<IActionResult> Order(int id, List<int> ids, CancellationToken ct)
+    {
+        await templates.ReorderAsync(id, ids, ct);
+        return Redirect($"/train/templates/{id}");
+    }
+
     [HttpGet("{id:int}/add-exercise")]
     public async Task<IActionResult> AddExercise(int id, CancellationToken ct)
     {

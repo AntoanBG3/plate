@@ -379,6 +379,7 @@
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
     "src/GymTracker.Web/Views/SettingsExercises/Edit.cshtml",
     "src/GymTracker.Web/Views/Shared/ExercisePicker.cshtml",
+    "src/GymTracker.Web/Views/Shared/Reorder.cshtml",
     "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
@@ -563,6 +564,7 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Done": [
+    "src/GymTracker.Web/Views/Shared/Reorder.cshtml",
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml",
     "src/GymTracker.Web/Views/Train/Session.cshtml",
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
@@ -1073,6 +1075,12 @@
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
+  "Move {0} down": [
+    "src/GymTracker.Web/Views/Shared/Reorder.cshtml"
+  ],
+  "Move {0} up": [
+    "src/GymTracker.Web/Views/Shared/Reorder.cshtml"
+  ],
   "Name": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
@@ -1498,6 +1506,13 @@
   "Rename": [
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
     "src/GymTracker.Web/Views/SettingsExercises/Edit.cshtml"
+  ],
+  "Reorder": [
+    "src/GymTracker.Web/Views/Shared/Reorder.cshtml"
+  ],
+  "Reorder exercises": [
+    "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
   "Rep range must be between 1 and 100, with the minimum not above the maximum.": [
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
@@ -1983,6 +1998,9 @@
   ],
   "The food parser took too long. Try again, or enter the food by hand.": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The list changed while you were reordering. Try again.": [
+    "src/GymTracker.Web/Features/Training/TemplateService.cs"
   ],
   "The model returned no food for \"1 banana\".": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"

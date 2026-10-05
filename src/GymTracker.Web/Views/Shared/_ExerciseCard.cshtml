@@ -32,6 +32,10 @@
                 {
                     <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" role="menuitem">@L["Move down"]@Ui.Icon("down")</button></form>
                 }
+                @if (!(Model.IsFirst && Model.IsLast))
+                {
+                    <a href="/train/sessions/@Ex.SessionId/reorder" role="menuitem">@L["Reorder exercises"]@Ui.Icon("reorder")</a>
+                }
                 <button type="button" role="menuitem" hx-get="/train/exercises/@Ex.ExerciseId/settings?returnUrl=@Uri.EscapeDataString($"/train/sessions/{Ex.SessionId}")" hx-target="#exercise-sheet-body" hx-swap="innerHTML" data-sheet-open="exercise-sheet">@L["Notes & bar"]@Ui.Icon("pencil")</button>
                 @if (Ex.Sets.Count == 0)
                 {
