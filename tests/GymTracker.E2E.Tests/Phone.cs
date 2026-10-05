@@ -10,6 +10,8 @@ public sealed class Phone : IAsyncDisposable
     private const string InitScript = """
         window.__gymPages = 0;
         document.addEventListener("gym:page", () => { window.__gymPages++; });
+        // The app asks in its own sheet (SPEC 7); a native dialog would also block the test.
+        window.confirm = () => { console.error("window.confirm was called"); return false; };
         """;
 
     private readonly E2EFixture app;

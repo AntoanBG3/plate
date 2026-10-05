@@ -6,6 +6,16 @@
     ViewData["BackLabel"] = L["Templates"];
     var items = template.Exercises.OrderBy(e => e.SortOrder).ToList();
 }
+@section TopbarTrailing {
+    @* Duplicate and Archive live here, away from Add exercise (Phase 11). *@
+    <div class="menu-wrap">
+        <button type="button" class="icon-btn" data-menu-trigger aria-expanded="false" aria-label="@L["Actions for {0}", template.Name]">@Ui.Icon("more")</button>
+        <div class="menu" role="menu">
+            <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/duplicate"><button type="submit" role="menuitem">@L["Duplicate"]@Ui.Icon("copy")</button></form>
+            <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/archive" data-confirm="@L["Archive this template? Past workouts keep their history."]" data-confirm-action="@L["Archive"]"><button type="submit" role="menuitem" class="danger">@L["Archive template"]@Ui.Icon("trash")</button></form>
+        </div>
+    </div>
+}
 <header class="page-head">
     <h1 class="large-title">@template.Name</h1>
 </header>
@@ -60,9 +70,6 @@
 
 <div class="btn-stack" style="margin-top: var(--s-6)">
     <a class="btn btn-secondary" href="/train/templates/@template.Id/add-exercise">@Ui.Icon("plus")@L["Add exercise"]</a>
-    <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/archive" data-confirm="@L["Archive this template? Past workouts keep their history."]">
-        <button type="submit" class="btn btn-destructive btn-block">@L["Archive template"]</button>
-    </form>
 </div>
 
 @section Overlays {

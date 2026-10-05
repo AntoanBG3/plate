@@ -63,13 +63,47 @@
         }
     });
 
-    // Destructive forms ask first. Capture phase, so it runs before the busy state and soft navigation.
+    // Destructive and final forms ask first, in the app's own sheet (SPEC 7). Capture phase, so it runs before the busy
+    // state and soft navigation; once confirmed, the form is sent again with the same button and goes through.
+    // data-confirm-action labels the button (else the form's own button text); data-confirm-style="primary" for an
+    // action that isn't destructive (Finish). Finish says how many planned sets aren't logged.
+    function confirmText(form) {
+        if (form.dataset.confirmUnloggedMany) {
+            const blank = document.querySelectorAll(".rows.working form[data-log-set]:not(.pending)").length;
+            if (blank === 1) {
+                return form.dataset.confirmUnloggedOne;
+            }
+            if (blank > 1) {
+                return form.dataset.confirmUnloggedMany.replace("{0}", String(blank));
+            }
+        }
+        return form.dataset.confirm;
+    }
+
     document.addEventListener("submit", (event) => {
         const form = event.target.closest("form[data-confirm]");
-        if (form && !window.confirm(form.dataset.confirm)) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
+        if (!form) {
+            return;
         }
+        if (form.dataset.confirmed === "true") {
+            delete form.dataset.confirmed;
+            return;
+        }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const sheet = document.getElementById("confirm-sheet");
+        const submitter = event.submitter;
+        sheet.querySelector("[data-confirm-text]").textContent = confirmText(form);
+        const yes = sheet.querySelector("[data-confirm-yes]");
+        yes.textContent = form.dataset.confirmAction || (submitter && submitter.textContent.trim()) || t("OK");
+        yes.className = "btn btn-block " + (form.dataset.confirmStyle === "primary" ? "btn-primary" : "btn-destructive");
+        yes.onclick = () => {
+            yes.onclick = null;
+            window.gymSheet.hide();
+            form.dataset.confirmed = "true";
+            form.requestSubmit(submitter && submitter.form === form ? submitter : undefined);
+        };
+        window.gymSheet.show(sheet);
     }, true);
 
     // Forms that take a while (the food text parser): show the busy state and stop a second send.

@@ -11,7 +11,7 @@
 @section TopbarTrailing {
     @if (session.IsActive)
     {
-        <form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/finish" data-confirm="@L["Finish this workout?"]">
+        <form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/finish" data-confirm="@L["Finish this workout?"]" data-confirm-unlogged-one="@L["1 planned set isn't logged. Finish anyway?"]" data-confirm-unlogged-many="@L["{0} planned sets aren't logged. Finish anyway?"]" data-confirm-action="@L["Finish"]" data-confirm-style="primary">
             <button type="submit" class="topbar-action">@L["Finish"]</button>
         </form>
     }

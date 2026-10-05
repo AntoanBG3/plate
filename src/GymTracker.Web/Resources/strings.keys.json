@@ -15,6 +15,9 @@
   "1 new reply": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "1 planned set isn't logged. Finish anyway?": [
+    "src/GymTracker.Web/Views/Train/Session.cshtml"
+  ],
   "1 set": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml",
@@ -196,6 +199,9 @@
   "Appearance": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Archive": [
+    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+  ],
   "Archive template": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
@@ -344,7 +350,8 @@
     "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
     "src/GymTracker.Web/Views/Shared/ExercisePicker.cshtml",
-    "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
+    "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml",
+    "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
   "Carbs": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
@@ -533,6 +540,7 @@
     "exercise"
   ],
   "Duplicate": [
+    "src/GymTracker.Web/Views/Templates/Edit.cshtml",
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
   "Duration": [
@@ -1171,6 +1179,9 @@
   ],
   "Nutrition values can't be negative.": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
+  ],
+  "OK": [
+    "wwwroot/js"
   ],
   "Oats, skyr, кашкавал…": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
@@ -2459,6 +2470,9 @@
   "{0} of {1} kcal": [
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "{0} planned sets aren't logged. Finish anyway?": [
+    "src/GymTracker.Web/Views/Train/Session.cshtml"
   ],
   "{0} sets": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml",
