@@ -53,8 +53,9 @@
         var left = kcal - (int)Math.Round(eaten.Kcal);
         var eatenP = (int)Math.Round(eaten.ProteinG);
         var macros = t.Macros;
-        var belowMin = macros is not null && eatenP < macros.ProteinMinG;
-        var leftP = belowMin ? macros!.ProteinMinG - eatenP : protein - eatenP;
+        // The ring counts toward the aim and marks the minimum (SPEC 7); the minimum is the caption under it.
+        var leftP = protein - eatenP;
+        var minReached = macros is not null && eatenP >= macros.ProteinMinG;
         <div class="gauges">
             <div class="gauge@(left < 0 ? " over" : "")">
                 <svg viewBox="0 0 150 128" aria-hidden="true"><path class="track" d="@Arc"/><path class="bar-kcal" d="@Arc" data-progress="@Share(eaten.Kcal, kcal)"/></svg>
@@ -70,7 +71,14 @@
                     }</svg>
                 <div class="gauge-center">
                     <div class="gauge-value num"><span data-count="@Math.Max(0, leftP)">@Math.Max(0, leftP)</span><small> @L["g"]</small></div>
-                    <div class="gauge-label">@(belowMin ? L["to your protein minimum"] : L["protein left"])</div>
+                    <div class="gauge-label">@L["protein left"]</div>
+                    @if (macros is not null && macros.ProteinMinG < protein)
+                    {
+                        <div class="gauge-sub num@(minReached ? " reached" : "")" data-protein-min>@if (minReached)
+                            {
+                                @Ui.Icon("check", "icon-sm")
+                            }@L["min {0} g", macros.ProteinMinG]</div>
+                    }
                 </div>
             </div>
         </div>
@@ -257,7 +265,7 @@ else if (Model.Weekly.CanWrite)
     </div>
     @if (Model.TodayWeight is not null)
     {
-        <p class="section-footer">@L["Logged today: {0} kg, trend {1} kg", Model.TodayWeight.WeightKg.Kg(), t.TrendWeightKg?.Kg(1)]</p>
+        <p class="section-footer">@L["Logged today: {0} kg", Model.TodayWeight.WeightKg.Kg()]</p>
     }
     else if (Model.LatestWeight is not null)
     {

@@ -238,8 +238,10 @@
         }
         root.dataset.nav = nav;
         const transition = document.startViewTransition(apply);
+        // A transition is skipped when the page is hidden or the viewport changes mid-way; the page is still swapped.
+        transition.ready.catch(() => {});
         current = transition;
-        transition.finished.finally(() => {
+        transition.finished.catch(() => {}).finally(() => {
             if (current === transition) {
                 current = null;
                 delete root.dataset.nav;

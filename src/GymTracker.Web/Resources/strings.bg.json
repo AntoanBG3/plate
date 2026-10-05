@@ -831,5 +831,7 @@
   "Nothing matches.": "Нищо не съвпада.",
   "Digits under the barcode": "Цифрите под баркода",
   "EAN-13, EAN-8, UPC-A or UPC-E: 8, 12 or 13 digits.": "EAN-13, EAN-8, UPC-A или UPC-E: 8, 12 или 13 цифри.",
-  "Working sets per muscle, this week ({0}–{1}) against last week. Secondary muscles count as half a set.": "Работни серии по мускул, тази седмица ({0}–{1}) спрямо миналата. Второстепенните мускули се броят за половин серия."
+  "Working sets per muscle, this week ({0}–{1}) against last week. Secondary muscles count as half a set.": "Работни серии по мускул, тази седмица ({0}–{1}) спрямо миналата. Второстепенните мускули се броят за половин серия.",
+  "Logged today: {0} kg": "Записано днес: {0} кг",
+  "{0} kg over this range": "{0} кг за този период"
 }

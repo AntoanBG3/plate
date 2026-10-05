@@ -520,6 +520,7 @@
     "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml"
   ],
   "Delete": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
   ],
   "Delete entry": [
@@ -986,7 +987,7 @@
   "Log your weight to get a target for your goal.": [
     "src/GymTracker.Web/Features/Food/NutritionTargets.cs"
   ],
-  "Logged today: {0} kg, trend {1} kg": [
+  "Logged today: {0} kg": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Logging workouts": [
@@ -2137,10 +2138,8 @@
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "wwwroot/js"
   ],
-  "Trend now:": [
-    "src/GymTracker.Web/Views/Progress/Index.cshtml"
-  ],
   "Trend weight": [
+    "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Triceps": [
@@ -2512,9 +2511,6 @@
   "saturated fat": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
-  "to your protein minimum": [
-    "src/GymTracker.Web/Views/Today/Index.cshtml"
-  ],
   "{0} (copy)": [
     "src/GymTracker.Web/Controllers/TemplatesController.cs"
   ],
@@ -2581,6 +2577,9 @@
   ],
   "{0} kg in total": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "{0} kg over this range": [
+    "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
   "{0} kg this week": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"

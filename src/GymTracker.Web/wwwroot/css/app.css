@@ -307,7 +307,7 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 /* ---------- metrics ---------- */
 
 .metric-value { font-size: var(--text-metric); line-height: 1; font-weight: var(--weight-semibold); }
-.metric-unit { font-size: var(--text-title-3); font-weight: var(--weight-semibold); color: var(--label-2); margin-left: 2px; }
+.metric-unit { font-size: var(--text-title-3); font-weight: var(--weight-semibold); color: var(--label-2); margin-left: 0.2em; }
 .metric-label { font-size: var(--text-subhead); color: var(--label-2); margin-top: 4px; }
 
 .gauges { display: grid; grid-template-columns: 1fr 1fr; padding: var(--s-5) var(--s-3) var(--s-1); }
@@ -315,6 +315,9 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .gauge svg { width: 100%; max-width: 172px; aspect-ratio: 150 / 128; margin: 0 auto; }
 .gauge path { fill: none; stroke-width: 12; stroke-linecap: round; }
 .gauge .track { stroke: var(--meter-track); }
+.gauge-sub { display: inline-flex; align-items: center; gap: 2px; margin-top: 2px; font-size: var(--text-caption); color: var(--label-2); }
+.gauge-sub.reached { color: var(--success); }
+.gauge-sub .icon { width: 12px; height: 12px; }
 .gauge .bar-kcal { stroke: var(--accent); }
 .gauge .bar-protein { stroke: var(--label); }
 .gauge.over .bar-kcal { stroke: var(--destructive); }

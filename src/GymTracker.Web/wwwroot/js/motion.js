@@ -72,7 +72,8 @@
             }
         }
         root.dataset.nav = reduce.matches ? "tab" : nav;
-        event.viewTransition.finished.finally(() => { delete root.dataset.nav; });
+        event.viewTransition.ready.catch(() => {});
+        event.viewTransition.finished.catch(() => {}).finally(() => { delete root.dataset.nav; });
     });
 
     // ---- large title collapses into the compact bar ----

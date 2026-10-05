@@ -64,6 +64,12 @@ window.gymModule("progress", () => {
         const label3 = token("--label-3");
         const grid = token("--separator");
         const fill = token("--fill-strong");
+        // A value whose neighbours have none draws no line (a first day's target); show it as a point instead.
+        const isolated = (ctx) => {
+            const d = ctx.dataset.data;
+            const i = ctx.dataIndex;
+            return d[i] != null && d[i - 1] == null && d[i + 1] == null ? 3 : 0;
+        };
         const surface = token("--surface-2");
 
         Chart.defaults.locale = "en-US"; // numbers in one format whatever the phone's region
@@ -140,8 +146,8 @@ window.gymModule("progress", () => {
                     labels: calories.labels,
                     datasets: [
                         { type: "bar", label: t("Eaten"), data: calories.kcal, backgroundColor: fill, hoverBackgroundColor: label3, borderRadius: 4, borderSkipped: false, barPercentage: 0.7, order: 3 },
-                        { type: "line", label: t("Target"), data: calories.target, borderColor: accent, borderWidth: 2, pointRadius: 0, stepped: true, order: 1 },
-                        { type: "line", label: t("Maintenance"), data: calories.maintenance, borderColor: label2, borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, stepped: true, order: 2 },
+                        { type: "line", label: t("Target"), data: calories.target, borderColor: accent, backgroundColor: accent, borderWidth: 2, pointRadius: isolated, pointBorderWidth: 0, stepped: true, order: 1 },
+                        { type: "line", label: t("Maintenance"), data: calories.maintenance, borderColor: label2, backgroundColor: label2, borderWidth: 1.5, borderDash: [5, 4], pointRadius: isolated, pointBorderWidth: 0, stepped: true, order: 2 },
                     ],
                 },
                 options: {
@@ -161,8 +167,8 @@ window.gymModule("progress", () => {
                     labels: protein.labels,
                     datasets: [
                         { type: "bar", label: t("Eaten"), data: protein.eaten, backgroundColor: fill, hoverBackgroundColor: label3, borderRadius: 4, borderSkipped: false, barPercentage: 0.7, order: 3 },
-                        { type: "line", label: t("Aim"), data: protein.aim, borderColor: label, borderWidth: 2, pointRadius: 0, stepped: true, order: 1 },
-                        { type: "line", label: t("Minimum"), data: protein.minimum, borderColor: label2, borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, order: 2 },
+                        { type: "line", label: t("Aim"), data: protein.aim, borderColor: label, backgroundColor: label, borderWidth: 2, pointRadius: isolated, pointBorderWidth: 0, stepped: true, order: 1 },
+                        { type: "line", label: t("Minimum"), data: protein.minimum, borderColor: label2, backgroundColor: label2, borderWidth: 1.5, borderDash: [5, 4], pointRadius: isolated, pointBorderWidth: 0, order: 2 },
                     ],
                 },
                 options: {
