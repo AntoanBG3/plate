@@ -17,7 +17,8 @@ public class UserProfile
     public int? InitialMaintenanceKcal { get; set; }
     public Goal Goal { get; set; } = Goal.Maintain;
     public decimal TargetRatePercentPerWeek { get; set; }
-    public decimal ProteinGramsPerKg { get; set; } = 2.0m;
+    /// <summary>The protein aim in g per kg of reference weight; null is Auto, set by goal (SPEC 5.6).</summary>
+    public decimal? ProteinGramsPerKg { get; set; }
     public decimal DefaultWeightIncrementKg { get; set; } = 2.5m;
     public Theme Theme { get; set; } = Theme.Dark;
     public Language Language { get; set; } = Language.English;

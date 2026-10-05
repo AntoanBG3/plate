@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Features.Onboarding;
 
 /// <summary>The starting maintenance and today's targets the summary card shows for the draft.</summary>
-public record OnboardingPreview(int MaintenanceKcal, int? TargetKcal, int? ProteinG, bool FloorApplied);
+public record OnboardingPreview(int MaintenanceKcal, int? TargetKcal, int? ProteinG, bool FloorApplied, MacroTarget? Macros = null);
 
 /// <param name="Available">A model is set up; otherwise only the form is offered.</param>
 /// <param name="Started">The chat has begun; before that the splash shows.</param>
@@ -153,7 +153,7 @@ public class OnboardingService(
             p.ActivityLevel = draft.ActivityLevel;
             p.Goal = draft.Goal!.Value;
             p.TargetRatePercentPerWeek = draft.Goal == Goal.Maintain ? 0 : draft.RatePercentPerWeek ?? 0;
-            p.ProteinGramsPerKg = form.ProteinGramsPerKg ?? p.ProteinGramsPerKg;
+            p.ProteinGramsPerKg = form.ProteinGramsPerKg;
             p.InitialMaintenanceKcal = form.InitialMaintenanceKcal;
             if (IsTimeZone(form.TimeZoneId))
             {
@@ -218,22 +218,22 @@ public class OnboardingService(
             chat is null ? [] : Read<List<ChatLine>>(chat.Messages) ?? [],
             chat is null ? [] : Read<List<string>>(chat.QuickReplies) ?? [],
             draft,
-            Preview(draft, await profiles.GetAsync(ct), year),
+            Preview(draft, await profiles.GetAsync(ct), DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime)),
             chat?.Turns >= MaxTurns,
             year);
     }
 
     /// <summary>The targets the draft would give today, once there is enough to compute them.</summary>
-    public static OnboardingPreview? Preview(OnboardingDraft draft, UserProfile profile, int currentYear)
+    public static OnboardingPreview? Preview(OnboardingDraft draft, UserProfile profile, DateOnly today)
     {
         var applied = draft.ApplyTo(profile);
-        if (Maintenance.Prior(applied, draft.WeightKg, currentYear) is not { } maintenance)
+        if (Maintenance.Prior(applied, draft.WeightKg, today.Year) is not { } maintenance)
         {
             return null;
         }
 
-        var target = GoalTargets.Calculate(maintenance, applied, draft.WeightKg);
-        return new OnboardingPreview(maintenance, target.Kcal, target.ProteinG, target.FloorApplied);
+        var target = GoalTargets.Calculate(maintenance, applied, draft.WeightKg, today);
+        return new OnboardingPreview(maintenance, target.Kcal, target.ProteinG, target.FloorApplied, target.Macros);
     }
 
     private async Task<OnboardingDraft> SeedAsync(CancellationToken ct) =>

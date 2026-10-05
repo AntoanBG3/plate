@@ -152,7 +152,7 @@ public class OnboardingDraftTests
         preview.DisplayName.Should().Be("Ivan");
         preview.Goal.Should().Be(Goal.Bulk);
         preview.TargetRatePercentPerWeek.Should().Be(0.25m);
-        preview.ProteinGramsPerKg.Should().Be(2.0m, "protein defaults to 2 g per kg");
+        preview.ProteinGramsPerKg.Should().BeNull("protein defaults to Auto");
         preview.BarWeightKg.Should().Be(15);
         profile.DisplayName.Should().Be("Old");
         ProfileRules.Validate(preview, Year).Should().BeNull();

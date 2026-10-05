@@ -925,7 +925,7 @@ namespace GymTracker.Web.Data.Migrations
                         .IsRequired()
                         .HasColumnType("numeric[]");
 
-                    b.Property<decimal>("ProteinGramsPerKg")
+                    b.Property<decimal?>("ProteinGramsPerKg")
                         .HasPrecision(4, 2)
                         .HasColumnType("numeric(4,2)");
 

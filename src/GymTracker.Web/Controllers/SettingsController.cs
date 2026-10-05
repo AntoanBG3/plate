@@ -46,7 +46,7 @@ public class SettingsController(
             p.InitialMaintenanceKcal = form.InitialMaintenanceKcal;
             p.Goal = form.Goal;
             p.TargetRatePercentPerWeek = form.TargetRatePercentPerWeek ?? 0;
-            p.ProteinGramsPerKg = form.ProteinGramsPerKg ?? 2.0m;
+            p.ProteinGramsPerKg = form.ProteinGramsPerKg;
             p.DefaultWeightIncrementKg = form.DefaultWeightIncrementKg ?? 2.5m;
             p.BarWeightKg = form.BarWeightKg ?? 20m;
             p.PlatesKg = (form.PlatesKg ?? []).Distinct().OrderDescending().ToList();

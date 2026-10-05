@@ -133,7 +133,7 @@ public class MaintenanceTests
     [InlineData(80, 160)]
     [InlineData(61.2, 120)]   // 122.4 → 120
     public void Protein_target_rounds_to_5_grams(decimal weight, int expected) =>
-        Maintenance.ProteinTarget(Profile(), weight).Should().Be(expected);
+        MacroTargets.ProteinAim(Profile(), weight, new DateOnly(2026, 10, 5)).Should().Be(expected);
 }
 
 public class ProfileRulesTests
