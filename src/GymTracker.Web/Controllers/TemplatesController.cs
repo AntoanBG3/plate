@@ -1,4 +1,5 @@
 using GymTracker.Core.Text;
+using GymTracker.Web.Features;
 using GymTracker.Web.Features.Localization;
 using GymTracker.Web.Features.Training;
 using GymTracker.Web.ViewModels;
@@ -29,6 +30,22 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     [HttpPost("{id:int}/rename")]
     public async Task<IActionResult> Rename(int id, string name, CancellationToken ct)
     {
+        if (Request.Headers.ContainsKey("HX-Request"))
+        {
+            try
+            {
+                await templates.RenameAsync(id, name, ct);
+                var saved = (await templates.GetAsync(id, ct)).Name;
+                // site.js puts the new name in the page's titles.
+                Response.Headers["HX-Trigger"] = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object> { ["gym:renamed"] = new { name = saved } });
+                return PartialView("_TemplateNameForm", new TemplateNameFormViewModel(id, saved, Saved: true));
+            }
+            catch (ValidationException ex)
+            {
+                return PartialView("_TemplateNameForm", new TemplateNameFormViewModel(id, name ?? "", ex.Text));
+            }
+        }
+
         await templates.RenameAsync(id, name, ct);
         return Redirect($"/train/templates/{id}");
     }
@@ -72,7 +89,22 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     [HttpPost("exercises/{id:int}")]
     public async Task<IActionResult> UpdateExercise(int id, int workingSets, int repMin, int repMax, decimal? weightIncrementKg, int restSeconds, CancellationToken ct)
     {
-        await templates.UpdateExerciseAsync(id, new TemplateExerciseInput(workingSets, repMin, repMax, weightIncrementKg, restSeconds), ct);
+        var input = new TemplateExerciseInput(workingSets, repMin, repMax, weightIncrementKg, restSeconds);
+        if (Request.Headers.ContainsKey("HX-Request"))
+        {
+            // Saved on change from the page: send the form back, marked saved, or with the error and what was typed.
+            try
+            {
+                await templates.UpdateExerciseAsync(id, input, ct);
+                return PartialView("_TemplateExerciseForm", new TemplateExerciseFormViewModel(await templates.GetExerciseAsync(id, ct), Saved: true));
+            }
+            catch (ValidationException ex)
+            {
+                return PartialView("_TemplateExerciseForm", new TemplateExerciseFormViewModel(await templates.GetExerciseAsync(id, ct), input, ex.Text));
+            }
+        }
+
+        await templates.UpdateExerciseAsync(id, input, ct);
         TempData.Focus($"te-{id}");
         return Redirect($"/train/templates/{await templates.TemplateIdOfExerciseAsync(id, ct)}");
     }

@@ -784,5 +784,6 @@
   "1 planned set isn't logged. Finish anyway?": "1 планирана серия не е записана. Да приключа ли все пак?",
   "{0} planned sets aren't logged. Finish anyway?": "{0} планирани серии не са записани. Да приключа ли все пак?",
   "Archive": "Архивирай",
-  "OK": "Добре"
+  "OK": "Добре",
+  "Not saved yet. It tries again when you have signal.": "Още не е запазено. Ще опита пак, когато има връзка."
 }

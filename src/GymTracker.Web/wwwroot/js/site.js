@@ -106,6 +106,86 @@
         window.gymSheet.show(sheet);
     }, true);
 
+    // ---- forms that save on change (SPEC 7: logged sets, template exercises, Settings) ----
+    // A form with data-autosave and hx-post sends itself on change (its hx-trigger). It is "dirty" from the first
+    // keystroke until its request starts, "saving" while it runs and "unsaved" when that failed; the server marks the
+    // form it sends back as saved. What is still dirty is sent before the page is left, and failures retry on reconnect.
+
+    const AUTOSAVE = "form[data-autosave]";
+
+    document.addEventListener("input", (event) => {
+        const form = event.target.closest(AUTOSAVE);
+        if (form) {
+            form.classList.add("is-dirty");
+            form.classList.remove("is-saved", "is-unsaved");
+        }
+    });
+    document.body.addEventListener("htmx:beforeRequest", (event) => {
+        const form = event.detail.elt;
+        if (form.matches && form.matches(AUTOSAVE)) {
+            form.classList.remove("is-dirty", "is-unsaved");
+            form.classList.add("is-saving");
+        }
+    });
+    for (const name of ["htmx:responseError", "htmx:sendError"]) {
+        document.body.addEventListener(name, (event) => {
+            const form = event.detail.elt;
+            if (form.matches && form.matches(AUTOSAVE)) {
+                form.classList.remove("is-saving");
+                form.classList.add("is-unsaved");
+            }
+        });
+    }
+
+    function sendNow(form) {
+        form.classList.remove("is-dirty");
+        form.classList.add("is-saving");
+        return fetch(form.getAttribute("hx-post"), {
+            method: "POST",
+            credentials: "same-origin",
+            // Survives the page going away (the app closed, or a full load).
+            keepalive: true,
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "RequestVerificationToken": window.gymToken(),
+                "HX-Request": "true",
+            },
+            body: new URLSearchParams(new FormData(form)),
+        });
+    }
+
+    // nav.js awaits this before it leaves the page; at most 3 seconds, so a dead connection never traps the user.
+    window.gymFlushEdits = () => {
+        const dirty = Array.from(document.querySelectorAll(AUTOSAVE + ".is-dirty"));
+        if (dirty.length === 0) {
+            return Promise.resolve();
+        }
+        const sent = Promise.allSettled(dirty.map((form) => sendNow(form)));
+        return Promise.race([sent, new Promise((resolve) => setTimeout(resolve, 3000))]);
+    };
+    window.addEventListener("pagehide", () => {
+        document.querySelectorAll(AUTOSAVE + ".is-dirty").forEach((form) => sendNow(form).catch(() => {}));
+    });
+
+    function retryUnsaved() {
+        if (window.htmx) {
+            document.querySelectorAll(AUTOSAVE + ".is-unsaved").forEach((form) => window.htmx.trigger(form, "submit"));
+        }
+    }
+    window.addEventListener("online", retryUnsaved);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            retryUnsaved();
+        }
+    });
+
+    // A template renamed in place: its titles follow (the large title, the compact one, the tab's).
+    document.body.addEventListener("gym:renamed", (event) => {
+        const name = event.detail.name;
+        document.querySelectorAll(".large-title, .topbar-title").forEach((el) => { el.textContent = name; });
+        document.title = name + " · Gym";
+    });
+
     // Forms that take a while (the food text parser): show the busy state and stop a second send.
     document.addEventListener("submit", (event) => {
         const form = event.target.closest("form[data-busy]");

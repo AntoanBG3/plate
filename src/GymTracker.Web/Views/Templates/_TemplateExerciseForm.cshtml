@@ -1,0 +1,24 @@
+@model TemplateExerciseFormViewModel
+@{
+    var item = Model.Item;
+    // After a refused change the fields keep what was typed, so it can be corrected (Phase 11).
+    var p = Model.Posted;
+    var sets = p?.WorkingSets ?? item.WorkingSets;
+    var repMin = p?.RepMin ?? item.RepMin;
+    var repMax = p?.RepMax ?? item.RepMax;
+    var increment = p is null ? item.WeightIncrementKg : p.WeightIncrementKg;
+    var rest = p?.RestSeconds ?? item.RestSeconds;
+}
+@* Saves on change (site.js data-autosave); htmx swaps in the form the server sends back, marked saved or with the error. *@
+<form method="post" asp-antiforgery="true" action="/train/templates/exercises/@item.Id" class="list@(Model.Saved ? " is-saved" : "")@(Model.Error is null ? "" : " has-error")"
+      data-autosave hx-post="/train/templates/exercises/@item.Id" hx-trigger="change delay:400ms, submit" hx-sync="this:replace" hx-target="this" hx-swap="outerHTML">
+    <div class="field-row"><label for="sets-@item.Id">@L["Working sets"]</label><input id="sets-@item.Id" class="num" type="number" name="workingSets" value="@sets" min="1" max="20" inputmode="numeric" required /></div>
+    <div class="field-row"><label for="min-@item.Id">@L["Reps"]</label><input id="min-@item.Id" class="num" type="number" name="repMin" value="@repMin" min="1" max="100" inputmode="numeric" required aria-label="@L["Minimum reps"]" style="flex-basis: 4ch" /><span class="unit">–</span><input class="num" type="number" name="repMax" value="@repMax" min="1" max="100" inputmode="numeric" required aria-label="@L["Maximum reps"]" style="flex-basis: 4ch; margin-left: -6px" /></div>
+    <div class="field-row"><label for="inc-@item.Id">@L["Weight jump"]</label><input id="inc-@item.Id" class="num" type="number" name="weightIncrementKg" value="@(increment?.Kg())" step="any" min="0" inputmode="decimal" placeholder="@L["Default"]" /><span class="unit">@L["kg"]</span></div>
+    <div class="field-row"><label for="rest-@item.Id">@L["Rest"]</label><input id="rest-@item.Id" class="num" type="number" name="restSeconds" value="@rest" min="0" max="1800" step="15" inputmode="numeric" required /><span class="unit">@L["s"]</span></div>
+    @if (Model.Error is { } error)
+    {
+        <p class="field-error" role="alert">@Ui.Icon("alert", "icon-sm")<span>@L[error]</span></p>
+    }
+    <p class="autosave-status" role="status"><span data-state="saving">@L["Saving…"]</span><span data-state="saved">@Ui.Icon("check", "icon-sm")@L["Saved"]</span><span data-state="unsaved">@L["Not saved yet. It tries again when you have signal."]</span></p>
+</form>

@@ -118,6 +118,15 @@ public record ExerciseSettingsFormViewModel(Exercise Exercise, UserExerciseSetti
 
 public record ExercisePickerViewModel(GymTracker.Core.Text.LocalText Title, string PostUrl, string BackUrl, IReadOnlyList<Exercise> Exercises);
 
+/// <summary>One exercise's fields in the template editor; after a refused change, what was typed and why.</summary>
+public record TemplateExerciseFormViewModel(
+    TemplateExercise Item,
+    GymTracker.Web.Features.Training.TemplateExerciseInput? Posted = null,
+    GymTracker.Core.Text.LocalText? Error = null,
+    bool Saved = false);
+
+public record TemplateNameFormViewModel(int TemplateId, string Name, GymTracker.Core.Text.LocalText? Error = null, bool Saved = false);
+
 public record QuickAddViewModel(DateOnly Date, Meal Meal);
 
 public record SaveMealFormViewModel(DateOnly Date, Meal Meal, string DefaultName);

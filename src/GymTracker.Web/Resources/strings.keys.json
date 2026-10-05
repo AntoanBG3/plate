@@ -471,7 +471,7 @@
     "exercise"
   ],
   "Default": [
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml"
   ],
   "Delete": [
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
@@ -993,7 +993,7 @@
     "extra"
   ],
   "Maximum reps": [
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml"
   ],
   "Meal": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml"
@@ -1006,7 +1006,7 @@
     "wwwroot/js"
   ],
   "Minimum reps": [
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml"
   ],
   "Missed a food": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -1031,7 +1031,7 @@
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+    "src/GymTracker.Web/Views/Templates/_TemplateNameForm.cshtml"
   ],
   "Name must be 1 to 100 characters.": [
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
@@ -1133,6 +1133,10 @@
   "Not found": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
     "src/GymTracker.Web/Views/Home/Error.cshtml"
+  ],
+  "Not saved yet. It tries again when you have signal.": [
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml",
+    "src/GymTracker.Web/Views/Templates/_TemplateNameForm.cshtml"
   ],
   "Not saved. Tap ✓ to try again.": [
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
@@ -1436,7 +1440,7 @@
   ],
   "Rename": [
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+    "src/GymTracker.Web/Views/Templates/_TemplateNameForm.cshtml"
   ],
   "Rep range must be between 1 and 100, with the minimum not above the maximum.": [
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
@@ -1461,7 +1465,7 @@
   ],
   "Reps": [
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml"
   ],
   "Reps must be between 0 and {0}.": [
     "src/GymTracker.Core/Training/SetRules.cs"
@@ -1470,7 +1474,7 @@
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
   ],
   "Rest": [
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml",
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml",
     "src/GymTracker.Web/Views/Train/Session.cshtml",
     "wwwroot/js"
   ],
@@ -1519,7 +1523,7 @@
   ],
   "Save changes": [
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml"
   ],
   "Save notes": [
     "src/GymTracker.Web/Views/Train/Session.cshtml"
@@ -1537,7 +1541,9 @@
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
   "Saved": [
-    "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
+    "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml",
+    "src/GymTracker.Web/Views/Templates/_TemplateNameForm.cshtml"
   ],
   "Saved as a meal.": [
     "src/GymTracker.Web/Controllers/SavedMealsController.cs"
@@ -1556,7 +1562,9 @@
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
   "Saving…": [
-    "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
+    "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml",
+    "src/GymTracker.Web/Views/Templates/_TemplateNameForm.cshtml"
   ],
   "Scan": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
@@ -2120,7 +2128,7 @@
   ],
   "Weight jump": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml"
   ],
   "Weight must be between 0 and 9999.99 kg.": [
     "src/GymTracker.Core/Training/SetRules.cs"
@@ -2154,7 +2162,7 @@
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Working sets": [
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml",
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml",
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
   "Working sets must be between 1 and 20.": [
@@ -2327,7 +2335,7 @@
     "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml",
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml",
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml",
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
@@ -2368,7 +2376,7 @@
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
   ],
   "s": [
-    "src/GymTracker.Web/Views/Templates/Edit.cshtml"
+    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml"
   ],
   "saturated fat": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"

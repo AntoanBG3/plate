@@ -7,7 +7,7 @@
 {
     @* A changed weight or reps saves on its own (SPEC 7); session.js marks the row while it does and sends what is
        still unsaved before the page is left. The status texts are switched by the row's class. *@
-    <form class="set-row done@(Model.IsWarmup ? " warmup" : "")@(Model.JustSaved ? " is-saved" : "")" data-client-id="@set.ClientId" data-edit-set hx-post="/train/sets/@set.Id/update" hx-trigger="change delay:300ms, submit" hx-sync="this:replace" hx-target="this" hx-swap="outerHTML">
+    <form class="set-row done@(Model.IsWarmup ? " warmup" : "")@(Model.JustSaved ? " is-saved" : "")" data-client-id="@set.ClientId" data-edit-set data-autosave hx-post="/train/sets/@set.Id/update" hx-trigger="change delay:300ms, submit" hx-sync="this:replace" hx-target="this" hx-swap="outerHTML">
         <button type="button" class="set-delete" hx-post="/train/sets/@set.Id/delete" hx-target="closest form" hx-swap="outerHTML swap:180ms">@L["Delete"]</button>
         <div class="set-content">
             <span class="set-n" aria-hidden="true">@(Model.IsWarmup ? Ui.Icon("warmup", "icon-sm") : Model.Number)</span>

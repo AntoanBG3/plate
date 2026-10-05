@@ -137,6 +137,8 @@ public class TemplateService(AppDbContext db, ICurrentUser currentUser, TimeProv
         await db.SaveChangesAsync(ct);
     }
 
+    public Task<TemplateExercise> GetExerciseAsync(int templateExerciseId, CancellationToken ct) => FindExerciseAsync(templateExerciseId, ct);
+
     public async Task<int> TemplateIdOfExerciseAsync(int templateExerciseId, CancellationToken ct) =>
         (await FindExerciseAsync(templateExerciseId, ct)).TemplateId;
 

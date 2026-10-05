@@ -20,15 +20,7 @@
     <h1 class="large-title">@template.Name</h1>
 </header>
 
-<form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/rename">
-    <div class="list">
-        <div class="field-row">
-            <label for="name">@L["Name"]</label>
-            <input id="name" type="text" name="name" value="@template.Name" maxlength="100" required />
-            <button type="submit" class="btn btn-plain">@L["Rename"]</button>
-        </div>
-    </div>
-</form>
+<partial name="_TemplateNameForm" model="new TemplateNameFormViewModel(template.Id, template.Name)" />
 
 @for (var i = 0; i < items.Count; i++)
 {
@@ -58,13 +50,7 @@
                 </div>
             </div>
         </div>
-        <form method="post" asp-antiforgery="true" action="/train/templates/exercises/@item.Id" class="list">
-            <div class="field-row"><label for="sets-@item.Id">@L["Working sets"]</label><input id="sets-@item.Id" class="num" type="number" name="workingSets" value="@item.WorkingSets" min="1" max="20" inputmode="numeric" required /></div>
-            <div class="field-row"><label for="min-@item.Id">@L["Reps"]</label><input id="min-@item.Id" class="num" type="number" name="repMin" value="@item.RepMin" min="1" max="100" inputmode="numeric" required aria-label="@L["Minimum reps"]" style="flex-basis: 4ch" /><span class="unit">–</span><input class="num" type="number" name="repMax" value="@item.RepMax" min="1" max="100" inputmode="numeric" required aria-label="@L["Maximum reps"]" style="flex-basis: 4ch; margin-left: -6px" /></div>
-            <div class="field-row"><label for="inc-@item.Id">@L["Weight jump"]</label><input id="inc-@item.Id" class="num" type="number" name="weightIncrementKg" value="@(item.WeightIncrementKg?.Kg())" step="any" min="0" inputmode="decimal" placeholder="@L["Default"]" /><span class="unit">@L["kg"]</span></div>
-            <div class="field-row"><label for="rest-@item.Id">@L["Rest"]</label><input id="rest-@item.Id" class="num" type="number" name="restSeconds" value="@item.RestSeconds" min="0" max="1800" step="15" inputmode="numeric" required /><span class="unit">@L["s"]</span></div>
-            <div class="row" style="padding-top: 0; padding-bottom: 0"><button type="submit" class="btn btn-plain" style="padding: 0">@L["Save changes"]</button></div>
-        </form>
+        <partial name="_TemplateExerciseForm" model="new TemplateExerciseFormViewModel(item)" />
     </section>
 }
 

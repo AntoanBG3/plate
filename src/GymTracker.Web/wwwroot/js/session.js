@@ -365,81 +365,11 @@
         document.querySelectorAll(".rows").forEach((rows) => rowsObserver.observe(rows, { childList: true }));
     }
 
-    // ---- editing a logged set (SPEC 7): it saves on change ----
-    // The row is "dirty" from the first keystroke until its request starts, "saving" while it runs, and "unsaved" when it
-    // failed; the server marks the row it returns as saved. What is still dirty is sent before the page is left.
-
-    const EDIT = "form[data-edit-set]";
-
-    document.addEventListener("input", (event) => {
-        const form = event.target.closest(EDIT);
-        if (form) {
-            form.classList.add("is-dirty");
-            form.classList.remove("is-saved", "is-unsaved");
-        }
-    });
-    document.body.addEventListener("htmx:beforeRequest", (event) => {
-        const form = event.detail.elt;
-        if (form.matches && form.matches(EDIT)) {
-            form.classList.remove("is-dirty", "is-unsaved");
-            form.classList.add("is-saving");
-        }
-    });
-    for (const name of ["htmx:responseError", "htmx:sendError"]) {
-        document.body.addEventListener(name, (event) => {
-            const form = event.detail.elt;
-            if (form.matches && form.matches(EDIT)) {
-                form.classList.remove("is-saving");
-                form.classList.add("is-unsaved");
-            }
-        });
-    }
-
-    function sendEdit(form) {
-        form.classList.remove("is-dirty");
-        form.classList.add("is-saving");
-        return fetch(form.getAttribute("hx-post"), {
-            method: "POST",
-            credentials: "same-origin",
-            // Survives the page going away (the app closed, or a full load).
-            keepalive: true,
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "RequestVerificationToken": window.gymToken(),
-                "HX-Request": "true",
-            },
-            body: new URLSearchParams(new FormData(form)),
-        });
-    }
-
-    // nav.js awaits this before it leaves the page; it waits at most 3 seconds, so a dead connection never traps the user.
-    window.gymFlushEdits = () => {
-        const dirty = Array.from(document.querySelectorAll(EDIT + ".is-dirty"));
-        if (dirty.length === 0) {
-            return Promise.resolve();
-        }
-        const sent = Promise.allSettled(dirty.map((form) => sendEdit(form)));
-        return Promise.race([sent, new Promise((resolve) => setTimeout(resolve, 3000))]);
-    };
-    window.addEventListener("pagehide", () => {
-        document.querySelectorAll(EDIT + ".is-dirty").forEach((form) => sendEdit(form).catch(() => {}));
-    });
-
-    function retryEdits() {
-        if (window.htmx) {
-            document.querySelectorAll(EDIT + ".is-unsaved").forEach((form) => window.htmx.trigger(form, "submit"));
-        }
-    }
-
-    window.addEventListener("online", () => {
-        flush();
-        retryEdits();
-    });
+    window.addEventListener("online", flush);
     window.addEventListener("pageshow", flush);
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
             flush();
-            retryEdits();
             keepAwake();
             ensureTicking();
         }
