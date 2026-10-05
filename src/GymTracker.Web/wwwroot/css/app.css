@@ -610,13 +610,15 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .autosave-status { display: none; align-items: center; gap: 4px; margin: 0; padding: 0 var(--s-4) var(--s-3); font-size: var(--text-caption); color: var(--label-2); }
 .autosave-status > span { display: none; align-items: center; gap: 4px; }
 .autosave-status .icon { width: 14px; height: 14px; }
-form:is(.is-saving, .is-saved, .is-unsaved) > .autosave-status { display: flex; }
-form.is-saving > .autosave-status [data-state="saving"], form.is-saved > .autosave-status [data-state="saved"], form.is-unsaved > .autosave-status [data-state="unsaved"] { display: inline-flex; }
-form.is-saved > .autosave-status { animation: saved-fade 2.4s var(--ease-out) forwards; }
-form.is-saved > .autosave-status [data-state="saved"] { color: var(--success); }
-form.is-unsaved > .autosave-status [data-state="unsaved"] { color: var(--destructive); }
+form:is(.is-saving, .is-saved, .is-unsaved) .autosave-status { display: flex; }
+form.is-saving .autosave-status [data-state="saving"], form.is-saved .autosave-status [data-state="saved"], form.is-unsaved .autosave-status [data-state="unsaved"] { display: inline-flex; }
+form.is-saved .autosave-status { animation: saved-fade 2.4s var(--ease-out) forwards; }
+form.is-saved .autosave-status [data-state="saved"] { color: var(--success); }
+form.is-unsaved .autosave-status [data-state="unsaved"] { color: var(--destructive); }
 .field-error { display: flex; align-items: flex-start; gap: var(--s-2); margin: 0; padding: var(--s-2) var(--s-4) var(--s-3); font-size: var(--text-footnote); color: var(--destructive); }
 .field-error .icon { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+/* Settings: the status and error sit under the card that changed (site.js moves them), aligned with its footer. */
+form[data-status-near] .autosave-status, form[data-status-near] .field-error { padding: var(--s-2) var(--s-4) 0; }
 .set-row.warmup .set-content { padding-top: 3px; padding-bottom: 3px; }
 .set-row.warmup .set-field { min-height: 36px; padding-top: 6px; padding-bottom: 4px; }
 .set-row.warmup .set-field input { font-size: var(--text-body); font-weight: var(--weight-regular); color: var(--label-2); }

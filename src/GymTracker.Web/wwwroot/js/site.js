@@ -22,6 +22,9 @@
             window.location.href = "/account/login?returnUrl=" + encodeURIComponent(window.location.pathname);
             return;
         }
+        if (xhr.status === 400 && event.detail.elt.closest && event.detail.elt.closest("[data-status-near]")) {
+            return; // shown under the field (the autosave handlers below)
+        }
         window.gymToast(xhr.status === 400 && xhr.responseText ? xhr.responseText : t("Something went wrong ({0}). Try again.", xhr.status));
     });
 
@@ -106,27 +109,79 @@
 
     const AUTOSAVE = "form[data-autosave]";
 
-    document.addEventListener("input", (event) => {
-        const form = event.target.closest(AUTOSAVE);
-        if (form) {
-            form.classList.add("is-dirty");
-            form.classList.remove("is-saved", "is-unsaved");
+    // A long form (Settings, data-status-near) keeps one status line and one error, shown under the card holding the
+    // field that changed (or the one that is missing), not at the bottom of the page.
+    const showNear = (form, field) => {
+        const card = field && field.closest(".list");
+        if (form.hasAttribute("data-status-near") && card) {
+            card.after(form.querySelector(".autosave-status"), form.querySelector("[data-autosave-error]"));
         }
-    });
+    };
+    const showError = (form, field, message) => {
+        const error = form.querySelector("[data-autosave-error]");
+        if (!error) {
+            return false;
+        }
+        showNear(form, field);
+        error.querySelector("span").textContent = message;
+        error.hidden = false;
+        form.classList.remove("is-saving", "is-saved", "is-unsaved");
+        form.classList.add("has-error");
+        return true;
+    };
+
+    for (const name of ["input", "change"]) {
+        document.addEventListener(name, (event) => {
+            const form = event.target.closest(AUTOSAVE);
+            if (form) {
+                form.gymChanged = event.target;
+                form.classList.add("is-dirty");
+                form.classList.remove("is-saved", "is-unsaved");
+            }
+        });
+    }
     document.body.addEventListener("htmx:beforeRequest", (event) => {
         const form = event.detail.elt;
         if (form.matches && form.matches(AUTOSAVE)) {
-            form.classList.remove("is-dirty", "is-unsaved");
+            showNear(form, form.gymChanged);
+            const error = form.querySelector("[data-autosave-error]");
+            if (error) {
+                error.hidden = true;
+            }
+            form.classList.remove("is-dirty", "is-unsaved", "has-error");
             form.classList.add("is-saving");
+        }
+    });
+    // A form that swaps nothing back (Settings) is marked saved here; the others come back from the server marked.
+    document.body.addEventListener("htmx:afterRequest", (event) => {
+        const form = event.detail.elt;
+        if (event.detail.successful && form.matches && form.matches(AUTOSAVE) && form.getAttribute("hx-swap") === "none") {
+            form.classList.remove("is-saving");
+            form.classList.add("is-saved");
+        }
+    });
+    // A field the browser refuses (a required rate left empty) stops the save; say which, under it.
+    document.body.addEventListener("htmx:validation:halted", (event) => {
+        const form = event.detail.elt;
+        const first = event.detail.errors && event.detail.errors[0];
+        if (form.matches && form.matches(AUTOSAVE) && first) {
+            // The app's own words where a field has them (data-missing), else the browser's.
+            showError(form, first.elt, (first.validity.valueMissing && first.elt.dataset.missing) || first.message);
         }
     });
     for (const name of ["htmx:responseError", "htmx:sendError"]) {
         document.body.addEventListener(name, (event) => {
             const form = event.detail.elt;
-            if (form.matches && form.matches(AUTOSAVE)) {
-                form.classList.remove("is-saving");
-                form.classList.add("is-unsaved");
+            if (!(form.matches && form.matches(AUTOSAVE))) {
+                return;
             }
+            // A refused value isn't retried on reconnect: it would only be refused again.
+            const xhr = event.detail.xhr;
+            if (name === "htmx:responseError" && xhr.status === 400 && showError(form, form.gymChanged, xhr.responseText)) {
+                return;
+            }
+            form.classList.remove("is-saving");
+            form.classList.add("is-unsaved");
         });
     }
 
@@ -358,6 +413,18 @@
     document.addEventListener("change", (event) => {
         if (event.target.name === "goal" && event.target.form) {
             syncRate(event.target.form);
+        }
+    });
+    // The browser's own bubble on a plain form (setup) uses the app's words too.
+    document.addEventListener("invalid", (event) => {
+        const field = event.target;
+        if (field.dataset && field.dataset.missing && field.validity.valueMissing) {
+            field.setCustomValidity(field.dataset.missing);
+        }
+    }, true);
+    document.addEventListener("input", (event) => {
+        if (event.target.dataset && event.target.dataset.missing) {
+            event.target.setCustomValidity("");
         }
     });
     document.addEventListener("gym:page", syncRates);

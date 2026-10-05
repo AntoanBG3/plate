@@ -258,9 +258,6 @@
   "Back to today": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
-  "Bar and plates": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
-  ],
   "Bar weight": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
@@ -299,7 +296,7 @@
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Based on {0} kg, a healthy weight for your height.": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+    "src/GymTracker.Web/Views/Settings/_ProteinNote.cshtml"
   ],
   "Bench press": [
     "exercise"
@@ -488,7 +485,7 @@
   "Cut": [
     "enum"
   ],
-  "Cuts are capped at 1% and bulks at 0.5% of bodyweight per week. The weight jump is how much is added when every set reaches the top of its range.": [
+  "Cuts are capped at 1% and bulks at 0.5% of bodyweight per week.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Cuts are capped at 1% and bulks at 0.5% of bodyweight per week; the rate is ignored for maintain. Leave starting maintenance empty unless you know it from tracking.": [
@@ -512,6 +509,9 @@
   ],
   "Day": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "Days for food and weigh-ins start at midnight in this time zone.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Deadlift": [
     "exercise"
@@ -626,6 +626,9 @@
   ],
   "Energy": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Enter a weekly rate for a cut or bulk.": [
+    "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
   "Enter a weight.": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
@@ -784,7 +787,7 @@
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
   "From 65, under 1.2 g per kg is below what keeps muscle when you train.": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+    "src/GymTracker.Web/Views/Settings/_ProteinNote.cshtml"
   ],
   "From a starting maintenance of about {0} kcal, with {1} g of protein. It adapts as you log food and weight.": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
@@ -934,7 +937,7 @@
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
   "Leave protein empty for Auto: 1.8 g per kg, 2.2 on a cut and 2.4 on a cut faster than 0.75% a week.": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+    "src/GymTracker.Web/Views/Settings/_ProteinNote.cshtml"
   ],
   "Leave starting maintenance empty to estimate it from sex, age, height, weight and activity. It adapts to your logged data later.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -1209,6 +1212,7 @@
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
   "Not saved yet. It tries again when you have signal.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml",
     "src/GymTracker.Web/Views/Templates/_TemplateNameForm.cshtml"
   ],
@@ -1520,6 +1524,9 @@
   "Reference {0}": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
   ],
+  "Region": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Remove": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
@@ -1641,6 +1648,7 @@
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
   "Saved": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
     "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml",
     "src/GymTracker.Web/Views/Templates/_TemplateNameForm.cshtml"
@@ -1659,6 +1667,7 @@
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
   "Saving…": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml",
     "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml",
     "src/GymTracker.Web/Views/Templates/_TemplateNameForm.cshtml"
@@ -2062,6 +2071,9 @@
   "The weekly summary model returned something unreadable.": [
     "src/GymTracker.Web/Integrations/OpenRouterWeeklySummaryWriter.cs"
   ],
+  "The weight jump is how much is added when every set reaches the top of its range.": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Theme": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -2109,7 +2121,7 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Today: at least {0} g, aiming for {1} g.": [
-    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+    "src/GymTracker.Web/Views/Settings/_ProteinNote.cshtml"
   ],
   "Too large": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
@@ -2129,7 +2141,8 @@
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
   ],
   "Training": [
-    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+    "src/GymTracker.Web/Features/Feedback/FeedbackText.cs",
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Trend": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",

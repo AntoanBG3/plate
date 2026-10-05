@@ -142,6 +142,11 @@ public class OnboardingService(
             throw new ValidationException(weightError);
         }
 
+        if (ProfileRules.MissingRateError(draft.Goal, draft.RatePercentPerWeek) is { } missingRate)
+        {
+            throw new ValidationException(missingRate);
+        }
+
         var latest = await bodyweights.LatestAsync(ct);
         var now = time.GetUtcNow();
         var today = await profiles.TodayAsync(ct);

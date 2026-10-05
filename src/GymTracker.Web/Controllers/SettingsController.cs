@@ -35,8 +35,13 @@ public class SettingsController(
     }
 
     [HttpPost("profile")]
-    public async Task<IActionResult> Profile(ProfileForm form, CancellationToken ct)
+    public async Task<IActionResult> Profile(ProfileForm form, bool autosave, CancellationToken ct)
     {
+        if (GymTracker.Core.Domain.ProfileRules.MissingRateError(form.Goal, form.TargetRatePercentPerWeek) is { } missingRate)
+        {
+            throw new ValidationException(missingRate);
+        }
+
         var today = await profiles.TodayAsync(ct);
         await profiles.UpdateAsync(p =>
         {
@@ -56,6 +61,12 @@ public class SettingsController(
             p.BarWeightKg = form.BarWeightKg ?? 20m;
             p.PlatesKg = (form.PlatesKg ?? []).Distinct().OrderDescending().ToList();
         }, ct);
+        if (autosave && Request.Headers.ContainsKey("HX-Request"))
+        {
+            // Saved on change from the page (Phase 11): nothing to swap but today's protein numbers, sent out of band.
+            return PartialView("_ProteinNote", new ProteinNoteViewModel(await profiles.GetAsync(ct), await targets.ForTodayAsync(ct), OutOfBand: true));
+        }
+
         TempData.Notice("Profile saved.");
         return Redirect("/settings");
     }

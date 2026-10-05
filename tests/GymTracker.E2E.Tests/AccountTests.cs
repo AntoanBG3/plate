@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.E2E.Tests;
 
@@ -49,5 +50,76 @@ public class AccountTests(E2EFixture app)
         // One visible "Goal": the section title. The radio group is named by aria-label only.
         (await phone.Page.Locator("form :text-is('Goal'):visible").CountAsync()).Should().Be(1);
         phone.ShouldHaveNoErrors();
+    }
+
+    private async Task<GymTracker.Core.Domain.UserProfile> ProfileAsync(Phone phone)
+    {
+        await using var db = app.Db.CreateContext(null);
+        var userId = await db.Users.Where(u => u.Email == phone.Email).Select(u => u.Id).SingleAsync();
+        return await db.Profiles.IgnoreQueryFilters().AsNoTracking().SingleAsync(p => p.UserId == userId);
+    }
+
+    private static Task SavedAsync(Phone phone) =>
+        phone.Page.Locator("#profile-form.is-saved").WaitForAsync();
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Settings_save_on_change_and_say_so_under_the_card(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.WithTargetsAsync(app);
+        await phone.GoAsync("/settings");
+        (await phone.Page.Locator("#profile-form button[type=submit]:visible").CountAsync()).Should().Be(0, "there is no Save button");
+
+        await phone.Page.FillAsync("#heightCm", "176");
+        await phone.Page.Locator("#heightCm").BlurAsync();
+        await SavedAsync(phone);
+        (await ProfileAsync(phone)).HeightCm.Should().Be(176);
+
+        // "Saved" shows right under the Profile card, not at the bottom of the page.
+        var status = await phone.Page.EvaluateAsync<bool>(
+            "() => document.querySelector('#heightCm').closest('.list').nextElementSibling.matches('.autosave-status')");
+        status.Should().BeTrue();
+
+        await phone.Page.Locator(".choice-row:has(input[value=Active])").TapAsync();
+        await phone.Page.WaitForFunctionAsync("() => document.querySelector('#profile-form.is-saved') && !document.querySelector('#profile-form.is-dirty')");
+        await phone.Page.WaitForTimeoutAsync(300);
+        (await ProfileAsync(phone)).ActivityLevel.Should().Be(GymTracker.Core.Domain.ActivityLevel.Active);
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_cut_waits_for_its_rate_and_a_refused_value_shows_why(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.WithTargetsAsync(app);
+        await phone.GoAsync("/settings");
+
+        await phone.Page.Locator("label.segment:has(input[name=goal][value=Cut])").TapAsync();
+        var error = phone.Page.Locator("[data-autosave-error]");
+        await error.WaitForAsync();
+        (await error.InnerTextAsync()).Should().Contain("Enter a weekly rate for a cut or bulk.");
+        (await ProfileAsync(phone)).Goal.Should().Be(GymTracker.Core.Domain.Goal.Maintain, "nothing is saved without a rate");
+
+        await phone.Page.FillAsync("#rate", "0.5");
+        await phone.Page.Locator("#rate").BlurAsync();
+        await SavedAsync(phone);
+        (await error.IsHiddenAsync()).Should().BeTrue();
+        var saved = await ProfileAsync(phone);
+        saved.Goal.Should().Be(GymTracker.Core.Domain.Goal.Cut);
+        saved.TargetRatePercentPerWeek.Should().Be(0.5m);
+
+        // The browser's own range check comes first (it stopped this too, with its message); without it, the server's
+        // refusal shows under the field, not as a toast, and isn't retried.
+        await phone.Page.EvalOnSelectorAsync("#heightCm", "e => e.removeAttribute('max')");
+        await phone.Page.FillAsync("#heightCm", "300");
+        await phone.Page.Locator("#heightCm").BlurAsync();
+        await phone.Page.Locator("#profile-form.has-error").WaitForAsync();
+        (await error.InnerTextAsync()).Should().Contain("Height must be between");
+        (await phone.Page.Locator(".toast:not([hidden])").CountAsync()).Should().Be(0);
+        (await ProfileAsync(phone)).HeightCm.Should().Be(180);
     }
 }
