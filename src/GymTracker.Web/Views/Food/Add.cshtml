@@ -23,7 +23,7 @@
     <a class="@TabClass("manual")" href="@TabUrl("manual")" aria-current="@Current("manual")">@L["Manual"]</a>
 </nav>
 
-@if (Model.Error is not null)
+@if (Model.Error is not null && Model.Tab != "barcode")
 {
     <div class="banner is-error" role="alert">@Ui.Icon("alert")<span>@L[Model.Error]</span></div>
 }
@@ -59,12 +59,16 @@
             <div class="list">
                 <div class="field-row">
                     <label for="code" class="sr-only">@L["Barcode digits"]</label>
-                    <input id="code" class="num" type="text" name="code" inputmode="numeric" pattern="[0-9]{8,14}" placeholder="@L["8 to 14 digits"]" required style="text-align: left; flex: 1; color: var(--label)" />
+                    <input id="code" class="num" type="text" name="code" value="@Model.Text" inputmode="numeric" pattern="[0-9 -]{8,16}" placeholder="@L["Digits under the barcode"]" required style="text-align: left; flex: 1; color: var(--label)" />
                     <button type="submit" class="btn btn-plain">@L["Look up"]</button>
                 </div>
+                @if (Model.Error is { } barcodeError)
+                {
+                    <p class="field-error" role="alert">@Ui.Icon("alert", "icon-sm")<span>@L[barcodeError]</span></p>
+                }
             </div>
         </form>
-        <p class="section-footer">@L["The camera may ask for permission each time the app opens."]</p>
+        <p class="section-footer">@L["EAN-13, EAN-8, UPC-A or UPC-E: 8, 12 or 13 digits."] @L["The camera may ask for permission each time the app opens."]</p>
         break;
 
     case "search":

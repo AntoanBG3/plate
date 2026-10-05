@@ -828,5 +828,8 @@
   "assumed 100 g each": "приети 100 г на брой",
   "{0} × a serving of {1} g": "{0} × порция от {1} г",
   "Change food": "Смени храната",
-  "Nothing matches.": "Нищо не съвпада."
+  "Nothing matches.": "Нищо не съвпада.",
+  "Digits under the barcode": "Цифрите под баркода",
+  "EAN-13, EAN-8, UPC-A or UPC-E: 8, 12 or 13 digits.": "EAN-13, EAN-8, UPC-A или UPC-E: 8, 12 или 13 цифри.",
+  "Working sets per muscle, this week ({0}–{1}) against last week. Secondary muscles count as half a set.": "Работни серии по мускул, тази седмица ({0}–{1}) спрямо миналата. Второстепенните мускули се броят за половин серия."
 }

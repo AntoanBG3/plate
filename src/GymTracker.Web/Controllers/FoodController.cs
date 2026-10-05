@@ -119,8 +119,15 @@ public class FoodController(
     [HttpGet("barcode")]
     public async Task<IActionResult> Barcode(DateOnly date, Meal meal, string? code, CancellationToken ct)
     {
-        code = new string((code ?? "").Where(char.IsAsciiDigit).ToArray());
-        return View(new BarcodeViewModel(date, meal, code, await foods.LookupBarcodeAsync(code, ct)));
+        var digits = Barcodes.Normalize(code);
+        if (!Barcodes.IsValid(digits))
+        {
+            // Back to the Scan tab with what was typed, so one wrong digit can be fixed (Phase 11).
+            return View("Add", new FoodAddViewModel(date, meal, "barcode", new string((code ?? "").Where(char.IsAsciiDigit).ToArray()),
+                "That isn't a valid EAN or UPC barcode.", null, [], null, [], []));
+        }
+
+        return View(new BarcodeViewModel(date, meal, digits, await foods.LookupBarcodeAsync(digits, ct)));
     }
 
     [HttpPost("log-item")]

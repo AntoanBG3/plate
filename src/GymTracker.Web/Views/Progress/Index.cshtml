@@ -149,7 +149,7 @@
         }
         else
         {
-            <div class="chart-head"><div class="footnote">@L["Working sets per muscle, week {0} against last week. Secondary muscles count as half a set.", Model.Volume.ThisWeek.Week]</div></div>
+            <div class="chart-head"><div class="footnote">@L["Working sets per muscle, this week ({0}–{1}) against last week. Secondary muscles count as half a set.", Ui.DayMonth(Model.Volume.ThisWeek.Monday), Ui.DayMonth(Model.Volume.ThisWeek.Monday.AddDays(6))]</div></div>
             <div class="chart tall" style="height: @(Math.Max(160, trained.Count * 40))px"><canvas id="volume-chart" role="img" aria-label="@L["Working sets per muscle this week and last week"]"></canvas></div>
             <div class="legend"><span><i style="background: var(--accent)"></i>@L["This week"]</span><span><i style="background: var(--fill-strong)"></i>@L["Last week"]</span></div>
             <script type="application/json" id="volume-data">@Html.Raw(volume)</script>

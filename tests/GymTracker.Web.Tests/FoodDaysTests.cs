@@ -103,4 +103,31 @@ public class FoodDaysTests(PostgresFixture fixture)
         var page = await client.GetStringAsync(response.Headers.Location!.OriginalString);
         page.Should().Contain("banner is-info").And.NotContain("banner is-success");
     }
+
+    [Fact]
+    public async Task A_wrong_barcode_keeps_the_digits_and_says_why_next_to_them()
+    {
+        await using var app = new AppFactory(fixture);
+        var (client, _) = await app.SignedInClientAsync();
+        var html = System.Net.WebUtility.HtmlDecode(await client.GetStringAsync("/food/barcode?date=2026-09-28&meal=Lunch&code=12345678"));
+        html.Should().Contain("value=\"12345678\"").And.Contain("class=\"field-error\"").And.Contain("isn't a valid EAN or UPC barcode");
+        html.Should().Contain("EAN-13, EAN-8, UPC-A or UPC-E");
+    }
+
+    [Fact]
+    public async Task Weekly_sets_name_the_dates_not_the_week_number()
+    {
+        await using var app = new AppFactory(fixture);
+        var (client, email) = await app.SignedInClientAsync();
+        await using var system = fixture.CreateContext(null);
+        var userId = await system.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
+        await using var s = new UserScope(fixture, userId);
+        var template = await s.Templates.CreateAsync("Upper", default);
+        await s.Templates.AddExerciseAsync(template.Id, (await s.Db.Exercises.FirstAsync(e => e.Name == "Bench press")).Id, default);
+        var session = await s.Sessions.GetAsync((await s.Sessions.StartAsync(template.Id, default)).Id, default);
+        await s.Sessions.LogSetAsync(new GymTracker.Web.Features.Training.LogSetInput(Guid.NewGuid(), session.Exercises[0].Id, 60, 10, null, false, null), default);
+
+        var html = System.Net.WebUtility.HtmlDecode(await client.GetStringAsync("/progress"));
+        html.Should().MatchRegex(@"this week \(\d{1,2} \w+–\d{1,2} \w+\) against last week").And.NotMatchRegex(@"week \d+ against");
+    }
 }

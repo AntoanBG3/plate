@@ -35,9 +35,6 @@
   "4 weeks": [
     "range"
   ],
-  "8 to 14 digits": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml"
-  ],
   "A bulk can't be faster than {0}% of bodyweight per week.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
@@ -559,6 +556,9 @@
   "Diet break until {0}": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
+  "Digits under the barcode": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
   "Dinner": [
     "enum"
   ],
@@ -595,6 +595,9 @@
   ],
   "Duration": [
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
+  ],
+  "EAN-13, EAN-8, UPC-A or UPC-E: 8, 12 or 13 digits.": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "Eaten": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
@@ -2285,7 +2288,7 @@
   "Working sets per muscle this week and last week": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
-  "Working sets per muscle, week {0} against last week. Secondary muscles count as half a set.": [
+  "Working sets per muscle, this week ({0}–{1}) against last week. Secondary muscles count as half a set.": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
   "Workout": [
