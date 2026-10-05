@@ -23,9 +23,9 @@
 
 <div id="queue-status" class="banner is-pending" role="status" hidden></div>
 
-@foreach (var exercise in session.Exercises)
+@for (var i = 0; i < session.Exercises.Count; i++)
 {
-    <partial name="_ExerciseCard" model="Model.CardFor(exercise)" />
+    <partial name="_ExerciseCard" model="Model.CardFor(session.Exercises[i], i)" />
 }
 @if (session.Exercises.Count == 0)
 {

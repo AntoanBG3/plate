@@ -20,12 +20,18 @@
         <div class="menu-wrap">
             <button type="button" class="icon-btn" data-menu-trigger aria-expanded="false" aria-label="@L["Actions for {0}", name]">@Ui.Icon("more")</button>
             <div class="menu" role="menu">
-                <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="-1" /><button type="submit" role="menuitem">@L["Move up"]@Ui.Icon("up")</button></form>
-                <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" role="menuitem">@L["Move down"]@Ui.Icon("down")</button></form>
+                @if (!Model.IsFirst)
+                {
+                    <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="-1" /><button type="submit" role="menuitem">@L["Move up"]@Ui.Icon("up")</button></form>
+                }
+                @if (!Model.IsLast)
+                {
+                    <form method="post" asp-antiforgery="true" action="/train/session-exercises/@Ex.Id/move"><input type="hidden" name="direction" value="1" /><button type="submit" role="menuitem">@L["Move down"]@Ui.Icon("down")</button></form>
+                }
                 <button type="button" role="menuitem" hx-get="/train/exercises/@Ex.ExerciseId/settings?returnUrl=@Uri.EscapeDataString($"/train/sessions/{Ex.SessionId}")" hx-target="#exercise-sheet-body" hx-swap="innerHTML" data-sheet-open="exercise-sheet">@L["Notes & bar"]@Ui.Icon("pencil")</button>
                 @if (Ex.Sets.Count == 0)
                 {
-                    <a href="/train/session-exercises/@Ex.Id/swap" role="menuitem">@L["Swap exercise"]@Ui.Icon("reorder")</a>
+                    <a href="/train/session-exercises/@Ex.Id/swap" role="menuitem">@L["Swap exercise"]@Ui.Icon("swap")</a>
                 }
                 @if (Model.Suggestion is not null)
                 {
@@ -57,7 +63,7 @@
             }
             @for (var i = 0; i < blanks; i++)
             {
-                <partial name="_SetRow" model="SetRowViewModel.Blank(Ex.Id, false, Model.TargetFor(working.Count + i)) with { Number = working.Count + i + 1 }" />
+                <partial name="_SetRow" model="SetRowViewModel.Blank(Ex.Id, false, Model.TargetFor(working.Count + i)) with { Number = working.Count + i + 1, Carried = Model.Carried }" />
             }
         </div>
         <div class="ex-actions">

@@ -217,11 +217,31 @@
         updateStatus();
 
         if (!item.isWarmup) {
+            carryOver(form, item);
             const card = form.closest(".exercise");
-            startRest(card ? Number(card.dataset.rest) : 120);
+            startRest(card ? Number(card.dataset.rest) : 120, card);
         }
 
         flush();
+    }
+
+    // Without a progression suggestion, the rows after a logged set start from it (SPEC 7): an untouched row then
+    // logs the same weight and reps. Rows filled this way (data-carried) follow the latest set; real suggestions stay.
+    function carryOver(form, item) {
+        for (let row = form.nextElementSibling; row; row = row.nextElementSibling) {
+            if (!row.matches("form[data-log-set]:not(.pending)")) {
+                continue;
+            }
+            const kg = row.querySelector('input[name="weightKg"]');
+            if (kg.dataset.suggested && row.dataset.carried !== "true") {
+                continue;
+            }
+            row.dataset.carried = "true";
+            [[kg, item.weightKg], [row.querySelector('input[name="reps"]'), item.reps]].forEach(([input, value]) => {
+                input.placeholder = value;
+                input.dataset.suggested = value;
+            });
+        }
     }
 
     // Put sets still waiting in the queue back on the page after a reload or relaunch.
@@ -473,11 +493,13 @@
         }
     }
 
-    function startRest(seconds) {
+    // `card` is the exercise just logged; Next starts looking from it.
+    function startRest(seconds, card) {
         if (!sessionActive || !seconds) {
             return;
         }
-        write(REST_KEY, { sessionId, end: Date.now() + seconds * 1000, total: seconds, beeped: false });
+        write(REST_KEY, { sessionId, end: Date.now() + seconds * 1000, total: seconds, beeped: false, exercise: card ? card.id : null });
+        showNext();
         ensureTicking();
     }
 
@@ -569,9 +591,25 @@
         return true;
     }
 
-    // What comes after the rest: the first set not yet logged, with its suggested weight and reps.
+    // The next working set not logged yet: in the exercise just logged, else the first exercise after it with one left,
+    // wrapping round to the top.
+    function nextRow() {
+        const state = read(REST_KEY, null);
+        const cards = Array.from(document.querySelectorAll(".exercise"));
+        const from = state && state.exercise ? cards.findIndex((c) => c.id === state.exercise) : -1;
+        const order = from < 0 ? cards : cards.slice(from).concat(cards.slice(0, from));
+        for (const card of order) {
+            const row = card.querySelector(".rows.working form[data-log-set]:not(.pending)");
+            if (row) {
+                return row;
+            }
+        }
+        return null;
+    }
+
+    // What comes after the rest: the next set (above), with its suggested weight and reps.
     function showNext() {
-        const next = document.querySelector("form[data-log-set]:not(.pending)");
+        const next = nextRow();
         const card = next && next.closest(".exercise");
         const name = card ? card.dataset.name : "";
         const kg = next ? next.querySelector('input[name="weightKg"]') : null;

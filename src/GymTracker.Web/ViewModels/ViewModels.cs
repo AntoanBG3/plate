@@ -29,7 +29,8 @@ public record TrainViewModel(WorkoutSession? ActiveSession, IReadOnlyList<Workou
 /// <summary>One row in an exercise card: a logged set, or an empty row to fill in, pre-filled from the suggestion when there is one.</summary>
 /// <param name="JustSaved">The row comes back from an in-place edit, so it shows "Saved" for a moment.</param>
 /// <param name="Number">The working set's position in its card; rows sent alone get theirs from session.js.</param>
-public record SetRowViewModel(int SessionExerciseId, bool IsWarmup, SetEntry? Logged, Guid ClientId, SetTarget? Target = null, bool JustSaved = false, int? Number = null)
+/// <param name="Carried">The target is the last set logged, not a suggestion, so a newer logged set replaces it.</param>
+public record SetRowViewModel(int SessionExerciseId, bool IsWarmup, SetEntry? Logged, Guid ClientId, SetTarget? Target = null, bool JustSaved = false, int? Number = null, bool Carried = false)
 {
     public static SetRowViewModel Blank(int sessionExerciseId, bool isWarmup, SetTarget? target = null) =>
         new(sessionExerciseId, isWarmup, null, Guid.NewGuid(), target);
@@ -50,22 +51,45 @@ public record SessionViewModel(
     IReadOnlyDictionary<int, UserExerciseSettings> Settings,
     decimal ProfileBarKg)
 {
-    public ExerciseCardViewModel CardFor(SessionExercise exercise)
+    /// <param name="index">The card's place in the session, which decides the Move up and Move down items.</param>
+    public ExerciseCardViewModel CardFor(SessionExercise exercise, int index)
     {
         var settings = Settings.GetValueOrDefault(exercise.ExerciseId);
         return new ExerciseCardViewModel(
             exercise,
             Suggestions.GetValueOrDefault(exercise.Id),
             settings?.Note,
-            PlateMath.BarFor(exercise.Exercise.Equipment, settings?.BarWeightKg, ProfileBarKg));
+            PlateMath.BarFor(exercise.Exercise.Equipment, settings?.BarWeightKg, ProfileBarKg),
+            IsFirst: index == 0,
+            IsLast: index == Session.Exercises.Count - 1);
     }
 }
 
-public record ExerciseCardViewModel(SessionExercise Exercise, ProgressionSuggestion? Suggestion, string? Note = null, decimal? BarKg = null)
+public record ExerciseCardViewModel(
+    SessionExercise Exercise,
+    ProgressionSuggestion? Suggestion,
+    string? Note = null,
+    decimal? BarKg = null,
+    bool IsFirst = true,
+    bool IsLast = true)
 {
-    /// <summary>The target for the n-th working set (0-based), repeating the last one past the planned count.</summary>
-    public SetTarget? TargetFor(int index) =>
-        Suggestion is { Sets.Count: > 0 } s ? s.Sets[Math.Min(index, s.Sets.Count - 1)] : null;
+    /// <summary>Targets come from the last set logged in this session rather than a progression suggestion.</summary>
+    public bool Carried => Suggestion is not { Sets.Count: > 0 };
+
+    /// <summary>
+    /// The target for the n-th working set (0-based), repeating the last one past the planned count. Without a
+    /// suggestion (no history yet), the last working set logged in this session, so the next rows start from it.
+    /// </summary>
+    public SetTarget? TargetFor(int index)
+    {
+        if (Suggestion is { Sets.Count: > 0 } s)
+        {
+            return s.Sets[Math.Min(index, s.Sets.Count - 1)];
+        }
+
+        var last = Exercise.Sets.Where(x => !x.IsWarmup).MaxBy(x => x.SetNumber);
+        return last is null ? null : new SetTarget(last.WeightKg, last.Reps);
+    }
 }
 
 public record SummaryViewModel(SessionSummary Summary, IReadOnlyList<PersonalRecord> Records);

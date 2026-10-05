@@ -113,6 +113,78 @@ public class SessionTests(E2EFixture app)
     [Theory]
     [InlineData(E2EFixture.Chromium)]
     [InlineData(E2EFixture.WebKit)]
+    public async Task Without_a_suggestion_the_next_rows_start_from_the_last_set_logged(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press");
+        await phone.StartSessionAsync(template);
+        (await Rows(phone.Page).Nth(1).Locator("input[name=weightKg]").GetAttributeAsync("placeholder")).Should().BeEmpty("a first-ever exercise has no suggestion");
+
+        await phone.LogSetAsync(Rows(phone.Page).First, "60", "10");
+        (await Rows(phone.Page).Nth(1).Locator("input[name=weightKg]").GetAttributeAsync("placeholder")).Should().Be("60");
+        (await Rows(phone.Page).Nth(2).Locator("input[name=reps]").GetAttributeAsync("placeholder")).Should().Be("10");
+
+        // An untouched row takes the values shown, as with a suggestion.
+        await Rows(phone.Page).Nth(1).Locator(".done-btn").TapAsync();
+        await phone.Page.Locator(".rows.working .set-row.done").Nth(1).WaitForAsync();
+        (await Rows(phone.Page).Nth(1).Locator("input[name=weightKg]").InputValueAsync()).Should().Be("60");
+
+        await phone.GoAsync(phone.Page.Url);
+        (await Rows(phone.Page).Nth(2).Locator("input[name=weightKg]").GetAttributeAsync("placeholder")).Should().Be("60");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task The_menu_only_offers_moves_that_go_somewhere(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press", "Barbell row", "Overhead press");
+        await phone.StartSessionAsync(template);
+
+        async Task<IReadOnlyList<string>> MenuAsync(int card) =>
+            (await phone.Page.Locator(".exercise").Nth(card).Locator(".menu [role=menuitem]").AllTextContentsAsync()).Select(t => t.Trim()).ToList();
+
+        (await MenuAsync(0)).Should().NotContain("Move up").And.Contain("Move down");
+        (await MenuAsync(1)).Should().Contain("Move up").And.Contain("Move down");
+        (await MenuAsync(2)).Should().Contain("Move up").And.NotContain("Move down");
+        (await phone.Page.Locator(".exercise").First.Locator(".menu a[href$='/swap'] use").GetAttributeAsync("href")).Should().Be("#i-swap");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task The_rest_timer_names_the_exercise_just_logged_when_it_has_sets_left(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press", "Barbell row");
+        await phone.StartSessionAsync(template);
+
+        // Bench press still has three sets to do, but the row was the one just done.
+        await phone.LogSetAsync(Rows(phone.Page, 1).First, "50", "10");
+        await phone.Page.Locator("#rest-timer:not([hidden])").WaitForAsync();
+        (await phone.Page.Locator("[data-rest-next-short]").TextContentAsync()).Should().Be("Next: Barbell row");
+
+        // When that exercise is done, Next moves on to the first exercise after it with sets left, then wraps round.
+        await phone.Page.Locator("#rest-skip").TapAsync();
+        foreach (var i in new[] { 1, 2 })
+        {
+            await phone.LogSetAsync(Rows(phone.Page, 1).Nth(i), "50", "10");
+            await phone.Page.Locator("#rest-timer:not([hidden])").WaitForAsync();
+            await phone.Page.Locator("#rest-skip").TapAsync();
+        }
+
+        await phone.LogSetAsync(Rows(phone.Page, 0).First, "60", "10");
+        await phone.Page.Locator("#rest-timer:not([hidden])").WaitForAsync();
+        (await phone.Page.Locator("[data-rest-next-short]").TextContentAsync()).Should().Be("Next: Bench press");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
     public async Task An_edit_still_being_typed_is_saved_when_leaving_the_page(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);

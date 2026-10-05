@@ -22,7 +22,7 @@ else
 {
     @* Submitted by session.js, which saves the set on the phone before sending it. Suggested values are
        placeholders, copied into the field when the set is logged, so they look different from entered ones. *@
-    <form class="set-row@(Model.IsWarmup ? " warmup" : "")" data-log-set data-client-id="@Model.ClientId">
+    <form class="set-row@(Model.IsWarmup ? " warmup" : "")" data-log-set data-client-id="@Model.ClientId" data-carried="@(Model.Carried && Model.Target is not null ? "true" : null)">
         <input type="hidden" name="clientId" value="@Model.ClientId" />
         <input type="hidden" name="sessionExerciseId" value="@Model.SessionExerciseId" />
         <input type="hidden" name="isWarmup" value="@(Model.IsWarmup ? "true" : "false")" />
