@@ -114,4 +114,30 @@ public class LayoutTests(E2EFixture app)
 
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium, 320)]
+    [InlineData(E2EFixture.WebKit, 320)]
+    [InlineData(E2EFixture.WebKit, 390)]
+    public async Task Segment_labels_fit_in_Bulgarian(string browser, int width)
+    {
+        var (email, password) = await app.App.CreateUserAsync(onboarded: false);
+        await using var phone = await app.PhoneAsync(browser, width);
+        await phone.SignInAsync(email, password);
+        phone.Email = email;
+        await phone.WithTargetsAsync(app, bulgarian: true);
+
+        foreach (var path in new[] { "/welcome", "/settings", "/food/add", "/progress" })
+        {
+            await phone.GoAsync(path);
+            // A label wider than its segment, or a segment taller than two lines, is cut off or crowds the control.
+            var bad = await phone.Page.EvaluateAsync<string[]>("""
+                () => [...document.querySelectorAll(".segmented .segment")]
+                    .filter((s) => s.offsetParent)
+                    .filter((s) => s.scrollWidth > s.clientWidth + 1 || s.getBoundingClientRect().height > 64)
+                    .map((s) => s.textContent.trim())
+                """);
+            bad.Should().BeEmpty($"every segment label on {path} fits");
+        }
+    }
 }
