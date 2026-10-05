@@ -26,6 +26,7 @@ public static class GoalTargets
         decimal? target = profile.Goal switch
         {
             Goal.Maintain => tdeeKcal,
+            Goal.Cut when CutCheck.OnBreak(profile, today) => tdeeKcal,
             Goal.Cut when trendKg is { } w => tdeeKcal - DailyAdjustment(w, profile.TargetRatePercentPerWeek),
             Goal.Bulk when trendKg is { } w => tdeeKcal + DailyAdjustment(w, profile.TargetRatePercentPerWeek),
             _ => null,

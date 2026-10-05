@@ -736,7 +736,6 @@
   "saturated fat": "наситени мазнини",
   "{0} g saturated fat, up to {1} g": "{0} г наситени мазнини, до {1} г",
   "Incomplete: some foods have no value": "Непълно: някои храни нямат стойност",
-  "at least · min {0} g": "поне · мин. {0} г",
   "average of 1 logged day": "средно от 1 записан ден",
   "average of {0} logged days": "средно от {0} записани дни",
   "minimum reached {0} of {1} days": "минимумът е достигнат {0} от {1} дни",
@@ -749,5 +748,14 @@
   "Judged on the 7 days before today, against today's targets.": "За 7-те дни преди днес, спрямо днешните цели.",
   "Aim": "Цел",
   "Minimum": "Минимум",
-  "Daily protein against the aim and minimum for the last 4 weeks": "Дневен протеин спрямо целта и минимума за последните 4 седмици"
+  "Daily protein against the aim and minimum for the last 4 weeks": "Дневен протеин спрямо целта и минимума за последните 4 седмици",
+  "Diet break until {0}": "Почивка от диетата до {0}",
+  "Calories are at maintenance; protein stays at your cut aim. The cut resumes on its own.": "Калориите са на поддържане; протеинът остава на целта за отслабване. Отслабването продължава само.",
+  "End the break now": "Прекрати почивката сега",
+  "You're losing about {0}% of your weight a week, faster than planned. Fast cuts cost more muscle; your target will adjust, or lower the rate in Settings.": "Сваляш около {0}% от теглото си на седмица, по-бързо от планираното. Бързото отслабване струва повече мускули; целта ти ще се коригира, или намали темпото в Настройки.",
+  "Protein averaged {0} g this week, under your minimum of {1} g.": "Протеинът е средно {0} г тази седмица, под минимума ти от {1} г.",
+  "You've been cutting for 12 weeks. A 2-week break at maintenance can help you keep muscle and stick with it.": "Отслабваш от 12 седмици. Двуседмична почивка на поддържащи калории може да ти помогне да запазиш мускулите и да издържиш.",
+  "Take a 2-week break": "Вземи 2 седмици почивка",
+  "Dismiss for a week": "Скрий за седмица",
+  "A diet break pauses a cut.": "Почивката от диетата е пауза в отслабването."
 }

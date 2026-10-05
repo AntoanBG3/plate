@@ -1,4 +1,7 @@
+using GymTracker.Core.Domain;
+using GymTracker.Core.Nutrition;
 using GymTracker.Core.Training;
+using GymTracker.Web.Features;
 using GymTracker.Web.Features.Body;
 using GymTracker.Web.Features.Food;
 using GymTracker.Web.Features.Profile;
@@ -16,6 +19,14 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
     {
         var profile = await profiles.GetAsync(ct);
         var today = await profiles.TodayAsync(ct);
+        if (CutCheck.Sync(profile, today))
+        {
+            await profiles.UpdateAsync(_ => { }, ct);
+        }
+
+        var dailyTargets = await targets.ForTodayAsync(ct);
+        var cutChecks = CutCheck.For(profile, today, await bodyweights.WeighInsAsync(ct),
+            (await food.WeekCardAsync(today, dailyTargets, ct))?.Week, dailyTargets.Macros);
         var active = await sessions.GetActiveAsync(ct);
         var list = await templates.ListAsync(ct);
         var nextId = NextWorkout.Pick(
@@ -34,10 +45,44 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
             list.FirstOrDefault(t => t.Id == nextId),
             list.Count > 0,
             day.Totals,
-            await targets.ForTodayAsync(ct),
+            dailyTargets,
             weights.Points.TakeLast(15).ToList(),
             day.Entries.MaxBy(e => e.CreatedAt)?.Description,
-            day.Quality));
+            day.Quality,
+            cutChecks,
+            CutCheck.OnBreak(profile, today) ? profile.DietBreakUntil : null));
+    }
+
+    [HttpPost("cut/break")]
+    public async Task<IActionResult> StartBreak(CancellationToken ct)
+    {
+        var today = await profiles.TodayAsync(ct);
+        await profiles.UpdateAsync(p =>
+        {
+            if (p.Goal != Goal.Cut)
+            {
+                throw new ValidationException("A diet break pauses a cut.");
+            }
+
+            CutCheck.StartBreak(p, today);
+        }, ct);
+        return Redirect("/today");
+    }
+
+    [HttpPost("cut/end-break")]
+    public async Task<IActionResult> EndBreak(CancellationToken ct)
+    {
+        var today = await profiles.TodayAsync(ct);
+        await profiles.UpdateAsync(p => CutCheck.EndBreak(p, today), ct);
+        return Redirect("/today");
+    }
+
+    [HttpPost("cut/dismiss")]
+    public async Task<IActionResult> DismissCutChecks(CancellationToken ct)
+    {
+        var today = await profiles.TodayAsync(ct);
+        await profiles.UpdateAsync(p => p.CutCheckDismissedUntil = CutCheck.DismissedUntil(today), ct);
+        return Redirect("/today");
     }
 
     [HttpPost("whats-new/dismiss")]

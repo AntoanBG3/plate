@@ -144,6 +144,7 @@ public class OnboardingService(
 
         var latest = await bodyweights.LatestAsync(ct);
         var now = time.GetUtcNow();
+        var today = await profiles.TodayAsync(ct);
         await profiles.UpdateAsync(p =>
         {
             p.DisplayName = draft.Name ?? "";
@@ -151,7 +152,9 @@ public class OnboardingService(
             p.BirthYear = draft.BirthYear;
             p.HeightCm = draft.HeightCm;
             p.ActivityLevel = draft.ActivityLevel;
+            var previousGoal = p.Goal;
             p.Goal = draft.Goal!.Value;
+            CutCheck.GoalChanged(p, previousGoal, today);
             p.TargetRatePercentPerWeek = draft.Goal == Goal.Maintain ? 0 : draft.RatePercentPerWeek ?? 0;
             p.ProteinGramsPerKg = form.ProteinGramsPerKg;
             p.InitialMaintenanceKcal = form.InitialMaintenanceKcal;

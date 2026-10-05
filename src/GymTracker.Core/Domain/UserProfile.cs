@@ -19,6 +19,15 @@ public class UserProfile
     public decimal TargetRatePercentPerWeek { get; set; }
     /// <summary>The protein aim in g per kg of reference weight; null is Auto, set by goal (SPEC 5.6).</summary>
     public decimal? ProteinGramsPerKg { get; set; }
+
+    /// <summary>When the current cut started, for the diet break offer (SPEC 5.9); null when not cutting.</summary>
+    public DateOnly? CutStartedOn { get; set; }
+
+    /// <summary>The last day of a diet break at maintenance; null when there is none.</summary>
+    public DateOnly? DietBreakUntil { get; set; }
+
+    /// <summary>Cut check-ins are hidden through this day.</summary>
+    public DateOnly? CutCheckDismissedUntil { get; set; }
     public decimal DefaultWeightIncrementKg { get; set; } = 2.5m;
     public Theme Theme { get; set; } = Theme.Dark;
     public Language Language { get; set; } = Language.English;

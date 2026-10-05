@@ -37,6 +37,7 @@ public class SettingsController(
     [HttpPost("profile")]
     public async Task<IActionResult> Profile(ProfileForm form, CancellationToken ct)
     {
+        var today = await profiles.TodayAsync(ct);
         await profiles.UpdateAsync(p =>
         {
             p.DisplayName = form.DisplayName?.Trim() ?? "";
@@ -46,7 +47,9 @@ public class SettingsController(
             p.BirthYear = form.BirthYear;
             p.ActivityLevel = form.ActivityLevel;
             p.InitialMaintenanceKcal = form.InitialMaintenanceKcal;
+            var previousGoal = p.Goal;
             p.Goal = form.Goal;
+            GymTracker.Core.Nutrition.CutCheck.GoalChanged(p, previousGoal, today);
             p.TargetRatePercentPerWeek = form.TargetRatePercentPerWeek ?? 0;
             p.ProteinGramsPerKg = form.ProteinGramsPerKg;
             p.DefaultWeightIncrementKg = form.DefaultWeightIncrementKg ?? 2.5m;

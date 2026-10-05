@@ -917,9 +917,18 @@ namespace GymTracker.Web.Data.Migrations
                     b.Property<DateTimeOffset?>("ChangelogSeenAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateOnly?>("CutCheckDismissedUntil")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("CutStartedOn")
+                        .HasColumnType("date");
+
                     b.Property<decimal>("DefaultWeightIncrementKg")
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");
+
+                    b.Property<DateOnly?>("DietBreakUntil")
+                        .HasColumnType("date");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()

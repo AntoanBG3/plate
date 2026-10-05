@@ -1,3 +1,4 @@
+@using GymTracker.Core.Nutrition
 @model TodayViewModel
 @inject UserTime Time
 @inject TimeProvider Clock
@@ -88,9 +89,9 @@
                 </div>
                 <div>
                     @{ var fiberG = Model.Quality.FiberG ?? 0; }
-                    <div class="footnote">@L["Fiber"] <span class="num">@L["{0} g", Math.Round(fiberG)]</span></div>
+                    <div class="footnote">@L["Fiber"] <span class="num">@(Model.Quality.FiberComplete ? "" : "≥")@L["{0} g", Math.Round(fiberG)]</span></div>
                     @Ui.Meter(fiberG, macros.FiberMinG, L["{0} of {1} g fiber", Math.Round(fiberG), macros.FiberMinG])
-                    <div class="caption num">@(Model.Quality.FiberComplete ? L["min {0} g", macros.FiberMinG] : L["at least · min {0} g", macros.FiberMinG])</div>
+                    <div class="caption num">@L["min {0} g", macros.FiberMinG]</div>
                 </div>
             </div>
         }
@@ -109,6 +110,42 @@
         </div>
     }
 </a>
+
+@if (Model.DietBreakUntil is { } breakUntil)
+{
+    <section class="card card-pad check-in">
+        <p class="headline">@L["Diet break until {0}", Ui.ShortDate(breakUntil)]</p>
+        <p class="subhead">@L["Calories are at maintenance; protein stays at your cut aim. The cut resumes on its own."]</p>
+        <form method="post" asp-antiforgery="true" action="/today/cut/end-break">
+            <button type="submit" class="btn btn-plain">@L["End the break now"]</button>
+        </form>
+    </section>
+}
+else if (Model.CutChecks.Count > 0)
+{
+    <section class="card card-pad check-in">
+        @foreach (var check in Model.CutChecks)
+        {
+            <p class="subhead">@(check.Kind switch
+            {
+                CutCheckKind.TooFast => L["You're losing about {0}% of your weight a week, faster than planned. Fast cuts cost more muscle; your target will adjust, or lower the rate in Settings.", check.LossPercentPerWeek?.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)],
+                CutCheckKind.ProteinLow => L["Protein averaged {0} g this week, under your minimum of {1} g.", check.ProteinG, check.ProteinMinG],
+                _ => L["You've been cutting for 12 weeks. A 2-week break at maintenance can help you keep muscle and stick with it."],
+            })</p>
+        }
+        <div class="check-in-actions">
+            @if (Model.CutChecks.Any(c => c.Kind == CutCheckKind.BreakOffer))
+            {
+                <form method="post" asp-antiforgery="true" action="/today/cut/break">
+                    <button type="submit" class="btn btn-tinted">@L["Take a 2-week break"]</button>
+                </form>
+            }
+            <form method="post" asp-antiforgery="true" action="/today/cut/dismiss">
+                <button type="submit" class="btn btn-plain">@L["Dismiss for a week"]</button>
+            </form>
+        </div>
+    </section>
+}
 
 <section class="section">
     <h2 class="section-title">@L["Workout"]</h2>

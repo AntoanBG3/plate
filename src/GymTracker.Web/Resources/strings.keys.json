@@ -40,6 +40,9 @@
   "A cut can't be faster than {0}% of bodyweight per week.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
+  "A diet break pauses a cut.": [
+    "src/GymTracker.Web/Controllers/TodayController.cs"
+  ],
   "A few quick questions and your calorie and protein targets are ready. It takes about two minutes.": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
@@ -313,6 +316,9 @@
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
   ],
+  "Calories are at maintenance; protein stays at your cut aim. The cut resumes on its own.": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "Calories must be between 1 and 5000.": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
   ],
@@ -484,11 +490,17 @@
   "Didn't understand my wording": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
+  "Diet break until {0}": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "Dinner": [
     "enum"
   ],
   "Dip": [
     "exercise"
+  ],
+  "Dismiss for a week": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Done": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml",
@@ -536,6 +548,9 @@
   ],
   "Email or password is wrong.": [
     "src/GymTracker.Web/Controllers/AccountController.cs"
+  ],
+  "End the break now": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Energy": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
@@ -1299,6 +1314,9 @@
   "Protein at least {0} g, aiming for {1} g; fat {2}–{3} g; carbs {4}–{5} g.": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
   ],
+  "Protein averaged {0} g this week, under your minimum of {1} g.": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "Protein must be between {0} and {1} g per kg.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
@@ -1676,6 +1694,9 @@
   ],
   "Swap {0}": [
     "src/GymTracker.Web/Controllers/TrainController.cs"
+  ],
+  "Take a 2-week break": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Take a photo instead": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
@@ -2114,6 +2135,12 @@
   "You're all set.": [
     "src/GymTracker.Web/Controllers/OnboardingController.cs"
   ],
+  "You're losing about {0}% of your weight a week, faster than planned. Fast cuts cost more muscle; your target will adjust, or lower the rate in Settings.": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "You've been cutting for 12 weeks. A 2-week break at maintenance can help you keep muscle and stick with it.": [
+    "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
   "Your answer": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
@@ -2141,9 +2168,6 @@
   ],
   "at least the floor {0} of {1} days": [
     "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
-  ],
-  "at least · min {0} g": [
-    "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "average of 1 logged day": [
     "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"

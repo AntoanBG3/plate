@@ -312,6 +312,8 @@ body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
 .mini-macros { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--s-4); padding: var(--s-2) var(--s-5) 0; }
 .mini-macros .caption { margin-top: 2px; }
 .mini-macros > div { display: flex; flex-direction: column; justify-content: flex-end; }
+.check-in { margin-top: var(--s-3); display: grid; gap: var(--s-2); }
+.check-in-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; }
 .gauges-foot { padding: var(--s-2) var(--s-4) var(--s-4); text-align: center; }
 
 .spark { width: 128px; height: 52px; overflow: visible; flex: none; }

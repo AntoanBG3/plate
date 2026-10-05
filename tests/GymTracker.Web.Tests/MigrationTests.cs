@@ -1,5 +1,4 @@
 using FluentAssertions;
-using GymTracker.Core.Domain;
 using GymTracker.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -19,9 +18,8 @@ public class MigrationTests(PostgresFixture fixture)
         await using (var db = fixture.CreateContext(null, connection))
         {
             await db.GetService<IMigrator>().MigrateAsync("AddOnboardingChat");
-            AddUser(db, "default", 2.0m);
-            AddUser(db, "chosen", 2.2m);
-            await db.SaveChangesAsync();
+            await AddUserAsync(db, "default", 2.0m);
+            await AddUserAsync(db, "chosen", 2.2m);
         }
 
         await using (var db = fixture.CreateContext(null, connection))
@@ -34,10 +32,15 @@ public class MigrationTests(PostgresFixture fixture)
         }
     }
 
-    private static void AddUser(AppDbContext db, string id, decimal proteinPerKg)
+    /// <summary>Plain SQL, since the current model has columns the old schema lacks.</summary>
+    private static async Task AddUserAsync(AppDbContext db, string id, decimal proteinPerKg)
     {
         db.Users.Add(new AppUser { Id = id, UserName = $"{id}@test", Email = $"{id}@test", NormalizedUserName = $"{id}@TEST", NormalizedEmail = $"{id}@TEST" });
-        db.Profiles.Add(new UserProfile { UserId = id, DisplayName = id, ProteinGramsPerKg = proteinPerKg });
+        await db.SaveChangesAsync();
+        await db.Database.ExecuteSqlAsync($"""
+            INSERT INTO "Profiles" ("UserId", "DisplayName", "TimeZoneId", "Goal", "TargetRatePercentPerWeek", "ProteinGramsPerKg", "DefaultWeightIncrementKg")
+            VALUES ({id}, {id}, 'Europe/Sofia', 'Maintain', 0, {proteinPerKg}, 2.5)
+            """);
     }
 
     private async Task<string> NewDatabaseAsync(string name)
