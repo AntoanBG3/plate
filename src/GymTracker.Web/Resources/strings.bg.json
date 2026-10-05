@@ -811,5 +811,10 @@
   "The list changed while you were reordering. Try again.": "Списъкът се промени, докато подреждаше. Опитай пак.",
   "No targets for this day yet.": "За този ден още няма цели.",
   "Targets start on {0}": "Целите започват от {0}",
-  "You can't log food for a future day.": "Не може да записваш храна за бъдещ ден."
+  "You can't log food for a future day.": "Не може да записваш храна за бъдещ ден.",
+  "Some foods have no fiber or saturated fat value, so these are at least what is shown.": "За някои храни липсват фибри или наситени мазнини, така че показаното е най-малкото.",
+  "aim {0}": "цел {0}",
+  "aim {0} · min {1}": "цел {0} · мин. {1}",
+  "max {0}": "макс. {0}",
+  "min {0}": "мин. {0}"
 }

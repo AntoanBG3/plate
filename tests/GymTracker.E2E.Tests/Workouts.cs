@@ -22,6 +22,22 @@ public static class Workouts
             """, new object?[] { path, fields ?? [] });
     }
 
+    /// <summary>Fills in the phone's profile (male, 1990, 180 cm, 80 kg today) so it has calorie and macro targets.</summary>
+    public static async Task WithTargetsAsync(this Phone phone, E2EFixture app, bool bulgarian = false)
+    {
+        await using var db = app.Db.CreateContext(null);
+        var userId = await db.Users.Where(u => u.Email == phone.Email).Select(u => u.Id).SingleAsync();
+        await db.Profiles.IgnoreQueryFilters().Where(p => p.UserId == userId).ExecuteUpdateAsync(p => p
+            .SetProperty(x => x.Sex, GymTracker.Core.Domain.Sex.Male)
+            .SetProperty(x => x.BirthYear, 1990)
+            .SetProperty(x => x.HeightCm, 180)
+            .SetProperty(x => x.Language, bulgarian ? GymTracker.Core.Domain.Language.Bulgarian : GymTracker.Core.Domain.Language.English));
+        await using var mine = app.Db.CreateContext(userId);
+        var today = GymTracker.Core.Time.UserClock.Today(DateTimeOffset.UtcNow, GymTracker.Core.Domain.UserProfile.DefaultTimeZoneId);
+        mine.Bodyweights.Add(new GymTracker.Core.Domain.BodyweightEntry { UserId = userId, Date = today, WeightKg = 80 });
+        await mine.SaveChangesAsync();
+    }
+
     public static async Task<int> ExerciseIdAsync(this E2EFixture app, string name)
     {
         await using var db = app.Db.CreateContext(null);

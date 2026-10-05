@@ -57,21 +57,20 @@
     {
         <div class="meter" role="img" aria-label="@L["{0} of {1} kcal", Math.Round(day.Totals.Kcal), targetKcal]"><i style="--p: @Share(day.Totals.Kcal, targetKcal)"></i></div>
     }
+    @* Every cell reads the same way: the amount, one word, the meter, then the target in one line (Phase 11). *@
     <div class="macro-grid">
         <div>
             <div class="macro-value num">@Math.Round(day.Totals.ProteinG)<small> @L["g"]</small></div>
-            <div class="footnote">@(targetProtein is { } tp ? L["protein of {0} g", tp] : L["protein"])</div>
+            <div class="footnote">@L["protein"]</div>
             @if (macros is not null)
             {
                 <text>@Ui.Meter(day.Totals.ProteinG, macros.ProteinAimG, L["{0} of {1} g protein, minimum {2} g", Math.Round(day.Totals.ProteinG), macros.ProteinAimG, macros.ProteinMinG], notches: [macros.ProteinMinG])</text>
-                @if (macros.ProteinMinG < macros.ProteinAimG)
-                {
-                    <div class="caption num">@L["min {0} g", macros.ProteinMinG]</div>
-                }
+                <div class="caption num">@(macros.ProteinMinG < macros.ProteinAimG ? L["aim {0} · min {1}", macros.ProteinAimG, macros.ProteinMinG] : L["aim {0}", macros.ProteinAimG])</div>
             }
-            else if (targetProtein is not null)
+            else if (targetProtein is { } tp)
             {
-                <div class="meter small"><i style="--p: @Share(day.Totals.ProteinG, targetProtein)"></i></div>
+                <div class="meter small"><i style="--p: @Share(day.Totals.ProteinG, tp)"></i></div>
+                <div class="caption num">@L["aim {0}", tp]</div>
             }
         </div>
         <div>
@@ -80,7 +79,7 @@
             @if (macros is not null && macros.CarbsMaxG > 0)
             {
                 <text>@Ui.Meter(day.Totals.CarbsG, macros.CarbsMaxG * 1.15m, L["{0} g carbs, range {1} to {2} g", Math.Round(day.Totals.CarbsG), macros.CarbsMinG, macros.CarbsMaxG], notches: [macros.CarbsMinG, macros.CarbsMaxG])</text>
-                <div class="caption num">@L["{0}–{1} g", macros.CarbsMinG, macros.CarbsMaxG]</div>
+                <div class="caption num">@L["{0}–{1}", macros.CarbsMinG, macros.CarbsMaxG]</div>
             }
         </div>
         <div>
@@ -89,7 +88,7 @@
             @if (macros is not null)
             {
                 <text>@Ui.Meter(day.Totals.FatG, macros.FatMaxG * 1.15m, L["{0} g fat, range {1} to {2} g", Math.Round(day.Totals.FatG), macros.FatMinG, macros.FatMaxG], notches: [macros.FatMinG, macros.FatMaxG])</text>
-                <div class="caption num">@L["{0}–{1} g", macros.FatMinG, macros.FatMaxG]</div>
+                <div class="caption num">@L["{0}–{1}", macros.FatMinG, macros.FatMaxG]</div>
             }
         </div>
     </div>
@@ -97,33 +96,40 @@
         var q = day.Quality;
         var fiber = q.FiberG ?? 0;
         var saturated = q.SaturatedFatG ?? 0;
+        // No value at all reads "—"; some foods without one make the total a lower bound, "≥".
+        string Amount(decimal? total, bool complete) =>
+            total is null && day.Entries.Count > 0 ? "—" : (complete ? "" : "≥") + Math.Round(total ?? 0);
     }
     <div class="macro-grid quality-grid">
         <div>
-            <div class="macro-value num">@(q.FiberG is null && day.Entries.Count > 0 ? "—" : Math.Round(fiber).ToString())<small> @L["g"]</small></div>
-            <div class="footnote">@(macros is not null ? L["fiber of {0} g", macros.FiberMinG] : L["fiber"])</div>
+            <div class="macro-value num">@Amount(q.FiberG, q.FiberComplete)@if (q.FiberG is not null || day.Entries.Count == 0)
+                {
+                    <small> @L["g"]</small>
+                }</div>
+            <div class="footnote">@L["fiber"]</div>
             @if (macros is not null)
             {
                 <text>@Ui.Meter(fiber, macros.FiberMinG, L["{0} of {1} g fiber", Math.Round(fiber), macros.FiberMinG])</text>
-            }
-            @if (!q.FiberComplete)
-            {
-                <div class="caption">@L["At least: some foods have no value"]</div>
+                <div class="caption num">@L["min {0}", macros.FiberMinG]</div>
             }
         </div>
         <div>
-            <div class="macro-value num">@(q.SaturatedFatG is null && day.Entries.Count > 0 ? "—" : Math.Round(saturated).ToString())<small> @L["g"]</small></div>
-            <div class="footnote">@(macros is not null ? L["saturated fat, up to {0} g", macros.SaturatedFatMaxG] : L["saturated fat"])</div>
+            <div class="macro-value num">@Amount(q.SaturatedFatG, q.SaturatedFatComplete)@if (q.SaturatedFatG is not null || day.Entries.Count == 0)
+                {
+                    <small> @L["g"]</small>
+                }</div>
+            <div class="footnote">@L["saturated fat"]</div>
             @if (macros is not null)
             {
                 <div class="@(q.SaturatedFatComplete ? "" : "unknown")"><text>@Ui.Meter(saturated, macros.SaturatedFatMaxG * 1.15m, L["{0} g saturated fat, up to {1} g", Math.Round(saturated), macros.SaturatedFatMaxG], over: q.SaturatedFatComplete && saturated > macros.SaturatedFatMaxG, notches: [macros.SaturatedFatMaxG])</text></div>
-            }
-            @if (!q.SaturatedFatComplete)
-            {
-                <div class="caption">@L["Incomplete: some foods have no value"]</div>
+                <div class="caption num">@L["max {0}", macros.SaturatedFatMaxG]</div>
             }
         </div>
     </div>
+    @if (!q.FiberComplete || !q.SaturatedFatComplete)
+    {
+        <p class="caption" style="margin-top: var(--s-2)">@L["Some foods have no fiber or saturated fat value, so these are at least what is shown."]</p>
+    }
     @if (Model.Targets is null && !isToday)
     {
         <p class="footnote" style="margin-top: var(--s-3)">@(Model.TargetsStart is { } start ? L["Targets start on {0}", Ui.LongDate(start)] : L["No targets for this day yet."])</p>

@@ -38,4 +38,28 @@ public class LayoutTests(E2EFixture app)
         await TopbarFitsAsync(phone, "the summary");
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium, 320, false)]
+    [InlineData(E2EFixture.Chromium, 320, true)]
+    [InlineData(E2EFixture.WebKit, 320, false)]
+    [InlineData(E2EFixture.WebKit, 320, true)]
+    [InlineData(E2EFixture.WebKit, 390, true)]
+    public async Task The_macro_meters_line_up(string browser, int width, bool bulgarian)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, width);
+        await phone.WithTargetsAsync(app, bulgarian);
+        await phone.GoAsync("/food");
+
+        var meters = phone.Page.Locator(".macro-grid:not(.quality-grid) .meter");
+        (await meters.CountAsync()).Should().Be(3);
+        var tops = new List<float>();
+        for (var i = 0; i < 3; i++)
+        {
+            tops.Add((await Phone.BoxAsync(meters.Nth(i))).Y);
+        }
+
+        (tops.Max() - tops.Min()).Should().BeLessThan(2, "the protein, carbs and fat meters sit on one line");
+        phone.ShouldHaveNoErrors();
+    }
 }

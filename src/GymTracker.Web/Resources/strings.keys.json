@@ -239,9 +239,6 @@
   "At least {0} g protein in this meal": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
-  "At least: some foods have no value": [
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
-  ],
   "Attach a screenshot or photo (JPEG, PNG or WebP).": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
   ],
@@ -861,9 +858,6 @@
   ],
   "Include {0}": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
-  ],
-  "Incomplete: some foods have no value": [
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "Increment must be above 0 and at most 50 kg.": [
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
@@ -1774,6 +1768,9 @@
   "Snack": [
     "enum"
   ],
+  "Some foods have no fiber or saturated fat value, so these are at least what is shown.": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
   "Something else": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
@@ -2340,6 +2337,12 @@
   "Your summary": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
   ],
+  "aim {0}": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "aim {0} · min {1}": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
   "assumed 100 g": [
     "extra"
   ],
@@ -2367,9 +2370,6 @@
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "fiber": [
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
-  ],
-  "fiber of {0} g": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "finished": [
@@ -2435,8 +2435,13 @@
   "logged {0}× in 30 days": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "max {0}": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "min {0}": [
+    "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
   "min {0} g": [
-    "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "minimum reached {0} of {1} days": [
@@ -2459,9 +2464,6 @@
   "protein left": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
-  "protein of {0} g": [
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
-  ],
   "reps": [
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
   ],
@@ -2469,9 +2471,6 @@
     "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml"
   ],
   "saturated fat": [
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
-  ],
-  "saturated fat, up to {0} g": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "to your protein minimum": [
@@ -2582,7 +2581,6 @@
     "wwwroot/js"
   ],
   "{0}–{1} g": [
-    "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "{0}–{1} reps · {2} · rest {3}": [
