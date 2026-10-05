@@ -1,6 +1,7 @@
 using GymTracker.Core.Text;
 using GymTracker.Web.Features;
 using GymTracker.Web.Features.Localization;
+using GymTracker.Web.Features.Profile;
 using GymTracker.Web.Features.Training;
 using GymTracker.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymTracker.Web.Controllers;
 
 [Route("train/templates")]
-public class TemplatesController(TemplateService templates, ExerciseService exercises, ExerciseSettingsService settings, Localizer localizer) : Controller
+public class TemplatesController(TemplateService templates, ExerciseService exercises, ExerciseSettingsService settings, ProfileService profiles, Localizer localizer) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct) => View(await templates.ListAsync(ct));
@@ -24,7 +25,7 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     public async Task<IActionResult> Edit(int id, CancellationToken ct)
     {
         var template = await templates.GetAsync(id, ct);
-        return View(new TemplateEditViewModel(template, await settings.ForAsync(template.Exercises.Select(e => e.ExerciseId), ct)));
+        return View(new TemplateEditViewModel(template, await settings.ForAsync(template.Exercises.Select(e => e.ExerciseId), ct), (await profiles.GetAsync(ct)).DefaultWeightIncrementKg));
     }
 
     [HttpPost("{id:int}/rename")]
@@ -136,11 +137,11 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
             try
             {
                 await templates.UpdateExerciseAsync(id, input, ct);
-                return PartialView("_TemplateExerciseForm", new TemplateExerciseFormViewModel(await templates.GetExerciseAsync(id, ct), Saved: true));
+                return PartialView("_TemplateExerciseForm", new TemplateExerciseFormViewModel(await templates.GetExerciseAsync(id, ct), (await profiles.GetAsync(ct)).DefaultWeightIncrementKg, Saved: true));
             }
             catch (ValidationException ex)
             {
-                return PartialView("_TemplateExerciseForm", new TemplateExerciseFormViewModel(await templates.GetExerciseAsync(id, ct), input, ex.Text));
+                return PartialView("_TemplateExerciseForm", new TemplateExerciseFormViewModel(await templates.GetExerciseAsync(id, ct), (await profiles.GetAsync(ct)).DefaultWeightIncrementKg, input, ex.Text));
             }
         }
 

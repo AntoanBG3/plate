@@ -112,7 +112,8 @@ public record ProgressViewModel(
 
 public record PlatesViewModel(int SessionExerciseId, decimal BarKg, decimal? TargetKg, PlateLoad? Load);
 
-public record TemplateEditViewModel(WorkoutTemplate Template, IReadOnlyDictionary<int, UserExerciseSettings> Settings);
+/// <param name="DefaultIncrementKg">The profile's weight jump, used where an exercise leaves its own empty.</param>
+public record TemplateEditViewModel(WorkoutTemplate Template, IReadOnlyDictionary<int, UserExerciseSettings> Settings, decimal DefaultIncrementKg);
 
 public record ExerciseSettingsFormViewModel(Exercise Exercise, UserExerciseSettings? Settings, decimal ProfileBarKg, string ReturnUrl);
 
@@ -137,6 +138,7 @@ public record CustomExerciseViewModel(int? Id, string Name, Muscle PrimaryMuscle
 /// <summary>One exercise's fields in the template editor; after a refused change, what was typed and why.</summary>
 public record TemplateExerciseFormViewModel(
     TemplateExercise Item,
+    decimal DefaultIncrementKg,
     GymTracker.Web.Features.Training.TemplateExerciseInput? Posted = null,
     GymTracker.Core.Text.LocalText? Error = null,
     bool Saved = false);

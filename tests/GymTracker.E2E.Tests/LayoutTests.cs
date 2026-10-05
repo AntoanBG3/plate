@@ -79,4 +79,39 @@ public class LayoutTests(E2EFixture app)
             "a number input shows the device's decimal comma, unlike the rest of the app");
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium, 320)]
+    [InlineData(E2EFixture.Chromium, 390)]
+    [InlineData(E2EFixture.WebKit, 320)]
+    [InlineData(E2EFixture.WebKit, 390)]
+    public async Task Placeholders_fit_their_fields_in_Bulgarian(string browser, int width)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, width);
+        await phone.WithTargetsAsync(app, bulgarian: true);
+        var template = await phone.CreateTemplateAsync(app, "Горна част", "Bench press");
+
+        foreach (var path in new[] { "/settings", $"/train/templates/{template}", "/today" })
+        {
+            await phone.GoAsync(path);
+            // Text width of each visible placeholder against the input's content box.
+            var clipped = await phone.Page.EvaluateAsync<string[]>("""
+                () => {
+                    const ctx = document.createElement("canvas").getContext("2d");
+                    return [...document.querySelectorAll(".field-row input[placeholder]")]
+                        .filter((i) => i.offsetParent && !i.value)
+                        .filter((i) => {
+                            const s = getComputedStyle(i);
+                            ctx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+                            const room = i.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+                            return ctx.measureText(i.placeholder).width > room + 1;
+                        })
+                        .map((i) => `${i.name}: ${i.placeholder}`);
+                }
+                """);
+            clipped.Should().BeEmpty($"every placeholder on {path} is readable in full");
+        }
+
+        phone.ShouldHaveNoErrors();
+    }
 }

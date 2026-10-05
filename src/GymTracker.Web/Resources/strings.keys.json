@@ -516,9 +516,6 @@
   "Deadlift": [
     "exercise"
   ],
-  "Default": [
-    "src/GymTracker.Web/Views/Templates/_TemplateExerciseForm.cshtml"
-  ],
   "Delete": [
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
