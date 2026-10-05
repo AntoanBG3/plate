@@ -128,4 +128,34 @@ public class UndoToastTests(E2EFixture app)
         (await phone.Page.Locator("#toast").IsHiddenAsync()).Should().BeTrue();
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_food_entry_can_be_swiped_away_and_the_totals_follow(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var date = await TodayAsync(phone);
+        var id = await QuickEntryAsync(phone, date, $"Swipe test {Guid.NewGuid():N}");
+        await phone.GoAsync("/food");
+        (await phone.Page.Locator(".macro-main .metric-value").TextContentAsync()).Should().Be("500");
+
+        var row = phone.Page.Locator("[data-swipe-row]").First;
+        var box = await Phone.BoxAsync(row.Locator(".swipe-content"));
+        await phone.Page.Mouse.MoveAsync(box.X + box.Width - 40, box.Y + box.Height / 2);
+        await phone.Page.Mouse.DownAsync();
+        for (var dx = 20; dx <= 160; dx += 20)
+        {
+            await phone.Page.Mouse.MoveAsync(box.X + box.Width - 40 - dx, box.Y + box.Height / 2);
+        }
+
+        await phone.Page.Mouse.UpAsync();
+        phone.Page.Url.Should().EndWith("/food", "a swipe is not a tap on the row");
+        await phone.NavigateByAsync(() => row.Locator(".set-delete").TapAsync());
+
+        (await IsDeletedAsync(id)).Should().BeTrue();
+        (await phone.Page.Locator(".macro-main .metric-value").TextContentAsync()).Should().Be("0");
+        await phone.Page.Locator("#toast:not([hidden]) .toast-action").WaitForAsync();
+        phone.ShouldHaveNoErrors();
+    }
 }

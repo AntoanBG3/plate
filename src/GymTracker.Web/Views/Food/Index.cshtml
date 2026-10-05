@@ -164,7 +164,9 @@
         <div class="list">
             @foreach (var e in entries)
             {
-                <a href="/food/entries/@e.Id" class="row row-link">
+                <div class="swipe-row" data-swipe-row>
+                <form method="post" asp-antiforgery="true" action="/food/entries/@e.Id/delete" class="set-delete-form"><button type="submit" class="set-delete">@L["Delete"]</button></form>
+                <a href="/food/entries/@e.Id" class="row row-link swipe-content" draggable="false">
                     <span class="row-main">
                         <span class="row-title" style="display: block">@L.Entry(e.Description)</span>
                         <span class="row-sub num" style="display: block">@(e.Source == EntrySource.Quick
@@ -173,6 +175,7 @@
                     </span>
                     @Ui.Icon("chevron", "row-chevron")
                 </a>
+                </div>
             }
             <a class="row row-link" href="/food/add?date=@Iso(day.Date)&amp;meal=@meal" style="color: var(--accent-text)">
                 @Ui.Icon("plus", "icon-sm")<span class="row-main">@L[AddTo[meal]]</span>

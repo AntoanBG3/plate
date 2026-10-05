@@ -356,13 +356,21 @@
     // ---- swipe a set row left to reveal its button (Delete on a logged set, Remove on an empty one); vertical drags still scroll ----
 
     let swipe = null;
+    let suppressClick = false;
+    document.addEventListener("click", (event) => {
+        if (suppressClick && event.target.closest("[data-swipe-row]")) {
+            suppressClick = false;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
     document.addEventListener("pointerdown", (event) => {
         // A swipe may start on a field: the fields fill most of the row, and a touch that moves sideways doesn't focus one.
-        const content = event.target.closest(".set-row:not(.pending) > .set-content");
-        if (!content || !content.parentElement.querySelector(":scope > .set-delete") || event.target.closest("button")) {
+        const content = event.target.closest(".set-row:not(.pending) > .set-content, [data-swipe-row] > .swipe-content");
+        if (!content || !content.parentElement.querySelector(":scope > .set-delete, :scope > .set-delete-form") || event.target.closest("button")) {
             return;
         }
-        swipe = { content, row: content.closest(".set-row"), x: event.clientX, y: event.clientY, dx: 0, active: false };
+        swipe = { content, row: content.parentElement, x: event.clientX, y: event.clientY, dx: 0, active: false };
     });
     document.addEventListener("pointermove", (event) => {
         if (!swipe) {
@@ -395,6 +403,9 @@
             return;
         }
         if (swipe.active) {
+            // The swipe ended on a link (a food row): it isn't a tap, so the click that follows must not open it.
+            suppressClick = true;
+            setTimeout(() => { suppressClick = false; }, 400);
             const open = swipe.dx < -44;
             swipe.content.style.transition = "";
             swipe.row.classList.remove("is-swiping");
@@ -404,10 +415,10 @@
         swipe = null;
     });
     document.addEventListener("click", (event) => {
-        if (!event.target.closest(".set-row.is-open")) {
-            $$(".set-row.is-open").forEach((row) => {
+        if (!event.target.closest(".set-row.is-open, [data-swipe-row].is-open")) {
+            $$(".set-row.is-open, [data-swipe-row].is-open").forEach((row) => {
                 row.classList.remove("is-open");
-                const content = row.querySelector(".set-content");
+                const content = row.querySelector(".set-content, .swipe-content");
                 if (content) {
                     content.style.transform = "";
                 }
