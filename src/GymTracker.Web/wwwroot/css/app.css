@@ -654,6 +654,11 @@ form.is-unsaved > .autosave-status [data-state="unsaved"] { color: var(--destruc
 .drag-handle { display: grid; place-items: center; width: var(--tap); height: var(--tap); margin-left: calc(var(--s-2) * -1); color: var(--label-3); touch-action: none; cursor: grab; }
 .drag-handle .icon { width: 20px; height: 20px; }
 .reorder-item:first-child [data-move="-1"], .reorder-item:last-child [data-move="1"] { visibility: hidden; }
+/* Change food on the confirmation list. */
+.result-notes .change-food { justify-self: start; padding: var(--s-1) 0; min-height: var(--tap); color: var(--accent-text); }
+/* An unticked row is left out when saving, so it fades back; its checkbox stays clear to tick again. */
+.result:has(.check-input:not(:checked)) > :not(.result-head), .result:has(.check-input:not(:checked)) .result-head > :not(.check-input) { opacity: 0.45; transition: opacity var(--dur-small) var(--ease-out); }
+.change-food-results { max-height: 55vh; overflow-y: auto; overscroll-behavior: contain; }
 /* The app's "are you sure" sheet (site.js). */
 .confirm-text { margin: var(--s-2) var(--s-2) var(--s-5); font-size: var(--text-body); text-align: center; color: var(--label); }
 .menu .icon { width: 20px; height: 20px; }

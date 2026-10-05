@@ -51,6 +51,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
     // USDA entries that are rarely what someone means by a plain food name.
     private static readonly string[] Niche = ["babyfood", "restaurant", "fast food", "fast foods", "school lunch", "infant", "breaded", "with ", "mix", "flour", "juice", "chips", "glutinous", "dehydrated", "dried", "powder", "canned", "frozen",
         ", skin,", "skin only", "peel", // the skin of a potato or fruit, eaten on its own
+        "meat and skin", // chicken breast or thigh means the meat unless skin is said
         "plant-based", "vegetarian", "vegan", "meatless", "imitation", "substitute",
         "растителен", "вегетариан", "веган", "заместител",
         // The same niches in the Bulgarian names (the English ones above don't appear in them).
@@ -111,7 +112,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             if (decision is { FoodItemId: { } id } && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
             {
                 var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
-                result.Add(new ConfirmItem(Description(item), item.Grams, pick.Per100, pick.Id, pick.DisplayName, confidence, notes, decisions!.Model));
+                result.Add(new ConfirmItem(Description(item), Portion(item, pick, notes), pick.Per100, pick.Id, pick.DisplayName, confidence, notes, decisions!.Model));
             }
             else if (decision is { FoodItemId: null } && decision.Confidence >= NoneGate)
             {
@@ -119,8 +120,12 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             }
             else if (ranked[n] is { } best)
             {
-                var confidence = best.Score >= HighConfidence ? Confidence.High : Confidence.Medium;
-                result.Add(new ConfirmItem(Description(item), item.Grams, best.Food.Per100, best.Food.Id, best.Food.DisplayName, confidence, notes));
+                // "Database" (High) only for a close match whose main food word is one the user wrote; otherwise the
+                // confirmation marks it "Check this" (QA: a banana matched a strawberry-banana mousse as Database).
+                var english = best.Food.NameBg is null || string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase);
+                var confidence = best.Score >= HighConfidence && HeadMatches(best.Food, english ? item.NameEn : item.NameOriginal, !english)
+                    ? Confidence.High : Confidence.Medium;
+                result.Add(new ConfirmItem(Description(item), Portion(item, best.Food, notes), best.Food.Per100, best.Food.Id, best.Food.DisplayName, confidence, notes));
             }
             else
             {
@@ -149,7 +154,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
     /// <summary>Rank's candidates, best first, across the English search and, for text in another language, the original-name search.</summary>
     private async Task<List<(FoodMatch Food, double Score)>> RankAsync(ParsedFoodItem item, CancellationToken ct)
     {
-        var ranked = (await foods.SearchAsync(item.NameEn, 120, MatchThreshold, ct))
+        var ranked = (await foods.SearchAsync(FoodWords(item.NameEn), 120, MatchThreshold, ct))
             .Select(c => (Food: c, Score: Rank(c, item.NameEn, item.State)))
             .ToList();
         if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
@@ -163,6 +168,36 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
 
         // A stable sort keeps the first of equal scores first, as MaxBy did.
         return ranked.OrderByDescending(x => x.Score).ToList();
+    }
+
+    /// <summary>
+    /// The grams for an item: as parsed, or for a count ("a banana") the food's serving times the count, with a note.
+    /// Foods without a serving keep the parser's 100 g each.
+    /// </summary>
+    private static decimal Portion(ParsedFoodItem item, FoodMatch food, List<LocalText> notes)
+    {
+        if (item.Units is not { } units)
+        {
+            return item.Grams;
+        }
+
+        if (food.DefaultServingGrams is { } serving and > 0)
+        {
+            notes.Add(new LocalText("{0} × a serving of {1} g", units, serving.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)));
+            return serving * units;
+        }
+
+        notes.Add(new LocalText("assumed 100 g each"));
+        return item.Grams;
+    }
+
+    /// <summary>The food's main word (before the first comma, in USDA's naming) is one the user wrote.</summary>
+    internal static bool HeadMatches(FoodMatch food, string query, bool bulgarian = false)
+    {
+        var name = (bulgarian ? food.NameBg ?? "" : food.Name).ToLowerInvariant();
+        var head = Words(name.Split(',')[0]).ToList();
+        var queryWords = Words(query).ToHashSet();
+        return head.Count > 0 && head.Any(queryWords.Contains);
     }
 
     /// <summary>No database food: the parser's own numbers, marked Low.</summary>
@@ -205,6 +240,16 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             score += 0.1;
         }
 
+        // USDA writes brands in capitals ("UNCLE BENS"); a brand nobody wrote is not the plain food.
+        if (!bulgarian && System.Text.RegularExpressions.Regex.IsMatch(food.Name, @"\b\p{Lu}{3,}\b")
+            && !System.Text.RegularExpressions.Regex.Matches(food.Name, @"\b\p{Lu}{3,}\b").Any(m => query.Contains(m.Value, StringComparison.OrdinalIgnoreCase)))
+        {
+            score -= 0.15;
+        }
+
+        // A word in the main food name the user didn't write is a variety they didn't ask for: "wild rice" for "rice".
+        score -= head.Count(w => !queryWords.Contains(w)) > 0 && head.Any(queryWords.Contains) ? 0.15 : 0;
+
         var nameWords = Words(name).ToHashSet();
         score += queryWords.Count == 0 ? 0 : 0.2 * queryWords.Count(nameWords.Contains) / queryWords.Count;
         // A niche word the user didn't write (asking for "dried apricots" is fine) counts against the entry.
@@ -222,6 +267,18 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
 
         // Shorter names are usually the plain version of a food rather than a niche variant.
         return score - name.Length / 2000.0;
+    }
+
+    /// <summary>
+    /// The text to look candidates up by: the food words without "cooked", "raw" and the like. With them, every cooked
+    /// food in the database scored high on that one word and crowded the food itself out ("cooked rice" found cooked
+    /// lamb before white rice). The state still counts in <see cref="Rank"/>.
+    /// </summary>
+    internal static string FoodWords(string text)
+    {
+        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var kept = words.Where(w => !CookedWords.Contains(w.ToLowerInvariant()) && !w.Equals("raw", StringComparison.OrdinalIgnoreCase)).ToList();
+        return kept.Count == 0 ? text : string.Join(' ', kept);
     }
 
     /// <summary>Lower-case words with a plural "s" or "es" removed, so "bananas" matches "banana".</summary>

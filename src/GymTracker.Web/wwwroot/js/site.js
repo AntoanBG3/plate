@@ -292,6 +292,56 @@
         button.focus();
     });
 
+    // ---- Change food on the confirmation list: search, then the picked food goes on that row ----
+
+    let changeRow = null;
+    document.addEventListener("click", (event) => {
+        const open = event.target.closest("[data-change-food]");
+        if (open) {
+            changeRow = document.querySelector(`.result[data-row="${open.dataset.changeFood}"]`);
+            const sheet = document.getElementById("change-food-sheet");
+            const search = sheet.querySelector("[data-change-search]");
+            search.value = open.dataset.query || "";
+            sheet.querySelector("#change-food-results").replaceChildren();
+            window.gymSheet.show(sheet);
+            if (search.value && window.htmx) {
+                window.htmx.trigger(search, "search");
+            }
+            return;
+        }
+        const pick = event.target.closest("[data-candidate]");
+        if (!pick || !changeRow) {
+            return;
+        }
+        const i = changeRow.dataset.row;
+        const set = (field, value) => {
+            const input = changeRow.querySelector(`[name="items[${i}].${field}"]`);
+            if (input) {
+                input.value = value || "";
+            }
+        };
+        set("FoodItemId", pick.dataset.candidate);
+        set("Kcal", pick.dataset.kcal);
+        set("Protein", pick.dataset.protein);
+        set("Carbs", pick.dataset.carbs);
+        set("Fat", pick.dataset.fat);
+        set("Fiber", pick.dataset.fiber);
+        set("SaturatedFat", pick.dataset.satfat);
+        set("MatchModel", "");
+        changeRow.dataset.per100 = `${pick.dataset.kcal},${pick.dataset.protein}`;
+        const using = changeRow.querySelector("[data-using]");
+        using.textContent = t("Using: {0}", pick.dataset.name);
+        using.hidden = false;
+        changeRow.querySelectorAll("[data-note]").forEach((note) => note.remove());
+        const chip = changeRow.querySelector("[data-chip]");
+        chip.className = "chip good";
+        chip.textContent = t("Database");
+        // The live totals beside the grams follow (the input handler above).
+        changeRow.querySelector('input[name$="Grams"]').dispatchEvent(new Event("input", { bubbles: true }));
+        window.gymSheet.hide();
+        changeRow = null;
+    });
+
     // A template renamed in place: its titles follow (the large title, the compact one, the tab's).
     document.body.addEventListener("gym:renamed", (event) => {
         const name = event.detail.name;

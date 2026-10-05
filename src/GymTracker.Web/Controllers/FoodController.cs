@@ -111,6 +111,11 @@ public class FoodController(
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
+    /// <summary>Foods to put on a confirmation row instead of the one it matched (the Change food sheet).</summary>
+    [HttpGet("candidates")]
+    public async Task<IActionResult> Candidates(string? q, CancellationToken ct) =>
+        PartialView("_Candidates", string.IsNullOrWhiteSpace(q) ? [] : await foods.SearchForPickerAsync(q, 20, ct));
+
     [HttpGet("barcode")]
     public async Task<IActionResult> Barcode(DateOnly date, Meal meal, string? code, CancellationToken ct)
     {

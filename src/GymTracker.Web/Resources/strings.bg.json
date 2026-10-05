@@ -824,5 +824,9 @@
   "Quick add to lunch": "Бързо добавяне към обяда",
   "Quick add, typed in": "Бързо добавяне, въведено на ръка",
   "Food database": "База с храни",
-  "Your foods": "Твоите храни"
+  "Your foods": "Твоите храни",
+  "assumed 100 g each": "приети 100 г на брой",
+  "{0} × a serving of {1} g": "{0} × порция от {1} г",
+  "Change food": "Смени храната",
+  "Nothing matches.": "Нищо не съвпада."
 }

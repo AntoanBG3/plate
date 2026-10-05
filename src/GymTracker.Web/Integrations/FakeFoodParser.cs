@@ -33,18 +33,42 @@ public partial class FakeFoodParser : IFoodParser
                 piece = (piece[..match.Index] + piece[(match.Index + match.Length)..]).Trim();
             }
 
+            // "a banana", "2 eggs", "една баница": a count instead of a weight; the matcher makes it grams.
+            decimal? units = null;
+            var count = Count().Match(piece);
+            if (!match.Success && count.Success && piece.Length > count.Length)
+            {
+                units = CountValue(count.Groups[1].Value);
+                piece = piece[count.Length..].Trim();
+                grams = 100m * units.Value;
+                assumption = null;
+            }
+
             var state = piece.Contains("cooked", StringComparison.OrdinalIgnoreCase) ? FoodState.Cooked
                 : piece.Contains("raw", StringComparison.OrdinalIgnoreCase) ? FoodState.Raw
                 : FoodState.NotApplicable;
 
             // The name is what was written without its amount; the amount is in grams.
-            items.Add(new ParsedFoodItem(piece, piece, grams, state, null, assumption, new Per100g(100, 5, 15, 3)));
+            items.Add(new ParsedFoodItem(piece, piece, grams, state, null, assumption, new Per100g(100, 5, 15, 3), units));
         }
 
         return Task.FromResult(items.Count == 0
             ? FoodParseResult.Failed("No food found in that text.")
             : new FoodParseResult(items, null, ModelName));
     }
+
+    private static decimal CountValue(string word) => word.ToLowerInvariant() switch
+    {
+        "a" or "an" or "one" or "един" or "една" or "едно" => 1,
+        "two" or "два" or "две" => 2,
+        "three" or "три" => 3,
+        "four" or "четири" => 4,
+        "five" or "пет" => 5,
+        var n => decimal.Parse(n, CultureInfo.InvariantCulture),
+    };
+
+    [GeneratedRegex(@"^\s*(a|an|one|two|three|four|five|един|една|едно|два|две|три|четири|пет|\d{1,2})\s+", RegexOptions.IgnoreCase)]
+    private static partial Regex Count();
 
     [GeneratedRegex(@",|\band\b|\n|\bи\b", RegexOptions.IgnoreCase)]
     private static partial Regex Separator();

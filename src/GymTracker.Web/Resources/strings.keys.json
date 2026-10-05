@@ -374,6 +374,7 @@
   ],
   "Cancel": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
@@ -396,6 +397,9 @@
   ],
   "Change a quick entry's calories instead of its amount.": [
     "src/GymTracker.Web/Features/Food/FoodLogService.cs"
+  ],
+  "Change food": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
   "Change password": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -503,7 +507,8 @@
     "extra"
   ],
   "Database": [
-    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml",
+    "wwwroot/js"
   ],
   "Database values come from USDA or foods you saved. AI estimates are the model's own numbers; check them against the label if you can.": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
@@ -1228,6 +1233,9 @@
   "Notes can be at most 2000 characters.": [
     "src/GymTracker.Web/Features/Training/SessionService.cs"
   ],
+  "Nothing matches.": [
+    "src/GymTracker.Web/Views/Food/_Candidates.cshtml"
+  ],
   "Nothing recent yet": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
@@ -1680,7 +1688,8 @@
     "src/GymTracker.Web/Views/Shared/ExercisePicker.cshtml"
   ],
   "Search foods": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml"
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
   "Seated cable row": [
     "exercise"
@@ -2177,7 +2186,8 @@
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
   "Using: {0}": [
-    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml",
+    "wwwroot/js"
   ],
   "Values per 100 g are impossible (over 900 kcal or over 100 g of macros).": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
@@ -2369,6 +2379,9 @@
   "assumed 100 g": [
     "extra"
   ],
+  "assumed 100 g each": [
+    "src/GymTracker.Web/Features/Food/FoodMatcher.cs"
+  ],
   "at least the floor {0} of {1} days": [
     "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
   ],
@@ -2557,7 +2570,8 @@
     "wwwroot/js"
   ],
   "{0} kcal, {1} g protein per 100 g": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml"
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/_Candidates.cshtml"
   ],
   "{0} kg": [
     "wwwroot/js"
@@ -2602,6 +2616,9 @@
   ],
   "{0} sets are saved on this phone and will send when the connection is back.": [
     "wwwroot/js"
+  ],
+  "{0} × a serving of {1} g": [
+    "src/GymTracker.Web/Features/Food/FoodMatcher.cs"
   ],
   "{0}–{1} g": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
