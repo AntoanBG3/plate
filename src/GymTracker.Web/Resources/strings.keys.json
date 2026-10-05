@@ -733,6 +733,9 @@
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
   ],
+  "Food database": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
   "Food matcher": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -1636,9 +1639,6 @@
   "Saved as a meal.": [
     "src/GymTracker.Web/Controllers/SavedMealsController.cs"
   ],
-  "Saved foods": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml"
-  ],
   "Saved for your account, so every phone you sign in on looks the same.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -2347,6 +2347,9 @@
   ],
   "Your food is still not saved; you can fix it and save as usual.": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Your foods": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "Your profile": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"

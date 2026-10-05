@@ -65,7 +65,7 @@ public class FoodController(
         var m = meal ?? await DefaultMealAsync();
         tab = Tabs.Contains(tab) ? tab! : "text";
 
-        var local = tab == "search" && !string.IsNullOrWhiteSpace(q) ? await foods.SearchAsync(q, 20, 0.3, ct) : [];
+        var local = tab == "search" && !string.IsNullOrWhiteSpace(q) ? await foods.SearchForPickerAsync(q, 20, ct) : [];
         var offResults = tab == "search" && off && !string.IsNullOrWhiteSpace(q) ? await foods.SearchOpenFoodFactsAsync(q, ct) : null;
         var recents = tab == "recent" ? await log.RecentsAsync(today, ct) : [];
         var saved = tab == "recent" ? await savedMeals.ListAsync(ct) : [];

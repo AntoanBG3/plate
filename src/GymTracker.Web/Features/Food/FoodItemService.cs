@@ -48,6 +48,49 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     public async Task<string?> DisplayNameOrNullAsync(int id, CancellationToken ct) =>
         (await db.FoodItems.SingleOrDefaultAsync(f => f.Id == id, ct)) is { } item ? Localization.FoodNames.DisplayName(item) : null;
 
+    /// <summary>
+    /// The Search tab's ranking (SPEC 7 Food): the user's own foods first, then names that start with what was typed
+    /// (which also catches plurals: "banana" starts "Bananas, raw"), then the closest by similarity, shorter names
+    /// first. The same food from two sources is listed once. The matcher keeps its own ranking (<see cref="SearchAsync"/>).
+    /// </summary>
+    public async Task<List<FoodMatch>> SearchForPickerAsync(string query, int take, CancellationToken ct)
+    {
+        var q = query.Trim();
+        if (q.Length < 2)
+        {
+            return [];
+        }
+
+        var userId = currentUser.UserId ?? "";
+        var lower = q.ToLowerInvariant();
+        var found = await db.Database.SqlQuery<FoodMatch>($"""
+            WITH m AS (
+                SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
+                       f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
+                       GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) AS sim,
+                       starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre
+                FROM "FoodItems" f
+                WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {userId})
+                  AND GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) >= 0.3
+            )
+            SELECT "Id", "Name", "NameBg", "Brand", "KcalPer100g", "ProteinPer100g", "CarbsPer100g", "FatPer100g",
+                   "FiberPer100g", "SaturatedFatPer100g", "DefaultServingGrams", "Own", (sim + CASE WHEN pre THEN 1 ELSE 0 END)::float8 AS "Score"
+            FROM m
+            -- Among names that start with the search, the shortest is the plain food ("Bananas, raw" before
+            -- "Bananas, dehydrated, or banana powder"); the rest by similarity.
+            ORDER BY "Own" DESC, pre DESC, CASE WHEN pre THEN length("Name") END, sim DESC, length("Name")
+            LIMIT {take * 2}
+            """).ToListAsync(ct);
+
+        // The reference tables repeat some USDA foods under the same name with slightly different numbers ("Bananas,
+        // raw" three times); one is shown, the earliest stored, which is USDA's (seeded first). Own foods are kept.
+        var keep = found
+            .GroupBy(f => (f.Own, Name: f.Name.ToLowerInvariant(), Brand: f.Brand?.ToLowerInvariant()))
+            .Select(g => g.MinBy(f => f.Id)!.Id)
+            .ToHashSet();
+        return found.Where(f => keep.Contains(f.Id)).Take(take).ToList();
+    }
+
     public async Task<FoodItem> GetAsync(int id, CancellationToken ct) =>
         await db.FoodItems.SingleOrDefaultAsync(f => f.Id == id, ct) ?? throw new NotFoundException("Food not found.");
 

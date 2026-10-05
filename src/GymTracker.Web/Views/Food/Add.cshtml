@@ -74,17 +74,20 @@
             <input type="hidden" name="tab" value="search" />
             <div class="search-field">
                 @Ui.Icon("search")
-                <input type="search" class="input" name="q" value="@Model.Query" placeholder="@L["Oats, skyr, кашкавал…"]" aria-label="@L["Search foods"]" autofocus enterkeyhint="search" />
+                <input type="search" class="input" name="q" value="@Model.Query" placeholder="@L["Oats, skyr, кашкавал…"]" aria-label="@L["Search foods"]" autofocus enterkeyhint="search" autocomplete="off"
+                       hx-get="/food/add" hx-include="closest form" hx-trigger="input changed delay:300ms, search" hx-target="#search-results" hx-select="#search-results" hx-swap="outerHTML" hx-replace-url="true" />
             </div>
         </form>
+        @* Results follow the field as it is typed in (htmx swaps this block); Enter still sends the form. *@
+        <div id="search-results">
         @if (!string.IsNullOrWhiteSpace(Model.Query))
         {
-            @if (Model.Local.Count > 0)
+            @foreach (var (heading, group) in new[] { (L["Your foods"], Model.Local.Where(f => f.Own).ToList()), (L["Food database"], Model.Local.Where(f => !f.Own).ToList()) }.Where(g => g.Item2.Count > 0))
             {
                 <section class="section" style="margin-top: var(--s-5)">
-                    <h2 class="section-header">@L["Saved foods"]</h2>
+                    <h2 class="section-header">@heading</h2>
                     <div class="list">
-                        @foreach (var f in Model.Local)
+                        @foreach (var f in group)
                         {
                             <form method="post" asp-antiforgery="true" action="/food/log-item" class="portion" data-per100="@f.KcalPer100g.Kg(),@f.ProteinPer100g.Kg()">
                                 <input type="hidden" name="date" value="@date" />
@@ -149,6 +152,7 @@
                 </section>
             }
         }
+        </div>
         break;
 
     case "recent":
