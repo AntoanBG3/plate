@@ -185,8 +185,9 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-// __Host- cookies must be Secure with Path=/ and no Domain; local development runs over plain http.
-var hostCookies = !builder.Environment.IsDevelopment();
+// __Host- cookies must be Secure with Path=/ and no Domain; local development runs over plain http. The browser
+// tests also run over http://localhost (no trusted certificate), so they turn this off with Auth:HostCookies.
+var hostCookies = config.GetValue("Auth:HostCookies", !builder.Environment.IsDevelopment());
 // The passkey relying party: the public host name in production; unset locally, where the request's host is used.
 builder.Services.Configure<IdentityPasskeyOptions>(o =>
 {
