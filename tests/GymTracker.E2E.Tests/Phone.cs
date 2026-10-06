@@ -107,7 +107,9 @@ public sealed class Phone : IAsyncDisposable
     public static bool Overlap(LocatorBoundingBoxResult a, LocatorBoundingBoxResult b) =>
         a.X < b.X + b.Width && b.X < a.X + a.Width && a.Y < b.Y + b.Height && b.Y < a.Y + a.Height;
 
-    public void ShouldHaveNoErrors() => Errors.Should().BeEmpty($"the {Browser} console should stay clean");
+    // A console "Failed to load resource" doesn't say which; the failed responses are listed with it.
+    public void ShouldHaveNoErrors() => Errors.Should().BeEmpty(
+        $"the {Browser} console should stay clean (failed responses: {string.Join(", ", Responses.Where(r => r[0] is '4' or '5'))})");
 
     public async ValueTask DisposeAsync() => await Context.CloseAsync();
 }

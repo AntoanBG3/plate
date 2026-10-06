@@ -152,6 +152,50 @@ public class UntestedAreasTests(E2EFixture app)
         (await phone.Page.TitleAsync()).Should().Be("Offline · Gym");
     }
 
+    // Chromium only: the virtual authenticator is a Chrome DevTools feature. It stands in for Face ID: resident key,
+    // user verification done (the app requires it, SPEC 12).
+    [Fact]
+    public async Task A_passkey_is_added_signs_in_and_unlocks_the_admin_area()
+    {
+        await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium);
+        var cdp = await phone.Page.Context.NewCDPSessionAsync(phone.Page);
+        await cdp.SendAsync("WebAuthn.enable");
+        await cdp.SendAsync("WebAuthn.addVirtualAuthenticator", new Dictionary<string, object>
+        {
+            ["options"] = new Dictionary<string, object>
+            {
+                ["protocol"] = "ctap2", ["transport"] = "internal", ["hasResidentKey"] = true,
+                ["hasUserVerification"] = true, ["isUserVerified"] = true, ["automaticPresenceSimulation"] = true,
+            },
+        });
+        (await GymTracker.Web.Cli.RoleCommand.RunAsync(app.App.Services, ["role", "grant", "dev", "--email", phone.Email], new StringWriter())).Should().Be(0);
+
+        // Add one in Settings.
+        await phone.GoAsync("/settings");
+        await phone.NavigateByAsync(() => phone.Page.Locator("[data-module=passkey-add]").TapAsync());
+        await using (var db = app.Db.CreateContext(null))
+        {
+            var userId = await UserIdAsync(phone);
+            (await db.UserPasskeys.CountAsync(p => p.UserId == userId)).Should().Be(1);
+        }
+
+        // Sign in with it, with no password, from the button. The virtual authenticator would also answer the autofill
+        // request the page starts on its own (a person has to pick the passkey there), racing the button; so autofill
+        // is reported unavailable here.
+        await phone.Page.AddInitScriptAsync("PublicKeyCredential.isConditionalMediationAvailable = () => Promise.resolve(false);");
+        await phone.Page.Context.ClearCookiesAsync();
+        await phone.GoAsync("/account/login");
+        await phone.Page.Locator("[data-module=passkey-login]").TapAsync();
+        await phone.Page.WaitForURLAsync(url => !url.Contains("/account/login"));
+
+        // And unlock the admin area.
+        await phone.GoAsync("/admin/unlock");
+        await phone.Page.Locator("[data-module=passkey-unlock]").TapAsync();
+        await phone.Page.WaitForURLAsync(url => new Uri(url).AbsolutePath.StartsWith("/admin") && !url.Contains("/unlock"));
+        (await phone.Page.Locator("main").InnerTextAsync()).Should().Contain("Lock now");
+        phone.ShouldHaveNoErrors();
+    }
+
     // A plain PNG of the given size, made without an image library: one grey RGB pixel row repeated.
     internal static byte[] Png(int width, int height)
     {
