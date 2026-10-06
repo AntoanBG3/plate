@@ -21,7 +21,8 @@ public class AccountTests(E2EFixture app)
         await phone.Page.Locator(".banner.is-error").WaitForAsync();
 
         (await phone.Page.InputValueAsync("#email")).Should().Be(email);
-        (await phone.Page.EvaluateAsync<string>("() => document.activeElement.id")).Should().Be("password");
+        // Focus can land a frame after the error shows (WebKit under load); it must land on the password.
+        await phone.Page.WaitForFunctionAsync("() => document.activeElement && document.activeElement.id === 'password'", null, new() { Timeout = 5000 });
     }
 
     [Theory]
