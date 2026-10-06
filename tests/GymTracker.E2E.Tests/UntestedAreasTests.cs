@@ -196,8 +196,58 @@ public class UntestedAreasTests(E2EFixture app)
         phone.ShouldHaveNoErrors();
     }
 
-    // A plain PNG of the given size, made without an image library: one grey RGB pixel row repeated.
-    internal static byte[] Png(int width, int height)
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_photo_of_a_barcode_is_read_and_looked_up(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=barcode");
+        const string code = "4006381333931";
+
+        await phone.NavigateByAsync(() => phone.Page.Locator("#scanner [data-photo]").SetInputFilesAsync(new Microsoft.Playwright.FilePayload
+        {
+            Name = "barcode.png", MimeType = "image/png", Buffer = Ean13Png(code),
+        }));
+
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food/barcode");
+        phone.Page.Url.Should().Contain($"code={code}");
+    }
+
+    // An EAN-13 drawn as black bars on white: 4 px per module, quiet zones of 12 modules (GS1 asks for 11 and 7).
+    internal static byte[] Ean13Png(string code)
+    {
+        string[] l = ["0001101", "0011001", "0010011", "0111101", "0100011", "0110001", "0101111", "0111011", "0110111", "0001011"];
+        string[] parity = ["LLLLLL", "LLGLGG", "LLGGLG", "LLGGGL", "LGLLGG", "LGGLLG", "LGGGLL", "LGLGLG", "LGLGGL", "LGGLGL"];
+        static string Invert(string bits) => new(bits.Select(b => b == '0' ? '1' : '0').ToArray());
+        var digits = code.Select(c => c - '0').ToArray();
+        var bars = new System.Text.StringBuilder("101");
+        for (var i = 1; i <= 6; i++)
+        {
+            bars.Append(parity[digits[0]][i - 1] == 'L' ? l[digits[i]] : new string(Invert(l[digits[i]]).Reverse().ToArray()));
+        }
+
+        bars.Append("01010");
+        for (var i = 7; i <= 12; i++)
+        {
+            bars.Append(Invert(l[digits[i]]));
+        }
+
+        bars.Append("101");
+        const int module = 4, quiet = 12;
+        var modules = bars.ToString();
+        return Png((modules.Length + 2 * quiet) * module, 160, (x, _) =>
+        {
+            var m = x / module - quiet;
+            return m >= 0 && m < modules.Length && modules[m] == '1';
+        });
+    }
+
+    // A plain grey PNG of the given size.
+    internal static byte[] Png(int width, int height) => Png(width, height, (_, _) => false, light: 128);
+
+    // A PNG made without an image library: RGB rows, each pixel black where dark(x, y), else light grey to white.
+    internal static byte[] Png(int width, int height, Func<int, int, bool> dark, byte light = 255)
     {
         static byte[] Chunk(string type, byte[] data)
         {
@@ -231,9 +281,12 @@ public class UntestedAreasTests(E2EFixture app)
         for (var y = 0; y < height; y++)
         {
             raw.WriteByte(0);
-            for (var x = 0; x < width * 3; x++)
+            for (var x = 0; x < width; x++)
             {
-                raw.WriteByte(128);
+                var v = dark(x, y) ? (byte)0 : light;
+                raw.WriteByte(v);
+                raw.WriteByte(v);
+                raw.WriteByte(v);
             }
         }
 
