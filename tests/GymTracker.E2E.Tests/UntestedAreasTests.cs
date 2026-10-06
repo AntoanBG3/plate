@@ -102,6 +102,56 @@ public class UntestedAreasTests(E2EFixture app)
         phone.ShouldHaveNoErrors();
     }
 
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_set_logged_offline_is_kept_and_sent_once_when_back_online(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press");
+        var session = await phone.StartSessionAsync(template);
+
+        await phone.Page.Context.SetOfflineAsync(true);
+        await phone.LogSetAsync(phone.Page.Locator(".rows.working .set-row").First, "60", "10");
+        var status = phone.Page.Locator("#queue-status");
+        await status.WaitForAsync();
+        (await status.InnerTextAsync()).Should().Contain("1 set is saved on this phone");
+
+        // Back online: the queue sends by itself, once.
+        await phone.Page.Context.SetOfflineAsync(false);
+        await phone.Page.EvaluateAsync("() => window.dispatchEvent(new Event('online'))");
+        await status.WaitForAsync(new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden });
+        await phone.GoAsync($"/train/sessions/{session}");
+        (await phone.Page.Locator(".set-row.done").CountAsync()).Should().Be(1);
+
+        await using var db = app.Db.CreateContext(await UserIdAsync(phone));
+        var sets = await db.Sets.Where(x => x.SessionExercise.SessionId == session).ToListAsync();
+        sets.Should().ContainSingle().Which.WeightKg.Should().Be(60);
+    }
+
+    // Chromium only: Playwright's WebKit fails an offline load before the service worker can answer it. Safari on the
+    // iPhone does answer it; that is on the iOS checklist.
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task Offline_a_page_that_cannot_load_shows_the_offline_page(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync("/today");
+        await phone.Page.EvaluateAsync("() => navigator.serviceWorker.ready.then(() => true)");
+
+        await phone.Page.Context.SetOfflineAsync(true);
+        try
+        {
+            await phone.Page.GotoAsync("/progress");
+        }
+        finally
+        {
+            await phone.Page.Context.SetOfflineAsync(false);
+        }
+
+        (await phone.Page.TitleAsync()).Should().Be("Offline · Gym");
+    }
+
     // A plain PNG of the given size, made without an image library: one grey RGB pixel row repeated.
     internal static byte[] Png(int width, int height)
     {
