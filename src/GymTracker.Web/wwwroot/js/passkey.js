@@ -64,12 +64,12 @@
         });
     }
 
-    async function post(url, body) {
+    async function post(url, body, signal) {
         const headers = { RequestVerificationToken: window.gymToken() };
         if (body) {
             headers["Content-Type"] = "application/json";
         }
-        const response = await fetch(url, { method: "POST", credentials: "same-origin", headers, body: body ? JSON.stringify(body) : undefined });
+        const response = await fetch(url, { method: "POST", credentials: "same-origin", headers, body: body ? JSON.stringify(body) : undefined, signal });
         if (!response.ok) {
             throw new Error(String(response.status));
         }
@@ -107,7 +107,7 @@
         const abort = new AbortController();
         pending = abort;
         try {
-            const options = await (await post("/account/passkey/request-options")).json();
+            const options = await (await post("/account/passkey/request-options", null, abort.signal)).json();
             const credential = await navigator.credentials.get({
                 publicKey: requestOptions(options),
                 mediation: conditional ? "conditional" : "optional",
@@ -151,18 +151,33 @@
     });
 
     window.gymModule("passkey-login", (button) => {
+        // Signing in with the password ends the waiting passkey request, or keeps it from starting (the availability
+        // check is asynchronous): its options request would otherwise reach the server after the sign-in, be refused
+        // (the anti-forgery token is the signed-out user's) and say the passkey didn't work.
+        let stopped = false;
+        const form = button.closest("main") && button.closest("main").querySelector("form");
+        const stop = () => {
+            stopped = true;
+            if (pending) {
+                pending.abort();
+            }
+        };
         button.hidden = false;
         button.addEventListener("click", () => signIn(false));
         if (PublicKeyCredential.isConditionalMediationAvailable) {
             PublicKeyCredential.isConditionalMediationAvailable().then((available) => {
-                if (available) {
+                if (available && !stopped) {
                     signIn(true);
                 }
             }).catch(() => {});
         }
+        if (form) {
+            form.addEventListener("submit", stop);
+        }
         return () => {
-            if (pending) {
-                pending.abort();
+            stop();
+            if (form) {
+                form.removeEventListener("submit", stop);
             }
         };
     });
