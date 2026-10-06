@@ -12,6 +12,8 @@ public class ErrorNoiseTests
     [InlineData("AbortError: Transition was skipped")]
     [InlineData("InvalidStateError: Transition was aborted because of invalid state")]
     [InlineData("Skipping view transition because document visibility state is hidden.")]
+    [InlineData("Skipping view transition because skipTransition() was called.")]
+    [InlineData("Old view transition aborted by new view transition.")]
     public void View_transition_aborts_are_noise(string message) => ErrorNoise.IsIgnored(message).Should().BeTrue();
 
     [Theory]

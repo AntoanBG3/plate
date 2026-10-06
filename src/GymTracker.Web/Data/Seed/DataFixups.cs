@@ -13,6 +13,17 @@ public static class DataFixups
     /// <summary>The default names quick entries used to be saved with, in English and Bulgarian.</summary>
     private static readonly string[] OldQuickNames = ["Quick add", "Бързо добавяне"];
 
+    /// <summary>
+    /// Bulgarian names of USDA foods that were wrong in usda-foods.csv beyond a look-alike letter (a garbled word, a
+    /// misspelling), by English name; the CSV is fixed too. Found on wizard after the Phase 11 deploy.
+    /// </summary>
+    private static readonly Dictionary<string, string> UsdaBgCorrections = new(StringComparer.Ordinal)
+    {
+        ["Pork, fresh, variety meats and by-products, leaf fat, raw"] = "Свинска вътрешна мас, сурова",
+        ["Salad dressing, thousand island dressing, fat-free"] = "Дресинг Хиляда острова, обезмаслен",
+        ["Salad dressing, thousand island dressing, reduced fat"] = "Дресинг Хиляда острова, с намалена масленост",
+    };
+
     public static async Task RunAsync(AppDbContext db, CancellationToken ct)
     {
         // Quick entries left unnamed were stored as "Quick add" in the language of the moment, so the other
@@ -42,5 +53,12 @@ public static class DataFixups
         }
 
         await db.SaveChangesAsync(ct);
+
+        foreach (var (name, bg) in UsdaBgCorrections)
+        {
+            await db.FoodItems.IgnoreQueryFilters()
+                .Where(f => f.Source == FoodSource.Usda && f.Name == name && f.NameBg != bg)
+                .ExecuteUpdateAsync(s => s.SetProperty(f => f.NameBg, bg), ct);
+        }
     }
 }
