@@ -45,6 +45,20 @@ public class VisualSystemTests(E2EFixture app)
         phone.ShouldHaveNoErrors();
     }
 
+    // The 44 px minimum for field-row inputs used to stretch the switch to 51 x 44 with its knob stuck at the top.
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_switch_in_a_field_row_keeps_its_size(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync("/settings");
+        var box = await phone.Page.Locator(".field-row .switch").First.BoundingBoxAsync();
+        box!.Width.Should().Be(51);
+        box.Height.Should().Be(31);
+        phone.ShouldHaveNoErrors();
+    }
+
     [Theory]
     [InlineData(E2EFixture.Chromium)]
     [InlineData(E2EFixture.WebKit)]
