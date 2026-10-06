@@ -714,6 +714,8 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
 /* ---------- bottom sheet ---------- */
 
 .sheet { position: fixed; inset: 0; z-index: 70; }
+/* "Are you sure" can open over another sheet (Delete saved meal in the food sheet); it must sit on top. */
+#confirm-sheet { z-index: 75; }
 .sheet-scrim { position: absolute; inset: 0; background: var(--scrim); opacity: 0; transition: opacity var(--dur-sheet) var(--ease-out); }
 .sheet-panel {
     position: absolute; left: 0; right: 0; bottom: 0; max-width: 640px; margin: 0 auto; max-height: calc(100dvh - env(safe-area-inset-top) - 24px); overflow: auto;

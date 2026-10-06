@@ -49,4 +49,26 @@ public class ConfirmSheetTests(E2EFixture app)
         phone.Page.Url.Should().EndWith("/train/templates");
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task The_confirmation_opens_on_top_of_another_sheet(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var today = GymTracker.Core.Time.UserClock.Today(DateTimeOffset.UtcNow, GymTracker.Core.Domain.UserProfile.DefaultTimeZoneId).ToString("yyyy-MM-dd");
+        await phone.GoAsync("/food");
+        await phone.PostAsync("/food/quick", new() { ["date"] = today, ["meal"] = "Lunch", ["description"] = "Wrap", ["kcal"] = "600" });
+        await phone.PostAsync("/food/saved-meals", new() { ["date"] = today, ["meal"] = "Lunch", ["name"] = "Usual lunch" });
+        await phone.GoAsync($"/food/add?date={today}&meal=Dinner&tab=recent");
+        await phone.Page.Locator("button.row-link", new() { HasText = "Usual lunch" }).TapAsync();
+        await phone.Page.Locator("#food-sheet-body form[action$='/delete'] button[type=submit]").TapAsync();
+
+        // The confirmation's button must be the element under its own centre, not the food sheet behind it.
+        var yes = phone.Page.Locator("#confirm-sheet [data-confirm-yes]");
+        await yes.WaitForAsync();
+        await phone.AnimationsDoneAsync("#confirm-sheet .sheet-panel");
+        (await yes.EvaluateAsync<bool>("b => { const r = b.getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest('[data-confirm-yes]') === b; }"))
+            .Should().BeTrue("the confirmation sits above the sheet that asked for it");
+    }
 }
