@@ -66,7 +66,9 @@ body.no-tabs .page { padding-bottom: calc(env(safe-area-inset-bottom) + var(--s-
     position: fixed; z-index: 30; top: 0; left: 0; right: 0;
     height: calc(env(safe-area-inset-top) + 44px);
     padding: env(safe-area-inset-top) var(--s-2) 0;
-    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--s-2);
+    /* The sides share what the title leaves, and may shrink below their content: a long back label or title is cut
+       with an ellipsis instead of running into the other (they overlapped with long template names). */
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr); align-items: center; gap: var(--s-2);
     border-bottom: 0.5px solid transparent;
     transition: background-color var(--dur-small) var(--ease-out), border-color var(--dur-small) var(--ease-out);
 }
@@ -77,18 +79,20 @@ body.no-tabs .page { padding-bottom: calc(env(safe-area-inset-bottom) + var(--s-
     border-color: var(--separator);
 }
 .topbar-title {
-    max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    /* Room is kept for a back label on either side (about "‹ Templates"). */
+    max-width: min(60vw, calc(100vw - 240px)); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     font-weight: var(--weight-semibold);
     opacity: 0; transform: translateY(4px);
     transition: opacity var(--dur-small) var(--ease-out), transform var(--dur-small) var(--ease-out);
 }
 .topbar.is-compact .topbar-title, .topbar.always-title .topbar-title { opacity: 1; transform: none; }
-.topbar-leading { justify-self: start; display: flex; min-width: 0; }
+.topbar-leading { justify-self: start; display: flex; min-width: 0; max-width: 100%; }
 .topbar-trailing { justify-self: end; display: flex; align-items: center; gap: var(--s-1); }
 .topbar-back {
     display: flex; align-items: center; gap: 2px; min-height: var(--tap); padding-right: var(--s-2);
-    color: var(--accent-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--accent-text); white-space: nowrap; overflow: hidden; min-width: 0; max-width: 100%;
 }
+.topbar-back > span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .topbar-back .icon { width: 22px; height: 22px; stroke-width: 2.2; margin-left: -2px; }
 .topbar-action { min-height: var(--tap); padding: 0 var(--s-2); display: flex; align-items: center; color: var(--accent-text); font-weight: var(--weight-semibold); }
 
@@ -133,7 +137,8 @@ a.section-aside { color: var(--accent-text) !important; }
 /* Inset separators between rows, starting at the text, not the edge. */
 .list :is(.row, .field-row) + :is(.row, .field-row)::before,
 .list > * + :is(.row, .field-row)::before,
-.list > * + * > :is(.row, .field-row):first-child::before {
+.list > * + * > :is(.row, .field-row):first-child::before,
+.list > * + [data-swipe-row] > .swipe-content::before {
     content: ""; position: absolute; top: 0; left: var(--s-4); right: 0; border-top: 0.5px solid var(--separator);
 }
 .list > li { position: relative; }
@@ -151,18 +156,25 @@ a.section-aside { color: var(--accent-text) !important; }
 .row-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
+/* A field the browser scrolls to (a missing value on Save) stops below the top bar and above the tab bar. */
+:where(input, select, textarea, .segmented, fieldset) {
+    scroll-margin-top: calc(env(safe-area-inset-top) + 64px);
+    scroll-margin-bottom: calc(env(safe-area-inset-bottom) + 49px + var(--s-4));
+}
+
 /* Rows that hold a form field: label on the left, the value editable on the right. */
 .field-row { display: flex; align-items: center; gap: var(--s-3); min-height: 44px; padding: 6px var(--s-4); position: relative; }
 .field-row > label, .field-row > .field-label { flex: 1; min-width: 0; }
 .field-row input, .field-row select {
     /* 44 px to tap; the negative margin lets the box reach into the row's padding without making the row taller. */
     flex: 0 1 50%; min-width: 0; min-height: 44px; margin: -6px 0; border: 0; background: none; outline: none; padding: 0;
-    text-align: right; color: var(--label-2); font-size: var(--text-body);
+    /* Typed values in the label colour; placeholders stay grey (--label-3), so an empty field reads as empty. */
+    text-align: right; color: var(--label); font-size: var(--text-body);
 }
-.field-row input:focus { color: var(--label); }
 .field-row input::placeholder { color: var(--label-3); }
 .field-row select { -webkit-appearance: none; appearance: none; color: var(--accent-text); text-align-last: right; cursor: pointer; }
-.field-row input[type="number"] { flex: 0 1 6ch; }
+/* Numbers, whole (type=number) or decimal (text with a decimal keypad, so a value shows with a dot as stored). */
+.field-row input:is([type="number"], [inputmode="decimal"]) { flex: 0 1 6ch; }
 .field-row .unit { color: var(--label-2); flex: none; margin-left: -6px; }
 .field-row.stacked { flex-direction: column; align-items: stretch; gap: var(--s-1); padding-top: var(--s-3); padding-bottom: var(--s-3); }
 .field-row.stacked input { text-align: left; color: var(--label); flex: none; }
@@ -223,11 +235,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
     position: relative; flex: 1; min-height: 40px; display: grid; place-items: center; padding: 0 var(--s-2);
     border-radius: 7px; color: var(--label); font-size: var(--text-footnote); font-weight: var(--weight-semibold); text-align: center; line-height: 1.15;
 }
-.segment.is-active, .segment:has(:checked) { background: var(--surface-2); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); }
+.segment.is-active, .segment:has(:checked) { background: var(--segment-thumb); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); }
 /* One sliding thumb per page: a view-transition-name must be unique, or the whole transition is skipped. */
 .segmented[data-thumb] .segment.is-active, .segmented[data-thumb] .segment:has(:checked) { view-transition-name: segment-thumb; }
-:root[data-theme="light"] .segment.is-active, :root[data-theme="light"] .segment:has(:checked) { background: var(--surface); }
-@media (prefers-color-scheme: light) { :root[data-theme="system"] .segment.is-active, :root[data-theme="system"] .segment:has(:checked) { background: var(--surface); } }
 .segment input { position: absolute; opacity: 0; pointer-events: none; }
 /* Reaches over the control's 2 px padding so each segment is 44 px tall to tap. */
 .segment::before { content: ""; position: absolute; inset: -2px -1px; }
@@ -250,6 +260,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .banner.is-error .icon { color: var(--destructive); }
 .banner.is-success .icon { color: var(--success); }
 .banner.is-pending .icon { color: var(--accent); }
+.banner.is-info .icon { color: var(--label-2); }
 
 .toast {
     position: fixed; z-index: 60; left: var(--s-4); right: var(--s-4); bottom: calc(env(safe-area-inset-bottom) + 49px + var(--s-3));
@@ -258,6 +269,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
     box-shadow: var(--shadow-float), inset 0 0 0 0.5px var(--separator); font-size: var(--text-subhead);
 }
 body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
+/* During a rest the toast sits above the timer, never on it: Undo and Skip were nearly the same spot. */
+:root { --rest-timer-h: 60px; }
+body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bottom) + 49px + var(--s-2) + var(--rest-timer-h) + var(--s-2)); }
 .toast:has(.toast-action) { display: flex; align-items: center; gap: var(--s-3); padding-top: 0; padding-bottom: 0; padding-right: var(--s-2); }
 .toast:has(.toast-action) > span { padding: var(--s-3) 0; }
 .toast-action { margin-left: auto; }
@@ -293,14 +307,17 @@ body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
 /* ---------- metrics ---------- */
 
 .metric-value { font-size: var(--text-metric); line-height: 1; font-weight: var(--weight-semibold); }
-.metric-unit { font-size: var(--text-title-3); font-weight: var(--weight-semibold); color: var(--label-2); margin-left: 2px; }
+.metric-unit { font-size: var(--text-title-3); font-weight: var(--weight-semibold); color: var(--label-2); margin-left: 0.2em; }
 .metric-label { font-size: var(--text-subhead); color: var(--label-2); margin-top: 4px; }
 
 .gauges { display: grid; grid-template-columns: 1fr 1fr; padding: var(--s-5) var(--s-3) var(--s-1); }
 .gauge { position: relative; text-align: center; color: inherit; }
 .gauge svg { width: 100%; max-width: 172px; aspect-ratio: 150 / 128; margin: 0 auto; }
 .gauge path { fill: none; stroke-width: 12; stroke-linecap: round; }
-.gauge .track { stroke: var(--fill); }
+.gauge .track { stroke: var(--meter-track); }
+.gauge-sub { display: inline-flex; align-items: center; gap: 2px; margin-top: 2px; font-size: var(--text-caption); color: var(--label-2); }
+.gauge-sub.reached { color: var(--success); }
+.gauge-sub .icon { width: 12px; height: 12px; }
 .gauge .bar-kcal { stroke: var(--accent); }
 .gauge .bar-protein { stroke: var(--label); }
 .gauge.over .bar-kcal { stroke: var(--destructive); }
@@ -339,6 +356,7 @@ body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
 .stat { padding: var(--s-4); text-align: center; position: relative; }
 .stat + .stat::before { content: ""; position: absolute; left: 0; top: var(--s-4); bottom: var(--s-4); border-left: 0.5px solid var(--separator); }
 .stat-value { font-size: var(--text-title-2); font-weight: var(--weight-semibold); }
+.stat-value small { font-size: var(--text-footnote); color: var(--label-2); font-weight: var(--weight-regular); }
 .stat-label { font-size: var(--text-footnote); color: var(--label-2); margin-top: 2px; }
 
 /* ---------- sign in ---------- */
@@ -358,7 +376,7 @@ body.no-tabs .toast { bottom: calc(env(safe-area-inset-bottom) + var(--s-4)); }
 .targets-how ul { margin: var(--s-2) 0 0; padding-left: 1.1em; display: grid; gap: var(--s-2); }
 .macro-card { padding: var(--s-4); }
 .macro-main { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
-.meter { height: 6px; border-radius: 3px; background: var(--fill); margin: var(--s-3) 0 var(--s-4); overflow: hidden; }
+.meter { height: 6px; border-radius: 3px; background: var(--meter-track); margin: var(--s-3) 0 var(--s-4); overflow: hidden; }
 .meter.small { position: relative; height: 4px; margin: var(--s-2) 0 0; }
 .meter.small i { background: var(--label); }
 .meter.over i { background: var(--warning); }
@@ -482,6 +500,7 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 /* ---------- workout session ---------- */
 
 .exercise { margin-top: var(--s-6); scroll-margin-top: 60px; }
+.meal-section { scroll-margin-top: 60px; }
 .ex-head { display: flex; align-items: flex-end; gap: var(--s-2); padding: 0 0 var(--s-2) var(--s-1); }
 .ex-head > div:first-child { flex: 1; min-width: 0; }
 .ex-name { font-size: var(--text-title-2); line-height: 1.27; font-weight: var(--weight-bold); letter-spacing: 0.016em; overflow-wrap: anywhere; }
@@ -502,8 +521,23 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .plate-choice input:checked + span { background: var(--accent); color: var(--on-accent); }
 .plate-choice input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 .plates-result { padding: var(--s-4) var(--s-1) 0; display: grid; gap: var(--s-2); }
-.plate-stack { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; }
-.plate { display: inline-grid; place-items: center; min-width: 52px; min-height: var(--tap); padding: 0 var(--s-3); border-radius: var(--r-md); background: var(--fill-strong); font-weight: var(--weight-semibold); }
+/* Plates as they look on the sleeve: big plates tall, small ones short, in IWF colours (25 red, 20 blue, 15 yellow,
+   10 green, 5 white; the small change plates repeat them). Colours were checked for 4.5:1 text contrast. */
+.plate-stack { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; padding-left: var(--s-4); position: relative; }
+.plate-stack::before { content: ""; position: absolute; left: 0; top: 50%; width: calc(100% - 4px); max-width: 100%; height: 8px; margin-top: -4px; border-radius: 4px; background: var(--fill-strong); z-index: 0; }
+.plate {
+    position: relative; z-index: 1; display: inline-grid; place-items: center; min-width: 40px; height: 88px; padding: 0 6px;
+    border-radius: 7px; background: var(--fill-strong); color: var(--label); font-weight: var(--weight-semibold); font-size: var(--text-footnote);
+}
+.plate[data-plate="25"], .plate[data-plate="2.5"] { background: #d62d20; color: #fff; }
+.plate[data-plate="20"], .plate[data-plate="2"] { background: #1f57c3; color: #fff; }
+.plate[data-plate="15"], .plate[data-plate="1.5"] { background: #f2c230; color: #000; }
+.plate[data-plate="10"], .plate[data-plate="1"] { background: #1e7b34; color: #fff; }
+.plate[data-plate="5"], .plate[data-plate="0.5"] { background: #f2f2f2; color: #000; }
+.plate[data-plate="1.25"] { background: #8e8e93; color: #000; }
+.plate:is([data-plate="5"]) { height: 64px; }
+.plate:is([data-plate="2.5"], [data-plate="2"]) { height: 52px; }
+.plate:is([data-plate="1.5"], [data-plate="1.25"], [data-plate="1"], [data-plate="0.5"]) { height: 44px; }
 .ex-meta { font-size: var(--text-subhead); color: var(--label-2); margin-top: 2px; }
 .icon-btn { width: var(--tap); height: var(--tap); display: grid; place-items: center; border-radius: 50%; color: var(--accent-text); flex: none; }
 .icon-btn .icon { width: 22px; height: 22px; }
@@ -521,10 +555,8 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 }
 .rows > .set-row + .set-row .set-content::before { content: ""; position: absolute; top: 0; left: calc(var(--s-4) + 1.6rem + var(--s-3)); right: 0; border-top: 0.5px solid var(--separator); }
 .warmups:not(:empty) + .working > .set-row:first-child .set-content::before { content: ""; position: absolute; top: 0; left: calc(var(--s-4) + 1.6rem + var(--s-3)); right: 0; border-top: 0.5px solid var(--separator); }
-.set-n { font-size: var(--text-subhead); font-weight: var(--weight-semibold); color: var(--label-2); counter-increment: set; }
-.working { counter-reset: set; }
-.working .set-n::before { content: counter(set); }
-.warmups .set-n { counter-increment: none; }
+/* Numbers are written by the server and kept in order by session.js; a CSS counter went stale after htmx swaps. */
+.set-n { font-size: var(--text-subhead); font-weight: var(--weight-semibold); color: var(--label-2); }
 .set-field {
     display: flex; align-items: baseline; justify-content: flex-end; gap: 4px;
     min-height: 44px; padding: 9px var(--s-3) 6px; border-radius: var(--r-sm); background: var(--fill); cursor: text;
@@ -561,6 +593,32 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .set-row.pending.is-waiting .set-status { display: flex; }
 .set-status { display: none; align-items: center; gap: 4px; grid-column: 2 / -1; font-size: var(--text-caption); color: var(--label-2); margin-top: -4px; }
 .set-status .icon { width: 14px; height: 14px; }
+/* A logged set being edited in place (session.js): one status line under the fields while saving, briefly once saved,
+   and until it is sent when saving failed. The check button turns into a hollow "save" until then. */
+.set-save { display: none; align-items: center; gap: 4px; grid-column: 2 / -1; font-size: var(--text-caption); color: var(--label-2); margin-top: -4px; }
+.set-save > span { display: none; align-items: center; gap: 4px; }
+.set-save .icon { width: 14px; height: 14px; }
+.set-row:is(.is-saving, .is-saved, .is-unsaved) .set-save { display: flex; }
+.set-row.is-saving [data-state="saving"], .set-row.is-saved [data-state="saved"], .set-row.is-unsaved [data-state="unsaved"] { display: inline-flex; }
+.set-row.is-saved .set-save { animation: saved-fade 2.4s var(--ease-out) forwards; }
+.set-row.is-saved [data-state="saved"] { color: var(--success); }
+.set-row.is-unsaved [data-state="unsaved"] { color: var(--destructive); }
+.set-row.done:is(.is-dirty, .is-unsaved) .disc { background: var(--accent-soft); }
+.set-row.done:is(.is-dirty, .is-unsaved) .done-btn svg { stroke: var(--accent); }
+@keyframes saved-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+/* The same states for a whole form that saves on change (template exercise, Settings), and its inline error. */
+.autosave-status { display: none; align-items: center; gap: 4px; margin: 0; padding: 0 var(--s-4) var(--s-3); font-size: var(--text-caption); color: var(--label-2); }
+.autosave-status > span { display: none; align-items: center; gap: 4px; }
+.autosave-status .icon { width: 14px; height: 14px; }
+form:is(.is-saving, .is-saved, .is-unsaved) .autosave-status { display: flex; }
+form.is-saving .autosave-status [data-state="saving"], form.is-saved .autosave-status [data-state="saved"], form.is-unsaved .autosave-status [data-state="unsaved"] { display: inline-flex; }
+form.is-saved .autosave-status { animation: saved-fade 2.4s var(--ease-out) forwards; }
+form.is-saved .autosave-status [data-state="saved"] { color: var(--success); }
+form.is-unsaved .autosave-status [data-state="unsaved"] { color: var(--destructive); }
+.field-error { display: flex; align-items: flex-start; gap: var(--s-2); margin: 0; padding: var(--s-2) var(--s-4) var(--s-3); font-size: var(--text-footnote); color: var(--destructive); }
+.field-error .icon { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+/* Settings: the status and error sit under the card that changed (site.js moves them), aligned with its footer. */
+form[data-status-near] .autosave-status, form[data-status-near] .field-error { padding: var(--s-2) var(--s-4) 0; }
 .set-row.warmup .set-content { padding-top: 3px; padding-bottom: 3px; }
 .set-row.warmup .set-field { min-height: 36px; padding-top: 6px; padding-bottom: 4px; }
 .set-row.warmup .set-field input { font-size: var(--text-body); font-weight: var(--weight-regular); color: var(--label-2); }
@@ -571,6 +629,12 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .set-row.warmup .done-btn svg { width: 13px; height: 13px; stroke: var(--label); }
 .set-delete { position: absolute; inset: 0 0 0 auto; width: 88px; border: 0; background: var(--destructive); color: #fff; font-weight: var(--weight-semibold); font-size: var(--text-subhead); visibility: hidden; }
 .set-row.is-open .set-delete, .set-row.is-swiping .set-delete { visibility: visible; }
+/* Food rows swipe the same way; the button is a form so the day's totals and Undo come back with the page. */
+[data-swipe-row] { position: relative; overflow: hidden; }
+[data-swipe-row] .swipe-content { position: relative; z-index: 1; background: var(--surface); touch-action: pan-y; transition: transform 380ms var(--ease-snappy); -webkit-user-drag: none; user-select: none; }
+[data-swipe-row] .set-delete-form { position: absolute; inset: 0 0 0 auto; width: 88px; margin: 0; }
+[data-swipe-row] .set-delete-form .set-delete { position: static; width: 100%; height: 100%; }
+[data-swipe-row].is-open .set-delete, [data-swipe-row].is-swiping .set-delete { visibility: visible; }
 .ex-actions { display: flex; border-top: 0.5px solid var(--separator); }
 .ex-actions > * { flex: 1; display: flex; }
 .ex-actions button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--tap); color: var(--accent-text); font-size: var(--text-subhead); }
@@ -591,6 +655,29 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .menu form + form, .menu > * + * { border-top: 0.5px solid var(--separator); }
 .menu button, .menu a { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: var(--s-4); min-height: var(--tap); padding: 0 var(--s-4); color: var(--label); text-align: left; }
 .menu .danger { color: var(--destructive); }
+.topbar .menu { z-index: 31; }
+/* The exercise picker when adding: tick several, the Add button stays in reach above the tab bar. */
+.pick-row { display: flex; align-items: center; gap: var(--s-3); cursor: pointer; }
+.pick-row .row-main { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.pick-row:has(input:checked) { background: var(--accent-soft); }
+.pick-added { display: inline-flex; align-items: center; gap: 2px; }
+.pick-added .icon { width: 12px; height: 12px; }
+.pick-bar { position: sticky; z-index: 5; bottom: calc(env(safe-area-inset-bottom) + 49px + var(--s-3)); margin-top: var(--s-5); }
+/* Reorder mode: a handle to drag (no scrolling from it), and up and down buttons. */
+.reorder-list { padding: 0; }
+.reorder-item { gap: var(--s-2); padding-right: var(--s-2); touch-action: auto; }
+.reorder-item.is-dragging { z-index: 2; box-shadow: var(--shadow-float); transition: none; }
+.reorder-item:not(.is-dragging) { transition: transform var(--dur-small) var(--ease-out); }
+.drag-handle { display: grid; place-items: center; width: var(--tap); height: var(--tap); margin-left: calc(var(--s-2) * -1); color: var(--label-3); touch-action: none; cursor: grab; }
+.drag-handle .icon { width: 20px; height: 20px; }
+.reorder-item:first-child [data-move="-1"], .reorder-item:last-child [data-move="1"] { visibility: hidden; }
+/* Change food on the confirmation list. */
+.result-notes .change-food { justify-self: start; padding: var(--s-1) 0; min-height: var(--tap); color: var(--accent-text); }
+/* An unticked row is left out when saving, so it fades back; its checkbox stays clear to tick again. */
+.result:has(.check-input:not(:checked)) > :not(.result-head), .result:has(.check-input:not(:checked)) .result-head > :not(.check-input) { opacity: 0.45; transition: opacity var(--dur-small) var(--ease-out); }
+.change-food-results { max-height: 55vh; overflow-y: auto; overscroll-behavior: contain; }
+/* The app's "are you sure" sheet (site.js). */
+.confirm-text { margin: var(--s-2) var(--s-2) var(--s-5); font-size: var(--text-body); text-align: center; color: var(--label); }
 .menu .icon { width: 20px; height: 20px; }
 /* A list's overflow clip would hide a menu that drops below its row, so round the end rows instead. */
 .list:has(.menu-wrap) { overflow: visible; }
@@ -602,7 +689,7 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
     position: fixed; z-index: 35; left: var(--s-2); right: var(--s-2); bottom: calc(env(safe-area-inset-bottom) + 49px + var(--s-2));
     max-width: 600px; margin: 0 auto;
     display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: var(--s-1);
-    min-height: 60px; padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3); border-radius: var(--r-lg); overflow: hidden;
+    min-height: var(--rest-timer-h); padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3); border-radius: var(--r-lg); overflow: hidden;
     background: var(--material); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
     box-shadow: var(--shadow-float), inset 0 0 0 0.5px var(--separator);
     view-transition-name: rest-timer;
@@ -627,6 +714,8 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 /* ---------- bottom sheet ---------- */
 
 .sheet { position: fixed; inset: 0; z-index: 70; }
+/* "Are you sure" can open over another sheet (Delete saved meal in the food sheet); it must sit on top. */
+#confirm-sheet { z-index: 75; }
 .sheet-scrim { position: absolute; inset: 0; background: var(--scrim); opacity: 0; transition: opacity var(--dur-sheet) var(--ease-out); }
 .sheet-panel {
     position: absolute; left: 0; right: 0; bottom: 0; max-width: 640px; margin: 0 auto; max-height: calc(100dvh - env(safe-area-inset-top) - 24px); overflow: auto;
@@ -677,6 +766,8 @@ body.sheet-open .app-scale {
 /* Page changes animate the content and the top bar; the tab bar and the rest of the shell stay still.
    html[data-nav] is "next", "prev", "forward", "back" or "tab" (nav.js for soft navigation, motion.js for full loads). */
 @view-transition { navigation: auto; }
+/* Taps during a transition go to the new page underneath; the overlay used to swallow them for ~340 ms. */
+::view-transition { pointer-events: none; }
 /* Opaque, so a sliding page never shows the one behind it through its gutters. */
 #main { view-transition-name: page; background: var(--bg); min-height: 100dvh; box-sizing: border-box; }
 .large-title { view-transition-name: large-title; }
@@ -712,7 +803,8 @@ html[data-nav]::view-transition-new(topbar) { animation: 200ms var(--ease-out) 6
 html[data-nav="forward"]::view-transition-group(large-title), html[data-nav="back"]::view-transition-group(large-title) { animation: none; }
 html[data-nav="forward"]::view-transition-old(large-title), html[data-nav="back"]::view-transition-old(large-title) { animation: 120ms var(--ease-out) both vt-fade-out; }
 html[data-nav="forward"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-push-in; }
-html[data-nav="back"]::view-transition-new(large-title) { animation: 200ms var(--ease-out) both vt-fade-in; }
+/* On Back the returning title travels with its page instead of appearing in place while the page slides in. */
+html[data-nav="back"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-pop-in; }
 @keyframes vt-tab-out { to { opacity: 0; transform: scale(0.985); } }
 @keyframes vt-tab-in { from { opacity: 0; transform: translateY(8px); } }
 
@@ -811,3 +903,6 @@ details.feedback-item > summary::-webkit-details-marker { display: none; }
 details > summary.section-title { cursor: pointer; }
 a.feedback-item { color: var(--label); text-decoration: none; }
 .field-row input.check-input { flex: none; width: 24px; height: 24px; min-height: 0; margin: 0; padding: 0; }
+
+/* The weekly rate only applies to a cut or bulk (SPEC 10); site.js also disables it so it isn't sent. */
+form:has(:is(input, option)[name="goal"][value="Maintain"]:checked, select[name="goal"] option[value="Maintain"]:checked) [data-rate-row] { display: none; }

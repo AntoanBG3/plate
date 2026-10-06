@@ -20,6 +20,12 @@ public partial class ErrorRecorder(IServiceScopeFactory scopes, TimeProvider tim
 {
     public async Task RecordAsync(ErrorReport report, CancellationToken ct)
     {
+        // Not errors, and pages cached before the browser stopped sending them still do (Phase 11).
+        if (GymTracker.Core.Text.ErrorNoise.IsIgnored(report.Message))
+        {
+            return;
+        }
+
         try
         {
             var fingerprint = ErrorFingerprint.Of(report.Type, report.Message, report.Stack, report.Path);

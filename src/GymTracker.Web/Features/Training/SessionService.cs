@@ -18,7 +18,7 @@ public record LogSetInput(
 
 public record SessionSummary(WorkoutSession Session, TimeSpan Duration, int WorkingSets);
 
-public record HistoryItem(int Id, string Name, DateTimeOffset StartedAt, DateTimeOffset? EndedAt, int WorkingSets);
+public record HistoryItem(int Id, string Name, DateTimeOffset StartedAt, DateTimeOffset? EndedAt, int WorkingSets, int? TemplateId = null);
 
 public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLookup profiles, TimeProvider time)
 {
@@ -124,6 +124,18 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         };
         db.Sets.Add(set);
 
+        // A set beyond the rows the server knows of (sent by an older page from the offline queue) grows the count,
+        // so the row it was logged in stays on screen.
+        var logged = await db.Sets.CountAsync(s => s.SessionExerciseId == exercise.Id && s.IsWarmup == input.IsWarmup, ct) + 1;
+        if (input.IsWarmup)
+        {
+            exercise.WarmupSlots = Math.Max(exercise.WarmupSlots, logged);
+        }
+        else
+        {
+            exercise.WorkingSets = Math.Max(exercise.WorkingSets, logged);
+        }
+
         try
         {
             await db.SaveChangesAsync(ct);
@@ -157,6 +169,52 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         return set;
     }
 
+    public const int MaxWorkingSets = 20;
+    public const int MaxWarmupSlots = 10;
+
+    /// <summary>Adds an empty working-set or warm-up row to a session exercise. Stored, so a reload keeps it (SPEC 7).</summary>
+    public async Task<SessionExercise> AddSlotAsync(int sessionExerciseId, bool warmup, CancellationToken ct)
+    {
+        var exercise = await GetExerciseAsync(sessionExerciseId, ct);
+        var logged = exercise.Sets.Count(s => s.IsWarmup == warmup);
+        if (warmup)
+        {
+            exercise.WarmupSlots = Math.Min(MaxWarmupSlots, Math.Max(exercise.WarmupSlots, logged) + 1);
+        }
+        else
+        {
+            exercise.WorkingSets = Math.Min(MaxWorkingSets, Math.Max(exercise.WorkingSets, logged) + 1);
+        }
+
+        await db.SaveChangesAsync(ct);
+        return exercise;
+    }
+
+    /// <summary>
+    /// Removes one empty row. False when every row of that kind holds a logged set, or when it would leave no working set.
+    /// </summary>
+    public async Task<bool> RemoveSlotAsync(int sessionExerciseId, bool warmup, CancellationToken ct)
+    {
+        var exercise = await GetExerciseAsync(sessionExerciseId, ct);
+        var logged = exercise.Sets.Count(s => s.IsWarmup == warmup);
+        if (warmup ? exercise.WarmupSlots <= logged : exercise.WorkingSets <= Math.Max(1, logged))
+        {
+            return false;
+        }
+
+        if (warmup)
+        {
+            exercise.WarmupSlots--;
+        }
+        else
+        {
+            exercise.WorkingSets--;
+        }
+
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
     /// <summary>The weight of the last working set logged on this session exercise, or null.</summary>
     public Task<decimal?> LastWorkingWeightAsync(int sessionExerciseId, CancellationToken ct) =>
         db.Sets
@@ -172,14 +230,15 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
             .SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct)
         ?? throw new NotFoundException();
 
-    public async Task AddExerciseAsync(int sessionId, int exerciseId, CancellationToken ct)
+    /// <summary>Adds an exercise at the end of the session. Returns the new session exercise's id.</summary>
+    public async Task<int> AddExerciseAsync(int sessionId, int exerciseId, CancellationToken ct)
     {
         var session = await db.Sessions.Include(s => s.Exercises).SingleOrDefaultAsync(s => s.Id == sessionId, ct)
             ?? throw new NotFoundException();
         var exercise = await db.Exercises.SingleOrDefaultAsync(e => e.Id == exerciseId && !e.IsArchived, ct)
             ?? throw new NotFoundException("Exercise not found.");
 
-        session.Exercises.Add(new SessionExercise
+        var item = new SessionExercise
         {
             ExerciseId = exercise.Id,
             SortOrder = session.Exercises.Count == 0 ? 0 : session.Exercises.Max(e => e.SortOrder) + 1,
@@ -187,8 +246,10 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
             RepMax = 12,
             WorkingSets = 3,
             WeightIncrementKg = await profiles.DefaultIncrementAsync(ct),
-        });
+        };
+        session.Exercises.Add(item);
         await db.SaveChangesAsync(ct);
+        return item.Id;
     }
 
     /// <summary>
@@ -213,6 +274,15 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
         item.ExerciseId = exercise.Id;
         await db.SaveChangesAsync(ct);
         return item.SessionId;
+    }
+
+    /// <summary>Puts the session's exercises in the given order (Reorder mode); the ids must be exactly its exercises.</summary>
+    public async Task ReorderAsync(int sessionId, IReadOnlyList<int> orderedIds, CancellationToken ct)
+    {
+        _ = await db.Sessions.SingleOrDefaultAsync(s => s.Id == sessionId, ct) ?? throw new NotFoundException();
+        var items = await db.SessionExercises.Where(e => e.SessionId == sessionId).ToListAsync(ct);
+        TemplateService.ApplyOrder(items, orderedIds, e => e.Id, (e, i) => e.SortOrder = i);
+        await db.SaveChangesAsync(ct);
     }
 
     public async Task<int> MoveExerciseAsync(int sessionExerciseId, int direction, CancellationToken ct)
@@ -283,6 +353,24 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
                 s.StartedAt,
                 s.EndedAt,
                 s.Exercises.SelectMany(e => e.Sets).Count(x => !x.IsWarmup)))
+            .ToListAsync(ct);
+
+    /// <summary>
+    /// The last few finished sessions, newest started first: Today picks "Done today" and the next template from them
+    /// in one query.
+    /// </summary>
+    public Task<List<HistoryItem>> RecentFinishedAsync(int take, CancellationToken ct) =>
+        db.Sessions
+            .Where(s => s.EndedAt != null)
+            .OrderByDescending(s => s.StartedAt)
+            .Take(take)
+            .Select(s => new HistoryItem(
+                s.Id,
+                s.Template != null ? s.Template.Name : "Freestyle",
+                s.StartedAt,
+                s.EndedAt,
+                s.Exercises.SelectMany(e => e.Sets).Count(x => !x.IsWarmup),
+                s.TemplateId))
             .ToListAsync(ct);
 
     public Task<int?> LastCompletedTemplateIdAsync(CancellationToken ct) =>

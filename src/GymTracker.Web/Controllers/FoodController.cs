@@ -21,8 +21,7 @@ public class FoodController(
     NutritionTargets targets,
     ProfileService profiles,
     UserTime userTime,
-    TimeProvider time,
-    Localizer localizer) : Controller
+    TimeProvider time) : Controller
 {
     private static readonly string[] Tabs = ["text", "barcode", "search", "recent", "manual"];
 
@@ -30,22 +29,45 @@ public class FoodController(
     public async Task<IActionResult> Index(DateOnly? date, CancellationToken ct)
     {
         var today = await profiles.TodayAsync(ct);
-        var day = await log.DayAsync(date ?? today, ct);
-        var dailyTargets = await targets.ForTodayAsync(ct);
-        var week = day.Date == today ? await log.WeekCardAsync(today, dailyTargets, ct) : null;
-        return View(new FoodDayViewModel(day, today, dailyTargets, week));
+        if (date > today)
+        {
+            return Redirect("/food"); // future days can't be logged (SPEC 7)
+        }
+
+        var shown = date ?? today;
+        var day = await log.DayAsync(shown, ct);
+        DailyTargets? dayTargets;
+        DateOnly? start = null;
+        if (shown == today)
+        {
+            dayTargets = await targets.ForTodayAsync(ct);
+        }
+        else
+        {
+            (dayTargets, start) = await targets.ForDateAsync(shown, ct);
+        }
+
+        var week = shown == today && dayTargets is not null ? await log.WeekCardAsync(today, dayTargets, ct) : null;
+        var previous = (await log.DayAsync(shown.AddDays(-1), ct)).Entries.Select(e => e.Meal).ToHashSet();
+        return View(new FoodDayViewModel(day, today, dayTargets, week, start, previous));
     }
 
     [HttpGet("add")]
     public async Task<IActionResult> Add(DateOnly? date, Meal? meal, string? tab, string? q, bool off, CancellationToken ct)
     {
-        var d = date ?? await profiles.TodayAsync(ct);
+        var today = await profiles.TodayAsync(ct);
+        if (date > today)
+        {
+            return Redirect("/food");
+        }
+
+        var d = date ?? today;
         var m = meal ?? await DefaultMealAsync();
         tab = Tabs.Contains(tab) ? tab! : "text";
 
-        var local = tab == "search" && !string.IsNullOrWhiteSpace(q) ? await foods.SearchAsync(q, 20, 0.3, ct) : [];
+        var local = tab == "search" && !string.IsNullOrWhiteSpace(q) ? await foods.SearchForPickerAsync(q, 20, ct) : [];
         var offResults = tab == "search" && off && !string.IsNullOrWhiteSpace(q) ? await foods.SearchOpenFoodFactsAsync(q, ct) : null;
-        var recents = tab == "recent" ? await log.RecentsAsync(await profiles.TodayAsync(ct), ct) : [];
+        var recents = tab == "recent" ? await log.RecentsAsync(today, ct) : [];
         var saved = tab == "recent" ? await savedMeals.ListAsync(ct) : [];
         return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved));
     }
@@ -85,14 +107,27 @@ public class FoodController(
             .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, i.Per100, i.FoodItemId, EntrySource.Ai, aiModel, string.IsNullOrWhiteSpace(i.MatchModel) ? null : i.MatchModel.Trim(), runId))
             .ToList();
         await log.AddAsync(entries, ct);
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
+
+    /// <summary>Foods to put on a confirmation row instead of the one it matched (the Change food sheet).</summary>
+    [HttpGet("candidates")]
+    public async Task<IActionResult> Candidates(string? q, CancellationToken ct) =>
+        PartialView("_Candidates", string.IsNullOrWhiteSpace(q) ? [] : await foods.SearchForPickerAsync(q, 20, ct));
 
     [HttpGet("barcode")]
     public async Task<IActionResult> Barcode(DateOnly date, Meal meal, string? code, CancellationToken ct)
     {
-        code = new string((code ?? "").Where(char.IsAsciiDigit).ToArray());
-        return View(new BarcodeViewModel(date, meal, code, await foods.LookupBarcodeAsync(code, ct)));
+        var digits = Barcodes.Normalize(code);
+        if (!Barcodes.IsValid(digits))
+        {
+            // Back to the Scan tab with what was typed, so one wrong digit can be fixed (Phase 11).
+            return View("Add", new FoodAddViewModel(date, meal, "barcode", new string((code ?? "").Where(char.IsAsciiDigit).ToArray()),
+                "That isn't a valid EAN or UPC barcode.", null, [], null, [], []));
+        }
+
+        return View(new BarcodeViewModel(date, meal, digits, await foods.LookupBarcodeAsync(digits, ct)));
     }
 
     [HttpPost("log-item")]
@@ -102,6 +137,7 @@ public class FoodController(
         var name = item.DisplayName();
         var description = item.Brand is null ? name : $"{name} ({item.Brand})";
         await log.AddAsync([new NewEntry(date, meal, description, grams, item.Per100(), item.Id, source)], ct);
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -110,6 +146,7 @@ public class FoodController(
     {
         var item = await foods.CreateManualAsync(name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, ct);
         await log.AddAsync([new NewEntry(date, meal, item.Name, grams, item.Per100(), item.Id, barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -117,6 +154,7 @@ public class FoodController(
     public async Task<IActionResult> LogRecent(DateOnly date, Meal meal, string description, int? foodItemId, decimal grams, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
         await log.AddAsync([new NewEntry(date, meal, description, grams, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), foodItemId, EntrySource.Recent)], ct);
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -124,9 +162,15 @@ public class FoodController(
     public async Task<IActionResult> Copy(DateOnly date, Meal meal, CancellationToken ct)
     {
         var copied = await log.CopyMealAsync(date.AddDays(-1), date, meal, ct);
-        TempData.Notice(copied == 0
-            ? new LocalText(NothingToCopy[meal])
-            : LocalText.Count(copied, "Copied 1 item.", "Copied {0} items."));
+        if (copied == 0)
+        {
+            TempData.Info(new LocalText(NothingToCopy[meal]));
+        }
+        else
+        {
+            TempData.Notice(LocalText.Count(copied, "Copied 1 item.", "Copied {0} items."));
+        }
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -145,36 +189,55 @@ public class FoodController(
     [HttpPost("quick")]
     public async Task<IActionResult> Quick(DateOnly date, Meal meal, string? description, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
-        await log.AddQuickAsync(date, meal, string.IsNullOrWhiteSpace(description) ? localizer["Quick add"] : description, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
+        // Left empty, the name is shown as "Quick add" in whichever language is reading it (Localizer.Entry).
+        await log.AddQuickAsync(date, meal, description ?? "", kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
     [HttpPost("entries/{id:int}/quick")]
-    public async Task<IActionResult> UpdateQuick(int id, string description, Meal meal, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
+    public async Task<IActionResult> UpdateQuick(int id, string? description, Meal meal, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
-        await log.UpdateQuickAsync(id, description, meal, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
+        await log.UpdateQuickAsync(id, description ?? "", meal, kcal, protein ?? 0, carbs ?? 0, fat ?? 0, fiber, saturatedFat, ct);
         var entry = await log.GetAsync(id, ct);
+        FocusMeal(entry.Meal);
         return Redirect($"/food?date={entry.Date:yyyy-MM-dd}");
     }
 
     [HttpGet("entries/{id:int}")]
-    public async Task<IActionResult> Entry(int id, CancellationToken ct) => View(await log.GetAsync(id, ct));
+    public async Task<IActionResult> Entry(int id, CancellationToken ct)
+    {
+        var entry = await log.GetAsync(id, ct);
+        if (entry.FoodItemId is { } foodId)
+        {
+            // Another user's food stays hidden: the name is then left out rather than shown.
+            ViewData["MatchedName"] = await foods.DisplayNameOrNullAsync(foodId, ct);
+        }
+
+        return View(entry);
+    }
 
     [HttpPost("entries/{id:int}")]
     public async Task<IActionResult> UpdateEntry(int id, string description, decimal grams, Meal meal, CancellationToken ct)
     {
         await log.UpdateAsync(id, description, grams, meal, ct);
         var entry = await log.GetAsync(id, ct);
+        FocusMeal(entry.Meal);
         return Redirect($"/food?date={entry.Date:yyyy-MM-dd}");
     }
 
     [HttpPost("entries/{id:int}/delete")]
     public async Task<IActionResult> DeleteEntry(int id, CancellationToken ct)
     {
+        var meal = (await log.GetAsync(id, ct)).Meal;
         var date = await log.DeleteAsync(id, ct);
         TempData.Undo("Entry deleted.", $"/undo/entry/{id}");
+        FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
+
+    /// <summary>The day view scrolls to the meal a change was made in (Phase 11).</summary>
+    private void FocusMeal(Meal meal) => TempData.Focus($"meal-{meal.ToString().ToLowerInvariant()}");
 
     /// <summary>The meal that fits the user's local time of day.</summary>
     private async Task<Meal> DefaultMealAsync()

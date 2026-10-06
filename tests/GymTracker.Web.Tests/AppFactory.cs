@@ -17,6 +17,9 @@ public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDicti
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        // Outside Development the host doesn't load the static web assets manifest, which maps the compressed copies
+        // in obj/; without it every request with Accept-Encoding gets an empty 200 (browsers always send one).
+        builder.UseStaticWebAssets();
         builder.UseSetting("ConnectionStrings:Default", db.ConnectionString);
         builder.UseSetting("RateLimits:LoginPerWindow", loginLimit.ToString());
         // Never reach the real OpenRouter from tests: nothing listens on the discard port.

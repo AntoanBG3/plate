@@ -1,5 +1,7 @@
 @model LoginViewModel
 @{
+    // After a failed attempt the email is kept, so the cursor goes to the password (QA, Phase 11).
+    var retry = Model.Error is not null && !string.IsNullOrEmpty(Model.Email);
     ViewData["Title"] = L["Sign in"];
     ViewData["HideTabs"] = true;
 }
@@ -18,11 +20,11 @@
         <div class="list">
             <div class="field-row stacked">
                 <label for="email" class="sr-only">@L["Email"]</label>
-                <input id="email" type="email" name="email" value="@Model.Email" autocomplete="username webauthn" autocapitalize="none" spellcheck="false" placeholder="@L["Email"]" required autofocus />
+                <input id="email" type="email" name="email" value="@Model.Email" autocomplete="username webauthn" autocapitalize="none" spellcheck="false" placeholder="@L["Email"]" required autofocus="@(!retry)" />
             </div>
             <div class="field-row stacked">
                 <label for="password" class="sr-only">@L["Password"]</label>
-                <input id="password" type="password" name="password" autocomplete="current-password" placeholder="@L["Password"]" required />
+                <input id="password" type="password" name="password" autocomplete="current-password" placeholder="@L["Password"]" required autofocus="@retry" />
             </div>
         </div>
         <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Sign in"]</button>

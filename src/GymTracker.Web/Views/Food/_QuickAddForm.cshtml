@@ -1,16 +1,26 @@
 @model QuickAddViewModel
-<div class="sheet-head"><span></span><span class="sheet-title" id="quick-title">@L["Quick add"]</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
+@{
+    // Whole phrases per meal: Bulgarian meal names change form inside a sentence.
+    var title = Model.Meal switch
+    {
+        Meal.Breakfast => L["Quick add to breakfast"],
+        Meal.Lunch => L["Quick add to lunch"],
+        Meal.Dinner => L["Quick add to dinner"],
+        _ => L["Quick add a snack"],
+    };
+}
+<div class="sheet-head"><span></span><span class="sheet-title" id="quick-title">@title</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
 <form method="post" asp-antiforgery="true" action="/food/quick">
     <input type="hidden" name="date" value="@Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" />
     <input type="hidden" name="meal" value="@Model.Meal" />
     <div class="list">
         <div class="field-row"><label for="quick-name">@L["Name"]</label><input id="quick-name" type="text" name="description" maxlength="200" placeholder="@L["Quick add"]" /></div>
-        <div class="field-row"><label for="quick-kcal">@L["Calories"]</label><input id="quick-kcal" class="num" type="number" name="kcal" min="1" max="5000" step="any" inputmode="decimal" required autofocus /><span class="unit">@L["kcal"]</span></div>
-        <div class="field-row"><label for="quick-protein">@L["Protein"]</label><input id="quick-protein" class="num" type="number" name="protein" min="0" max="500" step="any" inputmode="decimal" /><span class="unit">@L["g"]</span></div>
-        <div class="field-row"><label for="quick-carbs">@L["Carbs"]</label><input id="quick-carbs" class="num" type="number" name="carbs" min="0" max="500" step="any" inputmode="decimal" /><span class="unit">@L["g"]</span></div>
-        <div class="field-row"><label for="quick-fat">@L["Fat"]</label><input id="quick-fat" class="num" type="number" name="fat" min="0" max="500" step="any" inputmode="decimal" /><span class="unit">@L["g"]</span></div>
-        <div class="field-row"><label for="quick-fiber">@L["Fiber"]</label><input id="quick-fiber" class="num" type="number" name="fiber" min="0" max="200" step="any" inputmode="decimal" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
-        <div class="field-row"><label for="quick-satfat">@L["Saturated fat"]</label><input id="quick-satfat" class="num" type="number" name="saturatedFat" min="0" max="500" step="any" inputmode="decimal" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+        <div class="field-row"><label for="quick-kcal">@L["Calories"]</label><input id="quick-kcal" class="num" type="text" name="kcal" min="1" max="5000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required autofocus /><span class="unit">@L["kcal"]</span></div>
+        <div class="field-row"><label for="quick-protein">@L["Protein"]</label><input id="quick-protein" class="num" type="text" name="protein" min="0" max="500" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+        <div class="field-row"><label for="quick-carbs">@L["Carbs"]</label><input id="quick-carbs" class="num" type="text" name="carbs" min="0" max="500" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+        <div class="field-row"><label for="quick-fat">@L["Fat"]</label><input id="quick-fat" class="num" type="text" name="fat" min="0" max="500" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+        <div class="field-row"><label for="quick-fiber">@L["Fiber"]</label><input id="quick-fiber" class="num" type="text" name="fiber" min="0" max="200" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+        <div class="field-row"><label for="quick-satfat">@L["Saturated fat"]</label><input id="quick-satfat" class="num" type="text" name="saturatedFat" min="0" max="500" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
     </div>
     <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-4)">@L["Add"]</button>
 </form>

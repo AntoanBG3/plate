@@ -1,12 +1,25 @@
-@model string
+@model AdminUnlockViewModel
 @{
-    ViewData["Title"] = "Unlock admin";
+    ViewData["Title"] = L["Unlock admin"];
     ViewData["BackUrl"] = "/settings";
-    ViewData["BackLabel"] = "Settings";
+    ViewData["BackLabel"] = L["Settings"];
 }
 <header class="page-head">
-    <h1 class="large-title">Unlock admin</h1>
-    <p class="subhead">Confirm it's you with one of this account's passkeys. The admin area stays open for 30 minutes after the last page, and 4 hours at most.</p>
+    <h1 class="large-title">@L["Unlock admin"]</h1>
+    <p class="subhead">@L["Confirm it's you with one of this account's passkeys. The admin area stays open for 30 minutes after the last page, and 4 hours at most."]</p>
 </header>
-<button type="button" class="btn btn-tinted btn-block" data-module="passkey-unlock" hidden>@Ui.Icon("key")Unlock with Face ID</button>
-<noscript><p class="section-footer">Unlocking needs JavaScript.</p></noscript>
+@if (Model.HasPasskey)
+{
+    <button type="button" class="btn btn-tinted btn-block" data-module="passkey-unlock" hidden>@Ui.Icon("key")@L["Unlock with a passkey"]</button>
+    <noscript><p class="section-footer">@L["Unlocking needs JavaScript."]</p></noscript>
+}
+else
+{
+    @* Without a passkey the button could only fail; say what to do instead (QA admin unlock). *@
+    <div class="card empty">
+        <div class="empty-icon">@Ui.Icon("key")</div>
+        <h2>@L["Add a passkey in Settings first"]</h2>
+        <p>@L["The admin area opens only with a passkey on this account."]</p>
+        <a class="btn btn-tinted" href="/settings#passkeys">@L["Go to passkeys"]</a>
+    </div>
+}

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
+using GymTracker.Web.ViewModels;
+
 namespace GymTracker.Web.Controllers;
 
 /// <summary>
@@ -25,7 +27,12 @@ public class AdminUnlockController(
     ILogger<AdminUnlockController> log) : Controller
 {
     [HttpGet("unlock")]
-    public IActionResult Unlock(string? returnUrl) => View(model: SafeAdminUrl(returnUrl));
+    public async Task<IActionResult> Unlock(string? returnUrl)
+    {
+        var user = await users.GetUserAsync(User);
+        var hasPasskey = user is not null && (await users.GetPasskeysAsync(user)).Count > 0;
+        return View(new AdminUnlockViewModel(SafeAdminUrl(returnUrl), hasPasskey));
+    }
 
     [HttpPost("unlock/options")]
     [EnableRateLimiting(RateLimits.AdminUnlock)]

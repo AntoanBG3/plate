@@ -43,14 +43,15 @@ public class TrainController(
             session,
             await analytics.SuggestionsAsync(session, ct),
             await settings.ForAsync(session.Exercises.Select(e => e.ExerciseId), ct),
-            (await profiles.GetAsync(ct)).BarWeightKg));
+            (await profiles.GetAsync(ct)).BarWeightKg,
+            await analytics.LastTimeAsync(session, ct)));
     }
 
     [HttpGet("sessions/{id:int}/summary")]
     public async Task<IActionResult> Summary(int id, CancellationToken ct)
     {
         var summary = await sessions.SummaryAsync(id, ct);
-        return View(new SummaryViewModel(summary, await analytics.RecordsAsync(summary.Session, ct)));
+        return View(new SummaryViewModel(summary, await analytics.RecordsAsync(summary.Session, ct), await analytics.FirstTimesAsync(summary.Session, ct)));
     }
 
     [HttpPost("sessions/{id:int}/finish")]
@@ -77,15 +78,50 @@ public class TrainController(
     [HttpGet("sessions/{id:int}/add-exercise")]
     public async Task<IActionResult> AddExercise(int id, CancellationToken ct)
     {
-        await sessions.GetAsync(id, ct);
+        var session = await sessions.GetAsync(id, ct);
         return View("ExercisePicker", new ExercisePickerViewModel(
-            "Add exercise", $"/train/sessions/{id}/exercises", $"/train/sessions/{id}", await exercises.ListAsync(ct)));
+            "Add exercise", $"/train/sessions/{id}/exercises", $"/train/sessions/{id}", await exercises.ListAsync(ct),
+            Multi: true, AlreadyIn: session.Exercises.Select(e => e.ExerciseId).ToHashSet(), AddTo: $"session:{id}"));
     }
 
     [HttpPost("sessions/{id:int}/exercises")]
-    public async Task<IActionResult> AddExercise(int id, int exerciseId, CancellationToken ct)
+    /// <summary>Adds the picked exercises in the order they were picked (one, from older pages, as exerciseId).</summary>
+    public async Task<IActionResult> AddExercise(int id, int? exerciseId, List<int>? exerciseIds, CancellationToken ct)
     {
-        await sessions.AddExerciseAsync(id, exerciseId, ct);
+        var picked = exerciseIds is { Count: > 0 } ? exerciseIds : exerciseId is { } one ? [one] : [];
+        var before = (await sessions.GetAsync(id, ct)).Exercises.Select(e => e.ExerciseId).ToHashSet();
+        int? first = null;
+        foreach (var pick in picked)
+        {
+            var added = await sessions.AddExerciseAsync(id, pick, ct);
+            first ??= added;
+        }
+
+        if (picked.FirstOrDefault(before.Contains) is var again and > 0)
+        {
+            TempData.Notice(new LocalText("Added a second {0}.", localizer.Exercise(await exercises.GetAsync(again, ct))));
+        }
+
+        if (first is { } f)
+        {
+            TempData.Focus($"ex-{f}");
+        }
+
+        return Redirect($"/train/sessions/{id}");
+    }
+
+    [HttpGet("sessions/{id:int}/reorder")]
+    public async Task<IActionResult> Reorder(int id, CancellationToken ct)
+    {
+        var session = await sessions.GetAsync(id, ct);
+        return View("Reorder", new ReorderViewModel($"/train/sessions/{id}/order", $"/train/sessions/{id}",
+            session.Exercises.Select(e => (e.Id, localizer.Exercise(e.Exercise))).ToList()));
+    }
+
+    [HttpPost("sessions/{id:int}/order")]
+    public async Task<IActionResult> Order(int id, List<int> ids, CancellationToken ct)
+    {
+        await sessions.ReorderAsync(id, ids, ct);
         return Redirect($"/train/sessions/{id}");
     }
 
@@ -101,12 +137,20 @@ public class TrainController(
     }
 
     [HttpPost("session-exercises/{id:int}/swap")]
-    public async Task<IActionResult> Swap(int id, int exerciseId, CancellationToken ct) =>
-        Redirect($"/train/sessions/{await sessions.SwapExerciseAsync(id, exerciseId, ct)}");
+    public async Task<IActionResult> Swap(int id, int exerciseId, CancellationToken ct)
+    {
+        var sessionId = await sessions.SwapExerciseAsync(id, exerciseId, ct);
+        TempData.Focus($"ex-{id}");
+        return Redirect($"/train/sessions/{sessionId}");
+    }
 
     [HttpPost("session-exercises/{id:int}/move")]
-    public async Task<IActionResult> MoveExercise(int id, int direction, CancellationToken ct) =>
-        Redirect($"/train/sessions/{await sessions.MoveExerciseAsync(id, direction, ct)}");
+    public async Task<IActionResult> MoveExercise(int id, int direction, CancellationToken ct)
+    {
+        var sessionId = await sessions.MoveExerciseAsync(id, direction, ct);
+        TempData.Focus($"ex-{id}");
+        return Redirect($"/train/sessions/{sessionId}");
+    }
 
     [HttpPost("session-exercises/{id:int}/remove")]
     public async Task<IActionResult> RemoveExercise(int id, CancellationToken ct)
@@ -132,17 +176,24 @@ public class TrainController(
         return PartialView("_Plates", new PlatesViewModel(id, bar, target, load));
     }
 
-    /// <summary>An empty row for an extra working set or a warmup, appended by htmx.</summary>
-    [HttpGet("session-exercises/{id:int}/row")]
-    public async Task<IActionResult> BlankRow(int id, bool warmup, CancellationToken ct)
+    /// <summary>Adds an empty row for an extra working set or a warmup, stored on the session exercise; htmx appends it.</summary>
+    [HttpPost("session-exercises/{id:int}/slots")]
+    public async Task<IActionResult> AddSlot(int id, bool warmup, CancellationToken ct)
     {
-        var exercise = await sessions.GetExerciseAsync(id, ct);
+        var exercise = await sessions.AddSlotAsync(id, warmup, ct);
 
         // An extra working set starts from the last one logged.
         var last = warmup ? null : exercise.Sets.Where(s => !s.IsWarmup).MaxBy(s => s.SetNumber);
         var target = last is null ? null : new GymTracker.Core.Training.SetTarget(last.WeightKg, last.Reps);
         return PartialView("_SetRow", SetRowViewModel.Blank(id, warmup, target));
     }
+
+    /// <summary>Removes an empty row (swiped away). An empty response takes the row off the page; 400 when it can't go.</summary>
+    [HttpPost("session-exercises/{id:int}/slots/remove")]
+    public async Task<IActionResult> RemoveSlot(int id, bool warmup, CancellationToken ct) =>
+        await sessions.RemoveSlotAsync(id, warmup, ct)
+            ? Content("")
+            : throw new ValidationException(warmup ? "There is no empty warm-up row to remove." : "An exercise keeps at least one set.");
 
     [HttpPost("sets")]
     public async Task<IActionResult> LogSet(LogSetForm form, CancellationToken ct)
@@ -155,7 +206,7 @@ public class TrainController(
 
     [HttpPost("sets/{id:int}/update")]
     public async Task<IActionResult> UpdateSet(int id, decimal? weightKg, int? reps, decimal? rpe, CancellationToken ct) =>
-        PartialView("_SetRow", SetRowViewModel.For(await sessions.UpdateSetAsync(id, weightKg ?? 0, reps ?? 0, rpe, ct)));
+        PartialView("_SetRow", SetRowViewModel.For(await sessions.UpdateSetAsync(id, weightKg ?? 0, reps ?? 0, rpe, ct)) with { JustSaved = true });
 
     [HttpPost("sets/{id:int}/delete")]
     public async Task<IActionResult> DeleteSet(int id, CancellationToken ct)

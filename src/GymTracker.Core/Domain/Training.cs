@@ -78,7 +78,12 @@ public class SessionExercise
     public int SortOrder { get; set; }
     public int RepMin { get; set; }
     public int RepMax { get; set; }
+    /// <summary>The planned working sets: copied from the template, then grown or shrunk as rows are added or removed.</summary>
     public int WorkingSets { get; set; }
+
+    /// <summary>Warm-up rows added in this session; a blank one shows for each beyond the warm-ups logged.</summary>
+    public int WarmupSlots { get; set; }
+
     public decimal WeightIncrementKg { get; set; }
     public int RestSeconds { get; set; } = TemplateExercise.DefaultRestSeconds;
     public List<SetEntry> Sets { get; set; } = [];

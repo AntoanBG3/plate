@@ -50,6 +50,10 @@ public static class ProfileRules
             ? new LocalText("Starting maintenance must be between {0} and {1} kcal.", ProfileLimits.MinMaintenanceKcal, ProfileLimits.MaxMaintenanceKcal)
             : null;
 
+    /// <summary>A cut or bulk needs a weekly rate (SPEC 10); empty would otherwise be saved as 0%, no change at all.</summary>
+    public static LocalText? MissingRateError(Goal? goal, decimal? ratePercent) =>
+        (goal is Goal.Cut or Goal.Bulk) && ratePercent is null ? new LocalText("Enter a weekly rate for a cut or bulk.") : null;
+
     public static LocalText? RateError(Goal goal, decimal ratePercent)
     {
         if (ratePercent < 0)

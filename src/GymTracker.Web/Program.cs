@@ -185,8 +185,9 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-// __Host- cookies must be Secure with Path=/ and no Domain; local development runs over plain http.
-var hostCookies = !builder.Environment.IsDevelopment();
+// __Host- cookies must be Secure with Path=/ and no Domain; local development runs over plain http. The browser
+// tests also run over http://localhost (no trusted certificate), so they turn this off with Auth:HostCookies.
+var hostCookies = config.GetValue("Auth:HostCookies", !builder.Environment.IsDevelopment());
 // The passkey relying party: the public host name in production; unset locally, where the request's host is used.
 builder.Services.Configure<IdentityPasskeyOptions>(o =>
 {
@@ -297,7 +298,7 @@ builder.Services.AddRateLimiter(o =>
     // A failing weekly model is retried on Today visits; this caps how often (SPEC 6.5).
     o.AddPolicy(RateLimits.AiWeekly, http => PerUser(http, config.GetValue("RateLimits:AiWeeklyPerWindow", 6), TimeSpan.FromHours(1)));
     // The login page asks for passkey options on every view (autofill), so they get their own budget.
-    o.AddPolicy(RateLimits.PasskeyOptions, http => PerIp(http, 30, TimeSpan.FromMinutes(5)));
+    o.AddPolicy(RateLimits.PasskeyOptions, http => PerIp(http, config.GetValue("RateLimits:PasskeyOptionsPerWindow", 30), TimeSpan.FromMinutes(5)));
     o.AddPolicy(RateLimits.CspReport, http => PerIp(http, 20, TimeSpan.FromMinutes(1)));
     // Reports and parse ratings, and browser error reports (SPEC 11).
     o.AddPolicy(RateLimits.Feedback, http => PerUser(http, config.GetValue("RateLimits:FeedbackPerWindow", 30), TimeSpan.FromMinutes(10)));
@@ -317,6 +318,7 @@ builder.Services.AddControllersWithViews(o =>
 {
     o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
     o.Filters.Add<FeatureExceptionFilter>();
+    o.ModelBinderProviders.Insert(0, new DecimalModelBinderProvider());
 });
 builder.Services.AddAntiforgery(o =>
 {
@@ -338,6 +340,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ExerciseSeed.SeedAsync(db, CancellationToken.None);
     await UsdaSeed.SeedAsync(db, UsdaSeed.DefaultPath, CancellationToken.None);
     await BgFoodSeed.SeedAsync(db, BgFoodSeed.DefaultPath, CancellationToken.None);
+    await DataFixups.RunAsync(db, CancellationToken.None);
 }
 
 if (args.Length > 0 && args[0] == CreateUserCommand.Name)

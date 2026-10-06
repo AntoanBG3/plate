@@ -58,6 +58,7 @@ public class SavedMealService(AppDbContext db, ICurrentUser currentUser, TimePro
     /// </summary>
     public async Task<int> LogAsync(int id, DateOnly date, Meal meal, IReadOnlyList<decimal?> grams, CancellationToken ct)
     {
+        await FoodDays.EnsureNotFutureAsync(db, time, date, ct);
         var userId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.");
         var saved = await GetAsync(id, ct);
         var foodIds = saved.Items.Where(i => i.FoodItemId != null).Select(i => i.FoodItemId!.Value).ToList();

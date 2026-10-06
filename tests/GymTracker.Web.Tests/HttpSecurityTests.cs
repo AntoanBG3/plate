@@ -118,13 +118,13 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable
         var response = await AppFactory.PostAsync(client, "/today/weight", token, new() { ["weightKg"] = "82.4" });
 
         AppFactory.IsRedirectTo(response, "/today").Should().BeTrue();
-        (await client.GetStringAsync("/today")).Should().Contain("Logged today: 82.4 kg, trend 82.4 kg");
+        (await client.GetStringAsync("/today")).Should().Contain("Logged today: 82.4 kg");
 
         // Without a key the parser is the simple built-in one; the key and models themselves are in the admin area (AdminTests).
         (await client.GetStringAsync("/settings")).Should().Contain("AI models").And.Contain("Simple built-in parser").And.Contain("Off: database ranking only");
 
         var progress = await client.GetStringAsync("/progress?range=4w");
-        progress.Should().Contain("id=\"weight-data\"").And.Contain("Trend now: <strong>82.4 kg</strong>");
+        progress.Should().Contain("id=\"weight-data\"").And.Contain("82.4<small> kg</small>");
     }
 
     [Fact]

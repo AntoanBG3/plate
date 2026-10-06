@@ -53,8 +53,9 @@
         var left = kcal - (int)Math.Round(eaten.Kcal);
         var eatenP = (int)Math.Round(eaten.ProteinG);
         var macros = t.Macros;
-        var belowMin = macros is not null && eatenP < macros.ProteinMinG;
-        var leftP = belowMin ? macros!.ProteinMinG - eatenP : protein - eatenP;
+        // The ring counts toward the aim and marks the minimum (SPEC 7); the minimum is the caption under it.
+        var leftP = protein - eatenP;
+        var minReached = macros is not null && eatenP >= macros.ProteinMinG;
         <div class="gauges">
             <div class="gauge@(left < 0 ? " over" : "")">
                 <svg viewBox="0 0 150 128" aria-hidden="true"><path class="track" d="@Arc"/><path class="bar-kcal" d="@Arc" data-progress="@Share(eaten.Kcal, kcal)"/></svg>
@@ -70,7 +71,14 @@
                     }</svg>
                 <div class="gauge-center">
                     <div class="gauge-value num"><span data-count="@Math.Max(0, leftP)">@Math.Max(0, leftP)</span><small> @L["g"]</small></div>
-                    <div class="gauge-label">@(belowMin ? L["to your protein minimum"] : L["protein left"])</div>
+                    <div class="gauge-label">@L["protein left"]</div>
+                    @if (macros is not null && macros.ProteinMinG < protein)
+                    {
+                        <div class="gauge-sub num@(minReached ? " reached" : "")" data-protein-min>@if (minReached)
+                            {
+                                @Ui.Icon("check", "icon-sm")
+                            }@L["min {0} g", macros.ProteinMinG]</div>
+                    }
                 </div>
             </div>
         </div>
@@ -169,9 +177,37 @@ else if (Model.Weekly.CanWrite)
             <a class="btn btn-primary btn-block" href="/train/sessions/@active.Id">@Ui.Icon("play")@L["Resume workout"]</a>
         </div>
     }
+    else if (Model.DoneToday is { Count: > 0 } done)
+    {
+        @* A workout finished today comes first; the next one is a smaller row under it (SPEC 7). *@
+        <div class="list">
+            @foreach (var d in done)
+            {
+                <a class="row row-link" href="/train/sessions/@d.Id/summary" data-done-today>
+                    <span class="row-icon">@Ui.Icon("check")</span>
+                    <span class="row-main">
+                        <span class="row-title" style="display: block">@L["Done today: {0}", d.Name == "Freestyle" ? L["Freestyle"] : d.Name]</span>
+                        <span class="row-sub num" style="display: block">@L.Duration((d.EndedAt ?? d.StartedAt) - d.StartedAt) · @L.Count(d.WorkingSets, "1 set", "{0} sets")</span>
+                    </span>
+                    @Ui.Icon("chevron", "row-chevron")
+                </a>
+            }
+            @if (Model.NextTemplate is { } after)
+            {
+                <form method="post" asp-antiforgery="true" action="/train/start" class="row" data-up-next>
+                    <input type="hidden" name="templateId" value="@after.Id" />
+                    <span class="row-main">
+                        <span class="footnote" style="display: block">@L["Up next"]</span>
+                        <span class="row-title row-ellipsis" style="display: block">@after.Name</span>
+                    </span>
+                    <button type="submit" class="btn btn-tinted btn-small">@L["Start"]</button>
+                </form>
+            }
+        </div>
+    }
     else if (Model.NextTemplate is { } next)
     {
-        <div class="card card-pad">
+        <div class="card card-pad" data-up-next>
             <p class="footnote">@L["Up next"]</p>
             <p class="large-title" style="font-size: var(--text-title-1); margin: 4px 0 2px; view-transition-name: none">@next.Name</p>
             <p class="subhead row-ellipsis" style="margin-bottom: var(--s-4)">@string.Join(", ", next.Exercises.OrderBy(e => e.SortOrder).Select(e => L.Exercise(e.Exercise)))</p>
@@ -221,7 +257,7 @@ else if (Model.Weekly.CanWrite)
         }
         <form method="post" asp-antiforgery="true" action="/today/weight" class="field-row">
             <label for="weightKg">@L["Today's weight"]</label>
-            <input id="weightKg" class="num" type="number" name="weightKg" inputmode="decimal" step="any" min="@ProfileLimits.MinWeightKg.Kg()" max="@ProfileLimits.MaxWeightKg.Kg()"
+            <input id="weightKg" class="num" type="text" name="weightKg" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" step="any" min="@ProfileLimits.MinWeightKg.Kg()" max="@ProfileLimits.MaxWeightKg.Kg()"
                    placeholder="—" required value="@(Model.TodayWeight?.WeightKg.Kg())" @(Model.TodayWeight is null ? "autofocus" : "") />
             <span class="unit">@L["kg"]</span>
             <button type="submit" class="btn btn-plain">@(Model.TodayWeight is null ? L["Save"] : L["Update"])</button>
@@ -229,7 +265,7 @@ else if (Model.Weekly.CanWrite)
     </div>
     @if (Model.TodayWeight is not null)
     {
-        <p class="section-footer">@L["Logged today: {0} kg, trend {1} kg", Model.TodayWeight.WeightKg.Kg(), t.TrendWeightKg?.Kg(1)]</p>
+        <p class="section-footer">@L["Logged today: {0} kg", Model.TodayWeight.WeightKg.Kg()]</p>
     }
     else if (Model.LatestWeight is not null)
     {
@@ -245,7 +281,7 @@ else if (Model.Weekly.CanWrite)
                 <span class="row-title">@L["Log food"]</span>
                 @if (Model.LastFood is not null)
                 {
-                    <span class="row-sub row-ellipsis" style="display: block">@L["Last: {0}", Model.LastFood]</span>
+                    <span class="row-sub row-ellipsis" style="display: block">@L["Last: {0}", L.Entry(Model.LastFood)]</span>
                 }
             </span>
             @Ui.Icon("chevron", "row-chevron")

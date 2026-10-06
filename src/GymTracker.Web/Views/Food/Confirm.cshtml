@@ -42,42 +42,37 @@
                 Confidence.Medium => ("check", L["Check match"]),
                 _ => ("ai", L["AI estimate"]),
             };
-            <div class="result portion" data-per100="@item.Per100.Kcal.Kg(),@item.Per100.Protein.Kg()" style="animation-delay: @(i * 70)ms">
+            <div class="result portion" data-row="@i" data-per100="@item.Per100.Kcal.Kg(),@item.Per100.Protein.Kg()" style="animation-delay: @(i * 70)ms">
                 <div class="result-head">
                     <input type="checkbox" class="check-input" name="items[@i].Include" value="true" checked aria-label="@L["Include {0}", item.Description]" />
                     <input type="text" class="input" name="items[@i].Description" value="@item.Description" maxlength="200" aria-label="@L["Description"]" required />
-                    <span class="chip @chip">@label</span>
+                    <span class="chip @chip" data-chip>@label</span>
                     @if (Model.ParseRunId is not null)
                     {
                         <button type="button" class="rate-btn" data-rate="Down" data-item="@i" aria-pressed="false" aria-label="@L["{0} is wrong", item.Description]" hidden>@Ui.Icon("thumb-down")</button>
                     }
                 </div>
                 <div class="result-amount">
-                    <label class="grams"><input type="number" name="items[@i].Grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
+                    <label class="grams"><input type="text" name="items[@i].Grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
                     <span class="footnote num" data-totals>@L["{0} kcal · {1} g protein", Math.Round(item.Per100.Kcal * item.Grams / 100), (item.Per100.Protein * item.Grams / 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)]</span>
                 </div>
-                @if (item.MatchedName is not null || item.Notes.Count > 0)
-                {
-                    <div class="result-notes footnote">
-                        @if (item.MatchedName is not null)
-                        {
-                            <span>@L["Using: {0}", item.MatchedName]</span>
-                        }
-                        @foreach (var note in item.Notes)
-                        {
-                            <span>@L[note]</span>
-                        }
-                    </div>
-                }
+                <div class="result-notes footnote">
+                    <span data-using @(item.MatchedName is null ? "hidden" : null)>@(item.MatchedName is null ? "" : L["Using: {0}", item.MatchedName])</span>
+                    @foreach (var note in item.Notes)
+                    {
+                        <span data-note>@L[note]</span>
+                    }
+                    <button type="button" class="btn btn-plain btn-small change-food" data-change-food="@i" data-query="@item.Description">@L["Change food"]</button>
+                </div>
                 <details>
                     <summary>@L["Per 100 g values"]</summary>
                     <div class="per100">
-                        <label>@L["kcal"]<input class="input num" type="number" name="items[@i].Kcal" value="@item.Per100.Kcal.Kg()" min="0" max="900" step="any" inputmode="decimal" /></label>
-                        <label>@L["Protein"]<input class="input num" type="number" name="items[@i].Protein" value="@item.Per100.Protein.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
-                        <label>@L["Carbs"]<input class="input num" type="number" name="items[@i].Carbs" value="@item.Per100.Carbs.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
-                        <label>@L["Fat"]<input class="input num" type="number" name="items[@i].Fat" value="@item.Per100.Fat.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
-                        <label>@L["Fiber"]<input class="input num" type="number" name="items[@i].Fiber" value="@item.Per100.Fiber?.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
-                        <label>@L["Saturated fat"]<input class="input num" type="number" name="items[@i].SaturatedFat" value="@item.Per100.SaturatedFat?.Kg()" min="0" max="100" step="any" inputmode="decimal" /></label>
+                        <label>@L["kcal"]<input class="input num" type="text" name="items[@i].Kcal" value="@item.Per100.Kcal.Kg()" min="0" max="900" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
+                        <label>@L["Protein"]<input class="input num" type="text" name="items[@i].Protein" value="@item.Per100.Protein.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
+                        <label>@L["Carbs"]<input class="input num" type="text" name="items[@i].Carbs" value="@item.Per100.Carbs.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
+                        <label>@L["Fat"]<input class="input num" type="text" name="items[@i].Fat" value="@item.Per100.Fat.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
+                        <label>@L["Fiber"]<input class="input num" type="text" name="items[@i].Fiber" value="@item.Per100.Fiber?.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
+                        <label>@L["Saturated fat"]<input class="input num" type="text" name="items[@i].SaturatedFat" value="@item.Per100.SaturatedFat?.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
                     </div>
                 </details>
                 <input type="hidden" name="items[@i].FoodItemId" value="@item.FoodItemId" />
@@ -89,9 +84,24 @@
     <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L[SaveTo[Model.Meal]]</button>
 </form>
 
-@if (Model.ParseRunId is not null)
-{
-    @section Overlays {
+@section Overlays {
+    @* Change food: search the database and put another food on a row (site.js). *@
+    <div class="sheet" id="change-food-sheet" hidden>
+        <div class="sheet-scrim"></div>
+        <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="change-food-title">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <div class="sheet-head"><span></span><span class="sheet-title" id="change-food-title">@L["Change food"]</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
+            <div class="search-field">
+                @Ui.Icon("search")
+                <input type="search" class="input" name="q" aria-label="@L["Search foods"]" autocomplete="off" data-change-search
+                       hx-get="/food/candidates" hx-trigger="input changed delay:300ms, search" hx-target="#change-food-results" hx-swap="innerHTML" />
+            </div>
+            <div id="change-food-results" class="change-food-results"></div>
+        </div>
+    </div>
+    @if (Model.ParseRunId is not null)
+    {
+
         <div class="sheet" id="parse-sheet" hidden>
             <div class="sheet-scrim"></div>
             <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="parse-sheet-title">

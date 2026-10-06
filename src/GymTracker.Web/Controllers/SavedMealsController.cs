@@ -19,6 +19,7 @@ public class SavedMealsController(SavedMealService saved, Localizer localizer) :
     {
         await saved.SaveFromMealAsync(date, meal, name, ct);
         TempData.Notice("Saved as a meal.");
+        TempData.Focus($"meal-{meal.ToString().ToLowerInvariant()}");
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
@@ -31,6 +32,7 @@ public class SavedMealsController(SavedMealService saved, Localizer localizer) :
     {
         var count = await saved.LogAsync(id, date, meal, grams, ct);
         TempData.Notice(LocalText.Count(count, "Added 1 item.", "Added {0} items."));
+        TempData.Focus($"meal-{meal.ToString().ToLowerInvariant()}");
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 

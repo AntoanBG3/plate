@@ -65,7 +65,8 @@
     // Start loading on touch: on iOS the click arrives 100 to 150 ms after the finger goes down.
     document.addEventListener("pointerdown", (event) => {
         const url = eligibleLink(event.target.closest("a[href]"), event);
-        if (url && !(prefetched && prefetched.url === url.href)) {
+        // An unsaved edit on this page is sent first (go), so a page fetched now could miss it.
+        if (url && !(prefetched && prefetched.url === url.href) && !document.querySelector(".is-dirty")) {
             dropPrefetch();
             const abort = new AbortController();
             const promise = request(url, { signal: abort.signal });
@@ -73,6 +74,14 @@
             prefetched = { url: url.href, at: performance.now(), promise, abort };
         }
     }, { passive: true });
+
+    // A tap during a page transition is for the new page, which is already in place under the animation (its
+    // ::view-transition overlay lets taps through, app.css): finish the animation at once so what is seen matches.
+    document.addEventListener("pointerdown", () => {
+        if (current) {
+            current.skipTransition();
+        }
+    }, { capture: true, passive: true });
 
     // The touch became a scroll (iOS cancels the pointer), so the page won't be opened.
     document.addEventListener("pointercancel", dropPrefetch, { passive: true });
@@ -157,7 +166,21 @@
         Array.from(from.attributes).forEach((a) => to.setAttribute(a.name, a.value));
     }
 
-    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant }) {
+    // The server names the element a change was made to (Notices.Focus); bring it into view if it isn't.
+    function scrollToFocus() {
+        const marker = document.querySelector("#main [data-scroll-to]");
+        const target = marker && document.getElementById(marker.dataset.scrollTo);
+        if (!target) {
+            return;
+        }
+        const r = target.getBoundingClientRect();
+        if (r.top < 60 || r.top > window.innerHeight - 160) {
+            target.scrollIntoView({ block: "start" });
+        }
+    }
+    scrollToFocus();
+
+    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant, same, posted }) {
         const next = doc.documentElement;
         const nextShell = doc.querySelector(".app-scale");
         const shell = document.querySelector(".app-scale");
@@ -174,7 +197,8 @@
             await loadScript(s.getAttribute("src"));
         }
 
-        const nav = navType(root.dataset.tab, Number(root.dataset.depth || 0), next.dataset.tab, Number(next.dataset.depth || 0), isBack, side);
+        // The same page shown again after a change on it ("same") isn't arriving anywhere: no entrance (motion.js).
+        const nav = same ? "same" : navType(root.dataset.tab, Number(root.dataset.depth || 0), next.dataset.tab, Number(next.dataset.depth || 0), isBack, side);
         const keepTabbar = !!shell.querySelector(".tabbar") && !!nextShell.querySelector(".tabbar");
 
         const apply = () => {
@@ -198,9 +222,13 @@
                 history.replaceState({ gym: true }, "", finalUrl);
             }
             window.scrollTo(0, scrollY || 0);
+            scrollToFocus();
             htmx.process(document.querySelector(".app-scale"));
             htmx.process(document.getElementById("overlays"));
-            document.getElementById("main").focus({ preventScroll: true });
+            // A form sent back with an error marks the field to fix with autofocus, which a swap doesn't apply by itself.
+            // Pages merely opened keep focus on main, so a link never pops up the keyboard.
+            const field = posted && document.querySelector("#main [autofocus]");
+            (field || document.getElementById("main")).focus({ preventScroll: true });
             document.dispatchEvent(new CustomEvent("gym:page", { detail: { nav } }));
         };
 
@@ -213,8 +241,10 @@
         }
         root.dataset.nav = nav;
         const transition = document.startViewTransition(apply);
+        // A transition is skipped when the page is hidden or the viewport changes mid-way; the page is still swapped.
+        transition.ready.catch(() => {});
         current = transition;
-        transition.finished.finally(() => {
+        transition.finished.catch(() => {}).finally(() => {
             if (current === transition) {
                 current = null;
                 delete root.dataset.nav;
@@ -223,11 +253,15 @@
         await transition.updateCallbackDone;
     }
 
-    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, side = null, instant = false, fallback = () => { location.href = url.href; } } = {}) {
+    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, side = null, instant = false, keepScroll = false, fallback = () => { location.href = url.href; } } = {}) {
         // Remember where we were, for Back.
         history.replaceState(Object.assign({}, history.state, { gym: true, scrollY: window.scrollY }), "");
         const slow = setTimeout(() => root.classList.add("is-navigating"), SLOW_MS);
         try {
+            // A set edit still being typed is saved first, so the next page (or this one again) shows it.
+            if (window.gymFlushEdits) {
+                await window.gymFlushEdits();
+            }
             const response = await ((!init && takePrefetch(url)) || request(url, init || undefined));
             const finalUrl = new URL(response.url);
             const html = (response.headers.get("Content-Type") || "").includes("text/html");
@@ -241,7 +275,12 @@
             }
             const doc = new DOMParser().parseFromString(await response.text(), "text/html");
             const samePage = finalUrl.href === location.href;
-            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant });
+            // A change that comes back to the same page keeps the user's place on it (Phase 11).
+            if (keepScroll && finalUrl.pathname === location.pathname && finalUrl.search === location.search) {
+                scrollY = window.scrollY;
+            }
+            const same = finalUrl.pathname === location.pathname && finalUrl.search === location.search;
+            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant, same, posted: init?.method === "POST" });
         } catch (error) {
             if (error instanceof FullLoad) {
                 location.href = error.url;
@@ -290,6 +329,9 @@
         buttons.forEach((b) => { b.disabled = true; });
         go(action, {
             init: { method: "POST", body },
+            keepScroll: true,
+            // A form that changes the whole look (the theme) comes back without a page transition.
+            instant: form.hasAttribute("data-instant"),
             // No answer: the change may or may not have been saved, so say so instead of sending it again.
             fallback: () => window.gymToast(t("No connection. That change was not saved; try again when you have signal.")),
         }).finally(() => {

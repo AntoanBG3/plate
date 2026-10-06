@@ -117,10 +117,16 @@ public partial class CatalogueTests(ITestOutputHelper output)
         return keys;
     }
 
-    // The admin area is English only: only the developer sees it (SPEC 12).
+    // The admin area is English only: only the developer sees it (SPEC 12). The unlock page is reached from Settings and
+    // follows the account's language.
     private static bool IsAdmin(string file)
     {
         var sep = Path.DirectorySeparatorChar;
+        if (file.Contains($"{sep}Views{sep}AdminUnlock{sep}"))
+        {
+            return false;
+        }
+
         return file.Contains($"{sep}Views{sep}Admin") || file.Contains($"{sep}Features{sep}Admin{sep}")
             || (file.Contains($"{sep}Controllers{sep}") && Path.GetFileName(file).StartsWith("Admin", StringComparison.Ordinal));
     }

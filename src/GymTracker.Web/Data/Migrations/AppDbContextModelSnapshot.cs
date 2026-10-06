@@ -767,6 +767,9 @@ namespace GymTracker.Web.Data.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
 
+                    b.Property<int>("WarmupSlots")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("WeightIncrementKg")
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");

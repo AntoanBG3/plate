@@ -5,13 +5,16 @@
 }
 @if (set is not null)
 {
-    <form class="set-row done@(Model.IsWarmup ? " warmup" : "")" data-client-id="@set.ClientId" hx-post="/train/sets/@set.Id/update" hx-target="this" hx-swap="outerHTML">
+    @* A changed weight or reps saves on its own (SPEC 7); session.js marks the row while it does and sends what is
+       still unsaved before the page is left. The status texts are switched by the row's class. *@
+    <form class="set-row done@(Model.IsWarmup ? " warmup" : "")@(Model.JustSaved ? " is-saved" : "")" data-client-id="@set.ClientId" data-edit-set data-autosave hx-post="/train/sets/@set.Id/update" hx-trigger="change delay:300ms, submit" hx-sync="this:replace" hx-target="this" hx-swap="outerHTML">
         <button type="button" class="set-delete" hx-post="/train/sets/@set.Id/delete" hx-target="closest form" hx-swap="outerHTML swap:180ms">@L["Delete"]</button>
         <div class="set-content">
-            <span class="set-n" aria-hidden="true">@(Model.IsWarmup ? Ui.Icon("warmup", "icon-sm") : null)</span>
-            <label class="set-field"><input type="number" name="weightKg" value="@set.WeightKg.Kg()" inputmode="decimal" step="any" min="0" aria-label="@L["Weight in kg"]" required /><small>@L["kg"]</small></label>
+            <span class="set-n" aria-hidden="true">@(Model.IsWarmup ? Ui.Icon("warmup", "icon-sm") : Model.Number)</span>
+            <label class="set-field"><input type="text" name="weightKg" value="@set.WeightKg.Kg()" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" step="any" min="0" aria-label="@L["Weight in kg"]" required /><small>@L["kg"]</small></label>
             <label class="set-field"><input type="number" name="reps" value="@set.Reps" inputmode="numeric" step="1" min="0" aria-label="@L["Reps"]" required /><small>@L["reps"]</small></label>
             <button type="submit" class="done-btn" aria-label="@L["Save changes"]"><span class="disc">@Html.Raw(Check)</span></button>
+            <span class="set-save" role="status"><span data-state="saving">@L["Saving…"]</span><span data-state="saved">@Ui.Icon("check", "icon-sm")@L["Saved"]</span><span data-state="unsaved">@L["Not saved. Tap ✓ to try again."]</span></span>
         </div>
     </form>
 }
@@ -19,13 +22,15 @@ else
 {
     @* Submitted by session.js, which saves the set on the phone before sending it. Suggested values are
        placeholders, copied into the field when the set is logged, so they look different from entered ones. *@
-    <form class="set-row@(Model.IsWarmup ? " warmup" : "")" data-log-set data-client-id="@Model.ClientId">
+    <form class="set-row@(Model.IsWarmup ? " warmup" : "")" data-log-set data-client-id="@Model.ClientId" data-carried="@(Model.Carried && Model.Target is not null ? "true" : null)">
         <input type="hidden" name="clientId" value="@Model.ClientId" />
         <input type="hidden" name="sessionExerciseId" value="@Model.SessionExerciseId" />
         <input type="hidden" name="isWarmup" value="@(Model.IsWarmup ? "true" : "false")" />
+        @* Swiping an empty row reveals Remove; the server drops the stored row and the empty answer takes it off the page. *@
+        <button type="button" class="set-delete" hx-post="/train/session-exercises/@Model.SessionExerciseId/slots/remove?warmup=@(Model.IsWarmup ? "true" : "false")" hx-target="closest form" hx-swap="outerHTML swap:180ms">@L["Remove"]</button>
         <div class="set-content">
-            <span class="set-n" aria-hidden="true">@(Model.IsWarmup ? Ui.Icon("warmup", "icon-sm") : null)</span>
-            <label class="set-field"><input type="number" name="weightKg" placeholder="@(Model.Target?.WeightKg.Kg() ?? "")" data-suggested="@(Model.Target?.WeightKg.Kg())" inputmode="decimal" step="any" min="0" aria-label="@(Model.Target is { } w ? L["Weight in kg, suggested {0}", w.WeightKg.Kg()] : L["Weight in kg"])" required /><small>@L["kg"]</small></label>
+            <span class="set-n" aria-hidden="true">@(Model.IsWarmup ? Ui.Icon("warmup", "icon-sm") : Model.Number)</span>
+            <label class="set-field"><input type="text" name="weightKg" placeholder="@(Model.Target?.WeightKg.Kg() ?? "")" data-suggested="@(Model.Target?.WeightKg.Kg())" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" step="any" min="0" aria-label="@(Model.Target is { } w ? L["Weight in kg, suggested {0}", w.WeightKg.Kg()] : L["Weight in kg"])" required /><small>@L["kg"]</small></label>
             <label class="set-field"><input type="number" name="reps" placeholder="@(Model.Target?.Reps)" data-suggested="@(Model.Target?.Reps)" inputmode="numeric" step="1" min="0" aria-label="@(Model.Target is { } r ? L["Reps, suggested {0}", r.Reps] : L["Reps"])" required /><small>@L["reps"]</small></label>
             <button type="submit" class="done-btn" aria-label="@L["Log set"]"><span class="disc">@Html.Raw(Check)</span></button>
             <span class="set-status" role="status">@Ui.Icon("pending", "icon-sm")@L["Waiting for signal"]</span>

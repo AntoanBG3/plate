@@ -282,10 +282,11 @@ public class IntegrationParsingTests
     {
         var result = await new FakeFoodParser().ParseAsync("200g chicken breast, 150 г cooked rice and a banana", default);
 
-        result.Items.Select(i => (i.NameEn, i.Grams, i.State)).Should().Equal(
-            ("chicken breast", 200m, FoodState.NotApplicable),
-            ("cooked rice", 150m, FoodState.Cooked),
-            ("a banana", 100m, FoodState.NotApplicable));
+        // "a banana" is a count, not part of the name (Phase 11): one unit, 100 g until the matcher knows the serving.
+        result.Items.Select(i => (i.NameEn, i.Grams, i.State, i.Units)).Should().Equal(
+            ("chicken breast", 200m, FoodState.NotApplicable, (decimal?)null),
+            ("cooked rice", 150m, FoodState.Cooked, (decimal?)null),
+            ("banana", 100m, FoodState.NotApplicable, (decimal?)1m));
     }
 
     [Fact]

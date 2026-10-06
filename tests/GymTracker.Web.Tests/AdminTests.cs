@@ -56,6 +56,34 @@ public class AdminTests(PostgresFixture fixture) : IDisposable
         return client.SendAsync(request);
     }
 
+    [Fact]
+    public async Task The_unlock_page_names_the_passkey_and_follows_the_accounts_language()
+    {
+        var (client, email, _) = await DevAsync(app);
+        var html = System.Net.WebUtility.HtmlDecode(await client.GetStringAsync("/admin/unlock"));
+        html.Should().Contain("Unlock with a passkey").And.NotContain("Face ID");
+
+        await using (var db = fixture.CreateContext(null))
+        {
+            var id = await db.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
+            await db.Profiles.IgnoreQueryFilters().Where(p => p.UserId == id).ExecuteUpdateAsync(p => p.SetProperty(x => x.Language, Language.Bulgarian));
+        }
+
+        System.Net.WebUtility.HtmlDecode(await client.GetStringAsync("/admin/unlock")).Should().Contain("Отключи с ключ за достъп").And.Contain(">Настройки<");
+    }
+
+    [Fact]
+    public async Task Without_a_passkey_the_unlock_page_says_to_add_one()
+    {
+        var (email, password) = await app.CreateUserAsync();
+        (await RoleCommand.RunAsync(app.Services, ["role", "grant", "dev", "--email", email], new StringWriter())).Should().Be(0);
+        var client = app.NewClient();
+        await AppFactory.LoginAsync(client, email, password);
+
+        var html = System.Net.WebUtility.HtmlDecode(await client.GetStringAsync("/admin/unlock"));
+        html.Should().Contain("Add a passkey in Settings first").And.Contain("href=\"/settings#passkeys\"").And.NotContain("data-module=\"passkey-unlock\"");
+    }
+
     private async Task<List<AdminAudit>> AuditAsync()
     {
         await using var db = fixture.CreateContext(null);

@@ -89,6 +89,51 @@ public class TrainingAnalytics(AppDbContext db, TimeProvider time)
         return records;
     }
 
+    /// <summary>
+    /// Exercises done for the first time in this session, with their best e1RM: a baseline, shown apart from records.
+    /// </summary>
+    public async Task<List<PersonalRecord>> FirstTimesAsync(WorkoutSession session, CancellationToken ct)
+    {
+        var exerciseIds = session.Exercises.Select(e => e.ExerciseId).Distinct().ToList();
+        var done = (await db.Sets
+            .Where(s => !s.IsWarmup
+                && exerciseIds.Contains(s.SessionExercise.ExerciseId)
+                && s.SessionExercise.SessionId != session.Id
+                && s.SessionExercise.Session.StartedAt < session.StartedAt)
+            .Select(s => s.SessionExercise.ExerciseId)
+            .Distinct()
+            .ToListAsync(ct)).ToHashSet();
+
+        return session.Exercises
+            .GroupBy(e => e.ExerciseId)
+            .Where(g => !done.Contains(g.Key))
+            .Select(g => (Exercise: g.First().Exercise, Best: OneRepMax.Best(g.SelectMany(e => e.Sets).Select(ToLogged))))
+            .Where(x => x.Best is not null)
+            .Select(x => new PersonalRecord(x.Exercise.Name, Round(x.Best!.Value), null))
+            .ToList();
+    }
+
+    /// <summary>
+    /// The working sets of the last earlier session that had any for each exercise, keyed by session exercise id
+    /// (SPEC 7, the "Last time" line). Exercises never logged before are left out.
+    /// </summary>
+    public async Task<Dictionary<int, IReadOnlyList<LoggedSet>>> LastTimeAsync(WorkoutSession session, CancellationToken ct)
+    {
+        var result = new Dictionary<int, IReadOnlyList<LoggedSet>>();
+        foreach (var exercise in session.Exercises)
+        {
+            var last = (await RecentSessionSetsAsync(exercise.ExerciseId, session, 1, ct))
+                .Select(sets => sets.Where(x => !x.IsWarmup).ToList())
+                .FirstOrDefault(sets => sets.Count > 0);
+            if (last is not null)
+            {
+                result[exercise.Id] = last;
+            }
+        }
+
+        return result;
+    }
+
     public async Task<List<ExerciseOption>> ExercisesWithHistoryAsync(CancellationToken ct) =>
         (await db.Sets
             .Where(s => !s.IsWarmup)

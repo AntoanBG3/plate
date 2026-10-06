@@ -172,6 +172,16 @@ public class ProfileRulesTests
 {
     private static UserProfile Valid() => new() { DisplayName = "Antoan", HeightCm = 180, BirthYear = 1996, Goal = Goal.Maintain };
 
+    [Theory]
+    [InlineData(Goal.Cut, null, true)]
+    [InlineData(Goal.Bulk, null, true)]
+    [InlineData(Goal.Cut, 0.5, false)]
+    [InlineData(Goal.Cut, 0.0, false)]
+    [InlineData(Goal.Maintain, null, false)]
+    [InlineData(null, null, false)]
+    public void A_cut_or_bulk_needs_a_rate(Goal? goal, double? rate, bool refused) =>
+        (ProfileRules.MissingRateError(goal, (decimal?)rate) is not null).Should().Be(refused);
+
     [Fact]
     public void A_normal_profile_is_valid() => ProfileRules.Validate(Valid(), 2026).Should().BeNull();
 

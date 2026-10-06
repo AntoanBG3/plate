@@ -6,24 +6,30 @@
     ViewData["BackLabel"] = L["Templates"];
     var items = template.Exercises.OrderBy(e => e.SortOrder).ToList();
 }
+@section TopbarTrailing {
+    @* Duplicate and Archive live here, away from Add exercise (Phase 11). *@
+    <div class="menu-wrap">
+        <button type="button" class="icon-btn" data-menu-trigger aria-expanded="false" aria-label="@L["Actions for {0}", template.Name]">@Ui.Icon("more")</button>
+        <div class="menu" role="menu">
+            @if (template.Exercises.Count > 1)
+            {
+                <a href="/train/templates/@template.Id/reorder" role="menuitem">@L["Reorder exercises"]@Ui.Icon("reorder")</a>
+            }
+            <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/duplicate"><button type="submit" role="menuitem">@L["Duplicate"]@Ui.Icon("copy")</button></form>
+            <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/archive" data-confirm="@L["Archive this template? Past workouts keep their history."]" data-confirm-action="@L["Archive"]"><button type="submit" role="menuitem" class="danger">@L["Archive template"]@Ui.Icon("trash")</button></form>
+        </div>
+    </div>
+}
 <header class="page-head">
     <h1 class="large-title">@template.Name</h1>
 </header>
 
-<form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/rename">
-    <div class="list">
-        <div class="field-row">
-            <label for="name">@L["Name"]</label>
-            <input id="name" type="text" name="name" value="@template.Name" maxlength="100" required />
-            <button type="submit" class="btn btn-plain">@L["Rename"]</button>
-        </div>
-    </div>
-</form>
+<partial name="_TemplateNameForm" model="new TemplateNameFormViewModel(template.Id, template.Name)" />
 
 @for (var i = 0; i < items.Count; i++)
 {
     var item = items[i];
-    <section class="exercise">
+    <section class="exercise" id="te-@item.Id">
         <div class="ex-head">
             <div>
                 <h2 class="ex-name">@L.Exercise(item.Exercise)</h2>
@@ -48,21 +54,12 @@
                 </div>
             </div>
         </div>
-        <form method="post" asp-antiforgery="true" action="/train/templates/exercises/@item.Id" class="list">
-            <div class="field-row"><label for="sets-@item.Id">@L["Working sets"]</label><input id="sets-@item.Id" class="num" type="number" name="workingSets" value="@item.WorkingSets" min="1" max="20" inputmode="numeric" required /></div>
-            <div class="field-row"><label for="min-@item.Id">@L["Reps"]</label><input id="min-@item.Id" class="num" type="number" name="repMin" value="@item.RepMin" min="1" max="100" inputmode="numeric" required aria-label="@L["Minimum reps"]" style="flex-basis: 4ch" /><span class="unit">–</span><input class="num" type="number" name="repMax" value="@item.RepMax" min="1" max="100" inputmode="numeric" required aria-label="@L["Maximum reps"]" style="flex-basis: 4ch; margin-left: -6px" /></div>
-            <div class="field-row"><label for="inc-@item.Id">@L["Weight jump"]</label><input id="inc-@item.Id" class="num" type="number" name="weightIncrementKg" value="@(item.WeightIncrementKg?.Kg())" step="any" min="0" inputmode="decimal" placeholder="@L["Default"]" /><span class="unit">@L["kg"]</span></div>
-            <div class="field-row"><label for="rest-@item.Id">@L["Rest"]</label><input id="rest-@item.Id" class="num" type="number" name="restSeconds" value="@item.RestSeconds" min="0" max="1800" step="15" inputmode="numeric" required /><span class="unit">@L["s"]</span></div>
-            <div class="row" style="padding-top: 0; padding-bottom: 0"><button type="submit" class="btn btn-plain" style="padding: 0">@L["Save changes"]</button></div>
-        </form>
+        <partial name="_TemplateExerciseForm" model="new TemplateExerciseFormViewModel(item, Model.DefaultIncrementKg)" />
     </section>
 }
 
 <div class="btn-stack" style="margin-top: var(--s-6)">
     <a class="btn btn-secondary" href="/train/templates/@template.Id/add-exercise">@Ui.Icon("plus")@L["Add exercise"]</a>
-    <form method="post" asp-antiforgery="true" action="/train/templates/@template.Id/archive" data-confirm="@L["Archive this template? Past workouts keep their history."]">
-        <button type="submit" class="btn btn-destructive btn-block">@L["Archive template"]</button>
-    </form>
 </div>
 
 @section Overlays {

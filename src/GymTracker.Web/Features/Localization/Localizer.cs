@@ -61,6 +61,10 @@ public class Localizer
         string.Concat(name.Select((c, i) => i > 0 && char.IsUpper(c) ? " " + char.ToLowerInvariant(c) : c.ToString()));
 
     /// <summary>Seeded exercises have English names that are translated; a user's own exercises keep their name.</summary>
+    /// <summary>A food entry's name as shown: without a leading amount (older entries kept it), "Quick add" when empty.</summary>
+    public string Entry(string description) =>
+        string.IsNullOrWhiteSpace(description) ? this["Quick add"] : GymTracker.Core.Text.FoodText.StripAmount(description);
+
     public string Exercise(GymTracker.Core.Domain.Exercise exercise) =>
         exercise.OwnerUserId is null ? this[exercise.Name] : exercise.Name;
 

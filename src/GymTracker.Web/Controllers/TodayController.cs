@@ -31,10 +31,16 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
             : [];
         var active = await sessions.GetActiveAsync(ct);
         var list = await templates.ListAsync(ct);
-        var nextId = NextWorkout.Pick(
-            list.Select(t => new TemplateOrder(t.Id, t.SortOrder)).ToList(),
-            await sessions.LastCompletedTemplateIdAsync(ct));
+        // One query serves both the next template (after the last one finished) and "Done today" (finished on the
+        // user's day, in their time zone). Only when the recent ones are all freestyle is the last template looked up.
+        var recent = await sessions.RecentFinishedAsync(5, ct);
+        var lastTemplateId = recent.FirstOrDefault(s => s.TemplateId is not null)?.TemplateId
+            ?? (recent.Count < 5 ? null : await sessions.LastCompletedTemplateIdAsync(ct));
+        var nextId = NextWorkout.Pick(list.Select(t => new TemplateOrder(t.Id, t.SortOrder)).ToList(), lastTemplateId);
         var day = await food.DayAsync(today, ct);
+        var doneToday = active is not null ? [] : recent
+            .Where(s => GymTracker.Core.Time.UserClock.Today(s.EndedAt!.Value, profile.TimeZoneId) == today)
+            .ToList();
         var weights = await body.WeightAsync("4w", today, ct);
         ViewData["WhatsNew"] = await changelog.UnseenAsync(ct);
 
@@ -53,7 +59,8 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
             day.Quality,
             cutChecks,
             CutCheck.OnBreak(profile, today) ? profile.DietBreakUntil : null,
-            await summaries.StateAsync(ct)));
+            await summaries.StateAsync(ct),
+            doneToday));
     }
 
     /// <summary>Writes last week's summary when Today had none to show (SPEC 6.5); empty when it can't.</summary>

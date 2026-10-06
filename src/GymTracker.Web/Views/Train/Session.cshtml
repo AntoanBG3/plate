@@ -11,7 +11,7 @@
 @section TopbarTrailing {
     @if (session.IsActive)
     {
-        <form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/finish" data-confirm="@L["Finish this workout?"]">
+        <form method="post" asp-antiforgery="true" action="/train/sessions/@session.Id/finish" data-confirm="@L["Finish this workout?"]" data-confirm-unlogged-one="@L["1 planned set isn't logged. Finish anyway?"]" data-confirm-unlogged-many="@L["{0} planned sets aren't logged. Finish anyway?"]" data-confirm-action="@L["Finish"]" data-confirm-style="primary">
             <button type="submit" class="topbar-action">@L["Finish"]</button>
         </form>
     }
@@ -23,9 +23,9 @@
 
 <div id="queue-status" class="banner is-pending" role="status" hidden></div>
 
-@foreach (var exercise in session.Exercises)
+@for (var i = 0; i < session.Exercises.Count; i++)
 {
-    <partial name="_ExerciseCard" model="Model.CardFor(exercise)" />
+    <partial name="_ExerciseCard" model="Model.CardFor(session.Exercises[i], i)" />
 }
 @if (session.Exercises.Count == 0)
 {

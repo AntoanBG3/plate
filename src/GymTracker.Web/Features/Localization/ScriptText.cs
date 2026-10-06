@@ -12,6 +12,11 @@ public static class ScriptText
         "Something went wrong ({0}). Try again.",
         "No connection. That change was not saved; try again when you have signal.",
         "{0} kcal · {1} g protein",
+        "OK",
+        "Add",
+        "Add {0}",
+        "Using: {0}",
+        "Database",
         // session.js
         "1 set is saved on this phone and will send when the connection is back.",
         "{0} sets are saved on this phone and will send when the connection is back.",
@@ -25,6 +30,8 @@ public static class ScriptText
         // motion.js
         "Undo",
         "Set deleted.",
+        "Undo didn't go through.",
+        "Try again",
         // scanner.js
         "This browser can't open the camera. Type the digits or take a photo instead.",
         "Camera access was refused. Type the digits or take a photo instead.",

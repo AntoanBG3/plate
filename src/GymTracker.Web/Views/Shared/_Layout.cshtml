@@ -15,7 +15,9 @@
     string? Current(string name) => name == tab ? "page" : null;
     var error = Notices.Read(TempData[FeatureExceptionFilter.ErrorKey]);
     var message = Notices.Read(TempData[Notices.MessageKey]);
+    var info = Notices.Read(TempData[Notices.InfoKey]);
     var undo = Notices.ReadUndo(TempData);
+    var focus = Notices.ReadFocus(TempData);
 }
 <!DOCTYPE html>
 <html lang="@prefs.LangAttribute" data-version="@GymTracker.Web.Features.Diagnostics.AppVersion.Current" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth" data-shell="@prefs.LangAttribute-@(Context.User.Identity?.IsAuthenticated == true ? "in" : "out")">
@@ -82,9 +84,17 @@
             {
                 <div class="banner is-success" role="status">@Ui.Icon("done")<span>@L[message]</span></div>
             }
+            @if (info is not null)
+            {
+                <div class="banner is-info" role="status">@Ui.Icon("info")<span>@L[info]</span></div>
+            }
             @if (undo is { } u)
             {
                 <div hidden data-undo-url="@u.Url" data-undo-text="@L[u.Text]"></div>
+            }
+            @if (focus is not null)
+            {
+                <div hidden data-scroll-to="@focus"></div>
             }
             @RenderBody()
         </main>
@@ -100,6 +110,18 @@
         }
     </div>
     <div id="toast" class="toast" role="alert" hidden></div>
+    @* The app's own "are you sure" (site.js), for forms with data-confirm; replaces the browser's confirm(). *@
+    <div class="sheet" id="confirm-sheet" hidden>
+        <div class="sheet-scrim"></div>
+        <div class="sheet-panel confirm-panel" role="alertdialog" aria-modal="true" aria-labelledby="confirm-text">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <p id="confirm-text" class="confirm-text" data-confirm-text></p>
+            <div class="btn-stack">
+                <button type="button" class="btn btn-destructive btn-block" data-confirm-yes></button>
+                <button type="button" class="btn btn-secondary btn-block" data-sheet-close>@L["Cancel"]</button>
+            </div>
+        </div>
+    </div>
     <div id="overlays">@await RenderSectionAsync("Overlays", required: false)</div>
 </body>
 </html>

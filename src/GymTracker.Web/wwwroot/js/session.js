@@ -201,7 +201,8 @@
             clientId: form.querySelector('input[name="clientId"]').value,
             sessionId,
             sessionExerciseId: Number(form.querySelector('input[name="sessionExerciseId"]').value),
-            weightKg: form.querySelector('input[name="weightKg"]').value,
+            // A comma typed on the Bulgarian keypad is stored with a dot, like every number in the app.
+            weightKg: form.querySelector('input[name="weightKg"]').value.trim().replace(",", "."),
             reps: form.querySelector('input[name="reps"]').value,
             isWarmup: form.querySelector('input[name="isWarmup"]').value === "true",
             completedAt: new Date().toISOString(),
@@ -217,11 +218,31 @@
         updateStatus();
 
         if (!item.isWarmup) {
+            carryOver(form, item);
             const card = form.closest(".exercise");
-            startRest(card ? Number(card.dataset.rest) : 120);
+            startRest(card ? Number(card.dataset.rest) : 120, card);
         }
 
         flush();
+    }
+
+    // Without a progression suggestion, the rows after a logged set start from it (SPEC 7): an untouched row then
+    // logs the same weight and reps. Rows filled this way (data-carried) follow the latest set; real suggestions stay.
+    function carryOver(form, item) {
+        for (let row = form.nextElementSibling; row; row = row.nextElementSibling) {
+            if (!row.matches("form[data-log-set]:not(.pending)")) {
+                continue;
+            }
+            const kg = row.querySelector('input[name="weightKg"]');
+            if (kg.dataset.suggested && row.dataset.carried !== "true") {
+                continue;
+            }
+            row.dataset.carried = "true";
+            [[kg, item.weightKg], [row.querySelector('input[name="reps"]'), item.reps]].forEach(([input, value]) => {
+                input.placeholder = value;
+                input.dataset.suggested = value;
+            });
+        }
     }
 
     // Put sets still waiting in the queue back on the page after a reload or relaunch.
@@ -261,6 +282,89 @@
             logSet(form);
         }
     });
+
+    // ---- row numbers and values typed into rows not logged yet (SPEC 7 and 8) ----
+    // The server numbers a whole card; a row that arrives alone (logged, deleted, added, removed) is put back in order here.
+    // What is typed into a row before it is logged is kept on the phone by the row's place in its card, so a reload or
+    // a page swap (Move up, Swap) puts it back.
+
+    const DRAFTS_KEY = "gym.setDrafts.v1";
+    const DRAFT_DAYS = 2;
+
+    function renumber(rows) {
+        Array.from(rows.children).forEach((row, i) => {
+            const n = row.querySelector(".set-n");
+            if (n) {
+                n.textContent = String(i + 1);
+            }
+        });
+    }
+
+    function draftKey(rows, index) {
+        return `${sessionId}:${rows.id}:${index}`;
+    }
+
+    // Rewrites one card's drafts from what is on screen, so they follow the rows when one is removed.
+    function saveDrafts(rows) {
+        if (!sessionId || !rows.id) {
+            return;
+        }
+        const drafts = read(DRAFTS_KEY, {});
+        const prefix = `${sessionId}:${rows.id}:`;
+        Object.keys(drafts).filter((k) => k.startsWith(prefix)).forEach((k) => { delete drafts[k]; });
+        Array.from(rows.children).forEach((row, i) => {
+            if (!row.matches("form[data-log-set]:not(.pending)")) {
+                return;
+            }
+            const kg = row.querySelector('input[name="weightKg"]').value;
+            const reps = row.querySelector('input[name="reps"]').value;
+            if (kg !== "" || reps !== "") {
+                drafts[draftKey(rows, i)] = { kg, reps, at: Date.now() };
+            }
+        });
+        write(DRAFTS_KEY, Object.keys(drafts).length ? drafts : null);
+    }
+
+    function restoreDrafts() {
+        const drafts = read(DRAFTS_KEY, {});
+        const cutoff = Date.now() - DRAFT_DAYS * 86400000;
+        Object.keys(drafts).filter((k) => !(drafts[k].at > cutoff)).forEach((k) => { delete drafts[k]; });
+        write(DRAFTS_KEY, Object.keys(drafts).length ? drafts : null);
+        document.querySelectorAll(".rows.working, .rows.warmups").forEach((rows) => {
+            Array.from(rows.children).forEach((row, i) => {
+                const draft = drafts[draftKey(rows, i)];
+                if (!draft || !row.matches("form[data-log-set]:not(.pending)")) {
+                    return;
+                }
+                const kg = row.querySelector('input[name="weightKg"]');
+                const reps = row.querySelector('input[name="reps"]');
+                kg.value = kg.value || draft.kg;
+                reps.value = reps.value || draft.reps;
+            });
+        });
+    }
+
+    document.addEventListener("input", (event) => {
+        const row = event.target.closest("form[data-log-set]");
+        if (row && row.parentElement) {
+            saveDrafts(row.parentElement);
+        }
+    });
+
+    // Rows come and go through htmx swaps whose events fire on elements that may already be gone, so watch the cards.
+    let rowsObserver = null;
+    function watchRows() {
+        rowsObserver = new MutationObserver((records) => {
+            const changed = new Set(records.map((r) => r.target.closest && r.target.closest(".rows")).filter(Boolean));
+            changed.forEach((rows) => {
+                if (rows.classList.contains("working")) {
+                    renumber(rows);
+                }
+                saveDrafts(rows);
+            });
+        });
+        document.querySelectorAll(".rows").forEach((rows) => rowsObserver.observe(rows, { childList: true }));
+    }
 
     window.addEventListener("online", flush);
     window.addEventListener("pageshow", flush);
@@ -320,11 +424,13 @@
         }
     }
 
-    function startRest(seconds) {
+    // `card` is the exercise just logged; Next starts looking from it.
+    function startRest(seconds, card) {
         if (!sessionActive || !seconds) {
             return;
         }
-        write(REST_KEY, { sessionId, end: Date.now() + seconds * 1000, total: seconds, beeped: false });
+        write(REST_KEY, { sessionId, end: Date.now() + seconds * 1000, total: seconds, beeped: false, exercise: card ? card.id : null });
+        showNext();
         ensureTicking();
     }
 
@@ -416,9 +522,25 @@
         return true;
     }
 
-    // What comes after the rest: the first set not yet logged, with its suggested weight and reps.
+    // The next working set not logged yet: in the exercise just logged, else the first exercise after it with one left,
+    // wrapping round to the top.
+    function nextRow() {
+        const state = read(REST_KEY, null);
+        const cards = Array.from(document.querySelectorAll(".exercise"));
+        const from = state && state.exercise ? cards.findIndex((c) => c.id === state.exercise) : -1;
+        const order = from < 0 ? cards : cards.slice(from).concat(cards.slice(0, from));
+        for (const card of order) {
+            const row = card.querySelector(".rows.working form[data-log-set]:not(.pending)");
+            if (row) {
+                return row;
+            }
+        }
+        return null;
+    }
+
+    // What comes after the rest: the next set (above), with its suggested weight and reps.
     function showNext() {
-        const next = document.querySelector("form[data-log-set]:not(.pending)");
+        const next = nextRow();
         const card = next && next.closest(".exercise");
         const name = card ? card.dataset.name : "";
         const kg = next ? next.querySelector('input[name="weightKg"]') : null;
@@ -492,10 +614,16 @@
         sessionId = Number(el.dataset.sessionId);
         sessionActive = el.dataset.active === "true";
         restorePending();
+        restoreDrafts();
+        watchRows();
         flush();
         keepAwake();
         ensureTicking();
         return () => {
+            if (rowsObserver) {
+                rowsObserver.disconnect();
+                rowsObserver = null;
+            }
             sessionId = null;
             sessionActive = false;
             stopTicking();

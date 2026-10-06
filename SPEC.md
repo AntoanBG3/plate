@@ -417,39 +417,44 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Cut check-ins (5.9) and a diet break in progress, under the meters.
 - Last week's summary (6.5), with the line "Written by AI from your numbers."
 - Weight entry field (pre-focused if no weigh-in today), with the current trend weight shown next to it.
-- Next suggested workout: the template after the last one completed, in template sort order, with a Start button. If a session is active, a Resume button instead.
+- Next suggested workout: the template after the last one completed, in template sort order, with a Start button. If a session is active, a Resume button instead. Once a workout was finished today (the user's day), a "Done today" line with its name, duration and working sets comes first, and the next workout shows as a smaller row under it.
 - Small text showing the maintenance estimate and whether it is Initial or Adaptive, with days of data.
 
 ### Train
 - List of templates with Start buttons; option to start an empty freestyle session.
 - **Active session view:**
-  - One card per exercise in order. Each card shows the progression suggestion and its reason, then a row per working set with weight and reps inputs pre-filled from the suggestion, and a check button.
+  - One card per exercise in order. Each card shows the progression suggestion and its reason, a "Last time" line with the previous session's working sets for that exercise, then a row per working set with weight and reps inputs pre-filled from the suggestion, and a check button. Without a suggestion, rows after a logged set are pre-filled from the last set logged in that card.
+  - A logged set's weight and reps can be changed in place; the change saves on its own (no second tap) and the row shows whether it is saving, saved, or not saved yet.
+  - Set rows are numbered by the server, so the numbers stay right after a set is deleted or added.
   - Each exercise's menu has Notes & bar (a note shown under the exercise name, and an optional bar weight); the same item is on the template edit page.
   - Barbell exercises (or any with a bar weight set) have a Plates button: the plates per side for a weight, from the bar and plates in Settings. It finds the closest load at or below the weight with the fewest plates, starting from the last working set or the suggestion.
   - Swap an exercise for another one in this session only, while it has no sets logged (warmups included); same-muscle exercises are listed first, and the slot keeps its sets, rep range, increment and rest.
   - Tapping the check button saves the set immediately via htmx and starts the rest timer.
-  - Add warmup set, add extra set, add exercise, reorder, and remove exercise.
-  - Rest timer pinned to the bottom of the screen: counts down from the exercise's rest time and plays a short sound at zero, with +30 s and skip buttons. iOS has no `navigator.vibrate`, so there is no vibration. To make the sound reliable on iPhone:
+  - Add warmup set, add extra set, add exercise, reorder, and remove exercise. Added rows are stored on the server at once (the slot counts live on the session exercise), so they survive a reload; an empty added row can be removed by swiping it. Values typed into a row that is not logged yet are kept on the phone until it is logged.
+  - The exercise menu shows Move up only when there is an exercise above, and Move down only when there is one below. A Reorder mode lists the exercises with drag handles and up and down buttons.
+  - Rest timer pinned to the bottom of the screen: counts down from the exercise's rest time and plays a short sound at zero, with +30 s and skip buttons. "Next" names the next unlogged set of the exercise just logged, else the first unlogged set after it. An Undo toast shown during a rest sits above the timer, never on it. iOS has no `navigator.vibrate`, so there is no vibration. To make the sound reliable on iPhone:
     - Hold a Screen Wake Lock while a session is active (works in installed web apps since iOS 18.4), so the phone does not lock between sets. Re-acquire it when the page becomes visible again.
     - Create and resume one `AudioContext` on the check-button tap, so it is unlocked by a user gesture before the timer ends.
     - Always compute the remaining time from the stored end timestamp, never by counting ticks, because iOS suspends timers in the background.
-  - Finish button ends the session and shows a summary: duration, total working sets, new e1RM records.
+  - Finish button ends the session and shows a summary: duration, total working sets, new e1RM records, and a "First time" list for exercises done for the first time (a baseline, not a record). The confirmation says how many planned sets are not logged. The summary's back link goes to Train.
 - **History:** sessions list, newest first; tap to view or edit a past session.
-- **Templates:** create, edit, duplicate (the copy goes to the end of the list as "Name (copy)"), reorder exercises, set rep ranges, sets, increment and rest per exercise.
+- **Templates:** create, edit, duplicate (the copy goes to the end of the list as "Name (copy)"), reorder exercises, set rep ranges, sets, increment and rest per exercise. Every field saves on its own when it changes, with an inline error that keeps what was typed. Duplicate and Archive are in the page's menu.
+- **Exercise picker** (adding to a template or a session): pick several at once, added in the order tapped; exercises already there are marked. When nothing matches the search, it offers to create a custom exercise with that name.
 
 ### Food
-- Date selector (defaults to today), entries grouped by meal, daily totals at the top.
+- Date selector (defaults to today), entries grouped by meal, daily totals at the top. Future days can't be opened or logged. A past day shows the targets in force that day (the maintenance estimate of that day, 5.5, with the profile's goal rules, 5.6); days before the first estimate say when targets start.
 - The totals card shows each macro against its target (5.6): protein against the aim with the minimum, fat and carbs against their ranges, fiber against its minimum and saturated fat against its maximum, with the coverage note when a day is under 80% (5.8). Each of Breakfast, Lunch and Dinner shows its protein, with a check once it reaches the per-meal aim.
 - A This week card with the 5.8 averages.
 - Add entry with four methods:
   1. **Text:** a textarea; submit sends to the parser and shows the editable confirmation list; confirm saves all items.
   2. **Barcode:** opens the camera scanner (EAN-13, EAN-8, UPC-A, UPC-E only); on detection, looks up the product and asks for grams (pre-filled with the serving size). Installed iOS web apps do not keep camera permission, so expect a prompt on each launch, and open the scanner without changing the URL (no `hx-push-url`), since route changes can re-prompt or stop the stream. Fallbacks on the same screen: a field to type the digits, and a "take photo" button (`<input type="file" accept="image/*" capture="environment">`) decoded with the same detector.
-  3. **Search:** searches the user's own FoodItems and recent entries first, then shared items (including the USDA subset), then Open Food Facts on explicit submit.
+  3. **Search:** searches as you type: the user's own FoodItems and recent entries first, then shared items (including the USDA subset), then Open Food Facts on explicit submit. Names that start with the search (singular or plural) rank above names that merely contain it, and identical foods are listed once.
   4. **Recent / favourites:** one-tap re-log of the 20 most frequent entries from the last 30 days, with editable grams.
-- Edit or delete any entry. Copy yesterday's meal into today.
+- Edit or delete any entry (open it, or swipe the row). Copy yesterday's meal into today, offered only when yesterday has entries for that meal. An entry's name never carries its amount; the grams are shown beside it.
+- On the confirmation list, each item can be switched to another food from a search, and a weak database match is marked "Check this" rather than "Database".
 - Quick add per meal: a name (optional), calories, and optional protein, carbs, fat, fiber and saturated fat, for restaurant meals and labels not worth saving. Quick entries stay out of Recent.
 - Saved meals: a meal's menu on the Food day saves its entries under a name. Saved meals are listed first on the Recent tab; tapping one opens a sheet with editable grams per item (quick items keep their numbers) and logs them all into the chosen meal. Rename or delete from the same sheet.
-- Deleting a food entry or a set, and removing an exercise from a session or a template, happen at once with an Undo toast for 6 seconds (no confirm). Archiving a template, finishing or deleting a workout, removing a passkey, signing out everywhere and deleting a saved meal still ask first.
+- Deleting a food entry or a set, and removing an exercise from a session or a template, happen at once with an Undo toast for 6 seconds (no confirm). Archiving a template, finishing or deleting a workout, removing a passkey, signing out everywhere and deleting a saved meal still ask first, in the app's own confirmation sheet (never the browser's `confirm`). The Undo toast belongs to the page it was shown on and goes away on another page; its timer pauses while it is pressed, and a failed undo says so.
 
 ### Progress
 - Bodyweight chart: raw weigh-ins as dots, trend weight as a line, selectable range (4 weeks, 12 weeks, all).
@@ -459,7 +464,8 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Protein: daily intake against the minimum and aim for the same 4 weeks, and the This week card (5.8).
 
 ### Settings
-- Profile fields from section 4, with the limits in 5.7. Inputs take their `min` and `max` from the same limits.
+- Every setting saves when it changes, with a "Saved" mark or an inline error beside it; there is no Save button except for the password.
+- Profile fields from section 4, with the limits in 5.7. Inputs take their `min` and `max` from the same limits. Weight jump and bar and plates are grouped under Training; the time zone is picked from a list.
 - Protein: Auto (by goal) or a custom g/kg. Under it, the current aim in grams, and when the reference weight applies, "Based on {0} kg, a healthy weight for your height." A "How your targets are set" sheet gives each 5.6 rule in one line with its source.
 - Activity level, one line of explanation per choice. The levels follow NASEM 2023 table 7-1, which defines them as activity on top of daily living (about 30 minutes of walking): low active adds 60 to 80 minutes of brisk walking a day, active about two hours including some vigorous activity, very active more than two hours of vigorous activity. The step counts are a rough conversion.
   - Inactive: desk job and everyday errands, up to about 8,000 steps a day.
@@ -468,7 +474,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
   - Very active: more than two hours of hard activity a day (running, cycling, sport), or heavy manual work plus training.
   Under it: "Lifting 3 to 4 times a week counts for about half a level; add it to your walking. Used only until about three weeks of logs give an adaptive estimate." (An hour of lifting is about 3.5 to 5 MET, so 200 to 320 kcal above rest for 80 kg; four a week is 115 to 185 kcal a day against about 220 kcal between inactive and low active.)
 - Run the setup chat again (section 6.4).
-- Custom exercises.
+- Custom exercises: create (name, primary muscle, equipment, optional secondary muscles), rename and archive the user's own exercises. They appear in the picker with the shared library and are never visible to the other account.
 - Bar and plates: the profile bar weight and which plates the gym has.
 - Weekly AI summary: on or off (6.5), with the line "Last week's numbers are sent to an AI model through OpenRouter."
 - AI models: the current food parser, food matcher, setup chat and weekly summary models, read-only. Only the developer changes the key and models, in the admin area (section 12).
@@ -493,7 +499,8 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
   - When the active session page loads, merge any pending sets for that session back into the view.
   - Call `navigator.storage.persist()` once in standalone mode to reduce the chance of eviction.
   - The server treats a repeated `ClientId` as success without creating a duplicate, after checking the existing set belongs to the current user, and returns the same response as for a new insert.
-- The active session must be fully restorable after the app is closed or the phone locks: all state lives on the server, except the pending queue and the rest timer end time (both in `localStorage`).
+- The active session must be fully restorable after the app is closed or the phone locks: all state lives on the server, except the pending queue, values typed into rows not logged yet, and the rest timer end time (all in `localStorage`).
+- Numbers are written with a dot in both languages. The server also accepts a typed comma, since the Bulgarian iPhone keypad has one.
 
 ---
 
@@ -606,7 +613,7 @@ The developer's account (Antoan) has an admin area at `/admin` that does what th
 Every `/admin` request needs all of these; anything short of the role gets a 404, so the area is not discoverable.
 - Signed in, with the `Dev` role. `role grant|revoke dev --email ...` and `role list` in the CLI. The role is checked in the database on every admin request, so a revoke takes effect at once; a grant shows up in a live session within 5 minutes, when the sign-in cookie is refreshed, or at the next sign-in.
 - A valid Cloudflare Access token. Cloudflare Access protects `gym.peychev.uk/admin*` (one-time email code, only the developer's address). The app still checks `Cf-Access-Jwt-Assertion` itself: RS256 against the team's certs (cached an hour, refetched for an unknown key id), `aud` equal to `Admin:CloudflareAccess:Audience`, `iss` equal to the team domain, expiry with one minute of skew, and the token's email equal to the account's. In Production the area is off until `Admin:CloudflareAccess:TeamDomain` and `Audience` are set; Development and Testing skip the check unless they are set.
-- A passkey unlock: `/admin/unlock` asks for one of the account's own passkeys with user verification required, then sets `__Host-gym.admin` (HttpOnly, Secure, SameSite=Lax like the sign-in cookie, so arriving back from Cloudflare's login keeps the unlock; every admin write is a POST with an anti-forgery token) holding the user id, security stamp and unlock time. It lasts 30 minutes from the last admin request and 4 hours at most, and ends on Lock now, log out, Log out everywhere or a password change. A signed-in `Dev` account without it is sent to the unlock page.
+- A passkey unlock: `/admin/unlock` asks for one of the account's own passkeys with user verification required, then sets `__Host-gym.admin` (HttpOnly, Secure, SameSite=Lax like the sign-in cookie, so arriving back from Cloudflare's login keeps the unlock; every admin write is a POST with an anti-forgery token) holding the user id, security stamp and unlock time. It lasts 30 minutes from the last admin request and 4 hours at most, and ends on Lock now, log out, Log out everywhere or a password change. A signed-in `Dev` account without it is sent to the unlock page. The unlock page is reached from Settings, so it follows the account's language (the admin pages themselves are English); its button reads "Unlock with a passkey", and an account with no passkey is told to add one in Settings, with a link there, instead of a button that can only fail.
 
 Admin responses are `Cache-Control: no-store`. When the Access session has expired, an admin page change falls back to a full page load (soft navigation already does this when a fetch fails), which shows Cloudflare's login; the eval progress poll reloads the page when a request fails.
 
@@ -680,6 +687,11 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 ### Phase 10: Weekly summary
 - Section 6.5: the stored summary, the facts it is written from, the weekly AI task in the admin area and CLI, the Settings switch, and the Today card.
 - **Done when:** the Core tests for the enough-data rule, the week's range and the answer trimming pass; Today renders a stored summary without calling the model and loads a missing one without waiting; a failed model call shows nothing and is retried on a later visit; turning the switch off, or the model off, stops the calls; and the card reads correctly at 390 px in English and Bulgarian.
+
+### Phase 11: QA fixes
+- Every finding in `docs/qa/2026-10-05-ui-qa.md`: the workout screen (in-place set edits that save, stored set slots, rows pre-filled from the last set, server-side set numbers, the rest timer's Next and its place beside the Undo toast), the template editor and Settings saving on change, the app's own confirmation sheet, custom exercises and the multi-pick picker, reorder mode, scroll position kept after every change, taps during page transitions, food search ranking and live search, the fallback parser's matches and the "Change food" sheet, entry names without amounts, past-day targets and blocked future days, the totals card labels, chart series with one point, transition aborts kept out of the error log, the visual fixes (segment thumb, value and placeholder colours, scroll margins, light meters, theme switch, title on Back), the Bulgarian text, mixed-script food names, and the suggestions (Last time, Done today, plate bars).
+- A browser test project (Playwright, Chromium and WebKit, 390 and 320 px) covers the behaviour that lives in the page.
+- **Done when:** each finding has a test that failed before its fix and passes after; `dotnet test` (Core, Web and the browser tests) is green; a repeat of the QA pass in Chrome at 390 and 320 px, in English and Bulgarian, finds none of the listed problems; and the iOS checklist (wake lock, timer sound, Dynamic Type, safe areas, keyboard) passes on both iPhones.
 
 ### Later
 Ideas kept for after Phase 9, not planned yet. None should start before real logs show fiber coverage is good.

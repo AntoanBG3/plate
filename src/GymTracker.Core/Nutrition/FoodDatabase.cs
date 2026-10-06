@@ -28,6 +28,35 @@ public interface IFoodDatabase
 
 public static class Barcodes
 {
+    /// <summary>
+    /// The digits of a typed or scanned code, with a UPC-E code (8 digits, the short form on small packs) expanded to
+    /// the UPC-A it stands for, as the food databases store it. An 8-digit code that is a valid EAN-8 stays one.
+    /// </summary>
+    public static string Normalize(string? code)
+    {
+        var digits = new string((code ?? "").Where(char.IsAsciiDigit).ToArray());
+        if (digits.Length == 8 && !IsValid(digits) && digits[0] is '0' or '1' && ExpandUpcE(digits) is { } upcA && IsValid(upcA))
+        {
+            return upcA;
+        }
+
+        return digits;
+    }
+
+    /// <summary>UPC-E to UPC-A: the zeros the short form leaves out go back, by the rule its sixth digit sets.</summary>
+    private static string? ExpandUpcE(string e)
+    {
+        var (n, d, check) = (e[0], e[1..7], e[7]);
+        var body = d[5] switch
+        {
+            '0' or '1' or '2' => $"{d[0]}{d[1]}{d[5]}0000{d[2]}{d[3]}{d[4]}",
+            '3' => $"{d[0]}{d[1]}{d[2]}00000{d[3]}{d[4]}",
+            '4' => $"{d[0]}{d[1]}{d[2]}{d[3]}00000{d[4]}",
+            _ => $"{d[0]}{d[1]}{d[2]}{d[3]}{d[4]}0000{d[5]}",
+        };
+        return $"{n}{body}{check}";
+    }
+
     /// <summary>EAN-8, UPC-A (12), EAN-13 or GTIN-14 digits with a valid check digit.</summary>
     public static bool IsValid(string? code)
     {

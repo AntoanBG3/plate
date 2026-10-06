@@ -421,8 +421,9 @@
     let pendingErrors = [];
 
     function capture(message, stack, file) {
-        if (!message || message === "Script error." || /ResizeObserver loop/.test(message)) {
-            return; // cross-origin noise, or a harmless browser warning
+        if (!message || message === "Script error." || /ResizeObserver loop/.test(message)
+            || /Transition was (aborted|skipped)|Skipping view transition/i.test(message)) {
+            return; // cross-origin noise, a harmless browser warning, or a page transition skipped (phone locked)
         }
         if (file && !file.startsWith(location.origin)) {
             return; // an extension, not the app

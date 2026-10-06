@@ -11,12 +11,12 @@
         {
             @if (item.Grams > 0)
             {
-                <div class="field-row"><label for="g-@item.Id">@item.Description</label><input id="g-@item.Id" class="num" type="number" name="grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" required /><span class="unit">@L["g"]</span></div>
+                <div class="field-row"><label for="g-@item.Id">@L.Entry(item.Description)</label><input id="g-@item.Id" class="num" type="text" name="grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
             }
             else
             {
                 <input type="hidden" name="grams" value="" />
-                <div class="row"><span class="row-main">@item.Description</span><span class="row-value num">@L["{0} kcal", Math.Round(item.Kcal)]</span></div>
+                <div class="row"><span class="row-main">@L.Entry(item.Description)</span><span class="row-value num">@L["{0} kcal", Math.Round(item.Kcal)]</span></div>
             }
         }
     </div>

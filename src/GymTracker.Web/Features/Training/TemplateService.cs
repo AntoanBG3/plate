@@ -91,18 +91,21 @@ public class TemplateService(AppDbContext db, ICurrentUser currentUser, TimeProv
         }
     }
 
-    public async Task AddExerciseAsync(int templateId, int exerciseId, CancellationToken ct)
+    /// <summary>Adds an exercise at the end of the template. Returns the new template exercise's id.</summary>
+    public async Task<int> AddExerciseAsync(int templateId, int exerciseId, CancellationToken ct)
     {
         var template = await GetAsync(templateId, ct);
         var exercise = await db.Exercises.SingleOrDefaultAsync(e => e.Id == exerciseId && !e.IsArchived, ct)
             ?? throw new NotFoundException("Exercise not found.");
 
-        template.Exercises.Add(new TemplateExercise
+        var item = new TemplateExercise
         {
             ExerciseId = exercise.Id,
             SortOrder = template.Exercises.Count == 0 ? 0 : template.Exercises.Max(e => e.SortOrder) + 1,
-        });
+        };
+        template.Exercises.Add(item);
         await db.SaveChangesAsync(ct);
+        return item.Id;
     }
 
     public async Task UpdateExerciseAsync(int templateExerciseId, TemplateExerciseInput input, CancellationToken ct)
@@ -115,6 +118,30 @@ public class TemplateService(AppDbContext db, ICurrentUser currentUser, TimeProv
         item.WeightIncrementKg = input.WeightIncrementKg;
         item.RestSeconds = input.RestSeconds;
         await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Puts the template's exercises in the given order (Reorder mode); the ids must be exactly its exercises.</summary>
+    public async Task ReorderAsync(int templateId, IReadOnlyList<int> orderedIds, CancellationToken ct)
+    {
+        await FindAsync(templateId, ct);
+        var items = await db.TemplateExercises.Where(e => e.TemplateId == templateId).ToListAsync(ct);
+        ApplyOrder(items, orderedIds, e => e.Id, (e, i) => e.SortOrder = i);
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Numbers <paramref name="items"/> in the order of <paramref name="orderedIds"/>, which must name each once.</summary>
+    internal static void ApplyOrder<T>(List<T> items, IReadOnlyList<int> orderedIds, Func<T, int> id, Action<T, int> setOrder)
+    {
+        if (orderedIds.Count != items.Count || orderedIds.Distinct().Count() != items.Count || !items.Select(id).ToHashSet().SetEquals(orderedIds))
+        {
+            throw new ValidationException("The list changed while you were reordering. Try again.");
+        }
+
+        var byId = items.ToDictionary(id);
+        for (var i = 0; i < orderedIds.Count; i++)
+        {
+            setOrder(byId[orderedIds[i]], i);
+        }
     }
 
     public async Task MoveExerciseAsync(int templateExerciseId, int direction, CancellationToken ct)
@@ -133,6 +160,8 @@ public class TemplateService(AppDbContext db, ICurrentUser currentUser, TimeProv
         item.DeletedAt = time.GetUtcNow();
         await db.SaveChangesAsync(ct);
     }
+
+    public Task<TemplateExercise> GetExerciseAsync(int templateExerciseId, CancellationToken ct) => FindExerciseAsync(templateExerciseId, ct);
 
     public async Task<int> TemplateIdOfExerciseAsync(int templateExerciseId, CancellationToken ct) =>
         (await FindExerciseAsync(templateExerciseId, ct)).TemplateId;

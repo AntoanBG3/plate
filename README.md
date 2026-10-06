@@ -62,6 +62,10 @@ The design tokens (colour, type, spacing, motion) are in `wwwroot/css/tokens.css
 
 Add a migration: `dotnet ef migrations add <Name> --project src/GymTracker.Web --output-dir Data/Migrations`.
 
+### Browser tests
+
+`tests/GymTracker.E2E.Tests` drives the real app in Playwright's Chromium and WebKit (WebKit is the engine closest to iOS Safari) at 390 and 320 px. It runs with `dotnet test` like the other projects; the first run downloads the two browsers into the Playwright cache, which takes a minute. The app runs on `http://localhost` with `Auth:HostCookies=false`, because the `__Host-` cookie needs https and the local development certificate isn't trusted. Docker must be running, as for the other database tests.
+
 The app icon is drawn in `tools/icons/icon.svg`. After changing it, run `cd tools/icons && swift render.swift ../../src/GymTracker.Web/wwwroot/icons` and bump the cache name in `wwwroot/sw.js` so installed apps pick it up.
 
 ## Deploying on wizard

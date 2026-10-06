@@ -5,9 +5,11 @@
     var isToday = day.Date == Model.Today;
     var inv = System.Globalization.CultureInfo.InvariantCulture;
     string Iso(DateOnly d) => d.ToString("yyyy-MM-dd", inv);
-    var targetKcal = isToday ? Model.Targets.Kcal : null;
-    var targetProtein = isToday ? Model.Targets.ProteinG : null;
-    var macros = isToday ? Model.Targets.Macros : null;
+    // The targets in force on the day shown (today's, or a past day's estimate); none before the first estimate.
+    var targetKcal = Model.Targets?.Kcal;
+    var targetProtein = Model.Targets?.ProteinG;
+    var macros = Model.Targets?.Macros;
+    var isYesterday = day.Date == Model.Today.AddDays(-1);
     string Share(decimal value, int? target) => (target is > 0 ? Math.Min(1m, value / target.Value) : 0m).ToString("0.###", inv);
 }
 <header class="page-head">
@@ -17,17 +19,27 @@
 <nav class="date-stepper card" aria-label="@L["Day"]">
     <a class="icon-btn tap" href="/food?date=@Iso(day.Date.AddDays(-1))" aria-label="@L["Previous day"]">@Ui.Icon("back")</a>
     <div class="date-stepper-label">
-        <span class="headline">@(isToday ? L["Today"] : day.Date == Model.Today.AddDays(-1) ? L["Yesterday"] : Ui.ShortDate(day.Date))</span>
-        @if (!isToday)
-        {
-            <a class="footnote" href="/food" style="color: var(--accent-text)">@L["Back to today"]</a>
-        }
-        else
-        {
-            <span class="footnote">@Ui.LongDate(day.Date)</span>
-        }
+        <span class="headline">@(isToday ? L["Today"] : isYesterday ? L["Yesterday"] : Ui.LongDate(day.Date))</span>
+        <span class="footnote">
+            @if (isToday || isYesterday)
+            {
+                @Ui.LongDate(day.Date)
+            }
+            @if (!isToday)
+            {
+                @(isYesterday ? " · " : "")<a href="/food" style="color: var(--accent-text)">@L["Back to today"]</a>
+            }
+        </span>
     </div>
-    <a class="icon-btn tap" href="/food?date=@Iso(day.Date.AddDays(1))" aria-label="@L["Next day"]">@Ui.Icon("forward")</a>
+    @if (isToday)
+    {
+        @* Future days can't be logged (SPEC 7), so today has no next day. *@
+        <span class="icon-btn" aria-hidden="true"></span>
+    }
+    else
+    {
+        <a class="icon-btn tap" href="/food?date=@Iso(day.Date.AddDays(1))" aria-label="@L["Next day"]">@Ui.Icon("forward")</a>
+    }
 </nav>
 
 <div class="card macro-card">
@@ -45,21 +57,20 @@
     {
         <div class="meter" role="img" aria-label="@L["{0} of {1} kcal", Math.Round(day.Totals.Kcal), targetKcal]"><i style="--p: @Share(day.Totals.Kcal, targetKcal)"></i></div>
     }
+    @* Every cell reads the same way: the amount, one word, the meter, then the target in one line (Phase 11). *@
     <div class="macro-grid">
         <div>
             <div class="macro-value num">@Math.Round(day.Totals.ProteinG)<small> @L["g"]</small></div>
-            <div class="footnote">@(targetProtein is { } tp ? L["protein of {0} g", tp] : L["protein"])</div>
+            <div class="footnote">@L["protein"]</div>
             @if (macros is not null)
             {
                 <text>@Ui.Meter(day.Totals.ProteinG, macros.ProteinAimG, L["{0} of {1} g protein, minimum {2} g", Math.Round(day.Totals.ProteinG), macros.ProteinAimG, macros.ProteinMinG], notches: [macros.ProteinMinG])</text>
-                @if (macros.ProteinMinG < macros.ProteinAimG)
-                {
-                    <div class="caption num">@L["min {0} g", macros.ProteinMinG]</div>
-                }
+                <div class="caption num">@(macros.ProteinMinG < macros.ProteinAimG ? L["aim {0} · min {1}", macros.ProteinAimG, macros.ProteinMinG] : L["aim {0}", macros.ProteinAimG])</div>
             }
-            else if (targetProtein is not null)
+            else if (targetProtein is { } tp)
             {
-                <div class="meter small"><i style="--p: @Share(day.Totals.ProteinG, targetProtein)"></i></div>
+                <div class="meter small"><i style="--p: @Share(day.Totals.ProteinG, tp)"></i></div>
+                <div class="caption num">@L["aim {0}", tp]</div>
             }
         </div>
         <div>
@@ -68,7 +79,7 @@
             @if (macros is not null && macros.CarbsMaxG > 0)
             {
                 <text>@Ui.Meter(day.Totals.CarbsG, macros.CarbsMaxG * 1.15m, L["{0} g carbs, range {1} to {2} g", Math.Round(day.Totals.CarbsG), macros.CarbsMinG, macros.CarbsMaxG], notches: [macros.CarbsMinG, macros.CarbsMaxG])</text>
-                <div class="caption num">@L["{0}–{1} g", macros.CarbsMinG, macros.CarbsMaxG]</div>
+                <div class="caption num">@L["{0}–{1}", macros.CarbsMinG, macros.CarbsMaxG]</div>
             }
         </div>
         <div>
@@ -77,7 +88,7 @@
             @if (macros is not null)
             {
                 <text>@Ui.Meter(day.Totals.FatG, macros.FatMaxG * 1.15m, L["{0} g fat, range {1} to {2} g", Math.Round(day.Totals.FatG), macros.FatMinG, macros.FatMaxG], notches: [macros.FatMinG, macros.FatMaxG])</text>
-                <div class="caption num">@L["{0}–{1} g", macros.FatMinG, macros.FatMaxG]</div>
+                <div class="caption num">@L["{0}–{1}", macros.FatMinG, macros.FatMaxG]</div>
             }
         </div>
     </div>
@@ -85,33 +96,44 @@
         var q = day.Quality;
         var fiber = q.FiberG ?? 0;
         var saturated = q.SaturatedFatG ?? 0;
+        // No value at all reads "—"; some foods without one make the total a lower bound, "≥".
+        string Amount(decimal? total, bool complete) =>
+            total is null && day.Entries.Count > 0 ? "—" : (complete ? "" : "≥") + Math.Round(total ?? 0);
     }
     <div class="macro-grid quality-grid">
         <div>
-            <div class="macro-value num">@(q.FiberG is null && day.Entries.Count > 0 ? "—" : Math.Round(fiber).ToString())<small> @L["g"]</small></div>
-            <div class="footnote">@(macros is not null ? L["fiber of {0} g", macros.FiberMinG] : L["fiber"])</div>
+            <div class="macro-value num">@Amount(q.FiberG, q.FiberComplete)@if (q.FiberG is not null || day.Entries.Count == 0)
+                {
+                    <small> @L["g"]</small>
+                }</div>
+            <div class="footnote">@L["fiber"]</div>
             @if (macros is not null)
             {
                 <text>@Ui.Meter(fiber, macros.FiberMinG, L["{0} of {1} g fiber", Math.Round(fiber), macros.FiberMinG])</text>
-            }
-            @if (!q.FiberComplete)
-            {
-                <div class="caption">@L["At least: some foods have no value"]</div>
+                <div class="caption num">@L["min {0}", macros.FiberMinG]</div>
             }
         </div>
         <div>
-            <div class="macro-value num">@(q.SaturatedFatG is null && day.Entries.Count > 0 ? "—" : Math.Round(saturated).ToString())<small> @L["g"]</small></div>
-            <div class="footnote">@(macros is not null ? L["saturated fat, up to {0} g", macros.SaturatedFatMaxG] : L["saturated fat"])</div>
+            <div class="macro-value num">@Amount(q.SaturatedFatG, q.SaturatedFatComplete)@if (q.SaturatedFatG is not null || day.Entries.Count == 0)
+                {
+                    <small> @L["g"]</small>
+                }</div>
+            <div class="footnote">@L["saturated fat"]</div>
             @if (macros is not null)
             {
                 <div class="@(q.SaturatedFatComplete ? "" : "unknown")"><text>@Ui.Meter(saturated, macros.SaturatedFatMaxG * 1.15m, L["{0} g saturated fat, up to {1} g", Math.Round(saturated), macros.SaturatedFatMaxG], over: q.SaturatedFatComplete && saturated > macros.SaturatedFatMaxG, notches: [macros.SaturatedFatMaxG])</text></div>
-            }
-            @if (!q.SaturatedFatComplete)
-            {
-                <div class="caption">@L["Incomplete: some foods have no value"]</div>
+                <div class="caption num">@L["max {0}", macros.SaturatedFatMaxG]</div>
             }
         </div>
     </div>
+    @if (!q.FiberComplete || !q.SaturatedFatComplete)
+    {
+        <p class="caption" style="margin-top: var(--s-2)">@L["Some foods have no fiber or saturated fat value, so these are at least what is shown."]</p>
+    }
+    @if (Model.Targets is null && !isToday)
+    {
+        <p class="footnote" style="margin-top: var(--s-3)">@(Model.TargetsStart is { } start ? L["Targets start on {0}", Ui.LongDate(start)] : L["No targets for this day yet."])</p>
+    }
     @if (macros is { ProteinLowered: true })
     {
         <p class="footnote" style="margin-top: var(--s-3)">@L["Protein and fat fill your whole calorie target."]</p>
@@ -123,7 +145,7 @@
     var entries = day.For(meal).ToList();
     var mealTotals = day.TotalsFor(meal);
     var mealProtein = macros is not null && meal != Meal.Snack && entries.Count > 0 ? macros.MealProteinG : (int?)null;
-    <section class="section">
+    <section class="section meal-section" id="meal-@meal.ToString().ToLowerInvariant()">
         <div class="meal-head">
             <h2 class="section-title">@L.Enum(meal)<span class="section-aside num">@(entries.Count > 0 ? L["{0} kcal · {1} g protein", Math.Round(mealTotals.Kcal), Math.Round(mealTotals.ProteinG)] : "")@if (mealProtein is { } mp && mealTotals.ProteinG >= mp)
                 {
@@ -142,15 +164,18 @@
         <div class="list">
             @foreach (var e in entries)
             {
-                <a href="/food/entries/@e.Id" class="row row-link">
+                <div class="swipe-row" data-swipe-row>
+                <form method="post" asp-antiforgery="true" action="/food/entries/@e.Id/delete" class="set-delete-form"><button type="submit" class="set-delete">@L["Delete"]</button></form>
+                <a href="/food/entries/@e.Id" class="row row-link swipe-content" draggable="false">
                     <span class="row-main">
-                        <span class="row-title" style="display: block">@e.Description</span>
+                        <span class="row-title" style="display: block">@L.Entry(e.Description)</span>
                         <span class="row-sub num" style="display: block">@(e.Source == EntrySource.Quick
                             ? L["{0} kcal · {1} g protein", Math.Round(e.Kcal), e.ProteinG.Kg(1)]
                             : L["{0} g · {1} kcal · {2} g protein", e.Grams.Kg(), Math.Round(e.Kcal), e.ProteinG.Kg(1)])</span>
                     </span>
                     @Ui.Icon("chevron", "row-chevron")
                 </a>
+                </div>
             }
             <a class="row row-link" href="/food/add?date=@Iso(day.Date)&amp;meal=@meal" style="color: var(--accent-text)">
                 @Ui.Icon("plus", "icon-sm")<span class="row-main">@L[AddTo[meal]]</span>
@@ -158,7 +183,7 @@
             <button type="button" class="row row-link" hx-get="/food/quick?date=@Iso(day.Date)&amp;meal=@meal" hx-target="#quick-body" hx-swap="innerHTML" data-sheet-open="quick-sheet" style="width: 100%; color: var(--accent-text); text-align: left">
                 @Ui.Icon("plus", "icon-sm")<span class="row-main">@L["Quick add"]</span>
             </button>
-            @if (entries.Count == 0)
+            @if (entries.Count == 0 && Model.PreviousDayMeals?.Contains(meal) == true)
             {
                 <form method="post" asp-antiforgery="true" action="/food/copy" class="row" style="padding-top: 0; padding-bottom: 0">
                     <input type="hidden" name="date" value="@Iso(day.Date)" />
