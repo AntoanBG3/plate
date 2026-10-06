@@ -108,7 +108,7 @@ Units: weights in kilograms (`decimal(6,2)`), energy in kcal, macros in grams. D
 
 Muscle enum: Chest, Back, Shoulders, Biceps, Triceps, Forearms, Quads, Hamstrings, Glutes, Calves, Abs.
 
-Seed about 40 common exercises (bench press, incline dumbbell press, squat, Romanian deadlift, deadlift, pull-up, lat pulldown, barbell row, cable row, overhead press, lateral raise, leg press, leg curl, leg extension, calf raise, curls, triceps pushdown, etc.).
+Seed about 90 common exercises, each with a Bulgarian name in the gym vocabulary Bulgarian lifters use (bench press, incline dumbbell press, squat, Romanian deadlift, deadlift, pull-up, lat pulldown, barbell row, cable row, overhead press, lateral raise, leg press, leg curl, leg extension, calf raise, curls, triceps pushdown, etc.).
 
 **UserExerciseSettings**
 - `UserId`, `ExerciseId` (composite key)
@@ -540,7 +540,7 @@ The stack lives at `~/docker/gymtracker` on wizard, like the other stacks. wizar
 
 **docker-compose.dev.yml** for local development on a Mac: only `db` (`postgres:18`), published on `127.0.0.1:5432`, no `tunnel` network (it exists only on wizard).
 
-The app applies EF migrations automatically on startup (including `CREATE EXTENSION pg_trgm`), seeds the exercise library if empty and imports the USDA subset if absent.
+The app applies EF migrations automatically on startup (including `CREATE EXTENSION pg_trgm`), adds any seed exercise the shared library lacks (matched by name) and imports the USDA subset if absent.
 
 **Backups** go through wizard's existing nightly host script `/usr/local/bin/homeserver-backup` (03:30), which already writes dated snapshots to the HDD with 14-day retention, Telegram alerts on failure and the PC pull. Two changes to it, which need sudo and are run by Antoan:
 - Add a dump step, e.g. `docker exec gymtracker-db pg_dump -Fc -U gym gym > "$DEST/gymtracker-db.dump"`.
