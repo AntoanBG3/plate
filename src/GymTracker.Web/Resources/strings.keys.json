@@ -68,6 +68,9 @@
   "AI summary of last week on Today": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Ab wheel rollout": [
+    "exercise"
+  ],
   "About": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
@@ -239,6 +242,9 @@
   "Archive this template? Past workouts keep their history.": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml"
   ],
+  "Arnold press": [
+    "exercise"
+  ],
   "At least {0} g protein in this meal": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
@@ -254,6 +260,9 @@
   ],
   "Back": [
     "enum"
+  ],
+  "Back extension": [
+    "exercise"
   ],
   "Back to Today": [
     "src/GymTracker.Web/Views/Home/Error.cshtml"
@@ -283,6 +292,9 @@
   "Barbell row": [
     "exercise"
   ],
+  "Barbell shrug": [
+    "exercise"
+  ],
   "Barcode": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
@@ -300,6 +312,9 @@
   ],
   "Based on {0} kg, a healthy weight for your height.": [
     "src/GymTracker.Web/Views/Settings/_ProteinNote.cshtml"
+  ],
+  "Bench dip": [
+    "exercise"
   ],
   "Bench press": [
     "exercise"
@@ -431,6 +446,9 @@
   "Closest you can load: {0} kg (you asked for {1})": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
+  "Concentration curl": [
+    "exercise"
+  ],
   "Confirm it's you with one of this account's passkeys. The admin area stays open for 30 minutes after the last page, and 4 hours at most.": [
     "src/GymTracker.Web/Views/AdminUnlock/Unlock.cshtml"
   ],
@@ -480,6 +498,9 @@
   "Create template": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
+  "Crunch": [
+    "exercise"
+  ],
   "Current": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -522,6 +543,9 @@
   "Deadlift": [
     "exercise"
   ],
+  "Decline bench press": [
+    "exercise"
+  ],
   "Delete": [
     "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
@@ -550,6 +574,9 @@
   ],
   "Desk job and everyday errands, up to about 8,000 steps a day.": [
     "src/GymTracker.Core/Nutrition/ActivityLevels.cs"
+  ],
+  "Diamond push-up": [
+    "exercise"
   ],
   "Did this read your food right?": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
@@ -584,13 +611,28 @@
   "Dumbbell": [
     "enum"
   ],
+  "Dumbbell Romanian deadlift": [
+    "exercise"
+  ],
   "Dumbbell bench press": [
     "exercise"
   ],
   "Dumbbell curl": [
     "exercise"
   ],
+  "Dumbbell fly": [
+    "exercise"
+  ],
+  "Dumbbell lunge": [
+    "exercise"
+  ],
+  "Dumbbell pullover": [
+    "exercise"
+  ],
   "Dumbbell row": [
+    "exercise"
+  ],
+  "Dumbbell shrug": [
     "exercise"
   ],
   "Duplicate": [
@@ -602,6 +644,9 @@
   ],
   "EAN-13, EAN-8, UPC-A or UPC-E: 8, 12 or 13 digits.": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
+  "EZ-bar curl": [
+    "exercise"
   ],
   "Eaten": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
@@ -800,7 +845,13 @@
   "From a starting maintenance of about {0} kcal, with {1} g of protein. It adapts as you log food and weight.": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
   ],
+  "Front raise": [
+    "exercise"
+  ],
   "Front squat": [
+    "exercise"
+  ],
+  "Glute bridge": [
     "exercise"
   ],
   "Glutes": [
@@ -817,6 +868,12 @@
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Goblet squat": [
+    "exercise"
+  ],
+  "Good morning": [
+    "exercise"
+  ],
   "Got it": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
@@ -827,11 +884,17 @@
   "Grams must be above 0 and at most {0}.": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
   ],
+  "Hack squat": [
+    "exercise"
+  ],
   "Hammer curl": [
     "exercise"
   ],
   "Hamstrings": [
     "enum"
+  ],
+  "Hanging knee raise": [
+    "exercise"
   ],
   "Hanging leg raise": [
     "exercise"
@@ -842,6 +905,9 @@
   ],
   "Height must be between {0} and {1} cm.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
+  ],
+  "Hip abduction machine": [
+    "exercise"
   ],
   "Hip thrust": [
     "exercise"
@@ -879,6 +945,12 @@
   "Incline bench press": [
     "exercise"
   ],
+  "Incline dumbbell curl": [
+    "exercise"
+  ],
+  "Incline dumbbell fly": [
+    "exercise"
+  ],
   "Incline dumbbell press": [
     "exercise"
   ],
@@ -887,6 +959,9 @@
   ],
   "Increment must be above 0 and at most 50 kg.": [
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
+  ],
+  "Inverted row": [
+    "exercise"
   ],
   "It adapts weekly once you have 2 weeks of weigh-ins on most days and food logged on 80% of days.": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
@@ -908,6 +983,9 @@
   ],
   "Keep it under {0} characters.": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "Kettlebell swing": [
+    "exercise"
   ],
   "Kind": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
@@ -960,6 +1038,9 @@
     "exercise"
   ],
   "Leg press": [
+    "exercise"
+  ],
+  "Leg press calf raise": [
     "exercise"
   ],
   "Let's set you up": [
@@ -1022,10 +1103,16 @@
   "Lying leg curl": [
     "exercise"
   ],
+  "Lying leg raise": [
+    "exercise"
+  ],
   "Machine": [
     "enum"
   ],
   "Machine chest press": [
+    "exercise"
+  ],
+  "Machine shoulder press": [
     "exercise"
   ],
   "Main": [
@@ -1129,6 +1216,9 @@
   ],
   "Needs more detail": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Neutral-grip pull-up": [
+    "exercise"
   ],
   "New": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -1345,6 +1435,9 @@
   "Overhead cable triceps extension": [
     "exercise"
   ],
+  "Overhead dumbbell triceps extension": [
+    "exercise"
+  ],
   "Overhead press": [
     "exercise"
   ],
@@ -1366,6 +1459,9 @@
   ],
   "Password changed. Other devices will be signed out.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
+  ],
+  "Pec deck": [
+    "exercise"
   ],
   "Per 100 g": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
@@ -1417,6 +1513,9 @@
   ],
   "Portion": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Preacher curl": [
+    "exercise"
   ],
   "Previous day": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
@@ -1610,11 +1709,20 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml"
   ],
+  "Reverse curl": [
+    "exercise"
+  ],
+  "Reverse pec deck": [
+    "exercise"
+  ],
   "Romanian deadlift": [
     "exercise"
   ],
   "Run the setup chat again": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Russian twist": [
+    "exercise"
   ],
   "Saturated fat": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
@@ -1779,6 +1887,9 @@
   "Show": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml"
   ],
+  "Side plank": [
+    "exercise"
+  ],
   "Sign in": [
     "src/GymTracker.Web/Views/Account/Login.cshtml"
   ],
@@ -1814,6 +1925,12 @@
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
   "Skull crusher": [
+    "exercise"
+  ],
+  "Smith machine bench press": [
+    "exercise"
+  ],
+  "Smith machine squat": [
     "exercise"
   ],
   "Snack": [
@@ -1870,15 +1987,27 @@
   "Starting…": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
+  "Stiff-leg deadlift": [
+    "exercise"
+  ],
+  "Straight-arm pulldown": [
+    "exercise"
+  ],
   "Summary": [
     "src/GymTracker.Web/Views/Train/Session.cshtml",
     "src/GymTracker.Web/Views/Train/Summary.cshtml"
+  ],
+  "Sumo deadlift": [
+    "exercise"
   ],
   "Swap exercise": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
   ],
   "Swap {0}": [
     "src/GymTracker.Web/Controllers/TrainController.cs"
+  ],
+  "T-bar row": [
+    "exercise"
   ],
   "Take a 2-week break": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
@@ -2159,6 +2288,9 @@
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Trap bar deadlift": [
+    "exercise"
+  ],
   "Trend": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
     "wwwroot/js"
@@ -2169,6 +2301,9 @@
   ],
   "Triceps": [
     "enum"
+  ],
+  "Triceps kickback": [
+    "exercise"
   ],
   "Triceps pushdown": [
     "exercise"
@@ -2217,6 +2352,9 @@
   ],
   "Update": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
+  ],
+  "Upright row": [
+    "exercise"
   ],
   "Use the form instead": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
@@ -2335,6 +2473,9 @@
   ],
   "Workouts, sets, templates, weigh-ins, food log and targets as CSV files in a zip.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Wrist curl": [
+    "exercise"
   ],
   "Write a few words about it.": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"

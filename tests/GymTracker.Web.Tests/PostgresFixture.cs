@@ -4,6 +4,7 @@ using GymTracker.Web.Data.Seed;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Testcontainers.PostgreSql;
 
 namespace GymTracker.Web.Tests;
@@ -41,6 +42,21 @@ public sealed class PostgresFixture : IAsyncLifetime
     public AppDbContext CreateContext(string? userId, string? connectionString = null) =>
         new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connectionString ?? ConnectionString).UseApplicationServiceProvider(IdentityServices).Options,
             new FixedCurrentUser(userId));
+
+    /// <summary>A new empty database in the shared container, for tests that need their own (migrations, seeding).</summary>
+    public async Task<string> NewDatabaseAsync(string name)
+    {
+        await using (var admin = new NpgsqlConnection(ConnectionString))
+        {
+            await admin.OpenAsync();
+            await using var drop = new NpgsqlCommand($"DROP DATABASE IF EXISTS {name}", admin);
+            await drop.ExecuteNonQueryAsync();
+            await using var create = new NpgsqlCommand($"CREATE DATABASE {name}", admin);
+            await create.ExecuteNonQueryAsync();
+        }
+
+        return new NpgsqlConnectionStringBuilder(ConnectionString) { Database = name }.ConnectionString;
+    }
 
     /// <summary>Inserts a user and profile directly, bypassing Identity, for service-level tests.</summary>
     public async Task<string> CreateUserAsync()

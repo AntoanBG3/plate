@@ -3,7 +3,6 @@ using GymTracker.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql;
 
 namespace GymTracker.Web.Tests;
 
@@ -14,7 +13,7 @@ public class MigrationTests(PostgresFixture fixture)
     [Fact]
     public async Task Auto_protein_turns_the_old_default_into_auto_and_keeps_chosen_values()
     {
-        var connection = await NewDatabaseAsync("auto_protein");
+        var connection = await fixture.NewDatabaseAsync("auto_protein");
         await using (var db = fixture.CreateContext(null, connection))
         {
             await db.GetService<IMigrator>().MigrateAsync("AddOnboardingChat");
@@ -41,19 +40,5 @@ public class MigrationTests(PostgresFixture fixture)
             INSERT INTO "Profiles" ("UserId", "DisplayName", "TimeZoneId", "Goal", "TargetRatePercentPerWeek", "ProteinGramsPerKg", "DefaultWeightIncrementKg")
             VALUES ({id}, {id}, 'Europe/Sofia', 'Maintain', 0, {proteinPerKg}, 2.5)
             """);
-    }
-
-    private async Task<string> NewDatabaseAsync(string name)
-    {
-        await using (var admin = new NpgsqlConnection(fixture.ConnectionString))
-        {
-            await admin.OpenAsync();
-            await using var drop = new NpgsqlCommand($"DROP DATABASE IF EXISTS {name}", admin);
-            await drop.ExecuteNonQueryAsync();
-            await using var create = new NpgsqlCommand($"CREATE DATABASE {name}", admin);
-            await create.ExecuteNonQueryAsync();
-        }
-
-        return new NpgsqlConnectionStringBuilder(fixture.ConnectionString) { Database = name }.ConnectionString;
     }
 }
