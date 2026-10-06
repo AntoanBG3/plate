@@ -28,4 +28,18 @@ public class MixedScriptFixupTests(PostgresFixture fixture)
         (await db.FoodItems.IgnoreQueryFilters().CountAsync(f => f.Name == "Mousse strawberry banana apple carrot" || f.Name == "Мousse strawberry banana apple carrot"))
             .Should().Be(1);
     }
+
+    [Fact]
+    public async Task A_garbled_or_misspelt_USDA_name_stored_earlier_is_corrected()
+    {
+        const string name = "Pork, fresh, variety meats and by-products, leaf fat, raw";
+        await using var db = fixture.CreateContext(null);
+        await db.FoodItems.IgnoreQueryFilters().Where(f => f.Source == FoodSource.Usda && f.Name == name)
+            .ExecuteUpdateAsync(s => s.SetProperty(f => f.NameBg, "Свинска мас (риза/буrelation), сурова"));
+
+        await DataFixups.RunAsync(db, default);
+
+        (await db.FoodItems.IgnoreQueryFilters().Where(f => f.Source == FoodSource.Usda && f.Name == name).Select(f => f.NameBg).ToListAsync())
+            .Should().NotBeEmpty().And.AllBe("Свинска вътрешна мас, сурова");
+    }
 }

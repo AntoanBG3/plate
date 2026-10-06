@@ -98,4 +98,21 @@ public class ShippedSeedFileTests
         bad.Should().BeEmpty();
         File.ReadLines(path).Skip(1).Should().NotBeEmpty();
     }
+
+    // A Latin letter inside a Cyrillic word or the reverse (or a garbled word like "буrelation") in any food name.
+    [Theory]
+    [MemberData(nameof(Files))]
+    public void No_food_name_mixes_Latin_and_Cyrillic_letters(string path, int firstMacroColumn)
+    {
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        File.ReadLines(path).Skip(1)
+            .Select(UsdaSeed.ParseCsvLine)
+            .SelectMany(f => f.Take(firstMacroColumn).Concat(f.Skip(firstMacroColumn + 4).Where(v => !decimal.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out _))))
+            .Where(GymTracker.Core.Text.MixedScript.HasMixedWord)
+            .Should().BeEmpty();
+    }
 }

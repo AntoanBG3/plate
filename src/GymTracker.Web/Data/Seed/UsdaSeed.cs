@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using GymTracker.Core.Domain;
+using GymTracker.Core.Text;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Data.Seed;
@@ -43,7 +44,7 @@ public static class UsdaSeed
                 ProteinPer100g = D(f[3]),
                 CarbsPer100g = D(f[4]),
                 FatPer100g = D(f[5]),
-                NameBg = f.Count > 6 && f[6].Length > 0 ? Cut(f[6]) : null,
+                NameBg = f.Count > 6 && f[6].Length > 0 ? Cut(MixedScript.Normalize(f[6])) : null,
                 FiberPer100g = Optional(f, 7),
                 SaturatedFatPer100g = Optional(f, 8),
                 Source = FoodSource.Usda,
@@ -79,7 +80,7 @@ public static class UsdaSeed
             var f = ParseCsvLine(line);
             if (f.Count > 6 && f[6].Length > 0)
             {
-                names.TryAdd(Cut(f[1]), Cut(f[6]));
+                names.TryAdd(Cut(f[1]), Cut(MixedScript.Normalize(f[6])));
             }
         }
 

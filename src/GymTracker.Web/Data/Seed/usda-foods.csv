@@ -488,7 +488,7 @@ fdc_id,name,kcal,protein,carbs,fat,name_bg,fiber,satfat
 173728,"Beans, adzuki, mature seeds, cooked, boiled, without salt",128.0,7.52,24.77,0.1,"Боб адзуки, варен, без сол",7.3,0.04
 173727,"Beans, adzuki, mature seeds, raw",329.0,19.87,62.9,0.53,"Боб адзуки, суров",12.7,0.19
 168128,"Beans, baked, canned, no salt added",105.0,4.8,20.49,0.4,"Печен боб, от консерва, без сол",5.5,0.1
-175182,"Beans, baked, canned, plain or vegetarian",94.0,4.75,21.14,0.37,"Печен боб, от консерва, постeн",4.1,0.07
+175182,"Beans, baked, canned, plain or vegetarian",94.0,4.75,21.14,0.37,"Печен боб, от консерва, постен",4.1,0.07
 175183,"Beans, baked, canned, with beef",121.0,6.38,16.91,3.45,"Печен боб, от консерва, с говеждо",,1.68
 175184,"Beans, baked, canned, with franks",142.0,6.75,15.39,6.57,"Печен боб, от консерва, с кренвирши",6.9,2.35
 175185,"Beans, baked, canned, with pork",106.0,5.19,19.99,1.55,"Печен боб, от консерва, със свинско",5.5,0.6
@@ -6089,7 +6089,7 @@ fdc_id,name,kcal,protein,carbs,fat,name_bg,fiber,satfat
 168269,"Pork, fresh, variety meats and by-products, jowl, raw",655.0,6.38,0.0,69.61,"Свински бузи, сурови",0.0,25.26
 167860,"Pork, fresh, variety meats and by-products, kidneys, cooked, braised",151.0,25.4,0.0,4.7,"Свински бъбреци, задушени",0.0,1.51
 168270,"Pork, fresh, variety meats and by-products, kidneys, raw",100.0,16.46,0.0,3.25,"Свински бъбреци, сурови",0.0,1.04
-167861,"Pork, fresh, variety meats and by-products, leaf fat, raw",857.0,1.76,0.0,94.16,"Свинска мас (риза/буrelation), сурова",0.0,45.23
+167861,"Pork, fresh, variety meats and by-products, leaf fat, raw",857.0,1.76,0.0,94.16,"Свинска вътрешна мас, сурова",0.0,45.23
 167863,"Pork, fresh, variety meats and by-products, liver, cooked, braised",165.0,26.02,3.76,4.4,"Свински дроб, задушен",0.0,1.41
 167862,"Pork, fresh, variety meats and by-products, liver, raw",134.0,21.39,2.47,3.65,"Свински дроб, суров",0.0,1.17
 168271,"Pork, fresh, variety meats and by-products, lungs, cooked, braised",99.0,16.6,0.0,3.1,"Свински бял дроб, задушен",0.0,1.09
@@ -6550,8 +6550,8 @@ fdc_id,name,kcal,protein,carbs,fat,name_bg,fiber,satfat
 171006,"Salad dressing, sesame seed dressing, regular",443.0,3.1,8.6,45.2,Сусамов дресинг,1.0,6.2
 171036,"Salad dressing, spray-style dressing, assorted flavors",165.0,0.16,16.6,10.75,"Дресинг спрей, различни вкусове",0.3,1.64
 169875,"Salad dressing, sweet and sour",15.0,0.1,3.7,0.0,Сладко-кисел дресинг,0.0,0.0
-172356,"Salad dressing, thousand island dressing, fat-free",132.0,0.55,29.27,1.45,"Дресинг Хилeда острова, обезмаслен",3.3,0.2
-171008,"Salad dressing, thousand island dressing, reduced fat",195.0,0.83,24.06,11.32,"Дресинг Хилeда острова, с намалена масленост",1.2,0.75
+172356,"Salad dressing, thousand island dressing, fat-free",132.0,0.55,29.27,1.45,"Дресинг Хиляда острова, обезмаслен",3.3,0.2
+171008,"Salad dressing, thousand island dressing, reduced fat",195.0,0.83,24.06,11.32,"Дресинг Хиляда острова, с намалена масленост",1.2,0.75
 171402,"Salad dressing, thousand island, commercial, regular",379.0,1.09,14.64,35.06,Дресинг Хиляда острова,0.8,5.09
 172935,"Salami, cooked, beef",261.0,12.6,1.9,22.2,"Салам телешки, варен",0.0,9.87
 172936,"Salami, cooked, beef and pork",336.0,21.85,2.4,25.9,"Салам свинско и телешко, варен",0.0,9.32

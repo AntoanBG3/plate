@@ -11,6 +11,7 @@ public static class ErrorNoise
         "Transition was aborted",
         "Transition was skipped",
         "Skipping view transition",
+        "view transition aborted", // "Old view transition aborted by new view transition."
     ];
 
     public static bool IsIgnored(string? message) =>
