@@ -109,9 +109,13 @@ public sealed class ErrorCaptureHandler(ErrorRecorder recorder) : IExceptionHand
         var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         var trace = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
         // By now the request path is already the error page's; the feature keeps the page that failed.
-        var path = context.Features.Get<IExceptionHandlerFeature>()?.Path ?? context.Request.Path.Value;
+        var path = Redact(context.Features.Get<IExceptionHandlerFeature>()?.Path ?? context.Request.Path.Value);
         await recorder.RecordAsync(new ErrorReport(ErrorOrigin.Server, exception.GetType().Name, exception.Message, exception.ToString(),
             path, userId, trace, AppVersion.Current), CancellationToken.None);
         return false;
     }
+
+    /// <summary>An invite link's path is its secret (SPEC 9), so the error log keeps only the route.</summary>
+    public static string? Redact(string? path) =>
+        path is not null && path.StartsWith("/join/", StringComparison.OrdinalIgnoreCase) ? "/join/{token}" : path;
 }

@@ -103,11 +103,32 @@ The app joins the external `tunnel` network and publishes no host port. Memory l
 
 ### Users
 
-Public registration does not exist. Create each account once:
+Public registration does not exist. Accounts come from a single-use invite link or from the CLI; the app never sends email.
+
+To invite someone, make a link in the admin area (Admin → Invites, with Copy and Share) or over SSH, and send it yourself:
+
+```sh
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll invite create --note "Ivan from the gym" --expires 7d
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll invite list --all
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll invite revoke <id>
+```
+
+The link (`https://gym.peychev.uk/join/...`) is shown once; only its hash is stored. It works once, for 1 to 30 days (7 by default), and at most 5 invites are open at a time. The person picks a name, email, password and language, is signed in, and goes through the setup chat. Each use is audited and sends a Telegram message. The join page is limited to 10 requests per address per 15 minutes (`RateLimits__JoinPerWindow`).
+
+Or create an account directly:
 
 ```sh
 docker exec -it gymtracker-app dotnet GymTracker.Web.dll create-user --email someone@example.com --name "Display name"
 ```
+
+There is no emailed password reset. To set a new password (it clears a lockout and signs the account out everywhere; passkeys keep working), or to delete an account with all its data:
+
+```sh
+ssh -t wizard docker exec -it gymtracker-app dotnet GymTracker.Web.dll reset-password --email someone@example.com
+ssh -t wizard docker exec -it gymtracker-app dotnet GymTracker.Web.dll delete-user --email someone@example.com
+```
+
+`delete-user` asks for the email again (or takes `--yes`), refuses to delete the last `Dev` account, and keeps shared foods and the audit log. Offer the person the export in Settings first; the nightly dumps still hold the data for their 14 days.
 
 Passwords need at least 12 characters. Five wrong passwords lock the account for 15 minutes. Sign-in attempts are also limited per address (10 per 5 minutes) and across all addresses together (30 per 15 minutes); failed attempts are logged with the reason and address (`docker logs gymtracker-app | grep "Failed sign-in"`).
 
@@ -221,7 +242,7 @@ The feedback CLI starts a second .NET process in the app container. If `docker s
 
 ### Admin
 
-The developer's account has an admin area at `/admin` (Settings → Admin): reports with status and reply, parse runs, errors, What's new, the OpenRouter key and AI models, the parse evaluation, users and an audit log (SPEC section 12). The other account sees the AI models read-only and gets a 404 there. Getting in takes three things:
+The developer's account has an admin area at `/admin` (Settings → Admin): reports with status and reply, parse runs, errors, What's new, the OpenRouter key and AI models, the parse evaluation, invites, users and an audit log (SPEC section 12). The other account sees the AI models read-only and gets a 404 there. Getting in takes three things:
 
 1. The `Dev` role, given only over SSH:
 

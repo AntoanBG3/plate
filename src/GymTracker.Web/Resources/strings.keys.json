@@ -208,6 +208,9 @@
   "Amount": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml"
   ],
+  "An account with this email already exists.": [
+    "src/GymTracker.Web/Features/Users/UserCreator.cs"
+  ],
   "An estimate, no database food": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml"
   ],
@@ -489,6 +492,9 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/Index.cshtml"
   ],
+  "Create account": [
+    "src/GymTracker.Web/Views/Join/Index.cshtml"
+  ],
   "Create and add": [
     "src/GymTracker.Web/Views/SettingsExercises/Edit.cshtml"
   ],
@@ -497,6 +503,9 @@
   ],
   "Create template": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
+  ],
+  "Create your account": [
+    "src/GymTracker.Web/Views/Join/Index.cshtml"
   ],
   "Crunch": [
     "exercise"
@@ -667,6 +676,7 @@
   ],
   "Email": [
     "src/GymTracker.Web/Views/Account/Login.cshtml",
+    "src/GymTracker.Web/Views/Join/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Email or password is wrong.": [
@@ -677,6 +687,9 @@
   ],
   "Energy": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Enter a valid email address.": [
+    "src/GymTracker.Web/Features/Users/UserCreator.cs"
   ],
   "Enter a weekly rate for a cut or bulk.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs",
@@ -991,6 +1004,7 @@
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
   "Language": [
+    "src/GymTracker.Web/Views/Join/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Last time: {0}": [
@@ -1193,13 +1207,15 @@
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
+    "src/GymTracker.Web/Views/Join/Index.cshtml",
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/SettingsExercises/Edit.cshtml",
     "src/GymTracker.Web/Views/Templates/_TemplateNameForm.cshtml"
   ],
   "Name must be 1 to 100 characters.": [
-    "src/GymTracker.Web/Features/Training/TemplateService.cs"
+    "src/GymTracker.Web/Features/Training/TemplateService.cs",
+    "src/GymTracker.Web/Features/Users/UserCreator.cs"
   ],
   "Name must be 1 to 200 characters.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
@@ -1455,10 +1471,14 @@
   ],
   "Password": [
     "src/GymTracker.Web/Views/Account/Login.cshtml",
+    "src/GymTracker.Web/Views/Join/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Password changed. Other devices will be signed out.": [
     "src/GymTracker.Web/Controllers/SettingsController.cs"
+  ],
+  "Password, 12+ characters": [
+    "src/GymTracker.Web/Views/Join/Index.cshtml"
   ],
   "Pec deck": [
     "exercise"
@@ -1867,6 +1887,7 @@
     "src/GymTracker.Web/Views/AdminUnlock/Unlock.cshtml",
     "src/GymTracker.Web/Views/Feedback/Index.cshtml",
     "src/GymTracker.Web/Views/Feedback/New.cshtml",
+    "src/GymTracker.Web/Views/Join/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/SettingsExercises/Index.cshtml",
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
@@ -2203,6 +2224,9 @@
   "The parser reads typed food; the matcher picks which database food each item is, or says none fits. The numbers come from the food database.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "The password needs at least 12 characters.": [
+    "src/GymTracker.Web/Features/Users/UserCreator.cs"
+  ],
   "The plate calculator uses this bar and these plates. Set a different bar for one exercise under Notes & bar.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -2232,6 +2256,9 @@
   ],
   "This browser can't open the camera. Type the digits or take a photo instead.": [
     "wwwroot/js"
+  ],
+  "This invite is no longer valid. Ask Antoan for a new one.": [
+    "src/GymTracker.Web/Views/Join/Index.cshtml"
   ],
   "This meal has nothing logged yet.": [
     "src/GymTracker.Web/Features/Food/SavedMealService.cs"
@@ -2504,6 +2531,9 @@
   "Yesterday": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
+  "You are already signed in. Log out first to use this invite.": [
+    "src/GymTracker.Web/Views/Join/Index.cshtml"
+  ],
   "You ate": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
@@ -2527,6 +2557,9 @@
   ],
   "Your data": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Your email is only for signing in. Nothing is ever sent to it.": [
+    "src/GymTracker.Web/Views/Join/Index.cshtml"
   ],
   "Your feedback": [
     "src/GymTracker.Web/Views/Feedback/Index.cshtml",

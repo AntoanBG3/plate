@@ -848,5 +848,14 @@
   "Lying leg raise": "Повдигане на краката от лег",
   "Russian twist": "Руско извиване",
   "Side plank": "Страничен планк",
-  "Ab wheel rollout": "Ролер за корем"
+  "Ab wheel rollout": "Ролер за корем",
+  "Create your account": "Създай профила си",
+  "Create account": "Създай профил",
+  "This invite is no longer valid. Ask Antoan for a new one.": "Тази покана вече не е валидна. Поискай нова от Антоан.",
+  "You are already signed in. Log out first to use this invite.": "На това устройство вече има влязъл профил. Първо излез от него, за да използваш поканата.",
+  "Password, 12+ characters": "Парола, поне 12 символа",
+  "Your email is only for signing in. Nothing is ever sent to it.": "Имейлът е само за влизане. На него никога не се изпращат писма.",
+  "An account with this email already exists.": "Вече има профил с този имейл.",
+  "Enter a valid email address.": "Въведи валиден имейл адрес.",
+  "The password needs at least 12 characters.": "Паролата трябва да има поне 12 символа."
 }

@@ -50,4 +50,9 @@ public static class AuditActions
     public const string ExportCases = "export-cases";
     public const string RoleGrant = "role-grant";
     public const string RoleRevoke = "role-revoke";
+    public const string InviteCreate = "invite-create";
+    public const string InviteRevoke = "invite-revoke";
+    public const string InviteRedeem = "invite-redeem";
+    public const string PasswordReset = "password-reset";
+    public const string UserDelete = "user-delete";
 }

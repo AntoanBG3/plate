@@ -96,6 +96,7 @@ public class AdminTests(PostgresFixture fixture) : IDisposable
     [InlineData("/admin/ai")]
     [InlineData("/admin/feedback")]
     [InlineData("/admin/audit")]
+    [InlineData("/admin/invites")]
     public async Task Other_accounts_get_a_404_and_anonymous_visitors_the_login_page(string path)
     {
         (await app.NewClient().GetAsync(path)).Headers.Location!.AbsolutePath.Should().Be("/account/login");

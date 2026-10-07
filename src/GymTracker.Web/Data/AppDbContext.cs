@@ -37,6 +37,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<AdminAudit> AdminAudit => Set<AdminAudit>();
     public DbSet<OnboardingChat> OnboardingChats => Set<OnboardingChat>();
     public DbSet<WeeklySummary> WeeklySummaries => Set<WeeklySummary>();
+    public DbSet<Invite> Invites => Set<Invite>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -319,6 +320,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.TextBg).HasMaxLength(ChangelogEntry.MaxTextLength);
             e.Property(x => x.Version).HasMaxLength(40);
             e.HasOne<Feedback>().WithMany().HasForeignKey(x => x.FeedbackId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => x.CreatedAt);
+        });
+
+        // Invites (SPEC 9): not user data, only the developer sees them. CreatedByUserId has no foreign key, so an
+        // invite outlives the account that made it; deleting the account it created only clears RedeemedByUserId.
+        builder.Entity<Invite>(e =>
+        {
+            e.Property(x => x.TokenHash).HasMaxLength(32);
+            e.Property(x => x.Note).HasMaxLength(InviteRules.MaxNoteLength);
+            e.Property(x => x.CreatedByUserId).HasMaxLength(450);
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.RedeemedByUserId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => x.TokenHash).IsUnique();
             e.HasIndex(x => x.CreatedAt);
         });
 
