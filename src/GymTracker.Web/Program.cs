@@ -159,6 +159,7 @@ builder.Services.AddScoped<GymTracker.Core.Summary.IWeeklySummaryWriter, Switchi
 builder.Services.AddScoped<GymTracker.Web.Features.Summary.WeeklySummaryService>();
 // The label model when a key is set and it isn't off; otherwise label photos are hidden (SPEC 6.6).
 builder.Services.AddScoped<ILabelReader, SwitchingLabelReader>();
+builder.Services.AddScoped<GymTracker.Web.Features.Food.LabelScanService>();
 
 builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>
 {
@@ -308,6 +309,8 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy(RateLimits.AiOnboarding, http => PerUser(http, config.GetValue("RateLimits:AiOnboardingPerWindow", 40), TimeSpan.FromMinutes(10)));
     // A failing weekly model is retried on Today visits; this caps how often (SPEC 6.5).
     o.AddPolicy(RateLimits.AiWeekly, http => PerUser(http, config.GetValue("RateLimits:AiWeeklyPerWindow", 6), TimeSpan.FromHours(1)));
+    // Each label photo spends the shared OpenRouter balance too (SPEC 6.6).
+    o.AddPolicy(RateLimits.AiLabel, http => PerUser(http, config.GetValue("RateLimits:AiLabelPerWindow", 20), TimeSpan.FromMinutes(10)));
     // The login page asks for passkey options on every view (autofill), so they get their own budget.
     o.AddPolicy(RateLimits.PasskeyOptions, http => PerIp(http, config.GetValue("RateLimits:PasskeyOptionsPerWindow", 30), TimeSpan.FromMinutes(5)));
     o.AddPolicy(RateLimits.CspReport, http => PerIp(http, 20, TimeSpan.FromMinutes(1)));

@@ -67,14 +67,14 @@ public record LabelValues(
     IReadOnlyList<LocalText> Notes,
     IReadOnlyList<LocalText> Warnings)
 {
-    public static readonly LocalText NotFound = "Couldn't find a nutrition table in that photo.";
-    public static readonly LocalText PerServingOnly = "The label only gives values per serving. Enter them by hand or photograph the per-100 g column.";
-    public static readonly LocalText EnergyDisagrees = "The label's kJ and kcal disagree; the kcal value was used.";
-    public static readonly LocalText MillilitresAsGrams = "Per 100 ml, used as per 100 g.";
-    public static readonly LocalText LeftEmpty = "Some values were outside what a food can have and were left empty.";
-    public static readonly LocalText MacrosOver100 = "Protein, carbs and fat add up to more than 100 g. Check them.";
-    public static readonly LocalText SaturatedAboveFat = "Saturated fat is more than fat. Check both.";
-    public static readonly LocalText EnergyMismatch = "The calories don't match the protein, carbs and fat. Check the energy row.";
+    public static readonly LocalText NotFound = new LocalText("Couldn't find a nutrition table in that photo.");
+    public static readonly LocalText PerServingOnly = new LocalText("The label only gives values per serving. Enter them by hand or photograph the per-100 g column.");
+    public static readonly LocalText EnergyDisagrees = new LocalText("The label's kJ and kcal disagree; the kcal value was used.");
+    public static readonly LocalText MillilitresAsGrams = new LocalText("Per 100 ml, used as per 100 g.");
+    public static readonly LocalText LeftEmpty = new LocalText("Some values were outside what a food can have and were left empty.");
+    public static readonly LocalText MacrosOver100 = new LocalText("Protein, carbs and fat add up to more than 100 g. Check them.");
+    public static readonly LocalText SaturatedAboveFat = new LocalText("Saturated fat is more than fat. Check both.");
+    public static readonly LocalText EnergyMismatch = new LocalText("The calories don't match the protein, carbs and fat. Check the energy row.");
 
     private const decimal KjPerKcal = 4.184m;
 

@@ -256,6 +256,10 @@
   "At least {0} g protein in this meal": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
+  "Attach a photo (JPEG, PNG or WebP).": [
+    "src/GymTracker.Web/Controllers/FoodController.cs",
+    "src/GymTracker.Web/Features/Food/LabelScanService.cs"
+  ],
   "Attach a screenshot or photo (JPEG, PNG or WebP).": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
   ],
@@ -478,6 +482,9 @@
   ],
   "Couldn't add the passkey. Try again.": [
     "wwwroot/js"
+  ],
+  "Couldn't find a nutrition table in that photo.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
   ],
   "Couldn't read that photo. Type the digits instead.": [
     "wwwroot/js"
@@ -1507,6 +1514,9 @@
   "Per 100 g, from the label": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
+  "Per 100 ml, used as per 100 g.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
   "Per meal: about 0.3 g of protein per kg at breakfast, lunch and dinner; 0.4 g and at least 25 g from 65. Morton 2018.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -1593,6 +1603,9 @@
   "Protein must be between {0} and {1} g per kg.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
+  "Protein, carbs and fat add up to more than 100 g. Check them.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
   "Protein, carbs and fat must be between 0 and 500 g.": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
   ],
@@ -1647,6 +1660,9 @@
   "Rate per week": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Read from the photo. Check each value against the label.": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Read it": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
@@ -1764,6 +1780,9 @@
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "Saturated fat is more than fat. Check both.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
   ],
   "Save": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
@@ -1978,6 +1997,9 @@
   "Some foods have no fiber or saturated fat value, so these are at least what is shown.": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
+  "Some values were outside what a food can have and were left empty.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
   "Something else": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
@@ -2122,6 +2144,10 @@
   "That passkey didn't work. Try again.": [
     "wwwroot/js"
   ],
+  "That photo is too large.": [
+    "src/GymTracker.Web/Controllers/FoodController.cs",
+    "src/GymTracker.Web/Features/Food/LabelScanService.cs"
+  ],
   "That picture is too large. Try a screenshot instead of a photo.": [
     "src/GymTracker.Web/Controllers/FeedbackController.cs",
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
@@ -2179,6 +2205,9 @@
   "The calories don't add up from the macros.": [
     "src/GymTracker.Web/Features/Food/FoodMatcher.cs"
   ],
+  "The calories don't match the protein, carbs and fat. Check the energy row.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
   "The camera may ask for permission each time the app opens.": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
@@ -2226,6 +2255,12 @@
   ],
   "The food parser took too long. Try again, or enter the food by hand.": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The label only gives values per serving. Enter them by hand or photograph the per-100 g column.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
+  "The label's kJ and kcal disagree; the kcal value was used.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
   ],
   "The list changed while you were reordering. Try again.": [
     "src/GymTracker.Web/Features/Training/TemplateService.cs"

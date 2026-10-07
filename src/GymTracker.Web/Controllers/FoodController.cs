@@ -17,6 +17,7 @@ public class FoodController(
     FoodLogService log,
     SavedMealService savedMeals,
     FoodItemService foods,
+    LabelScanService labels,
     ParseRunService parseRuns,
     NutritionTargets targets,
     ProfileService profiles,
@@ -145,12 +146,44 @@ public class FoodController(
     }
 
     [HttpPost("items")]
-    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, CancellationToken ct)
+    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, CancellationToken ct)
     {
         var item = await foods.CreateManualAsync(name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, share, ct);
+        await labels.RecordSaveAsync(labelScanId, item, ct);
         await log.AddAsync([new NewEntry(date, meal, item.Name, grams, item.Per100(), item.Id, item.Barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
         FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
+    }
+
+    /// <summary>Reads a label photo and answers with the manual food form filled from it (SPEC 6.6).</summary>
+    [HttpPost("label")]
+    [EnableRateLimiting(RateLimits.AiLabel)]
+    // The one endpoint above the 1 MB request limit (SPEC 9): the phone shrinks a photo to under 2 MB.
+    [RequestSizeLimit(3 * 1024 * 1024)]
+    public async Task<IActionResult> Label(DateOnly date, Meal meal, string? barcode, bool barcodeField, string? name, int width, int height, IFormFile? photo, CancellationToken ct)
+    {
+        if (!await labels.IsAvailableAsync(ct))
+        {
+            return NotFound();
+        }
+
+        if (photo is null || photo.Length == 0)
+        {
+            throw new ValidationException("Attach a photo (JPEG, PNG or WebP).");
+        }
+
+        if (photo.Length > LabelScanPhoto.MaxBytes)
+        {
+            throw new ValidationException("That photo is too large.");
+        }
+
+        using var buffer = new MemoryStream((int)photo.Length);
+        await photo.CopyToAsync(buffer, ct);
+        var result = await labels.ReadAsync(buffer.ToArray(), width, height, ct);
+        barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim();
+        return PartialView("_ManualFoodForm", new ManualFoodFormModel(date, meal, barcodeField ? null : barcode, string.IsNullOrWhiteSpace(name) ? null : name.Trim(), barcodeField,
+            Label: result.Values, LabelScanId: result.ScanId, LabelAvailable: true, LabelError: result.Error,
+            BarcodeValue: barcodeField ? barcode : null));
     }
 
     [HttpPost("log-recent")]

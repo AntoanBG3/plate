@@ -229,7 +229,7 @@ public class FeedbackService(AppDbContext db, ICurrentUser currentUser, ProfileS
             throw new ValidationException("That picture is too large. Try a screenshot instead of a photo.");
         }
 
-        var type = ImageType(shot.Bytes) ?? throw new ValidationException("Attach a screenshot or photo (JPEG, PNG or WebP).");
+        var type = ImageSniffer.ContentType(shot.Bytes) ?? throw new ValidationException("Attach a screenshot or photo (JPEG, PNG or WebP).");
         return new FeedbackAttachment
         {
             ContentType = type,
@@ -238,12 +238,6 @@ public class FeedbackService(AppDbContext db, ICurrentUser currentUser, ProfileS
             Bytes = shot.Bytes,
         };
     }
-
-    internal static string? ImageType(ReadOnlySpan<byte> b) =>
-        b.Length >= 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF ? "image/jpeg"
-        : b.Length >= 8 && b[..8].SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }) ? "image/png"
-        : b.Length >= 12 && b[..4].SequenceEqual("RIFF"u8) && b[8..12].SequenceEqual("WEBP"u8) ? "image/webp"
-        : null;
 
     private async Task<JsonObject> ContextAsync(string? page, string? traceId, ClientDetails client, JsonNode? about, CancellationToken ct)
     {

@@ -865,5 +865,16 @@
   "Label reader": "Четене на етикети",
   "That model can't read labels.": "Този модел не може да чете етикети.",
   "Couldn't read the label. Enter the values by hand.": "Етикетът не можа да се прочете. Въведи стойностите ръчно.",
-  "The model misread the sample label (read {0} kcal, expected {1}).": "Моделът прочете грешно примерния етикет ({0} ккал вместо {1})."
+  "The model misread the sample label (read {0} kcal, expected {1}).": "Моделът прочете грешно примерния етикет ({0} ккал вместо {1}).",
+  "Read from the photo. Check each value against the label.": "Прочетено от снимката. Провери всяка стойност спрямо етикета.",
+  "Couldn't find a nutrition table in that photo.": "На снимката няма таблица с хранителни стойности.",
+  "The label only gives values per serving. Enter them by hand or photograph the per-100 g column.": "Етикетът дава стойности само за порция. Въведи ги ръчно или снимай колоната за 100 g.",
+  "The label's kJ and kcal disagree; the kcal value was used.": "kJ и ккал на етикета не съвпадат; използвани са ккал.",
+  "Per 100 ml, used as per 100 g.": "За 100 ml, използвано като за 100 g.",
+  "Some values were outside what a food can have and were left empty.": "Някои стойности са извън възможното за храна и са оставени празни.",
+  "Protein, carbs and fat add up to more than 100 g. Check them.": "Белтъчините, въглехидратите и мазнините са повече от 100 g общо. Провери ги.",
+  "Saturated fat is more than fat. Check both.": "Наситените мазнини са повече от мазнините. Провери и двете.",
+  "The calories don't match the protein, carbs and fat. Check the energy row.": "Калориите не отговарят на белтъчините, въглехидратите и мазнините. Провери реда за енергия.",
+  "Attach a photo (JPEG, PNG or WebP).": "Прикачи снимка (JPEG, PNG или WebP).",
+  "That photo is too large.": "Снимката е твърде голяма."
 }
