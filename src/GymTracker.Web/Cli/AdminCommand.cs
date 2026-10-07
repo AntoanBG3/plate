@@ -21,7 +21,7 @@ public static class AdminCommand
         DateTimeOffset since;
         try
         {
-            since = FeedbackCommand.Since(CliArgs.Option(rest, "--since"), TimeSpan.FromDays(30))!.Value;
+            since = Features.Feedback.TimeWindow.Since(CliArgs.Option(rest, "--since"), TimeSpan.FromDays(30), DateTimeOffset.UtcNow)!.Value;
         }
         catch (FormatException ex)
         {

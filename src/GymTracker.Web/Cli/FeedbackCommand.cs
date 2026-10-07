@@ -314,26 +314,7 @@ public static class FeedbackCommand
     private static int Int(string? value, int fallback) => int.TryParse(value, CultureInfo.InvariantCulture, out var n) && n > 0 ? n : fallback;
 
     /// <summary>"7d", "12h" or a date (yyyy-MM-dd); the fallback when not given.</summary>
-    internal static DateTimeOffset? Since(string? value, TimeSpan? fallback)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            return fallback is { } span ? DateTimeOffset.UtcNow - span : null;
-        }
-
-        if (value.Length > 1 && int.TryParse(value[..^1], CultureInfo.InvariantCulture, out var n))
-        {
-            switch (value[^1])
-            {
-                case 'd': return DateTimeOffset.UtcNow.AddDays(-n);
-                case 'h': return DateTimeOffset.UtcNow.AddHours(-n);
-            }
-        }
-
-        return DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var date)
-            ? date
-            : throw new FormatException($"Can't read --since {value}; use 7d, 12h or 2026-10-01.");
-    }
+    internal static DateTimeOffset? Since(string? value, TimeSpan? fallback) => TimeWindow.Since(value, fallback, DateTimeOffset.UtcNow);
 
     private static List<FeedbackStatus>? Statuses(string value) => value.ToLowerInvariant() switch
     {

@@ -33,15 +33,5 @@ public class AdminLabelsController(LabelScanReport labels, TimeProvider time) : 
         return File(photo.Bytes, photo.ContentType);
     }
 
-    private DateTimeOffset Since(string value)
-    {
-        try
-        {
-            return Cli.FeedbackCommand.Since(value, TimeSpan.FromDays(30))!.Value;
-        }
-        catch (FormatException)
-        {
-            return time.GetUtcNow().AddDays(-30);
-        }
-    }
+    private DateTimeOffset Since(string value) => TimeWindow.SinceOrDefault(value, TimeSpan.FromDays(30), time.GetUtcNow());
 }

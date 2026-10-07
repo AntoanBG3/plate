@@ -97,7 +97,7 @@ public static class ParseEvaluation
     public static async Task<int> RunAsync(IServiceProvider services, string[] args, TextWriter o, bool json, CancellationToken ct)
     {
         var request = new EvalRequest(
-            Cli.FeedbackCommand.Since(Option(args, "--since"), TimeSpan.FromDays(365))!.Value,
+            TimeWindow.Since(Option(args, "--since"), TimeSpan.FromDays(365), DateTimeOffset.UtcNow)!.Value,
             args.Contains("--flagged"),
             int.TryParse(Option(args, "--limit"), CultureInfo.InvariantCulture, out var l) && l > 0 ? l : 20,
             Option(args, "--parser"),
