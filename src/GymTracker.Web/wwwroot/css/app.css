@@ -397,7 +397,7 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .macro-value small { font-size: var(--text-footnote); color: var(--label-2); font-weight: var(--weight-regular); }
 
 .composer { display: flex; align-items: flex-end; gap: var(--s-2); padding: 6px 6px 6px var(--s-4); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow-card), inset 0 0 0 0.5px var(--separator); }
-.composer textarea { flex: 1; min-width: 0; min-height: 44px; margin: -4px 0; max-height: 40vh; padding: 7px 0; border: 0; background: none; outline: none; resize: none; font-size: var(--text-body); line-height: 1.35; field-sizing: content; }
+.composer textarea { flex: 1; min-width: 0; min-height: 44px; margin: -4px 0; max-height: 40vh; padding: calc((44px - 1.35em) / 2) 0; border: 0; background: none; outline: none; resize: none; font-size: var(--text-body); line-height: 1.35; field-sizing: content; }
 .composer textarea::placeholder { color: var(--label-3); }
 .composer:focus-within { box-shadow: var(--shadow-card), inset 0 0 0 1.5px var(--accent); }
 .send-btn { width: 36px; height: 36px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
