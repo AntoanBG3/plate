@@ -278,6 +278,17 @@ ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll admin audit --si
 
 `ai set-key` reads the key from standard input and never from an argument, so it stays out of shell history and the process list.
 
+### Label photos
+
+On the Manual tab, after a barcode Open Food Facts doesn't know, and from "Photograph a label" on the Scan tab, a photo of a nutrition table fills in the manual food form (SPEC 6.6). A separate vision model reads it, `google/gemini-3.5-flash-lite` unless another is picked under AI → Label reader; Off hides the feature for both accounts. Nothing is saved until the form is. Photos are kept 30 days so misreads can be checked under Admin → Labels or with `feedback labels --edited`, and the scans 180 days.
+
+```sh
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll ai set-model label google/gemini-3.5-flash-lite
+ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll ai test label   # reads a bundled sample label, expects 250 kcal
+```
+
+`tools/labels/make-sample.sh` re-renders that sample and the browser tests' label photos.
+
 ### Updating base images
 
 The Dockerfile and compose file pin the .NET and Postgres images by digest, so a rebuild never pulls a different image by surprise. About once a month, look up the current digests and replace the `@sha256:...` parts:

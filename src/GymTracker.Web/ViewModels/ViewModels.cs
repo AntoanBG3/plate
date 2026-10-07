@@ -242,4 +242,6 @@ public record AdminParseList(bool Flagged, string Since, IReadOnlyList<GymTracke
 
 public record AdminErrorList(string Since, IReadOnlyList<GymTracker.Core.Domain.ErrorEvent> Errors);
 
+public record AdminLabelList(string Since, bool Edited, bool Failed, IReadOnlyList<GymTracker.Web.Features.Feedback.LabelScanRow> Scans);
+
 public record AdminEvalPage(GymTracker.Web.Features.Admin.EvalJob? Job, string ParserModel, string MatcherModel, bool HasKey);

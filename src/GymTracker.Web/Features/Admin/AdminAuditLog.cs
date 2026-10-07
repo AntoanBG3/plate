@@ -55,4 +55,5 @@ public static class AuditActions
     public const string InviteRedeem = "invite-redeem";
     public const string PasswordReset = "password-reset";
     public const string UserDelete = "user-delete";
+    public const string LabelPhotoDownload = "label-photo-download";
 }

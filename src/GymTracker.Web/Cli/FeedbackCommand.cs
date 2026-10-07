@@ -26,6 +26,9 @@ public static class FeedbackCommand
                                           statuses: New Seen Planned Fixed WontFix NeedsInfo
           parses [--since 30d] [--flagged] [--limit 50] [--export-eval]
           eval [--since 365d] [--flagged] [--limit 20] [--parser <model>] [--matcher off|jev]
+          labels [--since 30d] [--edited] [--failed] [--limit 50]
+          label <id>                      what the label model read, the values offered and what was saved
+          label-photo <id>                raw photo bytes to stdout, while it is kept (30 days); audited
           errors [--since 7d]
           digest [--since 7d|<date>]
           changelog add --en "..." --bg "..." [--feedback <id>] [--version <sha>]
@@ -49,6 +52,7 @@ public static class FeedbackCommand
 
         using var scope = services.CreateScope();
         var admin = scope.ServiceProvider.GetRequiredService<FeedbackAdmin>();
+        var labels = scope.ServiceProvider.GetRequiredService<LabelScanReport>();
         var ct = CancellationToken.None;
         try
         {
@@ -165,6 +169,55 @@ public static class FeedbackCommand
 
                     return 0;
 
+                case "labels":
+                    var scans = await labels.ListAsync(Since(Option(rest, "--since"), TimeSpan.FromDays(30))!.Value, rest.Contains("--edited"), rest.Contains("--failed"),
+                        Int(Option(rest, "--limit"), 50), ct);
+                    if (json)
+                    {
+                        WriteJson(o, scans);
+                    }
+                    else
+                    {
+                        foreach (var scan in scans)
+                        {
+                            o.WriteLine(LabelLine(scan));
+                        }
+                    }
+
+                    return 0;
+
+                case "label":
+                    var label = await labels.GetAsync(Id(rest), ct);
+                    if (label is null)
+                    {
+                        Console.Error.WriteLine($"There is no label scan #{Id(rest)}.");
+                        return 1;
+                    }
+
+                    if (json)
+                    {
+                        WriteJson(o, label);
+                    }
+                    else
+                    {
+                        o.Write(LabelText(label));
+                    }
+
+                    return 0;
+
+                case "label-photo":
+                    var photo = await labels.PhotoAsync(Id(rest), ct);
+                    if (photo is null)
+                    {
+                        Console.Error.WriteLine($"Label scan #{Id(rest)} has no photo (deleted after 30 days, or no such scan).");
+                        return 1;
+                    }
+
+                    var photoStream = binary ?? Console.OpenStandardOutput();
+                    await photoStream.WriteAsync(photo.Bytes, ct);
+                    await photoStream.FlushAsync(ct);
+                    return 0;
+
                 case "digest":
                     var digest = await admin.DigestAsync(Since(Option(rest, "--since"), TimeSpan.FromDays(7))!.Value, ct);
                     if (json)
@@ -174,6 +227,9 @@ public static class FeedbackCommand
                     else
                     {
                         WriteDigest(o, digest);
+                        var counts = await labels.CountsAsync(digest.Since, ct);
+                        o.WriteLine();
+                        o.WriteLine($"Label reads: {counts.Reads} ({counts.Failed} failed, {counts.Edited} edited)");
                     }
 
                     return 0;
@@ -454,6 +510,22 @@ public static class FeedbackCommand
         o.WriteLine();
         o.WriteLine("Errors:");
         WriteErrors(o, d.Errors, withStack: false);
+    }
+
+    private static string LabelLine(LabelScanRow s) =>
+        $"#{s.Id} {When(s.CreatedAt)} {s.Reporter} {s.Model} {s.LatencyMs} ms "
+        + (s.Error is not null ? $"failed: {s.Error}" : !s.Saved ? "not saved" : s.Edited ? "saved with edits" : "saved as read")
+        + (s.HasPhoto ? "" : " (photo deleted)");
+
+    /// <summary>A label scan as the CLI prints it, for the admin area's scan page.</summary>
+    internal static string LabelText(LabelScanDetail detail)
+    {
+        using var w = new StringWriter();
+        w.WriteLine(LabelLine(detail.Scan));
+        w.WriteLine($"Read:    {detail.Reading ?? "(nothing)"}");
+        w.WriteLine($"Offered: {detail.Values ?? "(nothing)"}");
+        w.WriteLine($"Saved:   {detail.Saved ?? "(not saved)"}{(detail.FoodItemId is { } food ? $" as food #{food}" : "")}");
+        return w.ToString();
     }
 
     /// <summary>A parse run as the CLI prints it, for the admin area's report and parse pages.</summary>

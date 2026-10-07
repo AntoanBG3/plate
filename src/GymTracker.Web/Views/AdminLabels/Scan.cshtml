@@ -1,0 +1,24 @@
+@model GymTracker.Web.Features.Feedback.LabelScanDetail
+@{
+    var scan = Model.Scan;
+    ViewData["Title"] = $"Label {scan.Id}";
+    ViewData["BackUrl"] = "/admin/labels";
+    ViewData["BackLabel"] = "Labels";
+}
+<header class="page-head">
+    <h1 class="large-title">Label @scan.Id</h1>
+    <p class="subhead">@scan.Reporter · @scan.CreatedAt.ToUniversalTime().ToString("d MMM yyyy HH:mm") UTC · @scan.Model · @scan.LatencyMs ms</p>
+</header>
+<section class="section">
+    @if (scan.HasPhoto)
+    {
+        <img src="/admin/labels/@scan.Id/photo" alt="Label photo" style="width: 100%; border-radius: var(--r-md)" />
+    }
+    else
+    {
+        <p class="footnote">Photo deleted after 30 days.</p>
+    }
+</section>
+<section class="section">
+    <pre class="admin-pre">@GymTracker.Web.Cli.FeedbackCommand.LabelText(Model)</pre>
+</section>

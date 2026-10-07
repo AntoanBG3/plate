@@ -3,7 +3,7 @@
     var path = Context.Request.Path.Value ?? "";
     (string Href, string Label)[] links =
     [
-        ("/admin", "Overview"), ("/admin/feedback", "Reports"), ("/admin/parses", "Parses"), ("/admin/errors", "Errors"),
+        ("/admin", "Overview"), ("/admin/feedback", "Reports"), ("/admin/parses", "Parses"), ("/admin/labels", "Labels"), ("/admin/errors", "Errors"),
         ("/admin/changelog", "What's new"), ("/admin/ai", "AI"), ("/admin/ai/eval", "Eval"), ("/admin/invites", "Invites"), ("/admin/users", "Users"), ("/admin/audit", "Audit"),
     ];
     string? Current(string href) => (href == "/admin" ? path == "/admin" : path.StartsWith(href, StringComparison.Ordinal) && !(href == "/admin/ai" && path.StartsWith("/admin/ai/eval", StringComparison.Ordinal))) ? "page" : null;
