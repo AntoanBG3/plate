@@ -29,7 +29,9 @@ public class LabelScanTests(PostgresFixture fixture)
     private (AppFactory App, FakeLabelReader Reader) NewApp(Dictionary<string, string?>? settings = null)
     {
         var reader = new FakeLabelReader();
-        var app = new AppFactory(fixture, settings: settings, services: s => s.AddScoped<ILabelReader>(_ => reader));
+        var app = new AppFactory(fixture, settings: settings, services: s => s
+            .AddScoped<ILabelReader>(_ => reader)
+            .AddSingleton<IFoodDatabase, FakeFoodDatabase>());
         return (app, reader);
     }
 
@@ -275,5 +277,74 @@ public class LabelScanTests(PostgresFixture fixture)
 
         html.Should().MatchRegex("id=\"m-protein\"[^>]*value=\"3.2\"").And.NotContain("value=\"3,2\"");
         html.Should().Contain("Прочетено от снимката. Провери всяка стойност спрямо етикета.");
+    }
+
+    private const string PrivacyLine = "The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked.";
+
+    [Fact]
+    public async Task The_manual_tab_offers_a_label_photo_and_an_optional_barcode()
+    {
+        var (app, _) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var html = WebUtility.HtmlDecode(await a.Client.GetStringAsync(AddPage));
+
+        html.Should().Contain("Read the label from a photo").And.Contain("data-label-photo").And.Contain(PrivacyLine);
+        html.Should().Contain("accept=\"image/*\"").And.NotContain("capture=");
+        html.Should().Contain("data-barcode-input").And.Contain("data-module=\"label\"");
+    }
+
+    [Fact]
+    public async Task A_barcode_miss_offers_a_label_photo_and_shows_the_share_choice()
+    {
+        var (app, _) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var html = WebUtility.HtmlDecode(await a.Client.GetStringAsync("/food/barcode?date=2026-10-05&meal=Lunch&code=5901234123457"));
+
+        html.Should().Contain("data-label-photo").And.Contain("Share with other users");
+        html.Should().MatchRegex("<div class=\"list\" data-share[^>]*>").And.NotMatchRegex("<div class=\"list\" data-share[^>]*hidden");
+    }
+
+    [Fact]
+    public async Task The_scan_tab_offers_to_photograph_a_label()
+    {
+        var (app, _) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var html = WebUtility.HtmlDecode(await a.Client.GetStringAsync("/food/add?date=2026-10-05&meal=Lunch&tab=barcode"));
+
+        html.Should().Contain("Photograph a label").And.Contain("data-label-slot").And.Contain(PrivacyLine);
+    }
+
+    [Fact]
+    public async Task Without_a_label_model_no_photo_button_shows()
+    {
+        var (app, reader) = NewApp();
+        await using var _app = app;
+        reader.Available = false;
+        var a = await SignInAsync(app);
+
+        (await a.Client.GetStringAsync(AddPage)).Should().NotContain("data-label-photo");
+        (await a.Client.GetStringAsync("/food/add?date=2026-10-05&meal=Lunch&tab=barcode")).Should().NotContain("Photograph a label");
+    }
+
+    [Fact]
+    public async Task Converted_and_missing_values_are_marked_and_the_notes_listed()
+    {
+        var (app, reader) = NewApp();
+        await using var _app = app;
+        reader.Next = new LabelReadResult(new LabelReading(true, null, null, LabelBasis.PerServing, 30, 120, null, 3, 18, 4, null, null), "{}", null, "test/label");
+        var a = await SignInAsync(app);
+
+        var html = await HtmlAsync(await ReadAsync(a, Jpeg(100)));
+
+        html.Should().MatchRegex("id=\"m-kcal\" class=\"num is-converted\"[^>]*value=\"400\"");
+        html.Should().MatchRegex("id=\"m-protein\" class=\"num is-converted\"[^>]*value=\"10\"");
+        html.Should().MatchRegex("id=\"m-fiber\" class=\"num is-missing\"");
+        html.Should().Contain("Read from the photo. Check each value against the label.");
     }
 }

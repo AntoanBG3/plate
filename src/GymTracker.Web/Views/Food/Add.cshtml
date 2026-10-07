@@ -51,7 +51,22 @@
     case "barcode":
         <div class="btn-stack">
             <button type="button" class="btn btn-primary" data-start>@Ui.Icon("barcode")@L["Scan a barcode"]</button>
+            @if (Model.LabelAvailable)
+            {
+                <label class="btn btn-secondary" data-label-button>@Ui.Icon("photo")@L["Photograph a label"]
+                    <input type="file" accept="image/*" class="sr-only" data-label-photo data-label-start />
+                </label>
+            }
         </div>
+        @if (Model.LabelAvailable)
+        {
+            @* For products without a barcode: the filled manual form opens here (SPEC 6.6). *@
+            <div data-module="label">
+                <p class="section-footer" data-label-privacy>@L["The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked."]</p>
+                <p class="thinking" role="status" data-label-status><i></i><i></i><i></i><span>@L["Reading the label…"]</span></p>
+                <div data-label-slot data-date="@date" data-meal="@Model.Meal" style="margin-top: var(--s-5)"></div>
+            </div>
+        }
         <form method="get" action="/food/barcode" id="barcode-form" class="section" style="margin-top: var(--s-6)">
             <input type="hidden" name="date" value="@date" />
             <input type="hidden" name="meal" value="@Model.Meal" />
@@ -216,7 +231,9 @@
         break;
 
     default:
-        <partial name="_ManualFoodForm" model="new ManualFoodFormModel(Model.Date, Model.Meal, null, Model.Text, BarcodeField: true)" />
+        <div data-module="label">
+            <partial name="_ManualFoodForm" model="new ManualFoodFormModel(Model.Date, Model.Meal, null, Model.Text, BarcodeField: true, LabelAvailable: Model.LabelAvailable)" />
+        </div>
         break;
 }
 

@@ -50,7 +50,9 @@ else
             _ => L["This product isn't in Open Food Facts. Enter it from the label once and it's saved for both of you."],
         })</p>
     </header>
-    <partial name="_ManualFoodForm" model="new ManualFoodFormModel(Model.Date, Model.Meal, Model.Code, null, BarcodeField: false, LabelAvailable: Model.LabelAvailable)" />
+    <div data-module="label">
+        <partial name="_ManualFoodForm" model="new ManualFoodFormModel(Model.Date, Model.Meal, Model.Code, null, BarcodeField: false, LabelAvailable: Model.LabelAvailable)" />
+    </div>
 }
 
 @functions {

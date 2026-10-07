@@ -186,7 +186,8 @@ public record FoodAddViewModel(
     IReadOnlyList<GymTracker.Web.Features.Food.FoodMatch> Local,
     GymTracker.Core.Nutrition.ProductSearch? OpenFoodFacts,
     IReadOnlyList<GymTracker.Web.Features.Food.RecentFood> Recents,
-    IReadOnlyList<SavedMeal> SavedMeals);
+    IReadOnlyList<SavedMeal> SavedMeals,
+    bool LabelAvailable = false);
 
 public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, GymTracker.Core.Text.LocalText? Warning, int? ParseRunId = null);
 

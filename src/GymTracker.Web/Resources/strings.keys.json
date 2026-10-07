@@ -1523,6 +1523,9 @@
   "Per side": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
   ],
+  "Photograph a label": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
   "Pick sex, goal and activity level from the list.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
@@ -1666,6 +1669,13 @@
   ],
   "Read it": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
+  "Read the label from a photo": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Reading the label…": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Reading the photo…": [
     "wwwroot/js"
@@ -2285,6 +2295,10 @@
   ],
   "The password needs at least 12 characters.": [
     "src/GymTracker.Web/Features/Users/UserCreator.cs"
+  ],
+  "The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked.": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "The plate calculator uses this bar and these plates. Set a different bar for one exercise under Notes & bar.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"

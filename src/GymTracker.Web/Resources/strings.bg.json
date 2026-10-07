@@ -876,5 +876,9 @@
   "Saturated fat is more than fat. Check both.": "Наситените мазнини са повече от мазнините. Провери и двете.",
   "The calories don't match the protein, carbs and fat. Check the energy row.": "Калориите не отговарят на белтъчините, въглехидратите и мазнините. Провери реда за енергия.",
   "Attach a photo (JPEG, PNG or WebP).": "Прикачи снимка (JPEG, PNG или WebP).",
-  "That photo is too large.": "Снимката е твърде голяма."
+  "That photo is too large.": "Снимката е твърде голяма.",
+  "Read the label from a photo": "Прочети етикета от снимка",
+  "Photograph a label": "Снимай етикет",
+  "The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked.": "Снимката се изпраща до AI модел през OpenRouter и се пази 30 дни, за да могат грешките да се проверят.",
+  "Reading the label…": "Чета етикета…"
 }

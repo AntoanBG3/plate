@@ -71,7 +71,8 @@ public class FoodController(
         var offResults = tab == "search" && off && !string.IsNullOrWhiteSpace(q) ? await foods.SearchOpenFoodFactsAsync(q, ct) : null;
         var recents = tab == "recent" ? await log.RecentsAsync(today, ct) : [];
         var saved = tab == "recent" ? await savedMeals.ListAsync(ct) : [];
-        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved));
+        var labelAvailable = tab is "manual" or "barcode" && await labels.IsAvailableAsync(ct);
+        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved, labelAvailable));
     }
 
     [HttpPost("parse")]
@@ -131,7 +132,8 @@ public class FoodController(
 
         var result = await foods.LookupBarcodeAsync(digits, ct);
         return View(new BarcodeViewModel(date, meal, digits, result,
-            AddedByAnother: result.Item is { } item && FoodItemService.AddedByAnother(item, currentUser.UserId)));
+            AddedByAnother: result.Item is { } item && FoodItemService.AddedByAnother(item, currentUser.UserId),
+            LabelAvailable: result.Item is null && await labels.IsAvailableAsync(ct)));
     }
 
     [HttpPost("log-item")]

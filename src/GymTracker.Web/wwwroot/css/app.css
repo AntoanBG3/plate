@@ -404,6 +404,13 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .send-btn .icon { width: 20px; height: 20px; stroke-width: 2.4; }
 .send-btn:disabled { background: var(--fill-strong); color: var(--label-3); }
 .composer-hint { margin: var(--s-3) var(--s-4) 0; }
+/* Label photos (SPEC 6.6): converted values are tinted, values the label didn't give are underlined for checking. */
+.label-pick { margin-bottom: var(--s-5); }
+.label-pick .section-footer { margin-bottom: 0; }
+.label-pick.is-busy .thinking, [data-module="label"].is-busy > .thinking { display: flex; }
+.field-row input.is-converted { color: var(--accent-text); }
+.field-row input.is-missing { box-shadow: inset 0 -1.5px 0 var(--warning); }
+[data-label-button]:has(input:disabled) { opacity: 0.5; }
 .thinking { display: none; align-items: center; gap: var(--s-2); margin: var(--s-4) var(--s-4) 0; color: var(--label-2); font-size: var(--text-subhead); }
 form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .thinking i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: think 1s var(--ease-in-out) infinite; }

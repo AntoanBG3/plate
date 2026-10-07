@@ -12,6 +12,16 @@
         label is null ? "num" : label.Converted.HasFlag(field) ? "num is-converted" : v is null ? "num is-missing" : "num";
 }
 <div id="manual-food" data-label-form>
+    @if (Model.LabelAvailable)
+    {
+        <div class="label-pick" data-label>
+            <label class="btn btn-secondary btn-block" data-label-button>@Ui.Icon("photo")@L["Read the label from a photo"]
+                <input type="file" accept="image/*" class="sr-only" data-label-photo />
+            </label>
+            <p class="section-footer">@L["The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked."]</p>
+            <p class="thinking" role="status"><i></i><i></i><i></i><span>@L["Reading the label…"]</span></p>
+        </div>
+    }
     @if (Model.LabelError is { } labelError)
     {
         <div class="banner is-error" role="alert">@Ui.Icon("alert")<span>@L[labelError]</span></div>
