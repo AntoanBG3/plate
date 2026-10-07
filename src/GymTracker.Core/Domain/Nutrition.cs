@@ -36,6 +36,10 @@ public class FoodItem
 {
     public int Id { get; set; }
     public string? OwnerUserId { get; set; }
+
+    /// <summary>Who created a manual item; only used to say a shared food came from someone else (SPEC 4).</summary>
+    public string? AddedByUserId { get; set; }
+
     public string Name { get; set; } = "";
     public string? NameBg { get; set; }
     public string? Brand { get; set; }
