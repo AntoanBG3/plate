@@ -180,4 +180,62 @@ public class LabelPhotoTests(E2EFixture app)
         (await share.IsVisibleAsync()).Should().BeFalse();
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_failed_read_shows_the_message_and_keeps_what_was_typed(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync(Manual);
+        await phone.Page.FillAsync("#m-name", "no label");
+        await phone.Page.FillAsync("#m-kcal", "123");
+        await phone.Page.FillAsync("#m-grams", "80");
+
+        await PickAsync(phone, "label.jpg");
+
+        await phone.Page.Locator("#toast", new() { HasText = "Couldn't find a nutrition table in that photo." }).WaitForAsync();
+        (await phone.Page.InputValueAsync("#m-kcal")).Should().Be("123");
+        (await phone.Page.InputValueAsync("#m-grams")).Should().Be("80");
+        (await phone.Page.InputValueAsync("#m-name")).Should().Be("no label");
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task An_unticked_share_choice_survives_a_label_photo(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync($"/food/barcode?date={Today}&meal=Lunch&code={NewEan()}");
+        await phone.Page.Locator("[data-label-form] input.switch[name=share]").UncheckAsync();
+
+        await PickAsync(phone, "label.jpg");
+        await FilledAsync(phone);
+
+        (await phone.Page.Locator("[data-label-form] input.switch[name=share]").IsCheckedAsync()).Should().BeFalse();
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Fact]
+    public async Task A_photo_between_1_and_2_MB_gets_through_Kestrels_request_limit()
+    {
+        // Program.cs caps request bodies at 1 MB in Kestrel; /food/label raises it to 3 MB (SPEC 9). The test server
+        // in the Web tests doesn't apply Kestrel's limit, so this goes through the real server.
+        await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium, ai: true);
+        await phone.GoAsync(Manual);
+
+        var status = await phone.Page.EvaluateAsync<int>("""
+            async () => {
+              const bytes = new Uint8Array(1_500_000);
+              bytes.set([0xFF, 0xD8, 0xFF]);
+              const data = new FormData();
+              data.append("photo", new Blob([bytes], { type: "image/jpeg" }), "label.jpg");
+              for (const [k, v] of [["date", document.querySelector("[name=date]").value], ["meal", "Lunch"], ["barcodeField", "true"], ["width", "2000"], ["height", "1500"]]) data.set(k, v);
+              const r = await fetch("/food/label", { method: "POST", body: data, headers: { "RequestVerificationToken": window.gymToken(), "HX-Request": "true" } });
+              return r.status;
+            }
+            """);
+
+        status.Should().Be(200);
+    }
 }

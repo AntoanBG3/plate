@@ -98,6 +98,10 @@ window.gymModule("label", (root) => {
             const barcodeField = !form || !!form.querySelector("[data-barcode-input]");
             const knownBarcode = form && form.elements.barcode ? form.elements.barcode.value.trim() : "";
             data.set("barcodeField", String(barcodeField));
+            const share = form && form.querySelector("input[type=checkbox][name=share]");
+            if (share) {
+                data.set("share", String(share.checked));
+            }
             data.set("barcode", knownBarcode || (barcodeField ? await barcodeIn(shot.blob) || "" : ""));
             if (pending !== controller) {
                 return;

@@ -22,11 +22,7 @@
             <p class="thinking" role="status"><i></i><i></i><i></i><span>@L["Reading the label…"]</span></p>
         </div>
     }
-    @if (Model.LabelError is { } labelError)
-    {
-        <div class="banner is-error" role="alert">@Ui.Icon("alert")<span>@L[labelError]</span></div>
-    }
-    else if (label is not null)
+    @if (label is not null)
     {
         <div class="banner" role="status">@Ui.Icon("check")<span>@L["Read from the photo. Check each value against the label."]
             @foreach (var note in label.Notes.Concat(label.Warnings))
@@ -71,7 +67,7 @@
         <div class="list" data-share style="margin-top: var(--s-5)" hidden="@(!hasBarcode)">
             <label class="field-row switch-row">
                 <span>@L["Share with other users"]</span>
-                <input type="checkbox" class="switch" name="share" value="true" checked />
+                <input type="checkbox" class="switch" name="share" value="true" checked="@Model.Share" />
                 <input type="hidden" name="share" value="false" />
             </label>
         </div>

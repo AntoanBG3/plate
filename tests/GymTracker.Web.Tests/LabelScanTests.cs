@@ -43,7 +43,7 @@ public class LabelScanTests(PostgresFixture fixture)
         return new Account(client, email, id, await AppFactory.TokenAsync(client, AddPage));
     }
 
-    private static Task<HttpResponseMessage> ReadAsync(Account a, byte[] photo, string? name = null, string? barcode = null, bool barcodeField = true)
+    private static Task<HttpResponseMessage> ReadAsync(Account a, byte[] photo, string? name = null, string? barcode = null, bool barcodeField = true, bool? share = null)
     {
         var form = new MultipartFormDataContent
         {
@@ -61,6 +61,11 @@ public class LabelScanTests(PostgresFixture fixture)
         if (barcode is not null)
         {
             form.Add(new StringContent(barcode), "barcode");
+        }
+
+        if (share is { } s)
+        {
+            form.Add(new StringContent(s ? "true" : "false"), "share");
         }
 
         var file = new ByteArrayContent(photo);
@@ -137,19 +142,34 @@ public class LabelScanTests(PostgresFixture fixture)
     }
 
     [Fact]
-    public async Task A_failed_read_is_stored_and_keeps_the_typed_name()
+    public async Task A_failed_read_is_stored_and_answers_with_the_message_only()
     {
+        // The page keeps the form the user filled in; only the message comes back (SPEC 6.6: "leaves the form untouched").
         var (app, reader) = NewApp();
         await using var _app = app;
         reader.Next = LabelReadResult.Failed("Couldn't read the label. Enter the values by hand.", "test/label");
         var a = await SignInAsync(app);
 
-        var html = await HtmlAsync(await ReadAsync(a, Jpeg(5000), name: "My ayran"));
+        var response = await ReadAsync(a, Jpeg(5000), name: "My ayran");
 
-        html.Should().Contain("Couldn't read the label. Enter the values by hand.");
-        html.Should().MatchRegex("id=\"m-name\"[^>]*value=\"My ayran\"");
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Be("Couldn't read the label. Enter the values by hand.");
         await using var db = fixture.CreateContext(a.UserId);
         (await db.LabelScans.SingleAsync()).Error.Should().Be("Couldn't read the label. Enter the values by hand.");
+    }
+
+    [Fact]
+    public async Task An_unticked_share_choice_stays_unticked_after_a_read()
+    {
+        var (app, _) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var html = await HtmlAsync(await ReadAsync(a, Jpeg(100), barcode: "5901234123457", barcodeField: false, share: false));
+
+        html.Should().MatchRegex("<input type=\"checkbox\" class=\"switch\" name=\"share\" value=\"true\" />");
+        (await HtmlAsync(await ReadAsync(a, Jpeg(100), barcode: "5901234123457", barcodeField: false))).Should()
+            .MatchRegex("<input type=\"checkbox\" class=\"switch\" name=\"share\" value=\"true\" checked=\"checked\" />", "ticked unless the user unticked it");
     }
 
     [Fact]
@@ -170,7 +190,9 @@ public class LabelScanTests(PostgresFixture fixture)
         reader.Next = new LabelReadResult(FakeLabelReader.Yogurt with { IsLabel = false }, "{}", null, "test/label");
         var a = await SignInAsync(app);
 
-        (await HtmlAsync(await ReadAsync(a, Jpeg(5000)))).Should().Contain("Couldn't find a nutrition table in that photo.");
+        var response = await ReadAsync(a, Jpeg(5000));
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Be("Couldn't find a nutrition table in that photo.");
     }
 
     [Fact]

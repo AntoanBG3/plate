@@ -198,6 +198,7 @@ public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker
 /// <param name="Barcode">A scanned code, sent as a hidden field after a barcode miss.</param>
 /// <param name="BarcodeField">Whether the optional barcode field is shown (everywhere except after a barcode miss).</param>
 /// <param name="BarcodeValue">Pre-fills the optional barcode field, e.g. with a code found in the label photo.</param>
+/// <param name="Share">The share choice, kept when a label photo redraws the form.</param>
 public record ManualFoodFormModel(
     DateOnly Date,
     Meal Meal,
@@ -207,8 +208,8 @@ public record ManualFoodFormModel(
     GymTracker.Core.Nutrition.LabelValues? Label = null,
     int? LabelScanId = null,
     bool LabelAvailable = false,
-    GymTracker.Core.Text.LocalText? LabelError = null,
-    string? BarcodeValue = null);
+    string? BarcodeValue = null,
+    bool Share = true);
 
 /// <param name="ModelInfo">The current model's catalog entry, or null when the catalog can't be loaded or no longer lists it.</param>
 /// <param name="ModelInfo">Null when the model isn't in the task's list (e.g. OpenRouter's list can't be loaded).</param>
