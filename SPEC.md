@@ -1,6 +1,6 @@
 # GymTracker: Product and Technical Specification
 
-Self-hosted training and nutrition tracker for two users (me and my father). Runs in Docker on the headless Ubuntu home server "wizard", used from iPhones as an installed PWA, reached remotely at `https://gym.peychev.uk` through the server's existing Cloudflare Tunnel. Replaces ad hoc calorie tracking with a system that logs workouts, suggests progression, parses food entries with an LLM, and estimates real maintenance calories from logged data.
+Self-hosted training and nutrition tracker for me, my father and a few people I invite. Runs in Docker on the headless Ubuntu home server "wizard", used from iPhones as an installed PWA, reached remotely at `https://gym.peychev.uk` through the server's existing Cloudflare Tunnel. Replaces ad hoc calorie tracking with a system that logs workouts, suggests progression, parses food entries with an LLM, and estimates real maintenance calories from logged data.
 
 Build in the phases at the end of this document. Each phase must be usable on its own before the next starts.
 
@@ -13,10 +13,10 @@ Build in the phases at the end of this document. Each phase must be usable on it
 - The app tells me what weight and reps to aim for on every exercise.
 - Food logging accepts plain text ("200g chicken breast, 150g cooked rice, a banana") and barcodes.
 - Calorie targets adapt to my actual weight trend instead of a fixed guess.
-- Two fully separate accounts with no data leakage between them.
+- Fully separate accounts with no data leakage between them.
 
 **Non-goals**
-- Public sign-up, social features, sharing.
+- Public sign-up, social features, sharing. Accounts come only from the CLI or a single-use invite from the developer (section 9).
 - Native iOS app.
 - Anonymous access. The app is reachable from the internet only through its Cloudflare Tunnel hostname, and every page except login requires an account (see section 9).
 - Rest-timer alerts while the phone is locked (would need Web Push; revisit after Phase 5 if wanted).
@@ -98,6 +98,11 @@ Units: weights in kilograms (`decimal(6,2)`), energy in kcal, macros in grams. D
 - `CutStartedOn` (nullable `DateOnly`; set when the goal changes to Cut and after a diet break, cleared when it changes away; 5.9), `DietBreakUntil` (nullable `DateOnly`, the last day of a diet break), `CutCheckDismissedUntil` (nullable `DateOnly`; check-ins are hidden through this day)
 - `DefaultWeightIncrementKg` (default 2.5)
 - `BarWeightKg` (default 20) and `PlatesKg` (the plates the gym has; default 25, 20, 15, 10, 5, 2.5, 1.25), used by the plate calculator
+
+**Invite** (not user-owned, no user filter; section 9)
+- `Id`, `TokenHash` (SHA-256 of the token, unique; the token itself is never stored)
+- `Note` (up to 100 characters, e.g. "Ivan from the gym"), `CreatedByUserId`, `CreatedAt`, `ExpiresAt`
+- `RedeemedAt`, `RedeemedByUserId` (nullable, set null when that account is deleted), `RevokedAt`
 
 ### Training
 
@@ -330,7 +335,7 @@ LLM nutrition estimates are unreliable on their own (published studies show ener
 
 Implementation `OpenRouterFoodParser`:
 - Typed `HttpClient` calling OpenRouter's `POST /api/v1/chat/completions`.
-- Model: each AI task has its own model setting, shared by both accounts like the key (the parser, the matcher below, the setup chat in 6.4 and the weekly summary in 6.5). The parser's is picked from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `openai/gpt-6-luna`; a saved id must be in the catalog.
+- Model: each AI task has its own model setting, shared by all accounts like the key (the parser, the matcher below, the setup chat in 6.4 and the weekly summary in 6.5). The parser's is picked from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `openai/gpt-6-luna`; a saved id must be in the catalog.
 - API key from Settings (encrypted with Data Protection) or configuration `OpenRouter:ApiKey` (environment variable `OPENROUTER_API_KEY` in Docker). Never commit it.
 - Request structured output: `response_format: {type: "json_schema", json_schema: {name, strict: true, schema}}` with a strict-compatible schema (`additionalProperties: false`, every property required, nullable ones typed `["string","null"]`) matching `ParsedFoodItem[]`, and `provider: {require_parameters: true}`. Because that excludes providers lacking any sent parameter, `temperature` and `reasoning.effort` (the model's lowest supported effort) are sent only when the catalog lists them for the model.
 - System prompt: the user writes foods in English or Bulgarian; return one item per food; estimate grams for vague quantities ("a banana", "a plate of rice") and state the assumption; assume raw weight for meat and cooked weight for rice and pasta unless stated; always fill `NameEn`.
@@ -363,7 +368,7 @@ Also provide `FakeFoodParser` for tests and local development without a key (sel
 - Read `energy-kcal_100g`, `proteins_100g`, `carbohydrates_100g`, `fat_100g`. If kcal is missing but kJ is present, convert by dividing by 4.184.
 - Also read `fiber_100g` and `saturated-fat_100g` when present. They are optional: a product without them still counts as having nutrition data.
 - Set the `User-Agent` OFF requires: `GymTracker/<version> (<contact email from config>)`.
-- Rate limits are 15 product reads and 10 searches per minute per IP, shared by both users because all calls leave from wizard. Call OFF search only on explicit submit (never as-you-type), and treat HTTP 429 as "try again shortly" without breaking the page.
+- Rate limits are 15 product reads and 10 searches per minute per IP, shared by all users because all calls leave from wizard. Call OFF search only on explicit submit (never as-you-type), and treat HTTP 429 as "try again shortly" without breaking the page.
 - Cache every successful lookup as a shared `FoodItem` so repeat scans are instant and work offline from the API.
 - If the product is missing or has no nutrition data, offer to create a manual `FoodItem` with that barcode (shared, see section 4).
 
@@ -401,7 +406,7 @@ A short note on Today about the previous Monday to Sunday: what went well, up to
 
 **The facts sent.** No name, email or notes (exercise names are sent, including custom ones): the goal and weekly rate; food (logged days, averages of kcal, protein, fat, carbs, fiber and saturated fat against the targets in force, the days protein reached its minimum, using 5.8 with the week as its range); body (trend weight at the start and end of the week, weigh-in count); training (finished sessions, working sets, new e1RM records by exercise name, the most trained muscles); and whether a diet break ran. Today's targets stand in for the week's.
 
-**Model call.** `IWeeklySummaryWriter` in Core, `OpenRouterWeeklySummaryWriter` in Integrations, with the same request shape, structured output, timeout, retry and error handling as the setup chat (6.4). Schema: `summary` (string), `tips` (array of strings), `motivation` (string). The answer is trimmed to the lengths above, empty tips are dropped, and an empty summary counts as a failure. A fourth AI task, `weekly`, has its own model setting; unset, it uses the parser's model, and off turns the summary off for both accounts.
+**Model call.** `IWeeklySummaryWriter` in Core, `OpenRouterWeeklySummaryWriter` in Integrations, with the same request shape, structured output, timeout, retry and error handling as the setup chat (6.4). Schema: `summary` (string), `tips` (array of strings), `motivation` (string). The answer is trimmed to the lengths above, empty tips are dropped, and an empty summary counts as a failure. A fourth AI task, `weekly`, has its own model setting; unset, it uses the parser's model, and off turns the summary off for every account.
 
 **Prompt rules.** Plain and warm, in the account's language, using the informal "ти" in Bulgarian. Mention real numbers from the facts and never invent one. Tips are specific actions for next week drawn from the weakest numbers (for example protein at breakfast when the minimum was missed); when a number has no target or too little data, leave it out. No medical advice, no comments on the user's body or appearance, no praise or blame for weight changes; describe the trend against the goal neutrally.
 
@@ -506,12 +511,12 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 
 ## 9. Security
 
-- Public registration is disabled. Accounts are created with a CLI command: `dotnet GymTracker.Web.dll create-user --email ... --name ...`, which prompts for the password.
-- Every controller action requires authentication except login.
+- Public registration is disabled. Accounts are created with a CLI command, `dotnet GymTracker.Web.dll create-user --email ... --name ...`, which prompts for the password, or by redeeming a single-use invite from the developer (Invites, below).
+- Every controller action requires authentication except login and the invite page.
 - Global EF query filters plus explicit ownership checks on every write; integration tests must verify that user A cannot read or modify user B's sessions, sets, food entries or weigh-ins by ID.
 - Anti-forgery tokens on all POSTs, including htmx requests (send the token via `hx-headers`) and the set queue's `fetch` calls.
 - Secrets only from environment variables, except the OpenRouter key, which the developer may also save from the admin area (encrypted with Data Protection). Provide `.env.example`; `.env` is in `.gitignore`.
-- Roles: one Identity role, `Dev`, granted and revoked only with the CLI over SSH (section 12). No web page grants a role or creates an account.
+- Roles: one Identity role, `Dev`, granted and revoked only with the CLI over SSH (section 12). No web page grants a role, and the invite page is the only one that creates an account.
 
 **Exposure.** The app is reachable at `https://gym.peychev.uk` through wizard's Cloudflare Tunnel, with no Cloudflare Access in front of it (decided 2026-10-02). Access would add a second login with an emailed code about monthly, and an expired Access session turns htmx and queue requests into failed cross-origin redirects. The app's own login is therefore the only gate and must be hardened:
 - Lockout on: `PasswordSignInAsync(..., lockoutOnFailure: true)` (the template default is `false`), 5 failed attempts, 15-minute lockout.
@@ -522,8 +527,16 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Passkeys alongside passwords: registered in Settings, usernameless sign-in on the login page (button and autofill), relying party `gym.peychev.uk`.
 - Response headers: Content-Security-Policy (`script-src 'self' 'wasm-unsafe-eval'`, no inline scripts or event handlers; sent report-only with a `/csp-report` log until `CSP_ENFORCE=true`), HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `Permissions-Policy` (camera only), COOP. `AllowedHosts` limited to the public host name. Request bodies over 1 MB are refused.
 - Cookie: `Secure`, `HttpOnly`, `SameSite=Lax`, `__Host-` prefix, sliding 30-day expiration. "Log out everywhere" in Settings updates the security stamp.
-- Data Protection keys persisted to a bind-mounted directory, so rebuilding the container does not log both users out.
+- Data Protection keys persisted to a bind-mounted directory, so rebuilding the container does not log everyone out.
 - The container publishes no host port. cloudflared reaches it by container name on the external `tunnel` Docker network. An optional LAN-only port may be added for testing (pick one that is free on wizard; 8080 is AdGuard's).
+
+**Invites.** People Antoan knows join through a link he sends them himself (Viber, Messenger); the app never sends email, so there is no email verification, and the address is only the login name. The link is the proof that the developer meant to let this person in.
+- Only accounts with the `Dev` role create invites, from the CLI (`invite create`) or the admin area (section 12). The token is 32 random bytes in base64url; the link `https://gym.peychev.uk/join/<token>` is shown once at creation, since only its hash is stored. Expiry 1 to 30 days, default 7. At most 5 invites are open (not redeemed, revoked or expired) at a time.
+- `/join/{token}` is anonymous and in English and Bulgarian, defaulting from `Accept-Language`. It asks for name, email, password (the same 12-character minimum) and language. A token that is unknown, used, revoked or expired shows one message, "This invite is no longer valid. Ask Antoan for a new one.", and no form; the token's 256 bits make guessing pointless, so the page doesn't need to hide that the route exists. A visitor who is already signed in is told to log out first, and the token is not used.
+- Redeeming runs in one transaction: a conditional update marks the invite redeemed (`RedeemedAt IS NULL AND RevokedAt IS NULL AND ExpiresAt > now`), and the account is created with the same `UserCreator` as the CLI, with the chosen language in its profile. If the update touches no row, or the account cannot be created (the email is taken, the password is too short), the transaction rolls back, the invite stays open and the form shows the error. Two submissions of one token create one account.
+- After redeeming, the new account is signed in and lands on the onboarding splash (section 6.4). Passkeys are added in Settings as for any account.
+- Join requests (GET and POST) are limited to 10 per IP per 15 minutes. The page sends `X-Robots-Tag: noindex`. Error events record the route template, never the token.
+- A forgotten password is reset by the developer with `reset-password` (section 12); there is no emailed reset.
 
 If Cloudflare Access is ever added in front of the whole app (it covers only `/admin*`, section 12), the spec must also require: a one-month Access session, `X-Requested-With: XMLHttpRequest` on every htmx and queue request (so Access returns 401 instead of redirecting), 401 handled as in section 8, and a Bypass policy for the manifest, icons and static assets.
 
@@ -550,13 +563,13 @@ Building the image on wizard pulls the .NET SDK image onto the failing SSD; prun
 
 HTTPS (required for the camera and PWA install): add the public hostname `gym.peychev.uk` → `http://gymtracker-app:8080` to the "wizard" tunnel in the Cloudflare Zero Trust dashboard. No Access application on it (section 9).
 
-**README** must cover: prerequisites, `.env` setup, `docker compose up -d`, creating users, the Cloudflare public hostname, the two backup-script changes, restoring from a dump (`pg_restore` into a fresh database), and installing the PWA on iPhone (Safari, Share, Add to Home Screen).
+**README** must cover: prerequisites, `.env` setup, `docker compose up -d`, creating users and invites, resetting a password, deleting an account, the Cloudflare public hostname, the two backup-script changes, restoring from a dump (`pg_restore` into a fresh database), and installing the PWA on iPhone (Safari, Share, Add to Home Screen).
 
 ---
 
 ## 11. Feedback
 
-Both users report problems and ideas from their phones, food parsing collects ratings and the corrections people make, and errors are recorded on their own. the agent reads all of it over SSH with a CLI command and writes back a status and a short reply. Nothing is exposed on the public host beyond the app's own authenticated pages.
+Users report problems and ideas from their phones, food parsing collects ratings and the corrections people make, and errors are recorded on their own. the agent reads all of it over SSH with a CLI command and writes back a status and a short reply. Nothing is exposed on the public host beyond the app's own authenticated pages.
 
 ### Data
 
@@ -591,7 +604,7 @@ Both users report problems and ideas from their phones, food parsing collects ra
 
 ### Model accuracy
 
-- The AI model pages in the admin area show, for each model used in the last 90 days, the number of parses, the thumbs-down rate and the correction rate, pooled across both accounts because the model setting is shared. Under 20 parses shows "not enough data".
+- The AI model pages in the admin area show, for each model used in the last 90 days, the number of parses, the thumbs-down rate and the correction rate, pooled across all accounts because the model setting is shared. Under 20 parses shows "not enough data".
 
 ### CLI
 
@@ -606,7 +619,7 @@ Both users report problems and ideas from their phones, food parsing collects ra
 
 ## 12. Admin
 
-The developer's account (Antoan) has an admin area at `/admin` that does what the feedback CLI does, plus the AI settings. Everything else stays per user.
+The developer's account (Antoan) has an admin area at `/admin` that does what the feedback CLI does, plus the AI settings and invites. Everything else stays per user.
 
 ### Access
 
@@ -625,19 +638,23 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 - What's new: list, add and remove.
 - AI: the OpenRouter key (set, test, remove; only its last 4 characters are ever shown) and the parser, matcher and onboarding model pickers, with model accuracy for the first two.
 - Eval: the CLI's `eval` as a background job, one at a time, limit at most 20, with progress and the result kept in memory until the next job.
-- Users: name, email, created date, role, passkey count, last report. Read-only. The admin area shows what users sent as feedback and the parse and error records; it never browses another account's food log, weights or workouts.
+- Invites: open, redeemed, revoked and expired invites with note, created and expiry dates, and the account that redeemed each. Create takes a note and an expiry and shows the link once, with Copy and Share (the phone's share sheet). Revoke on an open invite. Section 9 has the rules.
+- Users: name, email, created date, role, passkey count, last report, and the note of the invite the account came from. Read-only; resetting a password and deleting an account stay in the CLI. The admin area shows what users sent as feedback and the parse and error records; it never browses another account's food log, weights or workouts.
 - Audit: the latest entries.
 
 ### Audit and alerts
 
-- `AdminAudit` rows record unlocks (and failed ones), key and model changes, status and reply changes, changelog changes, eval runs and regression-case downloads, from the web or the CLI, with the time, user, client IP and a short detail. Never a secret. Kept a year; `admin audit [--since 30d]` in the CLI.
-- With Telegram configured, each unlock and each key change sends a message.
+- `AdminAudit` rows record unlocks (and failed ones), invites created, revoked and redeemed, password resets, account deletions (with the deleted email in the detail), key and model changes, status and reply changes, changelog changes, eval runs and regression-case downloads, from the web or the CLI, with the time, user, client IP and a short detail. Never a secret. Kept a year; `admin audit [--since 30d]` in the CLI.
+- With Telegram configured, each unlock, each key change and each redeemed invite (its note and the new account's name) sends a message.
 
 ### CLI additions
 
 - `role grant|revoke dev --email <email>`, `role list`.
 - `ai show`, `ai set-model parser|matcher|onboarding|weekly <id>`, `ai set-key` (the key is read from standard input, never an argument), `ai clear-key`, `ai test`.
 - `feedback changelog list|remove <id>`, `admin audit [--since 30d]`.
+- `invite create [--note ...] [--expires 7d]` (prints the link), `invite list [--all]` (open ones by default), `invite revoke <id>`.
+- `reset-password --email <email>`: prompts for the new password like `create-user`, clears any lockout, and updates the security stamp, so every session of that account signs out. Passkeys are kept.
+- `delete-user --email <email>`: asks for the email again to confirm (or takes `--yes` when stdin is redirected), then deletes the account and every row it owns, feedback and screenshots included. Shared rows stay (foods added from a barcode, changelog entries); `Invite.RedeemedByUserId` is set null, and audit rows keep the user id. Refuses to delete the last `Dev` account. The user can export their data from Settings first; the nightly dumps still hold it for their 14-day retention.
 
 ---
 
@@ -693,8 +710,13 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 - A browser test project (Playwright, Chromium and WebKit, 390 and 320 px) covers the behaviour that lives in the page.
 - **Done when:** each finding has a test that failed before its fix and passes after; `dotnet test` (Core, Web and the browser tests) is green; a repeat of the QA pass in Chrome at 390 and 320 px, in English and Bulgarian, finds none of the listed problems; and the iOS checklist (wake lock, timer sound, Dynamic Type, safe areas, keyboard) passes on both iPhones.
 
+### Phase 12: Invites
+- The Invite entity (section 4), the invite rules and join page (section 9), the Invites admin page, and the CLI commands `invite`, `reset-password` and `delete-user` (section 12).
+- **Done when:** an invite made in the CLI and one made in the admin area each create an account from an iPhone at 390 px, one in English and one in Bulgarian, and the new account lands on the onboarding splash; a used, revoked, expired or unknown token creates nothing and shows the same message; two concurrent redemptions of one token create one account; a taken email or a short password leaves the invite open; a sixth open invite is refused; the join limit returns 429 on the eleventh request; a third account passes the user isolation tests against the other two; `reset-password` signs out the account's sessions and the new password works; `delete-user` leaves no row owned by the account and refuses the last `Dev`; and the redemption shows in `admin audit` and on Telegram.
+
 ### Later
-Ideas kept for after Phase 9, not planned yet. None should start before real logs show fiber coverage is good.
+Ideas kept for after Phase 9, not planned yet. The nutrition ideas should not start before real logs show fiber coverage is good.
+- A monthly cap on AI calls per account, once a third account uses the app regularly. The per-user rate limits in section 9 bound bursts but not a month's total cost.
 - Protein timing around training: the app knows when sessions happen, so it could suggest protein in the meal before or after.
 - Fruit and vegetables in grams, against WHO's 400 g a day.
 - Sodium and free sugars (Open Food Facts has both; USDA has most), against WHO's under 2 g sodium and under 10% of energy from free sugars.
