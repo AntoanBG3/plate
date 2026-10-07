@@ -1,7 +1,7 @@
 // Caches static files only (SPEC section 8). Pages and data always come from the server;
 // when a page can't be fetched, the offline page is shown instead. Static files carry ?v=<hash>,
 // so a cached copy of the exact URL is served without revalidating.
-const CACHE = "gym-static-v20";
+const CACHE = "gym-static-v21";
 const OFFLINE = "/offline.html";
 const PRECACHE = [
     OFFLINE,
@@ -14,6 +14,7 @@ const PRECACHE = [
     "/css/app.css",
     "/js/i18n.js",
     "/js/pages.js",
+    "/js/image.js",
     "/js/feedback.js",
     "/js/motion.js",
     "/js/site.js",
@@ -23,6 +24,7 @@ const PRECACHE = [
     "/js/offline.js",
     "/js/progress.js",
     "/js/scanner.js",
+    "/js/label.js",
     "/js/onboarding.js",
     "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
     "/lib/barcode-detector/zxing_reader.wasm",

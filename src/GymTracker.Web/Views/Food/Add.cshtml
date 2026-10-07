@@ -49,6 +49,8 @@
         break;
 
     case "barcode":
+        @* One label module holds the photo button and the slot the filled form opens in (SPEC 6.6). *@
+        <div data-module="label">
         <div class="btn-stack">
             <button type="button" class="btn btn-primary" data-start>@Ui.Icon("barcode")@L["Scan a barcode"]</button>
             @if (Model.LabelAvailable)
@@ -60,13 +62,12 @@
         </div>
         @if (Model.LabelAvailable)
         {
-            @* For products without a barcode: the filled manual form opens here (SPEC 6.6). *@
-            <div data-module="label">
-                <p class="section-footer" data-label-privacy>@L["The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked."]</p>
-                <p class="thinking" role="status" data-label-status><i></i><i></i><i></i><span>@L["Reading the label…"]</span></p>
-                <div data-label-slot data-date="@date" data-meal="@Model.Meal" style="margin-top: var(--s-5)"></div>
-            </div>
+            @* For products without a barcode: the filled manual form opens here. *@
+            <p class="section-footer" data-label-privacy>@L["The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked."]</p>
+            <p class="thinking" role="status" data-label-status><i></i><i></i><i></i><span>@L["Reading the label…"]</span></p>
+            <div data-label-slot data-date="@date" data-meal="@Model.Meal" style="margin-top: var(--s-5)"></div>
         }
+        </div>
         <form method="get" action="/food/barcode" id="barcode-form" class="section" style="margin-top: var(--s-6)">
             <input type="hidden" name="date" value="@date" />
             <input type="hidden" name="meal" value="@Model.Meal" />
@@ -266,6 +267,15 @@
         </div>
         <script src="~/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js" asp-append-version="true"></script>
         <script src="~/js/scanner.js" asp-append-version="true"></script>
+    }
+    @if (Model.LabelAvailable)
+    {
+        @if (Model.Tab == "manual")
+        {
+            @* Reads a barcode out of the label photo (label.js). *@
+            <script src="~/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js" asp-append-version="true"></script>
+        }
+        <script src="~/js/label.js" asp-append-version="true"></script>
     }
 }
 

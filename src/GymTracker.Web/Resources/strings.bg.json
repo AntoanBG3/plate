@@ -880,5 +880,8 @@
   "Read the label from a photo": "Прочети етикета от снимка",
   "Photograph a label": "Снимай етикет",
   "The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked.": "Снимката се изпраща до AI модел през OpenRouter и се пази 30 дни, за да могат грешките да се проверят.",
-  "Reading the label…": "Чета етикета…"
+  "Reading the label…": "Чета етикета…",
+  "Needs a connection": "Нужна е връзка",
+  "Couldn't read that picture. Try another photo.": "Снимката не можа да се отвори. Опитай с друга.",
+  "Too many photos for now. Try again in a few minutes.": "Твърде много снимки засега. Опитай пак след няколко минути."
 }

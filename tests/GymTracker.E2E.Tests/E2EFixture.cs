@@ -54,6 +54,10 @@ public sealed class E2EFixture : IAsyncLifetime
             s.AddScoped<GymTracker.Core.Nutrition.IFoodParser, StubFoodParser>();
             s.AddScoped<GymTracker.Core.Onboarding.IOnboardingAssistant, StubOnboardingAssistant>();
             s.AddScoped<GymTracker.Core.Summary.IWeeklySummaryWriter, StubWeeklySummaryWriter>();
+            s.AddHttpContextAccessor();
+            s.AddScoped<GymTracker.Core.Nutrition.ILabelReader, StubLabelReader>();
+            // Barcode misses for label photos; never the real Open Food Facts from a test.
+            s.AddSingleton<GymTracker.Core.Nutrition.IFoodDatabase, GymTracker.Web.Tests.FakeFoodDatabase>();
         });
         aiFactory.UseKestrel(o => o.ListenLocalhost(aiPort));
         aiFactory.StartServer();

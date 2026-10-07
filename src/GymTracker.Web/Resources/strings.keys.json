@@ -492,11 +492,15 @@
   "Couldn't read that picture. Try a screenshot.": [
     "wwwroot/js"
   ],
+  "Couldn't read that picture. Try another photo.": [
+    "wwwroot/js"
+  ],
   "Couldn't read that.": [
     "src/GymTracker.Web/Controllers/FoodController.cs"
   ],
   "Couldn't read the label. Enter the values by hand.": [
-    "src/GymTracker.Web/Integrations/OpenRouterLabelReader.cs"
+    "src/GymTracker.Web/Integrations/OpenRouterLabelReader.cs",
+    "wwwroot/js"
   ],
   "Create a custom exercise": [
     "src/GymTracker.Web/Views/Shared/ExercisePicker.cshtml"
@@ -1245,6 +1249,9 @@
   ],
   "Name, e.g. Upper A": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
+  ],
+  "Needs a connection": [
+    "wwwroot/js"
   ],
   "Needs more detail": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -2375,6 +2382,9 @@
   ],
   "Too many failed attempts. Try again in 15 minutes.": [
     "src/GymTracker.Web/Controllers/AccountController.cs"
+  ],
+  "Too many photos for now. Try again in a few minutes.": [
+    "wwwroot/js"
   ],
   "Train": [
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml",

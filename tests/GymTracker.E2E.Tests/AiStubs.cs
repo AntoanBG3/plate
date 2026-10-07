@@ -37,3 +37,20 @@ public sealed class StubWeeklySummaryWriter : IWeeklySummaryWriter
     public Task<WeeklySummaryResult> WriteAsync(WeekFacts facts, bool bulgarian, CancellationToken ct) => Task.FromResult(new WeeklySummaryResult(
         new WeeklySummaryText($"You weighed in {facts.WeighIns} times last week.", ["Weigh in every morning."], "Nice steady week."), "test/summary", null));
 }
+
+/// <summary>Reads every photo as a carton of ayran; a form posted with the name "slow" answers late (the second-photo test).</summary>
+public sealed class StubLabelReader(Microsoft.AspNetCore.Http.IHttpContextAccessor http) : ILabelReader
+{
+    public Task<bool> IsAvailableAsync(CancellationToken ct) => Task.FromResult(true);
+
+    public async Task<LabelReadResult> ReadAsync(byte[] image, string contentType, CancellationToken ct)
+    {
+        var slow = http.HttpContext?.Request.Form["name"].ToString() == "slow";
+        if (slow)
+        {
+            await Task.Delay(1500, ct);
+        }
+
+        return new(new LabelReading(true, slow ? "Slow ayran" : "Айрян", null, LabelBasis.Per100ml, null, 38, 159, 1.8m, 2.6m, 2.2m, 1.4m, null), "{}", null, "test/label");
+    }
+}
