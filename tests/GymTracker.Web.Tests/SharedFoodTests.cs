@@ -177,12 +177,34 @@ public class SharedFoodTests(PostgresFixture fixture)
         var b = await SignInAsync(app);
         var code = NewEan();
         await SaveManualAsync(a, Unique("Orphan qsf"), code, share: true);
+
+        using (var scope = app.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<GymTracker.Web.Data.AppUser>>();
+            await scope.ServiceProvider.GetRequiredService<GymTracker.Web.Features.Admin.UserDeleter>().DeleteAsync((await users.FindByEmailAsync(a.Email))!, default);
+        }
+
+        (await PageAsync(b, Scan(code))).Should().Contain(Mark);
+    }
+
+    [Fact]
+    public async Task A_food_whose_creator_is_unknown_shows_no_mark()
+    {
+        // Shared foods from before Phase 13 that nobody logged have no known creator (SPEC 4): nothing is claimed.
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        var name = Unique("Old shared qsf");
+        await SaveManualAsync(a, name, code, share: true);
         await using (var db = fixture.CreateContext(null))
         {
             await db.FoodItems.IgnoreQueryFilters().Where(f => f.Barcode == code).ExecuteUpdateAsync(f => f.SetProperty(x => x.AddedByUserId, (string?)null));
         }
 
-        (await PageAsync(b, Scan(code))).Should().Contain(Mark);
+        (await PageAsync(b, Scan(code))).Should().NotContain(Mark);
+        (await PageAsync(a, Scan(code))).Should().NotContain(Mark);
+        (await PageAsync(b, $"/food/add?date=2026-10-05&meal=Lunch&tab=search&q={Uri.EscapeDataString(name)}")).Should().Contain(name).And.NotContain(Mark);
     }
 
     [Fact]

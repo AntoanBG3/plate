@@ -165,7 +165,8 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime
             var invite = await db.Invites.SingleAsync(i => i.Id == inviteId);
             invite.RedeemedByUserId.Should().BeNull();
             invite.RedeemedAt.Should().NotBeNull();
-            (await db.FoodItems.IgnoreQueryFilters().SingleAsync(f => f.Id == owned.SharedFoodId)).AddedByUserId.Should().BeNull("shared foods stay, without the account");
+            (await db.FoodItems.IgnoreQueryFilters().SingleAsync(f => f.Id == owned.SharedFoodId)).AddedByUserId.Should().Be(id,
+                "shared foods stay, still credited to an account that no longer exists, so others keep seeing it as another user's");
             (await db.LabelScanPhotos.IgnoreQueryFilters().AnyAsync(p => p.LabelScanId == owned.LabelScanId)).Should().BeFalse("label photos go with the account");
             (await db.AdminAudit.AnyAsync(a => a.Action == AuditActions.UserDelete && a.Target == id && a.Detail == doomed)).Should().BeTrue();
         }
@@ -233,7 +234,7 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime
                 continue;
             }
 
-            foreach (var property in entity.GetProperties().Where(p => p.Name is "UserId" or "OwnerUserId" or "RedeemedByUserId" or "AddedByUserId"))
+            foreach (var property in entity.GetProperties().Where(p => p.Name is "UserId" or "OwnerUserId" or "RedeemedByUserId"))
             {
                 var column = property.GetColumnName();
                 var count = await db.Database.SqlQueryRaw<int>($"SELECT count(*)::int AS \"Value\" FROM \"{table}\" WHERE \"{column}\" = {{0}}", userId).SingleAsync();

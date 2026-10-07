@@ -36,7 +36,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
         return await db.Database.SqlQuery<FoodMatch>($"""
             SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                    f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
-                   (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS DISTINCT FROM {userId}) AS "ByOther",
+                   (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
                    GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')))::float8 AS "Score"
             FROM "FoodItems" f
             WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {userId})
@@ -54,9 +54,12 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     public Task<FoodItem?> FindVisibleAsync(int id, CancellationToken ct) =>
         db.FoodItems.SingleOrDefaultAsync(f => f.Id == id, ct);
 
-    /// <summary>A shared manual food someone else added, or whose account is gone (SPEC 7). Says nothing about who.</summary>
+    /// <summary>
+    /// A shared manual food another account added, deleted accounts included (SPEC 7). Says nothing about who; an
+    /// unknown creator (older foods nobody logged) claims nothing.
+    /// </summary>
     public static bool AddedByAnother(FoodItem item, string? userId) =>
-        item.Source == FoodSource.Manual && item.OwnerUserId is null && item.AddedByUserId != userId;
+        item.Source == FoodSource.Manual && item.OwnerUserId is null && item.AddedByUserId is { } addedBy && addedBy != userId;
 
     /// <summary>
     /// The Search tab's ranking (SPEC 7 Food): the user's own foods first, then names that start with what was typed
@@ -77,7 +80,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             WITH m AS (
                 SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                        f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
-                       (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS DISTINCT FROM {userId}) AS "ByOther",
+                       (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
                        GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) AS sim,
                        starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre
                 FROM "FoodItems" f

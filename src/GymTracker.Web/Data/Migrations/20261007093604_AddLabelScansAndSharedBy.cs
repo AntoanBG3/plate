@@ -11,7 +11,7 @@ namespace GymTracker.Web.Data.Migrations
     {
         /// <summary>
         /// Shared manual foods made before AddedByUserId existed are credited to whoever logged them first (SPEC 4).
-        /// Soft-deleted entries count: they still show who logged first.
+        /// Soft-deleted entries count: they still show who logged first. With no entry the creator stays unknown.
         /// </summary>
         public const string BackfillAddedBy = """
             UPDATE "FoodItems" f
@@ -25,6 +25,16 @@ namespace GymTracker.Web.Data.Migrations
             WHERE f."Id" = first."FoodItemId" AND f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NULL;
             """;
 
+        /// <summary>
+        /// The older schema had one barcode per food overall. Before its index comes back, private foods whose barcode
+        /// another food also has lose the barcode (the food itself stays); shared foods keep theirs.
+        /// </summary>
+        public const string ClearCollidingPrivateBarcodes = """
+            UPDATE "FoodItems" SET "Barcode" = NULL
+            WHERE "OwnerUserId" IS NOT NULL
+              AND "Barcode" IN (SELECT "Barcode" FROM "FoodItems" WHERE "Barcode" IS NOT NULL GROUP BY "Barcode" HAVING count(*) > 1);
+            """;
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -35,7 +45,8 @@ namespace GymTracker.Web.Data.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "AddedByUserId",
                 table: "FoodItems",
-                type: "text",
+                type: "character varying(450)",
+                maxLength: 450,
                 nullable: true);
 
             migrationBuilder.CreateTable(
@@ -96,11 +107,6 @@ namespace GymTracker.Web.Data.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_FoodItems_AddedByUserId",
-                table: "FoodItems",
-                column: "AddedByUserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_FoodItems_Barcode_Shared",
                 table: "FoodItems",
                 column: "Barcode",
@@ -135,33 +141,19 @@ namespace GymTracker.Web.Data.Migrations
                 table: "LabelScans",
                 columns: new[] { "UserId", "CreatedAt" });
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_FoodItems_AspNetUsers_AddedByUserId",
-                table: "FoodItems",
-                column: "AddedByUserId",
-                principalTable: "AspNetUsers",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
-
             migrationBuilder.Sql(BackfillAddedBy);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_FoodItems_AspNetUsers_AddedByUserId",
-                table: "FoodItems");
+            migrationBuilder.Sql(ClearCollidingPrivateBarcodes);
 
             migrationBuilder.DropTable(
                 name: "LabelScanPhotos");
 
             migrationBuilder.DropTable(
                 name: "LabelScans");
-
-            migrationBuilder.DropIndex(
-                name: "IX_FoodItems_AddedByUserId",
-                table: "FoodItems");
 
             migrationBuilder.DropIndex(
                 name: "IX_FoodItems_Barcode_Shared",

@@ -162,7 +162,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             // A barcode is unique among shared foods, and per owner among private ones (SPEC 4).
             e.HasIndex(x => x.Barcode).IsUnique().HasFilter("\"Barcode\" IS NOT NULL AND \"OwnerUserId\" IS NULL").HasDatabaseName("IX_FoodItems_Barcode_Shared");
             e.HasIndex(x => new { x.OwnerUserId, x.Barcode }).IsUnique().HasFilter("\"Barcode\" IS NOT NULL AND \"OwnerUserId\" IS NOT NULL").HasDatabaseName("IX_FoodItems_Owner_Barcode");
-            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.AddedByUserId).OnDelete(DeleteBehavior.SetNull);
+            // AddedByUserId has no foreign key, like Invite.CreatedByUserId: a deleted account's id stays, so its shared
+            // foods still read as another user's, and null means only "creator unknown" (SPEC 4).
+            e.Property(x => x.AddedByUserId).HasMaxLength(450);
             // The owner index above is filtered to barcodes, so the foreign key keeps its own.
             e.HasIndex(x => x.OwnerUserId);
             e.HasIndex(x => x.Name).HasMethod("gin").HasOperators("gin_trgm_ops");

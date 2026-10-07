@@ -37,7 +37,10 @@ public class FoodItem
     public int Id { get; set; }
     public string? OwnerUserId { get; set; }
 
-    /// <summary>Who created a manual item; only used to say a shared food came from someone else (SPEC 4).</summary>
+    /// <summary>
+    /// Who created a manual item; only used to say a shared food came from someone else (SPEC 4). Kept when that
+    /// account is deleted; null when the creator is unknown.
+    /// </summary>
     public string? AddedByUserId { get; set; }
 
     public string Name { get; set; } = "";

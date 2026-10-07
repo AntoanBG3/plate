@@ -334,7 +334,8 @@ namespace GymTracker.Web.Data.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AddedByUserId")
-                        .HasColumnType("text");
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
 
                     b.Property<string>("Barcode")
                         .HasMaxLength(32)
@@ -390,8 +391,6 @@ namespace GymTracker.Web.Data.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AddedByUserId");
 
                     b.HasIndex("Barcode")
                         .IsUnique()
@@ -1599,11 +1598,6 @@ namespace GymTracker.Web.Data.Migrations
 
             modelBuilder.Entity("GymTracker.Core.Domain.FoodItem", b =>
                 {
-                    b.HasOne("GymTracker.Web.Data.AppUser", null)
-                        .WithMany()
-                        .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("GymTracker.Web.Data.AppUser", null)
                         .WithMany()
                         .HasForeignKey("OwnerUserId")
