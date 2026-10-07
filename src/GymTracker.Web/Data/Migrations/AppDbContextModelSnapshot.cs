@@ -496,6 +496,54 @@ namespace GymTracker.Web.Data.Migrations
                     b.ToTable("FoodLog");
                 });
 
+            modelBuilder.Entity("GymTracker.Core.Domain.Invite", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("RedeemedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RedeemedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("bytea");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("RedeemedByUserId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("Invites");
+                });
+
             modelBuilder.Entity("GymTracker.Core.Domain.MaintenanceEstimate", b =>
                 {
                     b.Property<int>("Id")
@@ -1478,6 +1526,14 @@ namespace GymTracker.Web.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("FoodItem");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.Invite", b =>
+                {
+                    b.HasOne("GymTracker.Web.Data.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("RedeemedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.MaintenanceEstimate", b =>
