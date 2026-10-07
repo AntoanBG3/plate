@@ -61,10 +61,29 @@ public class ExportTests(PostgresFixture fixture)
 
         files.Keys.Should().BeEquivalentTo(
             "profile.csv", "bodyweight.csv", "workouts.csv", "sets.csv", "templates.csv",
-            "custom_exercises.csv", "food_log.csv", "maintenance_estimates.csv", "weekly_summaries.csv", "feedback.csv");
+            "custom_exercises.csv", "food_log.csv", "maintenance_estimates.csv", "weekly_summaries.csv", "feedback.csv", "label_scans.csv");
         files["bodyweight.csv"].Should().Be("date,weight_kg\r\n2026-10-01,82.4\r\n");
         files["food_log.csv"].Should().StartWith("date,meal,description,grams,kcal,protein_g,carbs_g,fat_g,fiber_g,saturated_fat_g,source,ai_model,match_model,created_at_utc\r\n");
         files["food_log.csv"].Should().Contain("2026-10-01,Breakfast,\"Баница, 2 парчета\",200,640,20,60,35,,,Ai,test,typesafe/jev-1.13-20260917,");
+    }
+
+    [Fact]
+    public async Task Label_scans_are_exported_without_their_photos()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.Db.LabelScans.Add(new LabelScan
+        {
+            UserId = s.UserId, CreatedAt = new DateTimeOffset(2026, 10, 7, 8, 0, 0, TimeSpan.Zero), Model = "test/label", LatencyMs = 1234, Edited = true,
+            Values = """{"kcal":62}""", Saved = """{"kcalPer100g":64}""",
+            Photo = new LabelScanPhoto { ContentType = "image/jpeg", Bytes = "PHOTOBYTES"u8.ToArray() },
+        });
+        await s.Db.SaveChangesAsync();
+
+        var csv = Unzip(await new DataExport(s.Db).ZipAsync(default))["label_scans.csv"];
+
+        csv.Should().StartWith("created_at_utc,model,latency_ms,error,edited,values,saved\r\n");
+        // jsonb comes back reformatted, so the JSON columns are checked by content.
+        csv.Should().Contain("2026-10-07T08:00:00Z,test/label,1234,,true,").And.Contain("kcalPer100g").And.NotContain("PHOTOBYTES");
     }
 
     /// <summary>File name to text, after checking each file starts with the UTF-8 byte order mark.</summary>

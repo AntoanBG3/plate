@@ -132,4 +132,29 @@ public class FeedbackExtrasTests(PostgresFixture fixture)
         request.Headers.Add("X-Gym-Queue", "1");
         return client.SendAsync(request);
     }
+
+    [Fact]
+    public async Task Label_photos_go_after_30_days_and_scans_after_180()
+    {
+        var userId = await fixture.CreateUserAsync();
+        await using var db = fixture.CreateContext(userId);
+        LabelScan Scan(int daysAgo) => new()
+        {
+            UserId = userId, CreatedAt = DateTimeOffset.UtcNow.AddDays(-daysAgo), Model = $"purge/{daysAgo}",
+            Photo = new LabelScanPhoto { ContentType = "image/jpeg", Bytes = [0xFF, 0xD8, 0xFF] },
+        };
+        var fresh = Scan(29);
+        var month = Scan(31);
+        var old = Scan(181);
+        db.LabelScans.AddRange(fresh, month, old);
+        await db.SaveChangesAsync();
+
+        await SoftDeletePurge.PurgeFeedbackAsync(db, DateTimeOffset.UtcNow, default);
+
+        db.ChangeTracker.Clear();
+        var left = await db.LabelScans.Include(s => s.Photo).Where(s => s.UserId == userId).ToDictionaryAsync(s => s.Id);
+        left.Keys.Should().BeEquivalentTo([fresh.Id, month.Id]);
+        left[fresh.Id].Photo.Should().NotBeNull();
+        left[month.Id].Photo.Should().BeNull("the photo is kept 30 days, the scan 180");
+    }
 }
