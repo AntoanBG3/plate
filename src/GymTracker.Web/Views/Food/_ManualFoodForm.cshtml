@@ -60,8 +60,8 @@
         </div>
         <h2 class="section-header" style="margin-top: var(--s-5)">@L["Portion"]</h2>
         <div class="list">
-            <div class="field-row"><label for="m-serving">@L["One serving"]</label><input id="m-serving" class="num" type="text" name="servingGrams" value="@Value(label?.ServingGrams)" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
-            <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="text" name="grams" value="@Value(label?.ServingGrams)" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
+            <div class="field-row"><label for="m-serving">@L["One serving"]</label><input id="m-serving" class="num" type="text" name="servingGrams" value="@Value(label?.ServingGrams ?? Model.TypedServing)" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+            <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="text" name="grams" value="@Value(Model.TypedGrams ?? label?.ServingGrams)" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
         </div>
         @* Shown only with a barcode: others find a shared food by scanning it (SPEC 4). Without one the server keeps it private. *@
         <div class="list" data-share style="margin-top: var(--s-5)" hidden="@(!hasBarcode)">

@@ -161,7 +161,7 @@ public class FoodController(
     [EnableRateLimiting(RateLimits.AiLabel)]
     // The one endpoint above the 1 MB request limit (SPEC 9): the phone shrinks a photo to under 2 MB.
     [RequestSizeLimit(3 * 1024 * 1024)]
-    public async Task<IActionResult> Label(DateOnly date, Meal meal, string? barcode, bool barcodeField, string? name, bool? share, int width, int height, IFormFile? photo, CancellationToken ct)
+    public async Task<IActionResult> Label(DateOnly date, Meal meal, string? barcode, bool barcodeField, string? name, bool? share, decimal? grams, decimal? servingGrams, int width, int height, IFormFile? photo, CancellationToken ct)
     {
         if (!await labels.IsAvailableAsync(ct))
         {
@@ -190,7 +190,7 @@ public class FoodController(
         barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim();
         return PartialView("_ManualFoodForm", new ManualFoodFormModel(date, meal, barcodeField ? null : barcode, string.IsNullOrWhiteSpace(name) ? null : name.Trim(), barcodeField,
             Label: result.Values, LabelScanId: result.ScanId, LabelAvailable: true,
-            BarcodeValue: barcodeField ? barcode : null, Share: share ?? true));
+            BarcodeValue: barcodeField ? barcode : null, Share: share ?? true, TypedGrams: grams, TypedServing: servingGrams));
     }
 
     [HttpPost("log-recent")]

@@ -238,4 +238,20 @@ public class LabelPhotoTests(E2EFixture app)
 
         status.Should().Be(200);
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task You_ate_typed_before_the_photo_is_kept(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync(Manual);
+        await phone.Page.FillAsync("#m-grams", "80");
+
+        await PickAsync(phone, "label.jpg");
+        await FilledAsync(phone);
+
+        (await phone.Page.InputValueAsync("#m-grams")).Should().Be("80");
+        phone.ShouldHaveNoErrors();
+    }
 }

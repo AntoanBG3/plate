@@ -199,6 +199,8 @@ public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker
 /// <param name="BarcodeField">Whether the optional barcode field is shown (everywhere except after a barcode miss).</param>
 /// <param name="BarcodeValue">Pre-fills the optional barcode field, e.g. with a code found in the label photo.</param>
 /// <param name="Share">The share choice, kept when a label photo redraws the form.</param>
+/// <param name="TypedGrams">"You ate" as typed before a label photo; it wins over the label's serving.</param>
+/// <param name="TypedServing">"One serving" as typed before a label photo; used when the label prints none.</param>
 public record ManualFoodFormModel(
     DateOnly Date,
     Meal Meal,
@@ -209,7 +211,9 @@ public record ManualFoodFormModel(
     int? LabelScanId = null,
     bool LabelAvailable = false,
     string? BarcodeValue = null,
-    bool Share = true);
+    bool Share = true,
+    decimal? TypedGrams = null,
+    decimal? TypedServing = null);
 
 /// <param name="ModelInfo">The current model's catalog entry, or null when the catalog can't be loaded or no longer lists it.</param>
 /// <param name="ModelInfo">Null when the model isn't in the task's list (e.g. OpenRouter's list can't be loaded).</param>

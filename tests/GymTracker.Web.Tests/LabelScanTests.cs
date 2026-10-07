@@ -43,7 +43,8 @@ public class LabelScanTests(PostgresFixture fixture)
         return new Account(client, email, id, await AppFactory.TokenAsync(client, AddPage));
     }
 
-    private static Task<HttpResponseMessage> ReadAsync(Account a, byte[] photo, string? name = null, string? barcode = null, bool barcodeField = true, bool? share = null)
+    private static Task<HttpResponseMessage> ReadAsync(Account a, byte[] photo, string? name = null, string? barcode = null, bool barcodeField = true, bool? share = null,
+        string? grams = null, string? servingGrams = null)
     {
         var form = new MultipartFormDataContent
         {
@@ -66,6 +67,16 @@ public class LabelScanTests(PostgresFixture fixture)
         if (share is { } s)
         {
             form.Add(new StringContent(s ? "true" : "false"), "share");
+        }
+
+        if (grams is not null)
+        {
+            form.Add(new StringContent(grams), "grams");
+        }
+
+        if (servingGrams is not null)
+        {
+            form.Add(new StringContent(servingGrams), "servingGrams");
         }
 
         var file = new ByteArrayContent(photo);
@@ -396,5 +407,21 @@ public class LabelScanTests(PostgresFixture fixture)
         await service.ReadAsync(Jpeg(100), 10, 10, default);
 
         (await db.LabelScans.SingleAsync(s => s.UserId == userId)).Model.Should().Be("unknown");
+    }
+
+    [Fact]
+    public async Task Amounts_typed_before_the_photo_are_kept()
+    {
+        // "You ate" typed first stays; the label's serving only fills it when it's empty (SPEC 6.6 rule 6).
+        var (app, reader) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var withServing = await HtmlAsync(await ReadAsync(a, Jpeg(100), grams: "80"));
+        withServing.Should().MatchRegex("id=\"m-grams\"[^>]*value=\"80\"").And.MatchRegex("id=\"m-serving\"[^>]*value=\"400\"");
+
+        reader.Next = new LabelReadResult(FakeLabelReader.Yogurt with { ServingGrams = null }, "{}", null, "test/label");
+        var noServing = await HtmlAsync(await ReadAsync(a, Jpeg(100), grams: "80", servingGrams: "30"));
+        noServing.Should().MatchRegex("id=\"m-grams\"[^>]*value=\"80\"").And.MatchRegex("id=\"m-serving\"[^>]*value=\"30\"");
     }
 }

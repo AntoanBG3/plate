@@ -98,6 +98,13 @@ window.gymModule("label", (root) => {
             const barcodeField = !form || !!form.querySelector("[data-barcode-input]");
             const knownBarcode = form && form.elements.barcode ? form.elements.barcode.value.trim() : "";
             data.set("barcodeField", String(barcodeField));
+            // Amounts typed before the photo stay; the label's serving only fills an empty "You ate".
+            for (const field of ["grams", "servingGrams"]) {
+                const value = form && form.elements[field] ? form.elements[field].value.trim() : "";
+                if (value) {
+                    data.set(field, value.replace(",", "."));
+                }
+            }
             const share = form && form.querySelector("input[type=checkbox][name=share]");
             if (share) {
                 data.set("share", String(share.checked));
