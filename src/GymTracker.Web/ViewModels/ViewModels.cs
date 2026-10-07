@@ -7,6 +7,15 @@ namespace GymTracker.Web.ViewModels;
 
 public record LoginViewModel(string? Email, string? ReturnUrl, string? Error);
 
+public enum JoinState
+{
+    Form,
+    Invalid,
+    SignedIn,
+}
+
+public record JoinViewModel(string Token, JoinState State, Language Language, string? Name = null, string? Email = null, IReadOnlyList<string>? Errors = null);
+
 public record TodayViewModel(
     string DisplayName,
     DateOnly Today,

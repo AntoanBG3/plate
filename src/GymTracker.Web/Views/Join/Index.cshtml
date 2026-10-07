@@ -1,0 +1,55 @@
+@model JoinViewModel
+@{
+    ViewData["Title"] = L["Create your account"];
+    ViewData["HideTabs"] = true;
+    var path = "/join/" + Uri.EscapeDataString(Model.Token);
+    var lang = Model.Language == Language.Bulgarian ? "bg" : "en";
+}
+<div class="auth">
+    <img class="auth-icon" src="/icons/icon-192.png" alt="" width="72" height="72" />
+    <h1 class="large-title">@L["Create your account"]</h1>
+    <p class="subhead">GymTracker</p>
+
+    @switch (Model.State)
+    {
+        case JoinState.Invalid:
+            <div class="banner is-info" role="status" style="margin-top: var(--s-5); text-align: left">@Ui.Icon("info")<span>@L["This invite is no longer valid. Ask Antoan for a new one."]</span></div>
+            break;
+
+        case JoinState.SignedIn:
+            <div class="banner is-info" role="status" style="margin-top: var(--s-5); text-align: left">@Ui.Icon("info")<span>@L["You are already signed in. Log out first to use this invite."]</span></div>
+            <a href="/settings" class="btn btn-secondary btn-block" style="margin-top: var(--s-5)">@L["Settings"]</a>
+            break;
+
+        default:
+            <nav class="auth-lang" aria-label="@L["Language"]">
+                <a href="@path?lang=en" lang="en" aria-current="@(lang == "en" ? "true" : null)">English</a>
+                <a href="@path?lang=bg" lang="bg" aria-current="@(lang == "bg" ? "true" : null)">Български</a>
+            </nav>
+
+            @foreach (var error in Model.Errors ?? [])
+            {
+                <div class="banner is-error" role="alert" style="margin-top: var(--s-3); text-align: left">@Ui.Icon("alert")<span>@L[error]</span></div>
+            }
+
+            <form method="post" asp-antiforgery="true" action="@path?lang=@lang" class="auth-form">
+                <div class="list">
+                    <div class="field-row stacked">
+                        <label for="name" class="sr-only">@L["Name"]</label>
+                        <input id="name" type="text" name="name" value="@Model.Name" autocomplete="given-name" maxlength="100" placeholder="@L["Name"]" required autofocus />
+                    </div>
+                    <div class="field-row stacked">
+                        <label for="email" class="sr-only">@L["Email"]</label>
+                        <input id="email" type="email" name="email" value="@Model.Email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="@L["Email"]" required />
+                    </div>
+                    <div class="field-row stacked">
+                        <label for="password" class="sr-only">@L["Password"]</label>
+                        <input id="password" type="password" name="password" autocomplete="new-password" minlength="12" placeholder="@L["Password, 12+ characters"]" required />
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Create account"]</button>
+            </form>
+            <p class="section-footer">@L["Your email is only for signing in. Nothing is ever sent to it."]</p>
+            break;
+    }
+</div>

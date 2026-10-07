@@ -33,6 +33,11 @@ public class UserPreferencesMiddleware(RequestDelegate next)
         }
 
         var prefs = FromCookies(context.Request.Cookies);
+        if (context.GetEndpoint()?.Metadata.GetMetadata<LanguageFromRequestAttribute>() is not null)
+        {
+            prefs = prefs with { Language = FromRequest(context.Request) };
+        }
+
         if (context.User.Identity?.IsAuthenticated == true)
         {
             // Loads the whole profile, which the page then reuses (ProfileService keeps it for the request).
@@ -56,6 +61,21 @@ public class UserPreferencesMiddleware(RequestDelegate next)
         Enum.TryParse<Theme>(cookies[ThemeCookie], true, out var theme) ? theme : UserPreferences.Default.Theme,
         cookies[LangCookie] == "bg" ? Language.Bulgarian : Language.English);
 
+    /// <summary>?lang= first, then this device's cookie, then the browser's languages in order of preference.</summary>
+    public static Language FromRequest(HttpRequest request)
+    {
+        static bool Known(string? code) => code is "en" or "bg";
+        var query = request.Query["lang"].ToString();
+        var cookie = request.Cookies[LangCookie];
+        var code = Known(query) ? query
+            : Known(cookie) ? cookie
+            : request.GetTypedHeaders().AcceptLanguage
+                .OrderByDescending(l => l.Quality ?? 1)
+                .Select(l => l.Value.Value?.Split('-')[0].ToLowerInvariant())
+                .FirstOrDefault(Known);
+        return code == "bg" ? Language.Bulgarian : Language.English;
+    }
+
     public static void Remember(HttpResponse response, IRequestCookieCollection current, UserPreferences prefs)
     {
         var options = new CookieOptions { MaxAge = TimeSpan.FromDays(400), SameSite = SameSiteMode.Lax, Secure = true, HttpOnly = false, IsEssential = true };
@@ -70,6 +90,13 @@ public class UserPreferencesMiddleware(RequestDelegate next)
         }
     }
 }
+
+/// <summary>
+/// An anonymous page a first-time visitor can land on from a link (the join page), so it can't rely on the language
+/// cookie: <see cref="UserPreferencesMiddleware.FromRequest"/> picks the language. A signed-in account's choice still wins.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public sealed class LanguageFromRequestAttribute : Attribute;
 
 public static class UserPreferencesExtensions
 {

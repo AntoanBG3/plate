@@ -18,6 +18,7 @@ public static class RateLimits
     public const string ClientError = "client-error";
     public const string Admin = "admin";
     public const string AdminUnlock = "admin-unlock";
+    public const string Join = "join";
 }
 
 /// <summary>Maps service exceptions to HTTP responses so controllers stay thin.</summary>
