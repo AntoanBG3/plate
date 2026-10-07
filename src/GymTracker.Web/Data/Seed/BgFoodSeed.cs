@@ -22,7 +22,8 @@ public static class BgFoodSeed
         }
 
         var foods = db.FoodItems.IgnoreQueryFilters();
-        var barcodes = (await foods.Where(f => f.Barcode != null).Select(f => f.Barcode!).ToListAsync(ct)).ToHashSet();
+        // Only shared foods: a private food may carry the same barcode (SPEC 4) and must not stop the shared product.
+        var barcodes = (await foods.Where(f => f.Barcode != null && f.OwnerUserId == null).Select(f => f.Barcode!).ToListAsync(ct)).ToHashSet();
         // Compared normalised, so a stored name from before MixedScript (fixed at startup) isn't seeded a second time.
         var references = (await foods.Where(f => f.Source == FoodSource.Reference && f.NameBg != null).Select(f => f.NameBg!).ToListAsync(ct))
             .Select(MixedScript.Normalize).ToHashSet();
@@ -80,12 +81,15 @@ public static class BgFoodSeed
         await AddFiberAndSaturatedFatAsync(db, extras, ct);
     }
 
-    /// <summary>Products seeded before the CSV had fiber and saturated fat get them, by barcode, where both are still unknown.</summary>
+    /// <summary>
+    /// Products seeded before the CSV had fiber and saturated fat get them, by barcode, where both are still unknown.
+    /// Shared foods only: someone's private food is theirs to fill in.
+    /// </summary>
     private static async Task AddFiberAndSaturatedFatAsync(AppDbContext db, Dictionary<string, (decimal? Fiber, decimal? Saturated)> extras, CancellationToken ct)
     {
         var codes = extras.Keys.ToList();
         var missing = await db.FoodItems.IgnoreQueryFilters()
-            .Where(f => f.Barcode != null && codes.Contains(f.Barcode) && f.FiberPer100g == null && f.SaturatedFatPer100g == null)
+            .Where(f => f.OwnerUserId == null && f.Barcode != null && codes.Contains(f.Barcode) && f.FiberPer100g == null && f.SaturatedFatPer100g == null)
             .ToListAsync(ct);
         foreach (var item in missing)
         {
