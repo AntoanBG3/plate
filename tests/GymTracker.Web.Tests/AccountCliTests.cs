@@ -237,7 +237,9 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime
             foreach (var property in entity.GetProperties().Where(p => p.Name is "UserId" or "OwnerUserId" or "RedeemedByUserId"))
             {
                 var column = property.GetColumnName();
-                var count = await db.Database.SqlQueryRaw<int>($"SELECT count(*)::int AS \"Value\" FROM \"{table}\" WHERE \"{column}\" = {{0}}", userId).SingleAsync();
+                // Table and column names come from the EF model, never from input; the user id is a parameter.
+                var sql = $"SELECT count(*)::int AS \"Value\" FROM \"{table}\" WHERE \"{column}\" = {{0}}";
+                var count = await db.Database.SqlQueryRaw<int>(sql, userId).SingleAsync();
                 if (count > 0)
                 {
                     found.Add($"{table}.{column}: {count}");
