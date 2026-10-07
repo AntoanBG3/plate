@@ -1,0 +1,69 @@
+@model AdminInvitesPage
+@{
+    ViewData["Title"] = "Invites";
+    ViewData["BackUrl"] = "/admin";
+    ViewData["BackLabel"] = "Admin";
+    var openCount = Model.Invites.Count(i => i.Status == InviteStatus.Open);
+    static string Day(DateTimeOffset at) => at.ToUniversalTime().ToString("d MMM HH:mm") + "Z";
+}
+<header class="page-head">
+    <h1 class="large-title">Invites</h1>
+</header>
+<partial name="_AdminNav" />
+
+@if (Model.Created is { } created)
+{
+    <section class="section">
+        <h2 class="section-title">New link@(created.Note is null ? "" : $" for {created.Note}")</h2>
+        <div class="list" data-module="invite-link" data-link="@created.Link">
+            <div class="row"><span class="row-main admin-text invite-link">@created.Link</span></div>
+            <div class="row invite-actions">
+                <button type="button" class="btn btn-secondary" data-copy>Copy</button>
+                <button type="button" class="btn btn-primary" data-share hidden>Share</button>
+            </div>
+        </div>
+        <p class="section-footer">Shown only now; only its hash is stored. Send it yourself: the app sends no email.</p>
+    </section>
+}
+
+<section class="section">
+    <h2 class="section-title">New invite</h2>
+    <form method="post" asp-antiforgery="true" action="/admin/invites" class="list">
+        <div class="field-row">
+            <label for="note">Note</label>
+            <input id="note" name="note" type="text" maxlength="@InviteRules.MaxNoteLength" placeholder="Ivan from the gym" />
+        </div>
+        <div class="field-row">
+            <label for="days">Days valid</label>
+            <input id="days" name="days" type="number" inputmode="numeric" min="@InviteRules.MinDays" max="@InviteRules.MaxDays" value="@InviteRules.DefaultDays" required />
+        </div>
+        <div class="row"><button type="submit" class="btn btn-plain" style="padding: 0" disabled="@(openCount >= InviteRules.MaxOpen)">Make a link</button></div>
+    </form>
+    <p class="section-footer">@openCount of @InviteRules.MaxOpen open invites. Each link makes one account, then the person goes through the setup chat.</p>
+</section>
+
+<section class="section">
+    <h2 class="section-title">All invites</h2>
+    <div class="list">
+        @foreach (var row in Model.Invites)
+        {
+            var i = row.Invite;
+            <div class="feedback-item">
+                <div class="feedback-head">
+                    <span class="footnote">#@i.Id · @row.Status.ToString().ToLowerInvariant() · made @Day(i.CreatedAt) · @(row.Status == InviteStatus.Redeemed ? $"used {Day(i.RedeemedAt!.Value)}" : $"until {Day(i.ExpiresAt)}")</span>
+                    @if (row.Status == InviteStatus.Open)
+                    {
+                        <form method="post" asp-antiforgery="true" action="/admin/invites/@i.Id/revoke" data-confirm="Revoke this invite? Its link stops working at once.">
+                            <button type="submit" class="btn btn-plain" style="color: var(--destructive)">Revoke</button>
+                        </form>
+                    }
+                </div>
+                <p class="feedback-message admin-text">@(i.Note ?? "(no note)")@(row.RedeemedByEmail is { } email ? $" → {email}" : "")</p>
+            </div>
+        }
+        @if (Model.Invites.Count == 0)
+        {
+            <div class="row"><span class="row-main footnote">No invites yet.</span></div>
+        }
+    </div>
+</section>

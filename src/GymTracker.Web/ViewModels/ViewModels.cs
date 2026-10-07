@@ -207,7 +207,12 @@ public record FeedbackFormViewModel(GymTracker.Web.Features.Feedback.ReportDraft
 public record AdminDashboard(GymTracker.Web.Features.Feedback.Digest Digest, GymTracker.Web.Integrations.OpenRouterKeyStatus Key, IReadOnlyList<AiTaskStatus> Models,
     DateTimeOffset? UnlockEnds);
 
-public record AdminUserRow(string Name, string Email, bool Dev, int Passkeys, DateTimeOffset? LastReport);
+public record AdminUserRow(string Name, string Email, bool Dev, int Passkeys, DateTimeOffset? LastReport, string? InviteNote);
+
+/// <summary>An invite just made: the only time its link can be shown.</summary>
+public record NewInvite(int Id, string? Note, string Link);
+
+public record AdminInvitesPage(List<GymTracker.Web.Features.Admin.InviteRow> Invites, NewInvite? Created);
 
 public record AdminAuditRow(GymTracker.Web.Data.AdminAudit Entry, string? Email);
 

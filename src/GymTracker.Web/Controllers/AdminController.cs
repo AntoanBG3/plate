@@ -59,12 +59,15 @@ public class AdminController(
         var passkeys = await db.UserPasskeys.AsNoTracking().GroupBy(p => p.UserId).Select(g => new { g.Key, Count = g.Count() }).ToDictionaryAsync(x => x.Key, x => x.Count, ct);
         var lastReport = await db.Feedback.IgnoreQueryFilters().AsNoTracking().GroupBy(f => f.UserId).Select(g => new { g.Key, Last = g.Max(f => f.CreatedAt) })
             .ToDictionaryAsync(x => x.Key, x => (DateTimeOffset?)x.Last, ct);
+        var inviteNotes = await db.Invites.AsNoTracking().Where(i => i.RedeemedByUserId != null)
+            .ToDictionaryAsync(i => i.RedeemedByUserId!, i => i.Note ?? "(no note)", ct);
         return View(accounts.Select(a => new AdminUserRow(
             profiles.TryGetValue(a.Id, out var p) ? p.DisplayName : "?",
             a.Email ?? "",
             devs.Contains(a.Id),
             passkeys.GetValueOrDefault(a.Id),
-            lastReport.GetValueOrDefault(a.Id))).ToList());
+            lastReport.GetValueOrDefault(a.Id),
+            inviteNotes.GetValueOrDefault(a.Id))).ToList());
     }
 
     [HttpGet("audit")]

@@ -16,10 +16,10 @@
             <div class="row">
                 <span class="row-main">
                     <span class="row-title">@u.Name@(u.Dev ? " · Dev" : "")</span>
-                    <span class="row-sub admin-text" style="display: block">@u.Email · @(u.Passkeys == 1 ? "1 passkey" : $"{u.Passkeys} passkeys")@(u.LastReport is { } last ? $" · last report {last.ToUniversalTime():d MMM}" : "")</span>
+                    <span class="row-sub admin-text" style="display: block">@u.Email · @(u.Passkeys == 1 ? "1 passkey" : $"{u.Passkeys} passkeys")@(u.LastReport is { } last ? $" · last report {last.ToUniversalTime():d MMM}" : "")@(u.InviteNote is { } note ? $" · invited: {note}" : "")</span>
                 </span>
             </div>
         }
     </div>
-    <p class="section-footer">Accounts and roles change only over SSH: create-user, role grant|revoke dev --email ...</p>
+    <p class="section-footer">New accounts come from <a href="/admin/invites">Invites</a> or create-user over SSH. Roles, password resets and deletions are SSH only: role grant|revoke dev, reset-password, delete-user --email ...</p>
 </section>

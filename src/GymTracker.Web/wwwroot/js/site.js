@@ -475,4 +475,20 @@
             out.textContent = t("{0} kcal · {1} g protein", Math.round(per[0] * f), (per[1] * f).toFixed(1));
         }
     });
+
+    // A new invite link in the admin area (English only): copy it, or hand it to the phone's share sheet.
+    window.gymModule("invite-link", (root) => {
+        const link = root.dataset.link;
+        const copy = root.querySelector("[data-copy]");
+        const share = root.querySelector("[data-share]");
+        copy.addEventListener("click", () => {
+            navigator.clipboard.writeText(link).then(
+                () => window.gymToast("Link copied."),
+                () => window.gymToast("Couldn't copy; select the link instead."));
+        });
+        if (navigator.share) {
+            share.hidden = false;
+            share.addEventListener("click", () => navigator.share({ title: "GymTracker", url: link }).catch(() => {}));
+        }
+    });
 })();
