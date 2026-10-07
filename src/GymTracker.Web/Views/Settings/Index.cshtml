@@ -189,11 +189,11 @@
     <div class="list">
         @foreach (var task in openRouter.Tasks)
         {
-            var off = task.Task switch { AiTask.Onboarding => L["Off: setup form only"], AiTask.Weekly => L["Off: no weekly summary"], _ => L["Off: database ranking only"] };
+            var off = task.Task switch { AiTask.Onboarding => L["Off: setup form only"], AiTask.Weekly => L["Off: no weekly summary"], AiTask.Label => L["Off: no label photos"], _ => L["Off: database ranking only"] };
             <div class="row">
-                <span class="row-icon neutral">@Ui.Icon(task.Task switch { AiTask.Parser => "text", AiTask.Matcher => "search", AiTask.Weekly => "list", _ => "feedback" })</span>
+                <span class="row-icon neutral">@Ui.Icon(task.Task switch { AiTask.Parser => "text", AiTask.Matcher => "search", AiTask.Weekly => "list", AiTask.Label => "photo", _ => "feedback" })</span>
                 <span class="row-main">
-                    <span class="row-title">@(task.Task switch { AiTask.Parser => L["Food parser"], AiTask.Matcher => L["Food matcher"], AiTask.Weekly => L["Weekly summary"], _ => L["Setup chat"] })</span>
+                    <span class="row-title">@(task.Task switch { AiTask.Parser => L["Food parser"], AiTask.Matcher => L["Food matcher"], AiTask.Weekly => L["Weekly summary"], AiTask.Label => L["Label reader"], _ => L["Setup chat"] })</span>
                     <span class="row-sub" style="display: block">@(openRouter.Key.Source == KeySource.None
                         ? (task.Task == AiTask.Parser ? L["Simple built-in parser"] : off)
                         : task.Model == AiTasks.Off ? off : task.ModelInfo?.Name ?? task.Model)</span>

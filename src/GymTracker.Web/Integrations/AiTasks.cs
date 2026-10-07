@@ -14,6 +14,9 @@ public enum AiTask
 
     /// <summary>Writes the weekly summary on Today (OpenRouter chat models, SPEC 6.5).</summary>
     Weekly,
+
+    /// <summary>Reads nutrition labels from photos (OpenRouter vision models, SPEC 6.6).</summary>
+    Label,
 }
 
 public static class AiTasks
@@ -37,12 +40,19 @@ public static class AiTasks
     /// <summary>The weekly summary can be turned off for both accounts.</summary>
     public static readonly OpenRouterModel WeeklyOff = new(Off, "GymTracker", "Off: no weekly summary", 0, 0, false, null);
 
+    /// <summary>Label photos can be turned off for both accounts.</summary>
+    public static readonly OpenRouterModel LabelOff = new(Off, "GymTracker", "Off: no label photos", 0, 0, false, null);
+
+    /// <summary>The label model until one is picked: a cheap vision model that reads Cyrillic well (SPEC 6.6).</summary>
+    public const string DefaultLabelModel = "google/gemini-3.5-flash-lite";
+
     /// <summary>English name of a task, for the admin area and the CLI.</summary>
     public static string Title(AiTask task) => task switch
     {
         AiTask.Parser => "Food parser",
         AiTask.Matcher => "Food matcher",
         AiTask.Onboarding => "Setup chat",
+        AiTask.Label => "Label reader",
         _ => "Weekly summary",
     };
 
@@ -51,6 +61,7 @@ public static class AiTasks
     {
         AiTask.Onboarding => "Off: setup form only",
         AiTask.Weekly => "Off: no weekly summary",
+        AiTask.Label => "Off: no label photos",
         _ => "Off: database ranking only",
     };
 
@@ -61,6 +72,7 @@ public static class AiTasks
         AiTask.Matcher => "OpenRouter:Model:Matcher",
         AiTask.Onboarding => "OpenRouter:Model:Onboarding",
         AiTask.Weekly => "OpenRouter:Model:Weekly",
+        AiTask.Label => "OpenRouter:Model:Label",
         _ => throw new ArgumentOutOfRangeException(nameof(task)),
     };
 

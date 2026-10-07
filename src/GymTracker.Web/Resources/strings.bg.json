@@ -860,5 +860,8 @@
   "Others who scan this barcode get this food instead of entering it again. Your name isn't shown.": "Който сканира този баркод, ще получи храната, без да я въвежда отново. Името ти не се показва.",
   "Added by another user": "Добавено от друг потребител",
   "A food with that barcode is already shared. Scan it again to use it.": "Вече има споделена храна с този баркод. Сканирай го отново, за да я използваш.",
-  "You already have a food with that barcode.": "Вече имаш храна с този баркод."
+  "You already have a food with that barcode.": "Вече имаш храна с този баркод.",
+  "Off: no label photos": "Изключено: без снимки на етикети",
+  "Label reader": "Четене на етикети",
+  "That model can't read labels.": "Този модел не може да чете етикети."
 }

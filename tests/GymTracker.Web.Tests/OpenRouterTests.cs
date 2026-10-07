@@ -24,7 +24,7 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
 
     public const string Models = """
         {"data":[
-          {"id":"google/gemini-3.5-flash-lite","name":"Google: Gemini 3.5 Flash Lite","architecture":{"output_modalities":["text"]},
+          {"id":"google/gemini-3.5-flash-lite","name":"Google: Gemini 3.5 Flash Lite","architecture":{"input_modalities":["text","image"],"output_modalities":["text"]},
            "pricing":{"prompt":"0.0000003","completion":"0.0000025"},
            "supported_parameters":["reasoning","response_format","structured_outputs","temperature"],
            "reasoning":{"mandatory":true,"supported_efforts":["high","medium","low","minimal"]}},
@@ -85,6 +85,15 @@ public class OpenRouterCatalogTests
             && m.PromptPerMillion == 0.3m && m.CompletionPerMillion == 2.5m && m.SupportsTemperature && m.LowestEffort == "minimal");
         gemini.Price.ToString().Should().Be("$0.30 in, $2.50 out per million tokens");
         models[1].LowestEffort.Should().Be("none", "reasoning is optional for that model");
+    }
+
+    [Fact]
+    public async Task Models_that_accept_images_are_marked()
+    {
+        var models = (await new StubOpenRouter().Catalog().ListAsync(default))!;
+
+        models.Single(m => m.Id == "google/gemini-3.5-flash-lite").AcceptsImages.Should().BeTrue();
+        models.Single(m => m.Id == "openai/gpt-x").AcceptsImages.Should().BeFalse();
     }
 
     [Fact]
@@ -169,6 +178,41 @@ public class OpenRouterSettingsTests(PostgresFixture fixture)
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
 
         await Store(s).Invoking(x => x.SetKeyAsync(key, default)).Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task The_label_picker_lists_only_vision_models_after_off()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+
+        (await Store(s).ListModelsAsync(AiTask.Label, default))!.Select(m => m.Id).Should().Equal(AiTasks.Off, "google/gemini-3.5-flash-lite");
+    }
+
+    [Fact]
+    public async Task The_label_model_defaults_to_gemini_flash_lite_and_not_the_parser()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        await ClearAsync(s);
+
+        (await Store(s, model: "openai/gpt-x").GetModelAsync(AiTask.Label, default)).Should().Be("google/gemini-3.5-flash-lite");
+    }
+
+    [Fact]
+    public async Task A_text_only_model_is_refused_for_labels()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        try
+        {
+            var refused = await Store(s).Invoking(x => x.SetModelAsync(AiTask.Label, "openai/gpt-x", default)).Should().ThrowAsync<ValidationException>();
+            refused.Which.Text.Should().Be(new GymTracker.Core.Text.LocalText("That model can't read labels."));
+
+            await Store(s).SetModelAsync(AiTask.Label, AiTasks.Off, default);
+            (await Store(s).GetModelAsync(AiTask.Label, default)).Should().Be(AiTasks.Off);
+        }
+        finally
+        {
+            await ClearAsync(s);
+        }
     }
 
     [Fact]

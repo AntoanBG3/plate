@@ -1006,6 +1006,9 @@
   "Kind": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
+  "Label reader": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Language": [
     "src/GymTracker.Web/Views/Join/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -1392,6 +1395,9 @@
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "Off: database ranking only": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Off: no label photos": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Off: no weekly summary": [
@@ -2093,6 +2099,9 @@
     "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
   "That model can't parse food.": [
+    "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
+  ],
+  "That model can't read labels.": [
     "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
   "That model can't run the setup chat.": [

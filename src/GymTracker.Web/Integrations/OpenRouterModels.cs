@@ -9,6 +9,7 @@ namespace GymTracker.Web.Integrations;
 /// <summary>A model from OpenRouter's catalog that can return structured JSON, so it can parse food.</summary>
 /// <param name="Provider">The part of the catalog name before the colon, e.g. "Google".</param>
 /// <param name="LowestEffort">The lowest reasoning effort the model accepts, or null when it has no effort setting.</param>
+/// <param name="AcceptsImages">The model takes images as input, so it can read a label photo (SPEC 6.6).</param>
 public record OpenRouterModel(
     string Id,
     string Provider,
@@ -16,7 +17,8 @@ public record OpenRouterModel(
     decimal PromptPerMillion,
     decimal CompletionPerMillion,
     bool SupportsTemperature,
-    string? LowestEffort)
+    string? LowestEffort,
+    bool AcceptsImages = false)
 {
     public LocalText Price => PromptPerMillion == 0 && CompletionPerMillion == 0
         ? new LocalText("Free")
@@ -70,6 +72,7 @@ public class OpenRouterModels(HttpClient http, IMemoryCache cache, ILogger<OpenR
             var id = Str(m?["id"]);
             var parameters = Strings(m?["supported_parameters"]);
             var output = Strings(m?["architecture"]?["output_modalities"]);
+            var input = Strings(m?["architecture"]?["input_modalities"]);
             // Batch variants are asynchronous; openrouter/* routers pick a different model per request.
             if (id is null || id.EndsWith(":batch", StringComparison.Ordinal) || id.StartsWith("openrouter/", StringComparison.Ordinal)
                 || !parameters.Contains("structured_outputs") || !parameters.Contains("response_format")
@@ -94,7 +97,8 @@ public class OpenRouterModels(HttpClient http, IMemoryCache cache, ILogger<OpenR
                 prompt,
                 completion,
                 parameters.Contains("temperature"),
-                parameters.Contains("reasoning") ? LowestEffort(m?["reasoning"]) : null));
+                parameters.Contains("reasoning") ? LowestEffort(m?["reasoning"]) : null,
+                input.Contains("image")));
         }
 
         return models.OrderBy(m => m.Provider, StringComparer.OrdinalIgnoreCase).ThenBy(m => m.PromptPerMillion + m.CompletionPerMillion).ThenBy(m => m.Name).ToList();

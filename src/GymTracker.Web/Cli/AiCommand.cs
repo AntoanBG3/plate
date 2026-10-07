@@ -17,7 +17,7 @@ public static class AiCommand
     private const string Usage = """
         Usage: ai <command>
           show
-          set-model parser|matcher|onboarding|weekly <model id>
+          set-model parser|matcher|onboarding|weekly|label <model id>
           set-key                         reads the key from standard input
           clear-key
           test

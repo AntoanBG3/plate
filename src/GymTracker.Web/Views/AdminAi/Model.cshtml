@@ -65,6 +65,7 @@ else
             AiTask.Parser => L["Only models that can return structured answers are listed. Prices are OpenRouter's, per million tokens; parsing one entry uses about a thousand."],
             AiTask.Weekly => "Only models that can return structured answers are listed. Unset, the weekly summary uses the food parser's model. Each account uses one call of about two thousand tokens a week. Off removes the summary for both accounts.",
             AiTask.Onboarding => "Only models that can return structured answers are listed. Unset, the setup chat uses the food parser's model. One setup is about ten turns of a few thousand tokens each. Off leaves the plain form.",
+            AiTask.Label => "Only models that accept images and return structured answers are listed. Unset, labels are read by Gemini 3.5 Flash Lite, never the food parser's model. One label photo is about two thousand tokens. Off hides label photos for both accounts.",
             _ => L["Jev is a decision model from TypeSafe: it picks between the database foods the search finds, or says none fits. An entry uses a few thousand tokens, a fraction of a cent. Off keeps the database ranking alone."],
         })</p>
 }
