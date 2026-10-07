@@ -108,11 +108,11 @@ public class PasskeyTests(PostgresFixture db) : IDisposable
         var (client, email) = await app.SignedInClientAsync();
         var credentialId = await AddPasskeyAsync(email);
 
-        (await client.GetStringAsync("/settings")).Should().Contain(WebEncoders.Base64UrlEncode(credentialId));
+        (await client.GetStringAsync("/settings/security")).Should().Contain(WebEncoders.Base64UrlEncode(credentialId));
         var token = await AppFactory.TokenAsync(client, "/settings");
         var response = await AppFactory.PostAsync(client, $"/settings/passkeys/{WebEncoders.Base64UrlEncode(credentialId)}/remove", token);
 
-        AppFactory.IsRedirectTo(response, "/settings").Should().BeTrue();
+        AppFactory.IsRedirectTo(response, "/settings/security").Should().BeTrue();
         (await PasskeysAsync(email)).Should().BeEmpty();
     }
 }

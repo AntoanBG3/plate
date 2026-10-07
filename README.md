@@ -92,7 +92,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 docker builder prune -f                      # the SDK build cache sits on the boot SSD
 ```
 
-For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the app under Settings → AI models (stored encrypted with the Data Protection keys, shared by both accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The same page has one model per AI task:
+For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the admin area under AI, `/admin/ai` (stored encrypted with the Data Protection keys, shared by both accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The same page has one model per AI task:
 
 - Food parser: picked from OpenRouter's catalog (default `openai/gpt-6-luna`, or `OPENROUTER_MODEL`).
 - Food matcher: Off (the database ranking picks the food, the default) or TypeSafe's Jev 1.13, a decision model that chooses which database food each item is, or says none fits. It uses the same key and costs about $0.0002 per entry. Picking it runs a test decision. Entries record which Jev version chose their match (`match_model` in the export); `docker logs gymtracker-app | grep "Jev "` shows each call's latency and cost.
@@ -242,7 +242,7 @@ The feedback CLI starts a second .NET process in the app container. If `docker s
 
 ### Admin
 
-The developer's account has an admin area at `/admin` (Settings → Admin): reports with status and reply, parse runs, errors, What's new, the OpenRouter key and AI models, the parse evaluation, invites, users and an audit log (SPEC section 12). The other account sees the AI models read-only and gets a 404 there. Getting in takes three things:
+The developer's account has an admin area at `/admin` (Settings → Admin): reports with status and reply, parse runs, errors, What's new, the OpenRouter key and AI models, the parse evaluation, invites, users and an audit log (SPEC section 12). Other accounts see nothing about the AI models in Settings and get a 404 there. Getting in takes three things:
 
 1. The `Dev` role, given only over SSH:
 

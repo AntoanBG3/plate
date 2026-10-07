@@ -4,7 +4,6 @@ using GymTracker.Web.Data;
 using GymTracker.Web.Features;
 using GymTracker.Web.Features.Export;
 using GymTracker.Web.Features.Profile;
-using GymTracker.Web.Integrations;
 using GymTracker.Web.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,25 +16,53 @@ public class SettingsController(
     ProfileService profiles,
     GymTracker.Web.Features.Food.NutritionTargets targets,
     DataExport export,
-    OpenRouterSettings openRouter,
     UserManager<AppUser> users,
     SignInManager<AppUser> signIn,
     GymTracker.Web.Features.Feedback.FeedbackService feedback) : Controller
 {
+    // Settings is a short hub of rows that each open one page (SPEC 7). Each page posts only its own fields, so a
+    // page never overwrites what another one owns; the whole profile is still validated on every save.
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         var user = await users.GetUserAsync(User);
         ViewData["Email"] = user?.Email;
-        ViewData["Passkeys"] = user is null ? [] : await users.GetPasskeysAsync(user);
-        ViewData["OpenRouter"] = await OpenRouterStatusAsync(ct);
+        ViewData["PasskeyCount"] = user is null ? 0 : (await users.GetPasskeysAsync(user)).Count;
         ViewData["UnreadFeedback"] = await feedback.UnreadRepliesAsync(ct);
-        ViewData["Targets"] = await targets.ForTodayAsync(ct);
+        return View(await profiles.GetAsync(ct));
+    }
+
+    [HttpGet("profile")]
+    public async Task<IActionResult> Profile(CancellationToken ct)
+    {
+        ViewData["Email"] = (await users.GetUserAsync(User))?.Email;
         return View(await profiles.GetAsync(ct));
     }
 
     [HttpPost("profile")]
     public async Task<IActionResult> Profile(ProfileForm form, bool autosave, CancellationToken ct)
+    {
+        await profiles.UpdateAsync(p =>
+        {
+            p.DisplayName = form.DisplayName?.Trim() ?? "";
+            p.Sex = form.Sex;
+            p.HeightCm = form.HeightCm;
+            p.BirthYear = form.BirthYear;
+        }, ct);
+        return Saved(autosave, "/settings/profile");
+    }
+
+    public record ProfileForm(string? DisplayName, GymTracker.Core.Domain.Sex? Sex, int? HeightCm, int? BirthYear);
+
+    [HttpGet("goal")]
+    public async Task<IActionResult> Goal(CancellationToken ct)
+    {
+        ViewData["Targets"] = await targets.ForTodayAsync(ct);
+        return View(await profiles.GetAsync(ct));
+    }
+
+    [HttpPost("goal")]
+    public async Task<IActionResult> Goal(GoalForm form, bool autosave, CancellationToken ct)
     {
         if (GymTracker.Core.Domain.ProfileRules.MissingRateError(form.Goal, form.TargetRatePercentPerWeek) is { } missingRate)
         {
@@ -45,11 +72,6 @@ public class SettingsController(
         var today = await profiles.TodayAsync(ct);
         await profiles.UpdateAsync(p =>
         {
-            p.DisplayName = form.DisplayName?.Trim() ?? "";
-            p.TimeZoneId = string.IsNullOrWhiteSpace(form.TimeZoneId) ? GymTracker.Core.Domain.UserProfile.DefaultTimeZoneId : form.TimeZoneId.Trim();
-            p.Sex = form.Sex;
-            p.HeightCm = form.HeightCm;
-            p.BirthYear = form.BirthYear;
             p.ActivityLevel = form.ActivityLevel;
             p.InitialMaintenanceKcal = form.InitialMaintenanceKcal;
             var previousGoal = p.Goal;
@@ -57,34 +79,68 @@ public class SettingsController(
             GymTracker.Core.Nutrition.CutCheck.GoalChanged(p, previousGoal, today);
             p.TargetRatePercentPerWeek = form.TargetRatePercentPerWeek ?? 0;
             p.ProteinGramsPerKg = form.ProteinGramsPerKg;
-            p.DefaultWeightIncrementKg = form.DefaultWeightIncrementKg ?? 2.5m;
-            p.BarWeightKg = form.BarWeightKg ?? 20m;
-            p.PlatesKg = (form.PlatesKg ?? []).Distinct().OrderDescending().ToList();
         }, ct);
         if (autosave && Request.Headers.ContainsKey("HX-Request"))
         {
-            // Saved on change from the page (Phase 11): nothing to swap but today's protein numbers, sent out of band.
+            // Nothing to swap but today's protein numbers, sent out of band.
             return PartialView("_ProteinNote", new ProteinNoteViewModel(await profiles.GetAsync(ct), await targets.ForTodayAsync(ct), OutOfBand: true));
         }
 
-        TempData.Notice("Profile saved.");
-        return Redirect("/settings");
+        return Saved(autosave, "/settings/goal");
     }
 
-    public record ProfileForm(
-        string? DisplayName,
-        string? TimeZoneId,
-        GymTracker.Core.Domain.Sex? Sex,
-        int? HeightCm,
-        int? BirthYear,
+    public record GoalForm(
         GymTracker.Core.Domain.ActivityLevel? ActivityLevel,
         int? InitialMaintenanceKcal,
         GymTracker.Core.Domain.Goal Goal,
         decimal? TargetRatePercentPerWeek,
-        decimal? ProteinGramsPerKg,
-        decimal? DefaultWeightIncrementKg,
-        decimal? BarWeightKg,
-        List<decimal>? PlatesKg);
+        decimal? ProteinGramsPerKg);
+
+    [HttpGet("training")]
+    public async Task<IActionResult> Training(CancellationToken ct) => View(await profiles.GetAsync(ct));
+
+    [HttpPost("training")]
+    public async Task<IActionResult> Training(TrainingForm form, bool autosave, CancellationToken ct)
+    {
+        await profiles.UpdateAsync(p =>
+        {
+            p.DefaultWeightIncrementKg = form.DefaultWeightIncrementKg ?? 2.5m;
+            p.BarWeightKg = form.BarWeightKg ?? 20m;
+            p.PlatesKg = (form.PlatesKg ?? []).Distinct().OrderDescending().ToList();
+        }, ct);
+        return Saved(autosave, "/settings/training");
+    }
+
+    public record TrainingForm(decimal? DefaultWeightIncrementKg, decimal? BarWeightKg, List<decimal>? PlatesKg);
+
+    [HttpGet("general")]
+    public async Task<IActionResult> General(CancellationToken ct) => View(await profiles.GetAsync(ct));
+
+    [HttpPost("time-zone")]
+    public async Task<IActionResult> TimeZone(string? timeZoneId, bool autosave, CancellationToken ct)
+    {
+        await profiles.UpdateAsync(p => p.TimeZoneId = string.IsNullOrWhiteSpace(timeZoneId) ? GymTracker.Core.Domain.UserProfile.DefaultTimeZoneId : timeZoneId.Trim(), ct);
+        return Saved(autosave, "/settings/general");
+    }
+
+    [HttpGet("security")]
+    public async Task<IActionResult> Security()
+    {
+        var user = await users.GetUserAsync(User) ?? throw new NotFoundException();
+        return View(await users.GetPasskeysAsync(user));
+    }
+
+    /// <summary>A page saving itself on change gets an empty answer; without script, the page again with a notice.</summary>
+    private IActionResult Saved(bool autosave, string page)
+    {
+        if (autosave && Request.Headers.ContainsKey("HX-Request"))
+        {
+            return NoContent();
+        }
+
+        TempData.Notice("Profile saved.");
+        return Redirect(page);
+    }
 
     [HttpPost("appearance")]
     public async Task<IActionResult> Appearance(GymTracker.Core.Domain.Theme theme, GymTracker.Core.Domain.Language language, CancellationToken ct)
@@ -94,7 +150,7 @@ public class SettingsController(
             p.Theme = theme;
             p.Language = language;
         }, ct);
-        return Redirect("/settings");
+        return Redirect("/settings/general");
     }
 
     /// <summary>The checkbox posts "true" before its hidden "false", so the first value is the choice.</summary>
@@ -102,19 +158,7 @@ public class SettingsController(
     public async Task<IActionResult> WeeklySummary(bool enabled, CancellationToken ct)
     {
         await profiles.UpdateAsync(p => p.WeeklySummaryEnabled = enabled, ct);
-        return Redirect("/settings");
-    }
-
-    private async Task<OpenRouterStatus> OpenRouterStatusAsync(CancellationToken ct)
-    {
-        var tasks = new List<AiTaskStatus>();
-        foreach (var task in Enum.GetValues<AiTask>())
-        {
-            var model = await openRouter.GetModelAsync(task, ct);
-            tasks.Add(new AiTaskStatus(task, model, await openRouter.FindModelAsync(task, model, ct)));
-        }
-
-        return new OpenRouterStatus(await openRouter.KeyStatusAsync(ct), tasks);
+        return Redirect("/settings/general");
     }
 
     [HttpGet("export")]
@@ -150,7 +194,7 @@ public class SettingsController(
         // Changing the password updates the security stamp; sign in again so this device stays logged in.
         await signIn.SignInAsync(user, isPersistent: true);
         TempData.Notice("Password changed. Other devices will be signed out.");
-        return Redirect("/settings");
+        return Redirect("/settings/security");
     }
 
     [HttpPost("logout-everywhere")]

@@ -85,7 +85,7 @@
             const credential = await navigator.credentials.create({ publicKey: creationOptions(options) });
             await post("/account/passkey/register", { credential: credentialJson(credential) });
             if (window.gymNav) {
-                window.gymNav("/settings", { push: false });
+                window.gymNav("/settings/security", { push: false });
             } else {
                 location.reload();
             }

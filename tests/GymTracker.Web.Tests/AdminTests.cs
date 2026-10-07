@@ -81,7 +81,7 @@ public class AdminTests(PostgresFixture fixture) : IDisposable
         await AppFactory.LoginAsync(client, email, password);
 
         var html = System.Net.WebUtility.HtmlDecode(await client.GetStringAsync("/admin/unlock"));
-        html.Should().Contain("Add a passkey in Settings first").And.Contain("href=\"/settings#passkeys\"").And.NotContain("data-module=\"passkey-unlock\"");
+        html.Should().Contain("Add a passkey in Settings first").And.Contain("href=\"/settings/security\"").And.NotContain("data-module=\"passkey-unlock\"");
     }
 
     private async Task<List<AdminAudit>> AuditAsync()
@@ -116,12 +116,10 @@ public class AdminTests(PostgresFixture fixture) : IDisposable
                 .StatusCode.Should().BeOneOf([HttpStatusCode.NotFound, HttpStatusCode.MethodNotAllowed], path);
         }
 
+        // Settings says nothing about the AI models: only the developer manages them, in the admin area.
         var settings = await client.GetStringAsync("/settings");
-        settings.Should().Contain("AI models").And.Contain("Simple built-in parser").And.Contain("The developer manages the AI models.");
-        settings.Should().NotContain("apiKey").And.NotContain("OpenRouter, with").And.NotContain("Key ending").And.NotContain("href=\"/admin\"");
-        // Each task is named for what it does; the label reader isn't listed as another setup chat.
-        settings.Should().Contain("Label reader").And.Contain("Off: no label photos");
-        System.Text.RegularExpressions.Regex.Matches(settings, "Setup chat").Count.Should().Be(1);
+        settings.Should().NotContain("AI models").And.NotContain("Food parser").And.NotContain("Label reader").And.NotContain("href=\"/admin\"");
+        settings.Should().NotContain("apiKey").And.NotContain("OpenRouter, with").And.NotContain("Key ending");
     }
 
     [Fact]
@@ -293,7 +291,7 @@ public class AdminTests(PostgresFixture fixture) : IDisposable
             (await AuditAsync()).Should().Contain(a => a.Action == AuditActions.ModelSet && a.Target == "matcher" && a.Detail == $"off -> {JevFoodMatchDecider.Jev113}");
 
             var (other, _) = await app.SignedInClientAsync();
-            (await other.GetStringAsync("/settings")).Should().Contain("Food matcher").And.NotContain("/admin/ai");
+            (await other.GetStringAsync("/settings")).Should().NotContain("Food matcher").And.NotContain("/admin");
             (await AppFactory.PostAsync(admin, "/admin/ai/model/nonsense", token, new() { ["modelId"] = "x" })).StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
         finally

@@ -507,24 +507,25 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - Protein: daily intake against the minimum and aim for the same 4 weeks, and the This week card (5.8).
 
 ### Settings
-- Every setting saves when it changes, with a "Saved" mark or an inline error beside it; there is no Save button except for the password.
-- Profile fields from section 4, with the limits in 5.7. Inputs take their `min` and `max` from the same limits. Weight jump and bar and plates are grouped under Training; the time zone is picked from a list.
-- Protein: Auto (by goal) or a custom g/kg. Under it, the current aim in grams, and when the reference weight applies, "Based on {0} kg, a healthy weight for your height." A "How your targets are set" sheet gives each 5.6 rule in one line with its source.
-- Activity level, one line of explanation per choice. The levels follow NASEM 2023 table 7-1, which defines them as activity on top of daily living (about 30 minutes of walking): low active adds 60 to 80 minutes of brisk walking a day, active about two hours including some vigorous activity, very active more than two hours of vigorous activity. The step counts are a rough conversion.
-  - Inactive: desk job and everyday errands, up to about 8,000 steps a day.
-  - Low active: everyday life plus about an hour of brisk walking or similar every day, roughly 11,000 to 14,000 steps.
-  - Active: everyday life plus about two hours of activity a day, some of it hard (cycling, a sport), or a job on your feet with lifting and carrying.
-  - Very active: more than two hours of hard activity a day (running, cycling, sport), or heavy manual work plus training.
-  Under it: "Lifting 3 to 4 times a week counts for about half a level; add it to your walking. Used only until about three weeks of logs give an adaptive estimate." (An hour of lifting is about 3.5 to 5 MET, so 200 to 320 kcal above rest for 80 kg; four a week is 115 to 185 kcal a day against about 220 kcal between inactive and low active.)
-- Run the setup chat again (section 6.4).
+Settings is a short hub, not one long page (progressive disclosure: NN/g, and the iOS Settings pattern). The hub is grouped lists of rows; each row has an icon, a title, a grey line with what is set now (so most questions are answered without opening it) and a chevron, and opens one page with Back to Settings. No page goes deeper than that, except the custom exercise editor.
+- Hub, in groups: Profile ("Name · 180 cm"), Goal & nutrition ("Cut · 0.5% a week · Low active"), Run the setup chat again; Training ("Bar 20 kg · Jump 2.5 kg"), Custom exercises; General ("Dark · English"), Sign-in & security ("2 passkeys" or "Password only"); Send feedback, Your feedback; Export all data, and Admin for `Dev` accounts only; Log out, with the account's email under it.
+- Every setting saves when it changes, with a "Saved" mark or an inline error under the card that changed; there is no Save button except for the password. Each page posts only its own fields (`/settings/profile`, `/settings/goal`, `/settings/training`, `/settings/time-zone`, `/settings/appearance`, `/settings/weekly-summary`), so saving one page never touches another's; the whole profile is still validated on every save.
+- Profile page: email (read-only), name, sex, birth year, height, with the limits in 5.7. Inputs take their `min` and `max` from the same limits.
+- Goal & nutrition page: goal, weekly rate, protein, starting maintenance, then activity level.
+  - Protein: Auto (by goal) or a custom g/kg. Under it, the current aim in grams, and when the reference weight applies, "Based on {0} kg, a healthy weight for your height." A "How your targets are set" sheet gives each 5.6 rule in one line with its source.
+  - Activity level, one line of explanation per choice. The levels follow NASEM 2023 table 7-1, which defines them as activity on top of daily living (about 30 minutes of walking): low active adds 60 to 80 minutes of brisk walking a day, active about two hours including some vigorous activity, very active more than two hours of vigorous activity. The step counts are a rough conversion.
+    - Inactive: desk job and everyday errands, up to about 8,000 steps a day.
+    - Low active: everyday life plus about an hour of brisk walking or similar every day, roughly 11,000 to 14,000 steps.
+    - Active: everyday life plus about two hours of activity a day, some of it hard (cycling, a sport), or a job on your feet with lifting and carrying.
+    - Very active: more than two hours of hard activity a day (running, cycling, sport), or heavy manual work plus training.
+    Under it: "Lifting 3 to 4 times a week counts for about half a level; add it to your walking. Used only until about three weeks of logs give an adaptive estimate." (An hour of lifting is about 3.5 to 5 MET, so 200 to 320 kcal above rest for 80 kg; four a week is 115 to 185 kcal a day against about 220 kcal between inactive and low active.)
+- Training page: weight jump; bar and plates (the profile bar weight and which plates the gym has).
 - Custom exercises: create (name, primary muscle, equipment, optional secondary muscles), rename and archive the user's own exercises. They appear in the picker with the shared library and are never visible to the other account.
-- Bar and plates: the profile bar weight and which plates the gym has.
-- Weekly AI summary: on or off (6.5), with the line "Last week's numbers are sent to an AI model through OpenRouter."
-- AI models: the current food parser, food matcher, setup chat and weekly summary models, read-only. Only the developer changes the key and models, in the admin area (section 12).
-- Admin: a row shown only to accounts with the `Dev` role, linking to `/admin`.
+- General page: theme and language; the time zone, picked from a list; the weekly AI summary on or off (6.5), with the line "Last week's numbers are sent to an AI model through OpenRouter."
+- Sign-in & security page: passkeys (add, remove), change password, log out everywhere.
+- Settings shows nothing about the AI models or the key. Only the developer manages them, in the admin area (section 12).
 - Export all of the user's data as CSV files in a zip.
 - Feedback: Send feedback and Your feedback (section 11).
-- Change password, log out.
 
 ---
 
@@ -666,7 +667,7 @@ The developer's account (Antoan) has an admin area at `/admin` that does what th
 Every `/admin` request needs all of these; anything short of the role gets a 404, so the area is not discoverable.
 - Signed in, with the `Dev` role. `role grant|revoke dev --email ...` and `role list` in the CLI. The role is checked in the database on every admin request, so a revoke takes effect at once; a grant shows up in a live session within 5 minutes, when the sign-in cookie is refreshed, or at the next sign-in.
 - A valid Cloudflare Access token. Cloudflare Access protects `gym.peychev.uk/admin*` (one-time email code, only the developer's address). The app still checks `Cf-Access-Jwt-Assertion` itself: RS256 against the team's certs (cached an hour, refetched for an unknown key id), `aud` equal to `Admin:CloudflareAccess:Audience`, `iss` equal to the team domain, expiry with one minute of skew, and the token's email equal to the account's. In Production the area is off until `Admin:CloudflareAccess:TeamDomain` and `Audience` are set; Development and Testing skip the check unless they are set.
-- A passkey unlock: `/admin/unlock` asks for one of the account's own passkeys with user verification required, then sets `__Host-gym.admin` (HttpOnly, Secure, SameSite=Lax like the sign-in cookie, so arriving back from Cloudflare's login keeps the unlock; every admin write is a POST with an anti-forgery token) holding the user id, security stamp and unlock time. It lasts 30 minutes from the last admin request and 4 hours at most, and ends on Lock now, log out, Log out everywhere or a password change. A signed-in `Dev` account without it is sent to the unlock page. The unlock page is reached from Settings, so it follows the account's language (the admin pages themselves are English); its button reads "Unlock with a passkey", and an account with no passkey is told to add one in Settings, with a link there, instead of a button that can only fail.
+- A passkey unlock: `/admin/unlock` asks for one of the account's own passkeys with user verification required, then sets `__Host-gym.admin` (HttpOnly, Secure, SameSite=Lax like the sign-in cookie, so arriving back from Cloudflare's login keeps the unlock; every admin write is a POST with an anti-forgery token) holding the user id, security stamp and unlock time. It lasts 30 minutes from the last admin request and 4 hours at most, and ends on Lock now, log out, Log out everywhere or a password change. A signed-in `Dev` account without it is sent to the unlock page. The unlock page is reached from Settings, so it follows the account's language (the admin pages themselves are English); its button reads "Unlock with a passkey", and an account with no passkey is told to add one in Settings, with a link to Sign-in & security, instead of a button that can only fail.
 
 Admin responses are `Cache-Control: no-store`. When the Access session has expired, an admin page change falls back to a full page load (soft navigation already does this when a fetch fails), which shows Cloudflare's login; the eval progress poll reloads the page when a request fails.
 
@@ -760,6 +761,10 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 - `FoodItem.AddedByUserId`, the split barcode index, own-first barcode lookup, the share checkbox and the "Added by another user" mark (sections 4 and 7).
 - Label reading (6.6): the label AI task and its picker, `ILabelReader` and `LabelValues` in Core, `OpenRouterLabelReader`, the photo flow on the manual form and the Scan tab, `LabelScan` and its photo with their retention, the Labels admin page, label accuracy, and the CLI additions (sections 11 and 12).
 - **Done when:** the Core tests for every 6.6 normalizing case pass; a browser test shows the composer's text centred on the send button within 1 px in Chromium and WebKit at 390 px, in English and Bulgarian, here and in the setup chat; on an iPhone at 390 px, in English and Bulgarian, a photo of a real Bulgarian label (camera and photo library both) fills the form after a barcode miss, and the saved shared food is found by the other account's scan with "Added by another user" and no name; an unticked one stays private and the other account can save its own for the same barcode; a per-serving label converts and a non-label photo shows the not-found message; the photo is gone after 30 days and `delete-user` leaves no scan; a third account passes the user isolation tests for scans and photos; the twenty-first label read in 10 minutes returns 429; the label model's accuracy shows in the admin area; and `ai test label` reads the bundled photo.
+
+### Phase 14: Settings hub
+- Section 7 Settings: the hub of rows with their current values, one page each for Profile, Goal & nutrition, Training, General and Sign-in & security, per-page saves, and no AI models section.
+- **Done when:** saving any page leaves every other page's fields as they were; each page opens from the hub and Back returns to it, with no sideways scroll, at 320 and 390 px in English and Bulgarian in Chromium and WebKit; and no account sees the AI models in Settings.
 
 ### Later
 Ideas kept for after Phase 9, not planned yet. The nutrition ideas should not start before real logs show fiber coverage is good.

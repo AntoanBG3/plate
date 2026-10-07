@@ -1,223 +1,63 @@
 @model UserProfile
-@using GymTracker.Web.Integrations
-@using GymTracker.Core.Nutrition
-@inject TimeProvider Time
 @{
     ViewData["Title"] = L["Settings"];
-    var openRouter = (OpenRouterStatus)ViewData["OpenRouter"]!;
-    var year = Time.GetUtcNow().Year;
-    var targets = ViewData["Targets"] as GymTracker.Web.Features.Food.DailyTargets;
+    var passkeys = ViewData["PasskeyCount"] as int? ?? 0;
+    var unreadFeedback = ViewData["UnreadFeedback"] as int? ?? 0;
+    // Each row says what is set now, so most questions are answered without opening it.
+    var profile = string.Join(" · ", new[] { Model.DisplayName, Model.HeightCm is { } cm ? $"{cm} {L["cm"]}" : null }.Where(s => !string.IsNullOrEmpty(s)));
+    var goal = string.Join(" · ", new[]
+    {
+        L.Enum(Model.Goal),
+        Model.Goal == Goal.Maintain ? null : L["{0}% a week", Model.TargetRatePercentPerWeek.Kg()],
+        Model.ActivityLevel is { } level ? L.Enum(level) : null,
+    }.Where(s => s is not null));
+    var training = $"{L["Bar {0} kg", Model.BarWeightKg.Kg()]} · {L["Jump {0} kg", Model.DefaultWeightIncrementKg.Kg()]}";
+    var general = $"{L[Model.Theme == Theme.System ? "Match phone" : Model.Theme.ToString()]} · {(Model.Language == Language.Bulgarian ? "Български" : "English")}";
 }
 <header class="page-head">
     <h1 class="large-title">@L["Settings"]</h1>
 </header>
 
-<form method="post" asp-antiforgery="true" action="/settings/appearance" data-autosubmit data-instant>
-    <section class="section">
-        <h2 class="section-title">@L["Appearance"]</h2>
-        <div class="list">
-            <div class="field-row stacked">
-                <span class="field-label">@L["Theme"]</span>
-                <div class="segmented tall" data-thumb role="radiogroup" aria-label="@L["Theme"]">
-                    @foreach (var theme in new[] { Theme.Dark, Theme.Light, Theme.System })
-                    {
-                        <label class="segment"><input type="radio" name="theme" value="@theme" checked="@(Model.Theme == theme)" data-theme-preview="@theme.ToString().ToLowerInvariant()" />@L[theme == Theme.System ? "Match phone" : theme.ToString()]</label>
-                    }
-                </div>
-            </div>
-            <div class="field-row stacked">
-                <span class="field-label">@L["Language"]</span>
-                <div class="segmented tall" role="radiogroup" aria-label="@L["Language"]">
-                    <label class="segment"><input type="radio" name="language" value="English" checked="@(Model.Language == Language.English)" />English</label>
-                    <label class="segment" lang="bg"><input type="radio" name="language" value="Bulgarian" checked="@(Model.Language == Language.Bulgarian)" />Български</label>
-                </div>
-            </div>
-        </div>
-        <noscript><button type="submit" class="btn btn-secondary btn-block" style="margin-top: var(--s-3)">@L["Save"]</button></noscript>
-        <p class="section-footer">@L["Saved for your account, so every phone you sign in on looks the same."]</p>
-    </section>
-</form>
-
-@* Saves on change (site.js data-autosave); the status and any error show under the card that changed. *@
-<form method="post" asp-antiforgery="true" action="/settings/profile" id="profile-form"
-      data-autosave data-status-near hx-post="/settings/profile" hx-trigger="change delay:500ms, submit" hx-sync="this:replace" hx-swap="none">
-    <input type="hidden" name="autosave" value="true" />
-    <section class="section">
-        <h2 class="section-title">@L["Profile"]</h2>
-        <div class="list">
-            <div class="row"><span class="row-main">@L["Email"]</span><span class="row-value row-ellipsis">@ViewData["Email"]</span></div>
-            <div class="field-row"><label for="displayName">@L["Name"]</label><input id="displayName" type="text" name="displayName" value="@Model.DisplayName" maxlength="@ProfileLimits.MaxNameLength" required autocomplete="name" /></div>
-            <div class="field-row">
-                <label for="sex">@L["Sex"]</label>
-                <select id="sex" name="sex">
-                    <option value="" selected="@(Model.Sex is null)">@L["Not set"]</option>
-                    <option value="Male" selected="@(Model.Sex == Sex.Male)">@L["Male"]</option>
-                    <option value="Female" selected="@(Model.Sex == Sex.Female)">@L["Female"]</option>
-                </select>
-            </div>
-            <div class="field-row"><label for="birthYear">@L["Birth year"]</label><input id="birthYear" class="num" type="number" name="birthYear" value="@Model.BirthYear" min="@ProfileLimits.MinBirthYear(year)" max="@ProfileLimits.MaxBirthYear(year)" inputmode="numeric" /></div>
-            <div class="field-row"><label for="heightCm">@L["Height"]</label><input id="heightCm" class="num" type="number" name="heightCm" value="@Model.HeightCm" min="@ProfileLimits.MinHeightCm" max="@ProfileLimits.MaxHeightCm" inputmode="numeric" /><span class="unit">@L["cm"]</span></div>
-        </div>
-    </section>
-
-    <section class="section">
-        <h2 class="section-title">@L["Activity"]</h2>
-        <div class="list" role="radiogroup" aria-label="@L["Activity level"]">
-            @foreach (var level in Enum.GetValues<ActivityLevel>())
-            {
-                <label class="row choice-row">
-                    <input type="radio" name="activityLevel" value="@level" checked="@(Model.ActivityLevel == level)" />
-                    <span class="choice-text"><span class="row-title">@L.Enum(level)</span><span class="row-sub">@L[ActivityLevels.Description(level)]</span></span>
-                    @Ui.Icon("check", "choice-check")
-                </label>
-            }
-        </div>
-        <p class="section-footer">@L[ActivityLevels.Note]</p>
-        <div class="list setup-again">
-            <a class="row row-link" href="/welcome?restart=1">
-                <span class="row-icon neutral">@Ui.Icon("feedback")</span>
-                <span class="row-main">@L["Run the setup chat again"]</span>
-                @Ui.Icon("chevron", "row-chevron")
-            </a>
-        </div>
-    </section>
-
-    <section class="section">
-        <h2 class="section-title">@L["Goal"]</h2>
-        <div class="list">
-            <div class="field-row stacked">
-                <div class="segmented tall" role="radiogroup" aria-label="@L["Goal"]">
-                    @foreach (var goal in Enum.GetValues<Goal>())
-                    {
-                        <label class="segment"><input type="radio" name="goal" value="@goal" checked="@(Model.Goal == goal)" />@L.Enum(goal)</label>
-                    }
-                </div>
-            </div>
-            @* Empty on Maintain (the stored 0 means nothing there), so choosing a cut asks for a rate. *@
-            <div class="field-row" data-rate-row><label for="rate">@L["Rate per week"]</label><input id="rate" class="num" type="text" name="targetRatePercentPerWeek" value="@(Model.Goal == Goal.Maintain ? null : Model.TargetRatePercentPerWeek.Kg())" min="0" max="@ProfileLimits.MaxCutRatePercent.Kg()" step="0.05" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" data-hint-cut="0.5" data-hint-bulk="0.25" data-missing="@L["Enter a weekly rate for a cut or bulk."]" /><span class="unit">@L["% of weight"]</span></div>
-            <div class="field-row"><label for="protein">@L["Protein"]</label><input id="protein" class="num" type="text" name="proteinGramsPerKg" value="@Model.ProteinGramsPerKg?.Kg()" placeholder="@L["Auto"]" min="@ProfileLimits.MinProteinGramsPerKg.Kg()" max="@ProfileLimits.MaxProteinGramsPerKg.Kg()" step="0.1" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /><span class="unit">@L["g per kg"]</span></div>
-            <div class="field-row"><label for="initialMaintenanceKcal">@L["Starting maintenance"]</label><input id="initialMaintenanceKcal" class="num" type="number" name="initialMaintenanceKcal" value="@Model.InitialMaintenanceKcal" min="@ProfileLimits.MinMaintenanceKcal" max="@ProfileLimits.MaxMaintenanceKcal" inputmode="numeric" placeholder="@L["Estimate"]" /><span class="unit">@L["kcal"]</span></div>
-        </div>
-        <p class="section-footer">@L["Cuts are capped at 1% and bulks at 0.5% of bodyweight per week."]</p>
-        <partial name="_ProteinNote" model="new ProteinNoteViewModel(Model, targets)" />
-        <p class="section-footer">@L["Leave starting maintenance empty to estimate it from sex, age, height, weight and activity. It adapts to your logged data later."]</p>
-        <details class="card card-pad targets-how">
-            <summary>@L["How your targets are set"]</summary>
-            <ul>
-                <li>@L["Protein: at least 1.6 g per kg (1.2 from age 65), aiming higher on a cut to keep muscle. Morton 2018, Nunes 2022, Helms 2014."]</li>
-                <li>@L["Above a BMI of 27, protein uses the weight at BMI 27 for your height, since grams per kg of total weight overshoots."]</li>
-                <li>@L["Fat: at least 20% of calories and 0.5 g per kg, up to 35%. Very low fat lowers testosterone. Whittaker 2021, ACSM."]</li>
-                <li>@L["Carbs: whatever calories are left after protein and fat."]</li>
-                <li>@L["Per meal: about 0.3 g of protein per kg at breakfast, lunch and dinner; 0.4 g and at least 25 g from 65. Morton 2018."]</li>
-                <li>@L["Targets are ranges because the evidence is. Judge them over a week, not a single day."]</li>
-            </ul>
-        </details>
-    </section>
-
-    <section class="section">
-        <h2 class="section-title">@L["Training"]</h2>
-        <div class="list">
-            <div class="field-row"><label for="increment">@L["Weight jump"]</label><input id="increment" class="num" type="text" name="defaultWeightIncrementKg" value="@Model.DefaultWeightIncrementKg.Kg()" min="@ProfileLimits.MinWeightIncrementKg.Kg()" max="@ProfileLimits.MaxWeightIncrementKg.Kg()" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /><span class="unit">@L["kg"]</span></div>
-            <div class="field-row"><label for="bar">@L["Bar weight"]</label><input id="bar" class="num" type="text" name="barWeightKg" value="@Model.BarWeightKg.Kg()" min="@ProfileLimits.MinBarWeightKg.Kg()" max="@ProfileLimits.MaxBarWeightKg.Kg()" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /><span class="unit">@L["kg"]</span></div>
-            <fieldset class="field-row stacked" style="border: 0; margin: 0">
-                <legend class="sr-only">@L["Plates you have"]</legend>
-                <span aria-hidden="true">@L["Plates you have"]</span>
-                <div class="plate-choices">
-                    @foreach (var plate in UserProfile.PlateChoicesKg)
-                    {
-                        <label class="plate-choice"><input type="checkbox" name="platesKg" value="@plate.Kg()" checked="@Model.PlatesKg.Contains(plate)" /><span class="num">@plate.Kg()</span></label>
-                    }
-                </div>
-            </fieldset>
-        </div>
-        <p class="section-footer">@L["The weight jump is how much is added when every set reaches the top of its range."]</p>
-        <p class="section-footer">@L["The plate calculator uses this bar and these plates. Set a different bar for one exercise under Notes & bar."]</p>
-    </section>
-
-    <section class="section">
-        <h2 class="section-title">@L["Region"]</h2>
-        <div class="list">
-            <div class="field-row">
-                <label for="timeZoneId">@L["Time zone"]</label>
-                <select id="timeZoneId" name="timeZoneId">
-                    @foreach (var (region, ids) in GymTracker.Web.Features.Profile.TimeZones.Grouped(Model.TimeZoneId))
-                    {
-                        <optgroup label="@region">
-                            @foreach (var id in ids)
-                            {
-                                <option value="@id" selected="@(id == Model.TimeZoneId)">@GymTracker.Web.Features.Profile.TimeZones.Label(region, id)</option>
-                            }
-                        </optgroup>
-                    }
-                </select>
-            </div>
-        </div>
-        <p class="section-footer">@L["Days for food and weigh-ins start at midnight in this time zone."]</p>
-    </section>
-
-    <p class="autosave-status" role="status"><span data-state="saving">@L["Saving…"]</span><span data-state="saved">@Ui.Icon("check", "icon-sm")@L["Saved"]</span><span data-state="unsaved">@L["Not saved yet. It tries again when you have signal."]</span></p>
-    <p class="field-error" role="alert" data-autosave-error hidden>@Ui.Icon("alert", "icon-sm")<span></span></p>
-    <noscript><button type="submit" class="btn btn-primary btn-block">@L["Save profile"]</button></noscript>
-</form>
-
-<form method="post" asp-antiforgery="true" action="/settings/weekly-summary" data-autosubmit>
-    <section class="section">
-        <h2 class="section-title">@L["Weekly summary"]</h2>
-        <div class="list">
-            <label class="field-row switch-row">
-                <span>@L["AI summary of last week on Today"]</span>
-                <input type="checkbox" class="switch" name="enabled" value="true" checked="@Model.WeeklySummaryEnabled" />
-                <input type="hidden" name="enabled" value="false" />
-            </label>
-        </div>
-        <p class="section-footer">@L["Last week's numbers are sent to an AI model through OpenRouter: calories, macros, weight trend and workouts, without your name."]</p>
-    </section>
-</form>
-
-<section class="section">
-    <div class="list">
-        <a class="row row-link" href="/settings/exercises">
-            <span class="row-icon neutral">@Ui.Icon("train")</span>
-            <span class="row-main">@L["Custom exercises"]</span>
+@{
+    void Row(string href, string icon, string title, string? sub)
+    {
+        <a class="row row-link" href="@href">
+            <span class="row-icon neutral">@Ui.Icon(icon)</span>
+            <span class="row-main">
+                <span class="row-title" style="display: block">@title</span>
+                @if (!string.IsNullOrEmpty(sub))
+                {
+                    <span class="row-sub row-ellipsis" style="display: block">@sub</span>
+                }
+            </span>
             @Ui.Icon("chevron", "row-chevron")
         </a>
-    </div>
-</section>
-
-<section class="section">
-    <h2 class="section-title">@L["AI models"]</h2>
-    <div class="list">
-        @foreach (var task in openRouter.Tasks)
-        {
-            var off = task.Task switch { AiTask.Onboarding => L["Off: setup form only"], AiTask.Weekly => L["Off: no weekly summary"], AiTask.Label => L["Off: no label photos"], _ => L["Off: database ranking only"] };
-            <div class="row">
-                <span class="row-icon neutral">@Ui.Icon(task.Task switch { AiTask.Parser => "text", AiTask.Matcher => "search", AiTask.Weekly => "list", AiTask.Label => "photo", _ => "feedback" })</span>
-                <span class="row-main">
-                    <span class="row-title">@(task.Task switch { AiTask.Parser => L["Food parser"], AiTask.Matcher => L["Food matcher"], AiTask.Weekly => L["Weekly summary"], AiTask.Label => L["Label reader"], _ => L["Setup chat"] })</span>
-                    <span class="row-sub" style="display: block">@(openRouter.Key.Source == KeySource.None
-                        ? (task.Task == AiTask.Parser ? L["Simple built-in parser"] : off)
-                        : task.Model == AiTasks.Off ? off : task.ModelInfo?.Name ?? task.Model)</span>
-                </span>
-            </div>
-        }
-        @if (User.IsInRole(GymTracker.Web.Features.Admin.AdminPolicy.Role))
-        {
-            @* Presentation only: the admin policy decides who gets in. *@
-            <a class="row row-link" href="/admin">
-                <span class="row-icon neutral">@Ui.Icon("key")</span>
-                <span class="row-main">@L["Admin"]</span>
-                @Ui.Icon("chevron", "row-chevron")
-            </a>
-        }
-    </div>
-    <p class="section-footer">@L["The parser reads typed food; the matcher picks which database food each item is, or says none fits. The numbers come from the food database."] @L["The developer manages the AI models."]</p>
-</section>
-
-@{
-    var unreadFeedback = ViewData["UnreadFeedback"] as int? ?? 0;
+    }
 }
+
 <section class="section">
-    <h2 class="section-title">@L["Feedback"]</h2>
+    <div class="list">
+        @{ Row("/settings/profile", "person", L["Profile"], profile); }
+        @{ Row("/settings/goal", "target", L["Goal & nutrition"], goal); }
+        @{ Row("/welcome?restart=1", "text", L["Run the setup chat again"], null); }
+    </div>
+</section>
+
+<section class="section">
+    <div class="list">
+        @{ Row("/settings/training", "train", L["Training"], training); }
+        @{ Row("/settings/exercises", "pencil", L["Custom exercises"], null); }
+    </div>
+</section>
+
+<section class="section">
+    <div class="list">
+        @{ Row("/settings/general", "settings", L["General"], general); }
+        @{ Row("/settings/security", "lock", L["Sign-in & security"], passkeys == 0 ? L["Password only"] : L.Count(passkeys, "1 passkey", "{0} passkeys")); }
+    </div>
+</section>
+
+<section class="section">
     <div class="list">
         <a class="row row-link" href="/feedback/new">
             <span class="row-icon neutral">@Ui.Icon("feedback")</span>
@@ -238,59 +78,30 @@
 </section>
 
 <section class="section">
-    <h2 class="section-title">@L["Your data"]</h2>
     <div class="list">
         <a class="row row-link" href="/settings/export" download>
             <span class="row-icon neutral">@Ui.Icon("download")</span>
             <span class="row-main">@L["Export all data"]</span>
             @Ui.Icon("chevron", "row-chevron")
         </a>
+        @if (User.IsInRole(GymTracker.Web.Features.Admin.AdminPolicy.Role))
+        {
+            @* Presentation only: the admin policy decides who gets in. *@
+            <a class="row row-link" href="/admin">
+                <span class="row-icon neutral">@Ui.Icon("key")</span>
+                <span class="row-main">@L["Admin"]</span>
+                @Ui.Icon("chevron", "row-chevron")
+            </a>
+        }
     </div>
     <p class="section-footer">@L["Workouts, sets, templates, weigh-ins, food log and targets as CSV files in a zip."]</p>
 </section>
-
-@{
-    var passkeys = ViewData["Passkeys"] as IList<Microsoft.AspNetCore.Identity.UserPasskeyInfo> ?? [];
-}
-<section class="section" id="passkeys">
-    <h2 class="section-title">@L["Passkeys"]</h2>
-    <div class="list">
-        @foreach (var passkey in passkeys)
-        {
-            var id = Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(passkey.CredentialId);
-            <form method="post" asp-antiforgery="true" action="/settings/passkeys/@id/remove" class="row" data-confirm="@L["Remove this passkey? You can still sign in with your password."]">
-                <span class="row-icon neutral">@Ui.Icon("key")</span>
-                <span class="row-main">@(passkey.Name ?? L["Passkey"])</span>
-                <span class="row-value">@L["Added {0}", Ui.DayMonth(passkey.CreatedAt.UtcDateTime)]</span>
-                <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--destructive)">@L["Remove"]</button>
-            </form>
-        }
-        <div class="row" style="padding-top: 0; padding-bottom: 0">
-            <button type="button" class="btn btn-plain" style="padding: 0" data-module="passkey-add" hidden>@Ui.Icon("plus")@L["Add a passkey"]</button>
-        </div>
-    </div>
-    <p class="section-footer">@L["Sign in with Face ID or Touch ID instead of typing your password."]</p>
-</section>
-
-<form method="post" asp-antiforgery="true" action="/settings/password">
-    <section class="section">
-        <h2 class="section-title">@L["Password"]</h2>
-        <div class="list">
-            <div class="field-row"><label for="currentPassword">@L["Current"]</label><input id="currentPassword" type="password" name="currentPassword" autocomplete="current-password" required /></div>
-            <div class="field-row"><label for="newPassword">@L["New"]</label><input id="newPassword" type="password" name="newPassword" autocomplete="new-password" minlength="12" required placeholder="@L["12+ characters"]" /></div>
-            <div class="field-row"><label for="confirmPassword">@L["Repeat new"]</label><input id="confirmPassword" type="password" name="confirmPassword" autocomplete="new-password" minlength="12" required /></div>
-        </div>
-        <button type="submit" class="btn btn-secondary btn-block" style="margin-top: var(--s-4)">@L["Change password"]</button>
-    </section>
-</form>
 
 <section class="section">
     <div class="list">
         <form method="post" asp-antiforgery="true" action="/account/logout" class="row" style="padding-top: 0; padding-bottom: 0">
             <button type="submit" class="btn btn-plain" style="padding: 0">@Ui.Icon("logout")@L["Log out"]</button>
         </form>
-        <form method="post" asp-antiforgery="true" action="/settings/logout-everywhere" class="row" style="padding-top: 0; padding-bottom: 0" data-confirm="@L["Sign out on every device, including this one?"]">
-            <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--destructive)">@L["Log out everywhere"]</button>
-        </form>
     </div>
+    <p class="section-footer">@L["Account: {0}", ViewData["Email"] ?? ""]</p>
 </section>

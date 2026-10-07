@@ -109,7 +109,7 @@ public class PasskeyController(SignInManager<AppUser> signIn, UserManager<AppUse
 
         await users.RemovePasskeyAsync(user, credentialId);
         TempData.Notice("Passkey removed.");
-        return Redirect("/settings");
+        return Redirect("/settings/security");
     }
 
     /// <summary>A short label so the list in Settings tells an iPhone from a Mac. Null when unknown; Settings shows a translated "Passkey".</summary>

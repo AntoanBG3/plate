@@ -60,8 +60,8 @@ public class AccountTests(E2EFixture app)
         return await db.Profiles.IgnoreQueryFilters().AsNoTracking().SingleAsync(p => p.UserId == userId);
     }
 
-    private static Task SavedAsync(Phone phone) =>
-        phone.Page.Locator("#profile-form.is-saved").WaitForAsync();
+    private static Task SavedAsync(Phone phone, string form = "#profile-form") =>
+        phone.Page.Locator($"{form}.is-saved").WaitForAsync();
 
     [Theory]
     [InlineData(E2EFixture.Chromium)]
@@ -71,6 +71,7 @@ public class AccountTests(E2EFixture app)
         await using var phone = await app.SignedInPhoneAsync(browser);
         await phone.WithTargetsAsync(app);
         await phone.GoAsync("/settings");
+        await phone.NavigateByAsync(() => phone.Page.Locator("a[href='/settings/profile']").TapAsync());
         (await phone.Page.Locator("#profile-form button[type=submit]:visible").CountAsync()).Should().Be(0, "there is no Save button");
 
         await phone.Page.FillAsync("#heightCm", "176");
@@ -83,8 +84,9 @@ public class AccountTests(E2EFixture app)
             "() => document.querySelector('#heightCm').closest('.list').nextElementSibling.matches('.autosave-status')");
         status.Should().BeTrue();
 
+        await phone.GoAsync("/settings/goal");
         await phone.Page.Locator(".choice-row:has(input[value=Active])").TapAsync();
-        await phone.Page.WaitForFunctionAsync("() => document.querySelector('#profile-form.is-saved') && !document.querySelector('#profile-form.is-dirty')");
+        await phone.Page.WaitForFunctionAsync("() => document.querySelector('#goal-form.is-saved') && !document.querySelector('#goal-form.is-dirty')");
         await phone.Page.WaitForTimeoutAsync(300);
         (await ProfileAsync(phone)).ActivityLevel.Should().Be(GymTracker.Core.Domain.ActivityLevel.Active);
         phone.ShouldHaveNoErrors();
@@ -97,7 +99,7 @@ public class AccountTests(E2EFixture app)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
         await phone.WithTargetsAsync(app);
-        await phone.GoAsync("/settings");
+        await phone.GoAsync("/settings/goal");
 
         await phone.Page.Locator("label.segment:has(input[name=goal][value=Cut])").TapAsync();
         var error = phone.Page.Locator("[data-autosave-error]");
@@ -107,7 +109,7 @@ public class AccountTests(E2EFixture app)
 
         await phone.Page.FillAsync("#rate", "0.5");
         await phone.Page.Locator("#rate").BlurAsync();
-        await SavedAsync(phone);
+        await SavedAsync(phone, "#goal-form");
         (await error.IsHiddenAsync()).Should().BeTrue();
         var saved = await ProfileAsync(phone);
         saved.Goal.Should().Be(GymTracker.Core.Domain.Goal.Cut);
@@ -115,6 +117,7 @@ public class AccountTests(E2EFixture app)
 
         // The browser's own range check comes first (it stopped this too, with its message); without it, the server's
         // refusal shows under the field, not as a toast, and isn't retried.
+        await phone.GoAsync("/settings/profile");
         await phone.Page.EvalOnSelectorAsync("#heightCm", "e => e.removeAttribute('max')");
         await phone.Page.FillAsync("#heightCm", "300");
         await phone.Page.Locator("#heightCm").BlurAsync();

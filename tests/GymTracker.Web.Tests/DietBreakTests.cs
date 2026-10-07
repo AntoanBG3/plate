@@ -15,8 +15,7 @@ public class DietBreakTests(PostgresFixture db) : IDisposable
 
     private static Dictionary<string, string> Form(string goal) => new()
     {
-        ["displayName"] = "Test", ["sex"] = "Male", ["birthYear"] = "1996", ["heightCm"] = "180", ["activityLevel"] = "Inactive",
-        ["goal"] = goal, ["targetRatePercentPerWeek"] = goal == "Maintain" ? "0" : "0.5", ["timeZoneId"] = "Europe/Sofia", ["platesKg"] = "20",
+        ["activityLevel"] = "Inactive", ["goal"] = goal, ["targetRatePercentPerWeek"] = goal == "Maintain" ? "0" : "0.5",
     };
 
     private async Task<UserProfile> ProfileAsync(string email)
@@ -39,7 +38,7 @@ public class DietBreakTests(PostgresFixture db) : IDisposable
         var (client, email) = await app.SignedInClientAsync();
         var today = UserClock.Today(DateTimeOffset.UtcNow, "Europe/Sofia");
 
-        await AppFactory.PostAsync(client, "/settings/profile", await AppFactory.TokenAsync(client, "/settings"), Form("Cut"));
+        await AppFactory.PostAsync(client, "/settings/goal", await AppFactory.TokenAsync(client, "/settings/goal"), Form("Cut"));
         (await ProfileAsync(email)).CutStartedOn.Should().Be(today);
         (await client.GetStringAsync("/today")).Should().NotContain("Take a 2-week break");
 
@@ -55,7 +54,7 @@ public class DietBreakTests(PostgresFixture db) : IDisposable
         var ended = await ProfileAsync(email);
         (ended.DietBreakUntil, ended.CutStartedOn).Should().Be(((DateOnly?)null, today));
 
-        await AppFactory.PostAsync(client, "/settings/profile", await AppFactory.TokenAsync(client, "/settings"), Form("Maintain"));
+        await AppFactory.PostAsync(client, "/settings/goal", await AppFactory.TokenAsync(client, "/settings/goal"), Form("Maintain"));
         (await ProfileAsync(email)).CutStartedOn.Should().BeNull();
     }
 
@@ -63,7 +62,7 @@ public class DietBreakTests(PostgresFixture db) : IDisposable
     public async Task Only_a_cut_can_take_a_break()
     {
         var (client, email) = await app.SignedInClientAsync();
-        await AppFactory.PostAsync(client, "/settings/profile", await AppFactory.TokenAsync(client, "/settings"), Form("Maintain"));
+        await AppFactory.PostAsync(client, "/settings/goal", await AppFactory.TokenAsync(client, "/settings/goal"), Form("Maintain"));
 
         await AppFactory.PostAsync(client, "/today/cut/break", await AppFactory.TokenAsync(client, "/today"));
 

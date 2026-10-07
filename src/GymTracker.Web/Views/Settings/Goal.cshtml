@@ -1,0 +1,65 @@
+@model UserProfile
+@using GymTracker.Core.Nutrition
+@{
+    ViewData["Title"] = L["Goal & nutrition"];
+    ViewData["BackUrl"] = "/settings";
+    ViewData["BackLabel"] = L["Settings"];
+    var targets = ViewData["Targets"] as GymTracker.Web.Features.Food.DailyTargets;
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Goal & nutrition"]</h1>
+</header>
+
+<form method="post" asp-antiforgery="true" action="/settings/goal" id="goal-form"
+      data-autosave data-status-near hx-post="/settings/goal" hx-trigger="change delay:500ms, submit" hx-sync="this:replace" hx-swap="none">
+    <input type="hidden" name="autosave" value="true" />
+    <section class="section">
+        <h2 class="section-title">@L["Goal"]</h2>
+        <div class="list">
+            <div class="field-row stacked">
+                <div class="segmented tall" role="radiogroup" aria-label="@L["Goal"]">
+                    @foreach (var goal in Enum.GetValues<Goal>())
+                    {
+                        <label class="segment"><input type="radio" name="goal" value="@goal" checked="@(Model.Goal == goal)" />@L.Enum(goal)</label>
+                    }
+                </div>
+            </div>
+            @* Empty on Maintain (the stored 0 means nothing there), so choosing a cut asks for a rate. *@
+            <div class="field-row" data-rate-row><label for="rate">@L["Rate per week"]</label><input id="rate" class="num" type="text" name="targetRatePercentPerWeek" value="@(Model.Goal == Goal.Maintain ? null : Model.TargetRatePercentPerWeek.Kg())" min="0" max="@ProfileLimits.MaxCutRatePercent.Kg()" step="0.05" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" data-hint-cut="0.5" data-hint-bulk="0.25" data-missing="@L["Enter a weekly rate for a cut or bulk."]" /><span class="unit">@L["% of weight"]</span></div>
+            <div class="field-row"><label for="protein">@L["Protein"]</label><input id="protein" class="num" type="text" name="proteinGramsPerKg" value="@Model.ProteinGramsPerKg?.Kg()" placeholder="@L["Auto"]" min="@ProfileLimits.MinProteinGramsPerKg.Kg()" max="@ProfileLimits.MaxProteinGramsPerKg.Kg()" step="0.1" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /><span class="unit">@L["g per kg"]</span></div>
+            <div class="field-row"><label for="initialMaintenanceKcal">@L["Starting maintenance"]</label><input id="initialMaintenanceKcal" class="num" type="number" name="initialMaintenanceKcal" value="@Model.InitialMaintenanceKcal" min="@ProfileLimits.MinMaintenanceKcal" max="@ProfileLimits.MaxMaintenanceKcal" inputmode="numeric" placeholder="@L["Estimate"]" /><span class="unit">@L["kcal"]</span></div>
+        </div>
+        <p class="section-footer">@L["Cuts are capped at 1% and bulks at 0.5% of bodyweight per week."]</p>
+        <partial name="_ProteinNote" model="new ProteinNoteViewModel(Model, targets)" />
+        <p class="section-footer">@L["Leave starting maintenance empty to estimate it from sex, age, height, weight and activity. It adapts to your logged data later."]</p>
+        <details class="card card-pad targets-how">
+            <summary>@L["How your targets are set"]</summary>
+            <ul>
+                <li>@L["Protein: at least 1.6 g per kg (1.2 from age 65), aiming higher on a cut to keep muscle. Morton 2018, Nunes 2022, Helms 2014."]</li>
+                <li>@L["Above a BMI of 27, protein uses the weight at BMI 27 for your height, since grams per kg of total weight overshoots."]</li>
+                <li>@L["Fat: at least 20% of calories and 0.5 g per kg, up to 35%. Very low fat lowers testosterone. Whittaker 2021, ACSM."]</li>
+                <li>@L["Carbs: whatever calories are left after protein and fat."]</li>
+                <li>@L["Per meal: about 0.3 g of protein per kg at breakfast, lunch and dinner; 0.4 g and at least 25 g from 65. Morton 2018."]</li>
+                <li>@L["Targets are ranges because the evidence is. Judge them over a week, not a single day."]</li>
+            </ul>
+        </details>
+    </section>
+
+    <section class="section">
+        <h2 class="section-title">@L["Activity"]</h2>
+        <div class="list" role="radiogroup" aria-label="@L["Activity level"]">
+            @foreach (var level in Enum.GetValues<ActivityLevel>())
+            {
+                <label class="row choice-row">
+                    <input type="radio" name="activityLevel" value="@level" checked="@(Model.ActivityLevel == level)" />
+                    <span class="choice-text"><span class="row-title">@L.Enum(level)</span><span class="row-sub">@L[ActivityLevels.Description(level)]</span></span>
+                    @Ui.Icon("check", "choice-check")
+                </label>
+            }
+        </div>
+        <p class="section-footer">@L[ActivityLevels.Note]</p>
+    </section>
+
+    <partial name="_AutosaveStatus" />
+    <noscript><button type="submit" class="btn btn-primary btn-block">@L["Save"]</button></noscript>
+</form>

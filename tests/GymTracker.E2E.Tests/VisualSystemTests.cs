@@ -39,7 +39,7 @@ public class VisualSystemTests(E2EFixture app)
     public async Task The_selected_segment_stands_out_from_its_track_in_a_card(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
-        await phone.GoAsync("/settings");
+        await phone.GoAsync("/settings/general");
         var (thumb, track) = await SegmentLuminanceAsync(phone);
         thumb.Should().BeGreaterThan(track * 1.5, "in dark mode the selected segment must be lighter than the track");
         phone.ShouldHaveNoErrors();
@@ -52,7 +52,7 @@ public class VisualSystemTests(E2EFixture app)
     public async Task A_switch_in_a_field_row_keeps_its_size(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
-        await phone.GoAsync("/settings");
+        await phone.GoAsync("/settings/general");
         var box = await phone.Page.Locator(".field-row .switch").First.BoundingBoxAsync();
         box!.Width.Should().Be(51);
         box.Height.Should().Be(31);
@@ -65,7 +65,7 @@ public class VisualSystemTests(E2EFixture app)
     public async Task Typed_values_read_brighter_than_placeholders(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
-        await phone.GoAsync("/settings");
+        await phone.GoAsync("/settings/profile");
         var colors = await phone.Page.EvaluateAsync<string[]>("""
             () => {
                 const filled = document.querySelector(".field-row input[name=heightCm], .field-row input[type=email], .field-row input[name=displayName]");
@@ -105,7 +105,7 @@ public class VisualSystemTests(E2EFixture app)
     public async Task Switching_theme_is_instant_without_a_crossfade(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
-        await phone.GoAsync("/settings");
+        await phone.GoAsync("/settings/general");
         await phone.Page.EvaluateAsync("""
             () => {
                 window.__transitions = 0;
