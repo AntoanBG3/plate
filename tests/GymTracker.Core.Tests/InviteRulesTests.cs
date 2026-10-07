@@ -42,6 +42,20 @@ public class InviteRulesTests
     }
 
     [Fact]
+    public void The_open_query_agrees_with_the_status()
+    {
+        var invites = new List<Invite>
+        {
+            Open(),
+            new() { ExpiresAt = Now },
+            new() { ExpiresAt = Now.AddDays(1), RedeemedAt = Now },
+            new() { ExpiresAt = Now.AddDays(1), RevokedAt = Now },
+        };
+
+        invites.AsQueryable().WhereOpen(Now).Should().Equal(invites.Where(i => InviteRules.Status(i, Now) == InviteStatus.Open));
+    }
+
+    [Fact]
     public void A_token_is_43_url_safe_characters_and_comes_with_its_hash()
     {
         var (token, hash) = InviteRules.NewToken();

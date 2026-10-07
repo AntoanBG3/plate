@@ -7,22 +7,31 @@ namespace GymTracker.Web.Features.Users;
 public class UserCreator(UserManager<AppUser> users, AppDbContext db)
 {
     /// <summary>Creates a login and its profile. Returns Identity's error messages, or an empty list on success.</summary>
-    public async Task<IReadOnlyList<string>> CreateAsync(string email, string displayName, string password, CancellationToken ct)
+    public async Task<IReadOnlyList<string>> CreateAsync(string email, string displayName, string password, CancellationToken ct) =>
+        (await CreateUserAsync(email, displayName, password, Language.English, ct)).Errors;
+
+    /// <summary>As <see cref="CreateAsync"/>, also returning the new login and setting the profile's language.</summary>
+    public async Task<UserCreation> CreateUserAsync(string email, string displayName, string password, Language language, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(displayName) || displayName.Trim().Length > 100)
         {
-            return ["Name must be 1 to 100 characters."];
+            return new(null, ["Name must be 1 to 100 characters."]);
         }
 
         var user = new AppUser { UserName = email.Trim(), Email = email.Trim(), EmailConfirmed = true };
         var result = await users.CreateAsync(user, password);
         if (!result.Succeeded)
         {
-            return result.Errors.Select(e => e.Description).ToList();
+            return new(null, result.Errors.Select(e => e.Description).ToList());
         }
 
-        db.Profiles.Add(new UserProfile { UserId = user.Id, DisplayName = displayName.Trim() });
+        db.Profiles.Add(new UserProfile { UserId = user.Id, DisplayName = displayName.Trim(), Language = language });
         await db.SaveChangesAsync(ct);
-        return [];
+        return new(user, []);
     }
+}
+
+public sealed record UserCreation(AppUser? User, IReadOnlyList<string> Errors)
+{
+    public bool Succeeded => User is not null;
 }

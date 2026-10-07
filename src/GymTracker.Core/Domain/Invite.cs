@@ -55,6 +55,10 @@ public static class InviteRules
 
     public static bool ValidDays(int days) => days is >= MinDays and <= MaxDays;
 
+    /// <summary><see cref="Status"/> is Open, as a query the database can run.</summary>
+    public static IQueryable<Invite> WhereOpen(this IQueryable<Invite> invites, DateTimeOffset now) =>
+        invites.Where(i => i.RedeemedAt == null && i.RevokedAt == null && i.ExpiresAt > now);
+
     /// <summary>A new link token (32 random bytes, base64url) and the hash to store for it.</summary>
     public static (string Token, byte[] Hash) NewToken()
     {

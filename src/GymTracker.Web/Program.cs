@@ -93,6 +93,7 @@ builder.Services.AddScoped<GymTracker.Web.Features.Export.DataExport>();
 
 // The admin area (SPEC 12).
 builder.Services.AddScoped<AdminAuditLog>();
+builder.Services.AddScoped<InviteAdmin>();
 builder.Services.AddScoped<AiAdmin>();
 builder.Services.AddSingleton<EvalJobs>();
 builder.Services.Configure<CloudflareAccessOptions>(config.GetSection("Admin:CloudflareAccess"));
@@ -160,6 +161,7 @@ builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>
 });
 builder.Services.AddScoped<UserTime>();
 builder.Services.AddScoped<UserCreator>();
+builder.Services.AddScoped<InviteService>();
 
 builder.Services
     .AddIdentity<AppUser, IdentityRole>(o =>
