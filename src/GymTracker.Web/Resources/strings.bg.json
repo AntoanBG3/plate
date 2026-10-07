@@ -883,5 +883,6 @@
   "Reading the label…": "Чета етикета…",
   "Needs a connection": "Нужна е връзка",
   "Couldn't read that picture. Try another photo.": "Снимката не можа да се отвори. Опитай с друга.",
-  "Too many photos for now. Try again in a few minutes.": "Твърде много снимки засега. Опитай пак след няколко минути."
+  "Too many photos for now. Try again in a few minutes.": "Твърде много снимки засега. Опитай пак след няколко минути.",
+  "That day is too far back.": "Този ден е твърде назад."
 }

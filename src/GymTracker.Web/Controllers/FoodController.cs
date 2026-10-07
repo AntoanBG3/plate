@@ -32,9 +32,9 @@ public class FoodController(
     public async Task<IActionResult> Index(DateOnly? date, CancellationToken ct)
     {
         var today = await profiles.TodayAsync(ct);
-        if (date > today)
+        if (date is { } asked && !FoodDays.IsOpenable(asked, today))
         {
-            return Redirect("/food"); // future days can't be logged (SPEC 7)
+            return Redirect("/food"); // future days and ancient ones can't be opened (SPEC 7)
         }
 
         var shown = date ?? today;
@@ -59,7 +59,7 @@ public class FoodController(
     public async Task<IActionResult> Add(DateOnly? date, Meal? meal, string? tab, string? q, bool off, CancellationToken ct)
     {
         var today = await profiles.TodayAsync(ct);
-        if (date > today)
+        if (date is { } asked && !FoodDays.IsOpenable(asked, today))
         {
             return Redirect("/food");
         }

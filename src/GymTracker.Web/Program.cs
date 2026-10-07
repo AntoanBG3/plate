@@ -51,8 +51,15 @@ builder.WebHost.ConfigureKestrel(k =>
 });
 
 builder.Services.AddSingleton<DbTimingInterceptor>();
+// The chiseled runtime image has no libgssapi_krb5. Npgsql's default (prefer GSS encryption) probes for it on every
+// start and logs "cannot open shared object file"; the database only takes passwords, so the probe is turned off.
+var connectionString = new Npgsql.NpgsqlConnectionStringBuilder(
+    config.GetConnectionString("Default") ?? throw new InvalidOperationException("ConnectionStrings:Default is not set."))
+{
+    GssEncryptionMode = Npgsql.GssEncryptionMode.Disable,
+}.ConnectionString;
 builder.Services.AddDbContext<AppDbContext>((sp, o) => o
-    .UseNpgsql(config.GetConnectionString("Default") ?? throw new InvalidOperationException("ConnectionStrings:Default is not set."))
+    .UseNpgsql(connectionString)
     .AddInterceptors(sp.GetRequiredService<DbTimingInterceptor>()));
 
 builder.Services.AddHttpContextAccessor();
