@@ -51,11 +51,12 @@ public static class CreateUserCommand
         return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
     }
 
-    internal static string ReadPassword(string prompt)
+    /// <summary>Reads a password without echoing it; from <paramref name="input"/> (tests) or redirected stdin, one line.</summary>
+    internal static string ReadPassword(string prompt, TextReader? input = null)
     {
-        if (Console.IsInputRedirected)
+        if (input is not null || Console.IsInputRedirected)
         {
-            return Console.ReadLine() ?? "";
+            return (input ?? Console.In).ReadLine() ?? "";
         }
 
         Console.Write(prompt);

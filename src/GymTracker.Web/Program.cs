@@ -34,7 +34,8 @@ var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 // The CLI commands print to stdout for piping over SSH (feedback attachments are raw bytes), so their logs go to stderr.
-if (args.Length > 0 && args[0] is FeedbackCommand.Name or RoleCommand.Name or AiCommand.Name or AdminCommand.Name)
+if (args.Length > 0 && args[0] is FeedbackCommand.Name or RoleCommand.Name or AiCommand.Name or AdminCommand.Name
+    or InviteCommand.Name or ResetPasswordCommand.Name or DeleteUserCommand.Name)
 {
     builder.Logging.ClearProviders();
     builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
@@ -94,6 +95,7 @@ builder.Services.AddScoped<GymTracker.Web.Features.Export.DataExport>();
 // The admin area (SPEC 12).
 builder.Services.AddScoped<AdminAuditLog>();
 builder.Services.AddScoped<InviteAdmin>();
+builder.Services.AddScoped<UserDeleter>();
 builder.Services.AddScoped<AiAdmin>();
 builder.Services.AddSingleton<EvalJobs>();
 builder.Services.Configure<CloudflareAccessOptions>(config.GetSection("Admin:CloudflareAccess"));
@@ -370,6 +372,21 @@ if (args.Length > 0 && args[0] == AiCommand.Name)
 if (args.Length > 0 && args[0] == AdminCommand.Name)
 {
     return await AdminCommand.RunAsync(app.Services, args);
+}
+
+if (args.Length > 0 && args[0] == InviteCommand.Name)
+{
+    return await InviteCommand.RunAsync(app.Services, args);
+}
+
+if (args.Length > 0 && args[0] == ResetPasswordCommand.Name)
+{
+    return await ResetPasswordCommand.RunAsync(app.Services, args);
+}
+
+if (args.Length > 0 && args[0] == DeleteUserCommand.Name)
+{
+    return await DeleteUserCommand.RunAsync(app.Services, args);
 }
 
 if (!app.Services.GetRequiredService<CloudflareAccess>().Available)

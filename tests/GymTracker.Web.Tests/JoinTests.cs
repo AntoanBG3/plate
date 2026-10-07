@@ -162,6 +162,38 @@ public class JoinTests(PostgresFixture fixture) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task An_account_made_from_an_invite_sees_nothing_of_the_other_accounts()
+    {
+        var owners = new List<(int SessionId, string Secret)>();
+        for (var i = 0; i < 2; i++)
+        {
+            var userId = await fixture.CreateUserAsync();
+            await using var s = new UserScope(fixture, userId);
+            var secret = $"Secret plan {Guid.NewGuid():N}";
+            var template = await s.Templates.CreateAsync(secret, default);
+            await s.Templates.AddExerciseAsync(template.Id, (await s.Db.Exercises.FirstAsync(e => e.Name == "Bench press")).Id, default);
+            owners.Add(((await s.Sessions.StartAsync(template.Id, default)).Id, secret));
+        }
+
+        var client = app.NewClient();
+        var email = NewEmail();
+        AppFactory.IsRedirectTo(await JoinAsync(client, await InviteAsync(app), email), "/").Should().BeTrue();
+        await using (var db = fixture.CreateContext(null))
+        {
+            // Past the setup chat, so pages answer directly.
+            var id = await db.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
+            await db.Profiles.IgnoreQueryFilters().Where(p => p.UserId == id).ExecuteUpdateAsync(p => p.SetProperty(x => x.OnboardedAt, DateTimeOffset.UtcNow));
+        }
+
+        foreach (var (sessionId, secret) in owners)
+        {
+            (await client.GetAsync($"/train/sessions/{sessionId}")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+            var export = ExportTests.Unzip(await client.GetByteArrayAsync("/settings/export"));
+            string.Concat(export.Values).Should().NotContain(secret);
+        }
+    }
+
+    [Fact]
     public async Task Join_requests_are_limited_per_address()
     {
         using var limited = new AppFactory(fixture, settings: new Dictionary<string, string?> { ["RateLimits:JoinPerWindow"] = "3" });
