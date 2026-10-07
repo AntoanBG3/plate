@@ -171,7 +171,7 @@ public class UntestedAreasTests(E2EFixture app)
         (await GymTracker.Web.Cli.RoleCommand.RunAsync(app.App.Services, ["role", "grant", "dev", "--email", phone.Email], new StringWriter())).Should().Be(0);
 
         // Add one in Settings.
-        await phone.GoAsync("/settings");
+        await phone.GoAsync("/settings/security");
         await phone.NavigateByAsync(() => phone.Page.Locator("[data-module=passkey-add]").TapAsync());
         await using (var db = app.Db.CreateContext(null))
         {

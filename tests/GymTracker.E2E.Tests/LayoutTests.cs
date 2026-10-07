@@ -39,6 +39,34 @@ public class LayoutTests(E2EFixture app)
         phone.ShouldHaveNoErrors();
     }
 
+    // Settings is a hub of rows that each open one page (SPEC 7); every page fits a phone in both languages.
+    [Theory]
+    [InlineData(E2EFixture.Chromium, 390, false)]
+    [InlineData(E2EFixture.Chromium, 320, true)]
+    [InlineData(E2EFixture.WebKit, 390, true)]
+    [InlineData(E2EFixture.WebKit, 320, false)]
+    public async Task Settings_pages_open_from_the_hub_and_fit_the_phone(string browser, int width, bool bulgarian)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, width);
+        await phone.WithTargetsAsync(app, bulgarian);
+        await phone.GoAsync("/settings");
+
+        var rows = await phone.Page.EvaluateAsync<double[]>("() => [...document.querySelectorAll('main .row-link')].map((r) => r.getBoundingClientRect().height)");
+        rows.Should().NotBeEmpty().And.OnlyContain(h => h >= 44, "every row is a full touch target");
+
+        foreach (var page in new[] { "profile", "goal", "training", "general", "security" })
+        {
+            await phone.NavigateByAsync(() => phone.Page.Locator($"main a[href='/settings/{page}']").TapAsync());
+            var overflow = await phone.Page.EvaluateAsync<double>("() => document.documentElement.scrollWidth - window.innerWidth");
+            overflow.Should().BeLessThanOrEqualTo(0, $"/settings/{page} does not scroll sideways");
+            await TopbarFitsAsync(phone, $"/settings/{page}");
+            await phone.NavigateByAsync(() => phone.Page.Locator(".topbar-back").TapAsync());
+            new Uri(phone.Page.Url).AbsolutePath.Should().Be("/settings");
+        }
+
+        phone.ShouldHaveNoErrors();
+    }
+
     [Theory]
     [InlineData(E2EFixture.Chromium, 320, false)]
     [InlineData(E2EFixture.Chromium, 320, true)]
@@ -127,7 +155,7 @@ public class LayoutTests(E2EFixture app)
         await phone.WithTargetsAsync(app, bulgarian: true);
         var template = await phone.CreateTemplateAsync(app, "Горна част", "Bench press");
 
-        foreach (var path in new[] { "/settings", $"/train/templates/{template}", "/today" })
+        foreach (var path in new[] { "/settings/goal", "/settings/security", $"/train/templates/{template}", "/today" })
         {
             await phone.GoAsync(path);
             // Text width of each visible placeholder against the input's content box.
@@ -163,7 +191,7 @@ public class LayoutTests(E2EFixture app)
         phone.Email = email;
         await phone.WithTargetsAsync(app, bulgarian: true);
 
-        foreach (var path in new[] { "/welcome", "/settings", "/food/add", "/progress" })
+        foreach (var path in new[] { "/welcome", "/settings/goal", "/settings/general", "/food/add", "/progress" })
         {
             await phone.GoAsync(path);
             // A label wider than its segment, or a segment taller than two lines, is cut off or crowds the control.

@@ -1,0 +1,50 @@
+@model IList<Microsoft.AspNetCore.Identity.UserPasskeyInfo>
+@{
+    ViewData["Title"] = L["Sign-in & security"];
+    ViewData["BackUrl"] = "/settings";
+    ViewData["BackLabel"] = L["Settings"];
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Sign-in & security"]</h1>
+</header>
+
+<section class="section" id="passkeys">
+    <h2 class="section-title">@L["Passkeys"]</h2>
+    <div class="list">
+        @foreach (var passkey in Model)
+        {
+            var id = Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(passkey.CredentialId);
+            <form method="post" asp-antiforgery="true" action="/settings/passkeys/@id/remove" class="row" data-confirm="@L["Remove this passkey? You can still sign in with your password."]">
+                <span class="row-icon neutral">@Ui.Icon("key")</span>
+                <span class="row-main">@(passkey.Name ?? L["Passkey"])</span>
+                <span class="row-value">@L["Added {0}", Ui.DayMonth(passkey.CreatedAt.UtcDateTime)]</span>
+                <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--destructive)">@L["Remove"]</button>
+            </form>
+        }
+        <div class="row" style="padding-top: 0; padding-bottom: 0">
+            <button type="button" class="btn btn-plain" style="padding: 0" data-module="passkey-add" hidden>@Ui.Icon("plus")@L["Add a passkey"]</button>
+        </div>
+    </div>
+    <p class="section-footer">@L["Sign in with Face ID or Touch ID instead of typing your password."]</p>
+</section>
+
+<form method="post" asp-antiforgery="true" action="/settings/password">
+    <section class="section">
+        <h2 class="section-title">@L["Password"]</h2>
+        <div class="list">
+            <div class="field-row"><label for="currentPassword">@L["Current"]</label><input id="currentPassword" type="password" name="currentPassword" autocomplete="current-password" required /></div>
+            <div class="field-row"><label for="newPassword">@L["New"]</label><input id="newPassword" type="password" name="newPassword" autocomplete="new-password" minlength="12" required placeholder="@L["12+ characters"]" /></div>
+            <div class="field-row"><label for="confirmPassword">@L["Repeat new"]</label><input id="confirmPassword" type="password" name="confirmPassword" autocomplete="new-password" minlength="12" required /></div>
+        </div>
+        <button type="submit" class="btn btn-secondary btn-block" style="margin-top: var(--s-4)">@L["Change password"]</button>
+    </section>
+</form>
+
+<section class="section">
+    <div class="list">
+        <form method="post" asp-antiforgery="true" action="/settings/logout-everywhere" class="row" style="padding-top: 0; padding-bottom: 0" data-confirm="@L["Sign out on every device, including this one?"]">
+            <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--destructive)">@L["Log out everywhere"]</button>
+        </form>
+    </div>
+    <p class="section-footer">@L["Signs out every phone and browser, including this one."]</p>
+</section>
