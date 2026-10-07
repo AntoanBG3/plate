@@ -15,6 +15,8 @@ public sealed class FakeLabelReader : ILabelReader
 
     public Task<LabelReadResult> ReadAsync(byte[] image, string contentType, CancellationToken ct)
     {
+        // Like the real HTTP call: a cancelled request never gets an answer.
+        ct.ThrowIfCancellationRequested();
         Calls++;
         return Task.FromResult(Next);
     }

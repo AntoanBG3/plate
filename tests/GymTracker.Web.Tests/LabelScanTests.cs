@@ -369,4 +369,19 @@ public class LabelScanTests(PostgresFixture fixture)
         html.Should().MatchRegex("id=\"m-fiber\" class=\"num is-missing\"");
         html.Should().Contain("Read from the photo. Check each value against the label.");
     }
+
+    [Fact]
+    public async Task A_read_whose_request_was_cancelled_is_still_stored()
+    {
+        // A second photo or leaving the page aborts the request, but the model may already have been paid for.
+        var userId = await fixture.CreateUserAsync();
+        await using var db = fixture.CreateContext(userId);
+        var service = new GymTracker.Web.Features.Food.LabelScanService(db, new FakeLabelReader(), new GymTracker.Web.Data.FixedCurrentUser(userId), TimeProvider.System);
+        using var aborted = new CancellationTokenSource();
+        await aborted.CancelAsync();
+
+        await service.ReadAsync(Jpeg(100), 10, 10, aborted.Token);
+
+        (await db.LabelScans.CountAsync(s => s.UserId == userId)).Should().Be(1);
+    }
 }

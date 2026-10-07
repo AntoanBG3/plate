@@ -25,7 +25,9 @@ public class LabelScanService(AppDbContext db, ILabelReader reader, ICurrentUser
 
         var type = ImageSniffer.ContentType(bytes) ?? throw new ValidationException("Attach a photo (JPEG, PNG or WebP).");
         var started = time.GetTimestamp();
-        var result = await reader.ReadAsync(bytes, type, ct);
+        // Not cancelled with the request: a second photo or leaving the page aborts it, but the model may already
+        // have been paid for, and every read is recorded (SPEC 6.6). The reader's own timeouts bound the wait.
+        var result = await reader.ReadAsync(bytes, type, CancellationToken.None);
         var outcome = result.Reading is { } reading ? LabelValues.Normalize(reading) : new LabelOutcome(null, result.Error);
         var scan = new LabelScan
         {
@@ -39,7 +41,7 @@ public class LabelScanService(AppDbContext db, ILabelReader reader, ICurrentUser
             Photo = new LabelScanPhoto { ContentType = type, Width = Math.Clamp(width, 0, 10_000), Height = Math.Clamp(height, 0, 10_000), Bytes = bytes },
         };
         db.LabelScans.Add(scan);
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(CancellationToken.None);
         return new LabelScanResult(scan.Id, outcome.Values, outcome.Error);
     }
 
