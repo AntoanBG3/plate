@@ -34,7 +34,7 @@ Build in the phases at the end of this document. Each phase must be usable on it
 | Front-end delivery | No CDNs. Pinned copies of every library (htmx, Alpine, Chart.js, the barcode scanner and its `.wasm`) are vendored into `wwwroot/lib` and precached by the service worker |
 | Database | PostgreSQL 18, EF Core with Npgsql provider |
 | Auth | ASP.NET Core Identity, cookie auth, sliding 30-day persistent login, lockout and login rate limiting on (section 9). No Cloudflare Access in front of the app, except the admin area (section 12), whose Access token is checked with `Microsoft.IdentityModel.JsonWebTokens`. Passkeys (WebAuthn, built into Identity in .NET 10) alongside passwords |
-| LLM | OpenRouter chat completions API (`openai/gpt-6-luna` by default, model picked in the admin area) via typed HttpClient, behind an interface. It extracts foods and grams; nutrition values come from the food database (section 6.1) |
+| LLM | OpenRouter chat completions API (`openai/gpt-6-luna` by default, model picked in the admin area) via typed HttpClient, behind an interface. It extracts foods and grams; nutrition values come from the food database (section 6.1). A separate vision model (`google/gemini-3.5-flash-lite` by default) reads nutrition labels from photos (section 6.6) |
 | Food matching | Optionally TypeSafe's Jev decision model (`typesafe/jev-1.13`) through OpenRouter's Decisions API, chosen in the admin area: it picks which shortlisted database food each parsed item is, or that none fits (section 6.1) |
 | Food database | Users' own and shared `FoodItem`s, a locally imported subset of USDA FoodData Central for generic foods, and Open Food Facts API v3 for barcodes |
 | Barcode scanning | `barcode-detector` ponyfill (ZXing-C++ compiled to WASM), self-hosted. Safari on iOS ships the native `BarcodeDetector` API disabled, and `@zxing/browser` sits on a library in maintenance mode |
@@ -56,7 +56,7 @@ src/
   GymTracker.Core/            Domain entities, enums, pure calculation services. No EF, no HTTP, no ASP.NET references.
   GymTracker.Web/             Controllers, views, view models, htmx partials, static assets, PWA manifest and service worker.
     Data/                     EF DbContext, migrations, seed data (exercises, USDA subset).
-    Integrations/             OpenRouter client and model catalog, Jev match decider, Open Food Facts client.
+    Integrations/             OpenRouter client and model catalog, Jev match decider, label reader, Open Food Facts client.
     Features/                 Thin feature services that use the DbContext directly and call Core for the math.
 tests/
   GymTracker.Core.Tests/      Unit tests for all calculation logic.
@@ -155,13 +155,23 @@ Seed about 90 common exercises, each with a Bulgarian name in the gym vocabulary
 ### Nutrition
 
 **FoodItem** (reusable food definitions and cache)
-- `Id`, `OwnerUserId` (nullable for shared items: the Open Food Facts cache, the USDA subset, and manual items created for a barcode)
-- `Name`, `NameBg` (nullable, Bulgarian name), `Brand` (nullable), `Barcode` (nullable, unique where not null)
+- `Id`, `OwnerUserId` (nullable for shared items: the Open Food Facts cache, the USDA subset, and manual items shared for a barcode)
+- `AddedByUserId` (nullable, no foreign key, like `Invite.CreatedByUserId`): who created a manual item. Kept when that account is deleted; null only when the creator is unknown. Used only to tell a user that a shared item came from someone else; never shown as a name.
+- `Name`, `NameBg` (nullable, Bulgarian name), `Brand` (nullable), `Barcode` (nullable). A barcode is unique among shared items, and unique per owner among private ones, so a private item doesn't block anyone else's.
 - `KcalPer100g`, `ProteinPer100g`, `CarbsPer100g`, `FatPer100g`
 - `FiberPer100g`, `SaturatedFatPer100g` (nullable; null means unknown, not zero)
 - `DefaultServingGrams` (nullable)
 - `Source` (OpenFoodFacts, Usda, Manual, Ai)
-- Manual items created from a barcode scan are shared (`OwnerUserId` null) so the other user doesn't re-enter the same product; Open Food Facts coverage of Bulgarian products is thin, so this path will be common. Manual items without a barcode stay private.
+- A manual item with a barcode is shared (`OwnerUserId` null) when the user leaves "Share with other users" ticked (the default), so others who scan the same packaged product don't re-enter it; Open Food Facts coverage of Bulgarian products is thin, so this path will be common. Unticked, it is private like a manual item without a barcode. Sharing can't be changed after saving.
+- Barcode lookup checks the user's own items first, then shared items, then Open Food Facts.
+- Existing shared manual items get `AddedByUserId` once, from the user of the earliest entry that logged them; with no entry it stays null, and the item shows no mark.
+- Rolling this change back clears the barcode of private items whose barcode another item also has, so the older one-barcode-per-food index can return; shared items keep theirs.
+
+**LabelScan** (user-owned, section 6.6)
+- `Id`, `UserId`, `CreatedAt`, `Model`, `LatencyMs`, `Error` (nullable)
+- `Reading` (jsonb, the model's answer as returned), `Values` (jsonb, the per-100 g values and serving after 6.6's normalizing, with its notes)
+- `FoodItemId` (nullable, set null on delete), `Saved` (jsonb, the values the user saved, null until saved), `Edited` (bool: any of energy, protein, carbs, fat, fiber, saturated fat or serving differs from `Values` beyond rounding)
+- **LabelScanPhoto**: the photo (`ContentType`, `Width`, `Height`, `Bytes`), in its own table so lists never load images. Deleted 30 days after the scan; the scan row is kept 180 days, like a ParseRun.
 
 **SavedMeal**
 - `Id`, `UserId`, `Name` (up to 60 characters), `CreatedAt`
@@ -410,6 +420,32 @@ A short note on Today about the previous Monday to Sunday: what went well, up to
 
 **Prompt rules.** Plain and warm, in the account's language, using the informal "ти" in Bulgarian. Mention real numbers from the facts and never invent one. Tips are specific actions for next week drawn from the weakest numbers (for example protein at breakfast when the minimum was missed); when a number has no target or too little data, leave it out. No medical advice, no comments on the user's body or appearance, no praise or blame for weight changes; describe the trend against the goal neutrally.
 
+### 6.6 Label reading
+
+Packaged products missing from Open Food Facts are entered from their nutrition table. Typing six numbers is slow, so a photo of the table fills the manual form instead, and the user checks it and saves. The values are printed on the pack, so the model transcribes rather than estimates; this is the one place a model's numbers go into a food directly, and only after the user has seen them.
+
+**Where.** "Read the label from a photo" at the top of the manual form, both on the Manual tab and after a barcode lookup finds nothing or no nutrition data; and "Photograph a label" on the Scan tab, under "Scan a barcode", for products without one, which opens the manual form filled in. Hidden when no key is set or the label model is off; disabled offline ("Needs a connection"). Under the button: "The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked."
+
+**Photo.** `<input type="file" accept="image/*">` without `capture`, so iOS offers both the camera and the photo library. The phone draws it at most 2,000 px on its long side as JPEG quality 0.85, stepping down like the feedback screenshot (section 11) until it is under 2 MB, with the same resize code. The barcode detector (section 7) also runs on the photo, and a barcode it finds fills the form's barcode field unless one is there. The server accepts JPEG, PNG or WebP by their first bytes, up to 2 MB; `POST /food/label` is the one endpoint whose request body may be up to 3 MB (section 9).
+
+**Model call.** `ILabelReader` in Core, `OpenRouterLabelReader` in Integrations, with the parser's request shape (6.1): strict structured output, `provider: {require_parameters: true}`, and temperature and the lowest reasoning effort only when the catalog lists them. The photo is an `image_url` content part with a base64 `data:` URL. Timeout 20 seconds and one retry on 5xx only; a timeout is not retried, so nobody waits more than about 40 seconds. Schema: `is_label` (bool), `name` and `brand` (nullable, only when printed in the photo), `basis` (`per_100g`, `per_100ml` or `per_serving`), `serving_grams`, `energy_kcal`, `energy_kj`, `protein`, `carbs`, `fat`, `saturated_fat`, `fiber` (nullable numbers, as printed in the chosen column).
+
+**Prompt rules.** Transcribe; never calculate or estimate. Prefer the per-100 g or per-100 ml column, and use a per-serving column only when there is none, giving the serving weight. A value that isn't printed or isn't legible is null. Read decimal commas. Labels are in Bulgarian or another EU language; name the Bulgarian rows (Енергийна стойност, Мазнини, от които наситени мастни киселини, Въглехидрати, от които захари, Фибри or Хранителни влакна, Белтъчини, Сол), and say sugars are not carbs. A photo that isn't a nutrition table gives `is_label` false.
+
+**Normalizing** (`LabelValues.Normalize` in Core, pure, unit-tested with each case below):
+1. `is_label` false, or energy, protein, carbs and fat all null: "Couldn't find a nutrition table in that photo." The form is left as it was.
+2. kcal is kJ ÷ 4.184 when kcal is null. When both are printed and differ by more than 5%, kcal is kept with a note.
+3. Per serving becomes per 100 g through `serving_grams`. Without a serving weight: "The label only gives values per serving. Enter them by hand or photograph the per-100 g column." Converted fields are marked.
+4. Per 100 ml is used as per 100 g, with the note "Per 100 ml, used as per 100 g".
+5. Rounded to one decimal, kcal to a whole number. A value outside the `FoodMath.Validate` limits is left empty with a note. Protein, carbs and fat adding up to more than 100 g, saturated fat above fat, and the 6.1 energy check (`|kcal - (4P + 4C + 9F)|` over 15% of kcal) each add a warning and keep the values.
+6. A printed serving weight fills "One serving" and an empty "You ate". Amounts typed before the photo are kept: "You ate" always, "One serving" when the label prints none. The share choice is kept too.
+
+**Result.** The form is filled (the name only when the field is empty), with the banner "Read from the photo. Check each value against the label." and any notes and warnings; converted and missing fields are highlighted. Nothing is saved until Save and add. Saving records the saved values on the scan (`Saved`, `Edited`, `FoodItemId`); a missing or foreign scan id never blocks saving food. A timeout, a refusal or an unreadable answer shows "Couldn't read the label. Enter the values by hand." and leaves the form untouched. Every read stores a `LabelScan` and its photo (section 4), failures included, and so does a read whose request was aborted (a second photo, leaving the page), since the model may already have been paid for. A read that fails before a model is chosen records the configured model, or "unknown".
+
+**Model setting.** A fifth AI task, `label`, with its own model setting (`OpenRouter:Model:Label`), default `google/gemini-3.5-flash-lite`. Its picker lists catalog models whose `architecture.input_modalities` include `image`, with the parser's structured-output filter; Off hides the feature. It never falls back to the parser's model. About $0.001 to $0.002 per scan. Tests use `FakeLabelReader`; without a key the feature is hidden, so production never uses the fake.
+
+**Limits.** 20 label reads per user per 10 minutes (section 9).
+
 ---
 
 ## 7. Screens
@@ -451,13 +487,15 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - The totals card shows each macro against its target (5.6): protein against the aim with the minimum, fat and carbs against their ranges, fiber against its minimum and saturated fat against its maximum, with the coverage note when a day is under 80% (5.8). Each of Breakfast, Lunch and Dinner shows its protein, with a check once it reaches the per-meal aim.
 - A This week card with the 5.8 averages.
 - Add entry with four methods:
-  1. **Text:** a textarea; submit sends to the parser and shows the editable confirmation list; confirm saves all items.
-  2. **Barcode:** opens the camera scanner (EAN-13, EAN-8, UPC-A, UPC-E only); on detection, looks up the product and asks for grams (pre-filled with the serving size). Installed iOS web apps do not keep camera permission, so expect a prompt on each launch, and open the scanner without changing the URL (no `hx-push-url`), since route changes can re-prompt or stop the stream. Fallbacks on the same screen: a field to type the digits, and a "take photo" button (`<input type="file" accept="image/*" capture="environment">`) decoded with the same detector.
+  1. **Text:** a textarea (one line to start, its text level with the send button, growing as it fills); submit sends to the parser and shows the editable confirmation list; confirm saves all items.
+  2. **Barcode:** opens the camera scanner (EAN-13, EAN-8, UPC-A, UPC-E only); on detection, looks up the product and asks for grams (pre-filled with the serving size). Installed iOS web apps do not keep camera permission, so expect a prompt on each launch, and open the scanner without changing the URL (no `hx-push-url`), since route changes can re-prompt or stop the stream. Fallbacks on the same screen: a field to type the digits, and a "take photo" button (`<input type="file" accept="image/*" capture="environment">`) decoded with the same detector. Under the scan button, "Photograph a label" (6.6) for products without a barcode.
   3. **Search:** searches as you type: the user's own FoodItems and recent entries first, then shared items (including the USDA subset), then Open Food Facts on explicit submit. Names that start with the search (singular or plural) rank above names that merely contain it, and identical foods are listed once.
   4. **Recent / favourites:** one-tap re-log of the 20 most frequent entries from the last 30 days, with editable grams.
 - Edit or delete any entry (open it, or swipe the row). Copy yesterday's meal into today, offered only when yesterday has entries for that meal. An entry's name never carries its amount; the grams are shown beside it.
 - On the confirmation list, each item can be switched to another food from a search, and a weak database match is marked "Check this" rather than "Database".
 - Quick add per meal: a name (optional), calories, and optional protein, carbs, fat, fiber and saturated fat, for restaurant meals and labels not worth saving. Quick entries stay out of Recent.
+- Manual food (the Manual tab, and after a barcode lookup finds nothing): name, the per-100 g values from the label, an optional serving and the grams eaten, with "Read the label from a photo" at the top (6.6). Except after a barcode miss, where the scanned code is already known, an optional barcode field comes after the name. Saving the food and logging the portion happen together: when the entry is refused (too many grams, a future day), no food is kept, so a retry isn't told the barcode is taken. When the form has a barcode, a "Share with other users" checkbox, ticked by default, sits above Save, with the hint "Others who scan this barcode get this food instead of entering it again. Your name isn't shown." (section 4).
+- A shared manual food that another account added is marked "Added by another user" (never a name or anything else about the account): in the grams sheet after a scan, on its search result line, and in the sheet of an entry logged from it. The account that added it, a food whose creator is unknown, and every other kind of food show nothing.
 - Saved meals: a meal's menu on the Food day saves its entries under a name. Saved meals are listed first on the Recent tab; tapping one opens a sheet with editable grams per item (quick items keep their numbers) and logs them all into the chosen meal. Rename or delete from the same sheet.
 - Deleting a food entry or a set, and removing an exercise from a session or a template, happen at once with an Undo toast for 6 seconds (no confirm). Archiving a template, finishing or deleting a workout, removing a passkey, signing out everywhere and deleting a saved meal still ask first, in the app's own confirmation sheet (never the browser's `confirm`). The Undo toast belongs to the page it was shown on and goes away on another page; its timer pauses while it is pressed, and a failed undo says so.
 
@@ -523,9 +561,9 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - ASP.NET Core rate limiting middleware on the login POST, partitioned by client IP.
 - Forwarded headers: behind cloudflared every request comes from 172.30.0.10, so configure `ForwardedHeadersOptions` with that address as the only known proxy, read the client IP from `CF-Connecting-IP` and the scheme from `X-Forwarded-Proto`. Without this, rate limiting puts every client in one bucket.
 - Passwords: minimum 12 characters, no composition rules. An unknown email costs one password hash like a known one, so timing does not reveal which accounts exist.
-- A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes), admin unlock requests (10 per 15 minutes, two per unlock), AI food parsing (30 per 10 minutes), setup chat messages (40 per 10 minutes), weekly summaries (6 per hour) and admin writes (60 per 10 minutes).
+- A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes), admin unlock requests (10 per 15 minutes, two per unlock), AI food parsing (30 per 10 minutes), setup chat messages (40 per 10 minutes), label reads (20 per 10 minutes), weekly summaries (6 per hour) and admin writes (60 per 10 minutes).
 - Passkeys alongside passwords: registered in Settings, usernameless sign-in on the login page (button and autofill), relying party `gym.peychev.uk`.
-- Response headers: Content-Security-Policy (`script-src 'self' 'wasm-unsafe-eval'`, no inline scripts or event handlers; sent report-only with a `/csp-report` log until `CSP_ENFORCE=true`), HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `Permissions-Policy` (camera only), COOP. `AllowedHosts` limited to the public host name. Request bodies over 1 MB are refused.
+- Response headers: Content-Security-Policy (`script-src 'self' 'wasm-unsafe-eval'`, no inline scripts or event handlers; sent report-only with a `/csp-report` log until `CSP_ENFORCE=true`), HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `Permissions-Policy` (camera only), COOP. `AllowedHosts` limited to the public host name. Request bodies over 1 MB are refused, except label photos (`POST /food/label`, 3 MB; section 6.6).
 - Cookie: `Secure`, `HttpOnly`, `SameSite=Lax`, `__Host-` prefix, sliding 30-day expiration. "Log out everywhere" in Settings updates the security stamp.
 - Data Protection keys persisted to a bind-mounted directory, so rebuilding the container does not log everyone out.
 - The container publishes no host port. cloudflared reaches it by container name on the external `tunnel` Docker network. An optional LAN-only port may be added for testing (pick one that is free on wizard; 8080 is AdGuard's).
@@ -605,15 +643,17 @@ Users report problems and ideas from their phones, food parsing collects ratings
 ### Model accuracy
 
 - The AI model pages in the admin area show, for each model used in the last 90 days, the number of parses, the thumbs-down rate and the correction rate, pooled across all accounts because the model setting is shared. Under 20 parses shows "not enough data".
+- For the label model (6.6), the same page shows per model the number of label reads, the failure rate and the edited rate (saved scans with any value changed), with the same 20-read minimum.
 
 ### CLI
 
 `dotnet GymTracker.Web.dll feedback <command>` (run on wizard as `docker exec gymtracker-app dotnet GymTracker.Web.dll feedback ...`). Logs go to stderr so stdout can be piped. Text output, or `--json`.
 - `list [--status new|open|all|<status>] [--since 7d] [--area <area>]`, `show <id>`, `attachment <id>` (raw bytes), `status <id> <status> [--reply ...] [--version <sha>]`.
 - `parses [--since 30d] [--corrected] [--export-eval]`, `eval [--parser <model>] [--matcher off|jev] [--limit N]` (re-runs the live parser and matcher on exported cases; never part of the tests).
-- `errors [--since 7d]`, `digest [--since <date>]`, `changelog add --en ... --bg ... [--feedback <id>] [--version <sha>]`.
+- `labels [--since 30d] [--edited]`, `label <id>` (the model's reading, the normalized values and what was saved), `label-photo <id>` (raw bytes, while the photo is kept).
+- `errors [--since 7d]`, `digest [--since <date>]` (which also counts label reads, failures and edited scans), `changelog add --en ... --bg ... [--feedback <id>] [--version <sha>]`.
 - The app version is the Git commit, passed at build time as `APP_VERSION` and stored as the assembly's informational version.
-- Retention: ParseRuns older than 180 days with no feedback, and ErrorEvents last seen more than 90 days ago, are removed by the hourly cleanup job. The data export includes the user's own reports.
+- Retention: ParseRuns older than 180 days with no feedback, LabelScans older than 180 days, label photos older than 30 days, and ErrorEvents last seen more than 90 days ago, are removed by the hourly cleanup job. The data export includes the user's own reports and label scans (without photos).
 
 ---
 
@@ -636,25 +676,26 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 - Reports: list with the CLI's filters; a report shows everything `feedback show` does with the screenshot inline, and sets status, reply and fixed-in version (defaulting to the running version). Opening a new report marks it Seen.
 - Parses and errors as in the CLI; regression cases download as JSONL.
 - What's new: list, add and remove.
-- AI: the OpenRouter key (set, test, remove; only its last 4 characters are ever shown) and the parser, matcher and onboarding model pickers, with model accuracy for the first two.
+- AI: the OpenRouter key (set, test, remove; only its last 4 characters are ever shown) and the parser, matcher, onboarding, weekly and label model pickers, with model accuracy for the parser, matcher and label models.
 - Eval: the CLI's `eval` as a background job, one at a time, limit at most 20, with progress and the result kept in memory until the next job.
 - Invites: open, redeemed, revoked and expired invites with note, created and expiry dates, and the account that redeemed each. Create takes a note and an expiry and shows the link once, with Copy and Share (the phone's share sheet). Revoke on an open invite. Section 9 has the rules.
+- Labels: label scans, newest first, filterable to edited or failed ones; a scan shows the photo (while kept) beside the model's reading, the normalized values and what was saved. Like parse runs, this is feedback data, not a food log.
 - Users: name, email, created date, role, passkey count, last report, and the note of the invite the account came from. Read-only; resetting a password and deleting an account stay in the CLI. The admin area shows what users sent as feedback and the parse and error records; it never browses another account's food log, weights or workouts.
 - Audit: the latest entries.
 
 ### Audit and alerts
 
-- `AdminAudit` rows record unlocks (and failed ones), invites created, revoked and redeemed, password resets, account deletions (with the deleted email in the detail), key and model changes, status and reply changes, changelog changes, eval runs and regression-case downloads, from the web or the CLI, with the time, user, client IP and a short detail. Never a secret. Kept a year; `admin audit [--since 30d]` in the CLI.
+- `AdminAudit` rows record unlocks (and failed ones), invites created, revoked and redeemed, password resets, account deletions (with the deleted email in the detail), key and model changes, status and reply changes, changelog changes, eval runs, regression-case downloads and label photo downloads, from the web or the CLI, with the time, user, client IP and a short detail. Never a secret. Kept a year; `admin audit [--since 30d]` in the CLI.
 - With Telegram configured, each unlock, each key change and each redeemed invite (its note and the new account's name) sends a message.
 
 ### CLI additions
 
 - `role grant|revoke dev --email <email>`, `role list`.
-- `ai show`, `ai set-model parser|matcher|onboarding|weekly <id>`, `ai set-key` (the key is read from standard input, never an argument), `ai clear-key`, `ai test`.
+- `ai show`, `ai set-model parser|matcher|onboarding|weekly|label <id>`, `ai set-key` (the key is read from standard input, never an argument), `ai clear-key`, `ai test [label]` (with `label`, reads a synthetic label photo bundled with the app and prints the values).
 - `feedback changelog list|remove <id>`, `admin audit [--since 30d]`.
 - `invite create [--note ...] [--expires 7d]` (prints the link), `invite list [--all]` (open ones by default), `invite revoke <id>`.
 - `reset-password --email <email>`: prompts for the new password like `create-user`, clears any lockout, and updates the security stamp, so every session of that account signs out. Passkeys are kept.
-- `delete-user --email <email>`: asks for the email again to confirm (or takes `--yes` when stdin is redirected), then deletes the account and every row it owns, feedback and screenshots included. Shared rows stay (foods added from a barcode, changelog entries); `Invite.RedeemedByUserId` is set null, and audit rows keep the user id. Refuses to delete the last `Dev` account. The user can export their data from Settings first; the nightly dumps still hold it for their 14-day retention.
+- `delete-user --email <email>`: asks for the email again to confirm (or takes `--yes` when stdin is redirected), then deletes the account and every row it owns, feedback and screenshots included. Shared rows stay (foods added from a barcode, changelog entries); `Invite.RedeemedByUserId` is set null; a shared food it added stays and keeps the account's id in `AddedByUserId`, so others still see it as added by another user; and audit rows keep the user id. Refuses to delete the last `Dev` account. The user can export their data from Settings first; the nightly dumps still hold it for their 14-day retention.
 
 ---
 
@@ -714,9 +755,17 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 - The Invite entity (section 4), the invite rules and join page (section 9), the Invites admin page, and the CLI commands `invite`, `reset-password` and `delete-user` (section 12).
 - **Done when:** an invite made in the CLI and one made in the admin area each create an account from an iPhone at 390 px, one in English and one in Bulgarian, and the new account lands on the onboarding splash; a used, revoked, expired or unknown token creates nothing and shows the same message; two concurrent redemptions of one token create one account; a taken email or a short password leaves the invite open; a sixth open invite is refused; the join limit returns 429 on the eleventh request; a third account passes the user isolation tests against the other two; `reset-password` signs out the account's sessions and the new password works; `delete-user` leaves no row owned by the account and refuses the last `Dev`; and the redemption shows in `admin audit` and on Telegram.
 
+### Phase 13: Label photos and shared foods
+- The Text composer's first line level with the send button (section 7), in the food composer and the setup chat.
+- `FoodItem.AddedByUserId`, the split barcode index, own-first barcode lookup, the share checkbox and the "Added by another user" mark (sections 4 and 7).
+- Label reading (6.6): the label AI task and its picker, `ILabelReader` and `LabelValues` in Core, `OpenRouterLabelReader`, the photo flow on the manual form and the Scan tab, `LabelScan` and its photo with their retention, the Labels admin page, label accuracy, and the CLI additions (sections 11 and 12).
+- **Done when:** the Core tests for every 6.6 normalizing case pass; a browser test shows the composer's text centred on the send button within 1 px in Chromium and WebKit at 390 px, in English and Bulgarian, here and in the setup chat; on an iPhone at 390 px, in English and Bulgarian, a photo of a real Bulgarian label (camera and photo library both) fills the form after a barcode miss, and the saved shared food is found by the other account's scan with "Added by another user" and no name; an unticked one stays private and the other account can save its own for the same barcode; a per-serving label converts and a non-label photo shows the not-found message; the photo is gone after 30 days and `delete-user` leaves no scan; a third account passes the user isolation tests for scans and photos; the twenty-first label read in 10 minutes returns 429; the label model's accuracy shows in the admin area; and `ai test label` reads the bundled photo.
+
 ### Later
 Ideas kept for after Phase 9, not planned yet. The nutrition ideas should not start before real logs show fiber coverage is good.
 - A monthly cap on AI calls per account, once a third account uses the app regularly. The per-user rate limits in section 9 bound bursts but not a month's total cost.
+- Sending shared manual foods to Open Food Facts, so other apps get them too. Needs an OFF account and their write API.
+- Changing whether a manual food is shared after it is saved.
 - Protein timing around training: the app knows when sessions happen, so it could suggest protein in the meal before or after.
 - Fruit and vegetables in grams, against WHO's 400 g a day.
 - Sodium and free sugars (Open Food Facts has both; USDA has most), against WHO's under 2 g sodium and under 10% of energy from free sugars.

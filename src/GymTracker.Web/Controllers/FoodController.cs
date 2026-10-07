@@ -17,10 +17,13 @@ public class FoodController(
     FoodLogService log,
     SavedMealService savedMeals,
     FoodItemService foods,
+    LabelScanService labels,
+    ManualFoodService manualFoods,
     ParseRunService parseRuns,
     NutritionTargets targets,
     ProfileService profiles,
     UserTime userTime,
+    GymTracker.Web.Data.ICurrentUser currentUser,
     TimeProvider time) : Controller
 {
     private static readonly string[] Tabs = ["text", "barcode", "search", "recent", "manual"];
@@ -69,7 +72,8 @@ public class FoodController(
         var offResults = tab == "search" && off && !string.IsNullOrWhiteSpace(q) ? await foods.SearchOpenFoodFactsAsync(q, ct) : null;
         var recents = tab == "recent" ? await log.RecentsAsync(today, ct) : [];
         var saved = tab == "recent" ? await savedMeals.ListAsync(ct) : [];
-        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved));
+        var labelAvailable = tab is "manual" or "barcode" && await labels.IsAvailableAsync(ct);
+        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved, labelAvailable));
     }
 
     [HttpPost("parse")]
@@ -127,7 +131,10 @@ public class FoodController(
                 "That isn't a valid EAN or UPC barcode.", null, [], null, [], []));
         }
 
-        return View(new BarcodeViewModel(date, meal, digits, await foods.LookupBarcodeAsync(digits, ct)));
+        var result = await foods.LookupBarcodeAsync(digits, ct);
+        return View(new BarcodeViewModel(date, meal, digits, result,
+            AddedByAnother: result.Item is { } item && FoodItemService.AddedByAnother(item, currentUser.UserId),
+            LabelAvailable: result.Item is null && await labels.IsAvailableAsync(ct)));
     }
 
     [HttpPost("log-item")]
@@ -142,12 +149,48 @@ public class FoodController(
     }
 
     [HttpPost("items")]
-    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, CancellationToken ct)
+    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, CancellationToken ct)
     {
-        var item = await foods.CreateManualAsync(name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, ct);
-        await log.AddAsync([new NewEntry(date, meal, item.Name, grams, item.Per100(), item.Id, barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
+        await manualFoods.SaveAndLogAsync(date, meal, name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, grams, share, labelScanId, ct);
         FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
+    }
+
+    /// <summary>Reads a label photo and answers with the manual food form filled from it (SPEC 6.6).</summary>
+    [HttpPost("label")]
+    [EnableRateLimiting(RateLimits.AiLabel)]
+    // The one endpoint above the 1 MB request limit (SPEC 9): the phone shrinks a photo to under 2 MB.
+    [RequestSizeLimit(3 * 1024 * 1024)]
+    public async Task<IActionResult> Label(DateOnly date, Meal meal, string? barcode, bool barcodeField, string? name, bool? share, decimal? grams, decimal? servingGrams, int width, int height, IFormFile? photo, CancellationToken ct)
+    {
+        if (!await labels.IsAvailableAsync(ct))
+        {
+            return NotFound();
+        }
+
+        if (photo is null || photo.Length == 0)
+        {
+            throw new ValidationException("Attach a photo (JPEG, PNG or WebP).");
+        }
+
+        if (photo.Length > LabelScanPhoto.MaxBytes)
+        {
+            throw new ValidationException("That photo is too large.");
+        }
+
+        using var buffer = new MemoryStream((int)photo.Length);
+        await photo.CopyToAsync(buffer, ct);
+        var result = await labels.ReadAsync(buffer.ToArray(), width, height, ct);
+        if (result.Values is null)
+        {
+            // Only the message goes back: the form the user already filled in stays as it is (SPEC 6.6).
+            throw new ValidationException(result.Error ?? "Couldn't read the label. Enter the values by hand.");
+        }
+
+        barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim();
+        return PartialView("_ManualFoodForm", new ManualFoodFormModel(date, meal, barcodeField ? null : barcode, string.IsNullOrWhiteSpace(name) ? null : name.Trim(), barcodeField,
+            Label: result.Values, LabelScanId: result.ScanId, LabelAvailable: true,
+            BarcodeValue: barcodeField ? barcode : null, Share: share ?? true, TypedGrams: grams, TypedServing: servingGrams));
     }
 
     [HttpPost("log-recent")]
@@ -210,8 +253,12 @@ public class FoodController(
         var entry = await log.GetAsync(id, ct);
         if (entry.FoodItemId is { } foodId)
         {
-            // Another user's food stays hidden: the name is then left out rather than shown.
-            ViewData["MatchedName"] = await foods.DisplayNameOrNullAsync(foodId, ct);
+            // Another user's private food stays hidden: the name is then left out rather than shown.
+            if (await foods.FindVisibleAsync(foodId, ct) is { } food)
+            {
+                ViewData["MatchedName"] = GymTracker.Web.Features.Localization.FoodNames.DisplayName(food);
+                ViewData["AddedByAnother"] = FoodItemService.AddedByAnother(food, currentUser.UserId);
+            }
         }
 
         return View(entry);

@@ -24,7 +24,7 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
 
     public const string Models = """
         {"data":[
-          {"id":"google/gemini-3.5-flash-lite","name":"Google: Gemini 3.5 Flash Lite","architecture":{"output_modalities":["text"]},
+          {"id":"google/gemini-3.5-flash-lite","name":"Google: Gemini 3.5 Flash Lite","architecture":{"input_modalities":["text","image"],"output_modalities":["text"]},
            "pricing":{"prompt":"0.0000003","completion":"0.0000025"},
            "supported_parameters":["reasoning","response_format","structured_outputs","temperature"],
            "reasoning":{"mandatory":true,"supported_efforts":["high","medium","low","minimal"]}},
@@ -47,6 +47,14 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
     public string? SentKey { get; private set; }
     public JsonNode? SentBody { get; private set; }
 
+    /// <summary>Statuses for the next completions, in order; after them every call gets the constructor's status.</summary>
+    public Queue<HttpStatusCode> Statuses { get; } = new();
+
+    /// <summary>How long each completion takes to answer.</summary>
+    public TimeSpan Delay { get; set; }
+
+    public int Calls { get; private set; }
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         if (request.RequestUri!.AbsolutePath.EndsWith("/models"))
@@ -54,9 +62,15 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
             return ModelsDown ? throw new HttpRequestException("down") : Json(HttpStatusCode.OK, Models);
         }
 
+        Calls++;
         SentKey = request.Headers.Authorization?.Parameter;
         SentBody = JsonNode.Parse(await request.Content!.ReadAsStringAsync(ct));
-        return Json(status, completion ?? Banana);
+        if (Delay > TimeSpan.Zero)
+        {
+            await Task.Delay(Delay, ct);
+        }
+
+        return Json(Statuses.Count > 0 ? Statuses.Dequeue() : status, completion ?? Banana);
     }
 
     private static HttpResponseMessage Json(HttpStatusCode status, string body) =>
@@ -68,6 +82,12 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
     public OpenRouterFoodParser Parser() => new(Client(), Catalog(), NullLogger<OpenRouterFoodParser>.Instance);
 
     public OpenRouterOnboardingAssistant Onboarding() => new(Client(), Catalog(), NullLogger<OpenRouterOnboardingAssistant>.Instance);
+
+    public OpenRouterLabelReader Label() => new(Client(), Catalog(), NullLogger<OpenRouterLabelReader>.Instance);
+
+    /// <summary>A chat completion whose content is <paramref name="json"/>.</summary>
+    public static string Completion(string json) =>
+        new JsonObject { ["choices"] = new JsonArray(new JsonObject { ["message"] = new JsonObject { ["role"] = "assistant", ["content"] = json } }) }.ToJsonString();
 
     private HttpClient Client() => new(this, disposeHandler: false) { BaseAddress = new Uri("https://openrouter.test/api/v1/") };
 }
@@ -85,6 +105,15 @@ public class OpenRouterCatalogTests
             && m.PromptPerMillion == 0.3m && m.CompletionPerMillion == 2.5m && m.SupportsTemperature && m.LowestEffort == "minimal");
         gemini.Price.ToString().Should().Be("$0.30 in, $2.50 out per million tokens");
         models[1].LowestEffort.Should().Be("none", "reasoning is optional for that model");
+    }
+
+    [Fact]
+    public async Task Models_that_accept_images_are_marked()
+    {
+        var models = (await new StubOpenRouter().Catalog().ListAsync(default))!;
+
+        models.Single(m => m.Id == "google/gemini-3.5-flash-lite").AcceptsImages.Should().BeTrue();
+        models.Single(m => m.Id == "openai/gpt-x").AcceptsImages.Should().BeFalse();
     }
 
     [Fact]
@@ -169,6 +198,41 @@ public class OpenRouterSettingsTests(PostgresFixture fixture)
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
 
         await Store(s).Invoking(x => x.SetKeyAsync(key, default)).Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task The_label_picker_lists_only_vision_models_after_off()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+
+        (await Store(s).ListModelsAsync(AiTask.Label, default))!.Select(m => m.Id).Should().Equal(AiTasks.Off, "google/gemini-3.5-flash-lite");
+    }
+
+    [Fact]
+    public async Task The_label_model_defaults_to_gemini_flash_lite_and_not_the_parser()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        await ClearAsync(s);
+
+        (await Store(s, model: "openai/gpt-x").GetModelAsync(AiTask.Label, default)).Should().Be("google/gemini-3.5-flash-lite");
+    }
+
+    [Fact]
+    public async Task A_text_only_model_is_refused_for_labels()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        try
+        {
+            var refused = await Store(s).Invoking(x => x.SetModelAsync(AiTask.Label, "openai/gpt-x", default)).Should().ThrowAsync<ValidationException>();
+            refused.Which.Text.Should().Be(new GymTracker.Core.Text.LocalText("That model can't read labels."));
+
+            await Store(s).SetModelAsync(AiTask.Label, AiTasks.Off, default);
+            (await Store(s).GetModelAsync(AiTask.Label, default)).Should().Be(AiTasks.Off);
+        }
+        finally
+        {
+            await ClearAsync(s);
+        }
     }
 
     [Fact]
@@ -306,5 +370,136 @@ public class OpenRouterParserTests
         var stub = new StubOpenRouter(status, """{"error":{"message":"nope"}}""");
 
         (await stub.Parser().TestAsync("sk-or-v1-key", "google/gemini-3.5-flash-lite", default))!.ToString().Should().Contain(expected);
+    }
+}
+
+public class OpenRouterLabelReaderTests
+{
+    private const string Ayran = """{"is_label":true,"name":"Айрян","brand":null,"basis":"per_100ml","serving_grams":null,"energy_kcal":38,"energy_kj":159,"protein":1.8,"carbs":2.6,"fat":2.2,"saturated_fat":1.4,"fiber":null}""";
+    private static readonly byte[] Jpeg = [0xFF, 0xD8, 0xFF, 0x01];
+
+    [Fact]
+    public async Task Sends_the_photo_as_a_data_url_with_a_strict_schema()
+    {
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(Ayran));
+
+        await stub.Label().ReadAsync(Jpeg, "image/jpeg", "sk-test", "google/gemini-3.5-flash-lite", default);
+
+        stub.SentKey.Should().Be("sk-test");
+        var body = stub.SentBody!;
+        body["model"]!.GetValue<string>().Should().Be("google/gemini-3.5-flash-lite");
+        body["messages"]![1]!["content"]![1]!["image_url"]!["url"]!.GetValue<string>().Should().StartWith("data:image/jpeg;base64,/9j/");
+        body["response_format"]!["json_schema"]!["strict"]!.GetValue<bool>().Should().BeTrue();
+        body["provider"]!["require_parameters"]!.GetValue<bool>().Should().BeTrue();
+        body["reasoning"]!["effort"]!.GetValue<string>().Should().Be("minimal");
+    }
+
+    [Fact]
+    public async Task Reads_the_answer_into_a_label_reading()
+    {
+        var result = await new StubOpenRouter(completion: StubOpenRouter.Completion(Ayran)).Label()
+            .ReadAsync(Jpeg, "image/jpeg", "k", "google/gemini-3.5-flash-lite", default);
+
+        result.Error.Should().BeNull();
+        result.Model.Should().Be("google/gemini-3.5-flash-lite");
+        result.Raw.Should().Be(Ayran);
+        result.Reading.Should().Be(new LabelReading(true, "Айрян", null, LabelBasis.Per100ml, null, 38, 159, 1.8m, 2.6m, 2.2m, 1.4m, null));
+    }
+
+    [Fact]
+    public async Task An_unreadable_answer_fails_and_keeps_what_came_back()
+    {
+        var result = await new StubOpenRouter(completion: StubOpenRouter.Completion("not json")).Label()
+            .ReadAsync(Jpeg, "image/jpeg", "k", "google/gemini-3.5-flash-lite", default);
+
+        result.Reading.Should().BeNull();
+        result.Error.Should().Be(new GymTracker.Core.Text.LocalText("Couldn't read the label. Enter the values by hand."));
+        result.Raw.Should().Be("not json");
+    }
+
+    [Fact]
+    public async Task A_server_error_is_retried_once()
+    {
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(Ayran));
+        stub.Statuses.Enqueue(HttpStatusCode.BadGateway);
+
+        var result = await stub.Label().ReadAsync(Jpeg, "image/jpeg", "k", "google/gemini-3.5-flash-lite", default);
+
+        result.Reading.Should().NotBeNull();
+        stub.Calls.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task A_timeout_is_not_retried()
+    {
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(Ayran)) { Delay = TimeSpan.FromSeconds(5) };
+        var reader = stub.Label();
+        reader.AttemptTimeout = TimeSpan.FromMilliseconds(50);
+
+        var result = await reader.ReadAsync(Jpeg, "image/jpeg", "k", "google/gemini-3.5-flash-lite", default);
+
+        result.Error.Should().Be(new GymTracker.Core.Text.LocalText("Couldn't read the label. Enter the values by hand."));
+        stub.Calls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task The_admin_test_reads_the_bundled_sample_and_checks_its_energy()
+    {
+        const string sample = """{"is_label":true,"name":null,"brand":null,"basis":"per_100g","serving_grams":null,"energy_kcal":250,"energy_kj":1046,"protein":10,"carbs":30,"fat":10,"saturated_fat":4,"fiber":2}""";
+        var right = new StubOpenRouter(completion: StubOpenRouter.Completion(sample));
+        (await right.Label().TestAsync("k", "google/gemini-3.5-flash-lite", default)).Should().BeNull();
+        right.SentBody!["messages"]![1]!["content"]![1]!["image_url"]!["url"]!.GetValue<string>().Length.Should().BeGreaterThan(10_000, "the real sample photo is sent");
+
+        var wrong = new StubOpenRouter(completion: StubOpenRouter.Completion(sample.Replace("\"energy_kcal\":250", "\"energy_kcal\":205")));
+        (await wrong.Label().TestAsync("k", "google/gemini-3.5-flash-lite", default)).Should()
+            .Be(new GymTracker.Core.Text.LocalText("The model misread the sample label (read {0} kcal, expected {1}).", "205", 250m));
+    }
+}
+
+[Collection(PostgresCollection.Name)]
+public class LabelReaderSwitchTests(PostgresFixture fixture)
+{
+    private static async Task<bool> AvailableAsync(AppFactory app)
+    {
+        using var scope = app.Services.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<ILabelReader>().IsAvailableAsync(default);
+    }
+
+    [Fact]
+    public async Task Label_photos_need_a_key_and_a_label_model_that_isnt_off()
+    {
+        await using (var noKey = new AppFactory(fixture))
+        {
+            (await AvailableAsync(noKey)).Should().BeFalse();
+        }
+
+        await using var withKey = new AppFactory(fixture, settings: new Dictionary<string, string?> { ["OpenRouter:ApiKey"] = "sk-or-v1-label-switch-test-0123456789" });
+        await using var db = fixture.CreateContext(null);
+        await db.AppSettings.Where(x => x.Name == "OpenRouter:Model:Label").ExecuteDeleteAsync();
+        try
+        {
+            (await AvailableAsync(withKey)).Should().BeTrue("the default label model is on");
+
+            db.AppSettings.Add(new AppSetting { Name = "OpenRouter:Model:Label", Value = AiTasks.Off, UpdatedAt = DateTimeOffset.UtcNow });
+            await db.SaveChangesAsync();
+            (await AvailableAsync(withKey)).Should().BeFalse();
+        }
+        finally
+        {
+            await db.AppSettings.Where(x => x.Name == "OpenRouter:Model:Label").ExecuteDeleteAsync();
+        }
+    }
+
+    [Fact]
+    public async Task A_read_that_cannot_run_names_the_configured_model()
+    {
+        await using var db = fixture.CreateContext(null);
+        await db.AppSettings.Where(x => x.Name == "OpenRouter:Model:Label").ExecuteDeleteAsync();
+        await using var noKey = new AppFactory(fixture);
+        using var scope = noKey.Services.CreateScope();
+
+        var result = await scope.ServiceProvider.GetRequiredService<ILabelReader>().ReadAsync([0xFF, 0xD8, 0xFF], "image/jpeg", default);
+
+        (result.Error, result.Model).Should().Be((new GymTracker.Core.Text.LocalText("Couldn't read the label. Enter the values by hand."), AiTasks.DefaultLabelModel));
     }
 }

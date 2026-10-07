@@ -65,6 +65,11 @@ public static class ScriptText
         "Couldn't add the passkey. Try again.",
         "That passkey didn't work. Try again or use your password.",
         "That passkey didn't work. Try again.",
+        // label.js
+        "Needs a connection",
+        "Couldn't read that picture. Try another photo.",
+        "Too many photos for now. Try again in a few minutes.",
+        "Couldn't read the label. Enter the values by hand.",
     ];
 
     public static Dictionary<string, string> For(Localizer localizer) =>

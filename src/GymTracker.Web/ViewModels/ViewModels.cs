@@ -186,11 +186,34 @@ public record FoodAddViewModel(
     IReadOnlyList<GymTracker.Web.Features.Food.FoodMatch> Local,
     GymTracker.Core.Nutrition.ProductSearch? OpenFoodFacts,
     IReadOnlyList<GymTracker.Web.Features.Food.RecentFood> Recents,
-    IReadOnlyList<SavedMeal> SavedMeals);
+    IReadOnlyList<SavedMeal> SavedMeals,
+    bool LabelAvailable = false);
 
 public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, GymTracker.Core.Text.LocalText? Warning, int? ParseRunId = null);
 
-public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result);
+/// <param name="AddedByAnother">The food is a shared manual one another account added (SPEC 7).</param>
+public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result, bool AddedByAnother = false, bool LabelAvailable = false);
+
+/// <summary>The manual food form (SPEC 7), on the Manual tab, after a barcode miss, and filled from a label photo (6.6).</summary>
+/// <param name="Barcode">A scanned code, sent as a hidden field after a barcode miss.</param>
+/// <param name="BarcodeField">Whether the optional barcode field is shown (everywhere except after a barcode miss).</param>
+/// <param name="BarcodeValue">Pre-fills the optional barcode field, e.g. with a code found in the label photo.</param>
+/// <param name="Share">The share choice, kept when a label photo redraws the form.</param>
+/// <param name="TypedGrams">"You ate" as typed before a label photo; it wins over the label's serving.</param>
+/// <param name="TypedServing">"One serving" as typed before a label photo; used when the label prints none.</param>
+public record ManualFoodFormModel(
+    DateOnly Date,
+    Meal Meal,
+    string? Barcode,
+    string? Name,
+    bool BarcodeField,
+    GymTracker.Core.Nutrition.LabelValues? Label = null,
+    int? LabelScanId = null,
+    bool LabelAvailable = false,
+    string? BarcodeValue = null,
+    bool Share = true,
+    decimal? TypedGrams = null,
+    decimal? TypedServing = null);
 
 /// <param name="ModelInfo">The current model's catalog entry, or null when the catalog can't be loaded or no longer lists it.</param>
 /// <param name="ModelInfo">Null when the model isn't in the task's list (e.g. OpenRouter's list can't be loaded).</param>
@@ -223,5 +246,7 @@ public record AdminFeedbackList(AdminFeedbackFilter Filter, IReadOnlyList<GymTra
 public record AdminParseList(bool Flagged, string Since, IReadOnlyList<GymTracker.Web.Features.Feedback.ParseRunDetail> Runs);
 
 public record AdminErrorList(string Since, IReadOnlyList<GymTracker.Core.Domain.ErrorEvent> Errors);
+
+public record AdminLabelList(string Since, bool Edited, bool Failed, IReadOnlyList<GymTracker.Web.Features.Feedback.LabelScanRow> Scans);
 
 public record AdminEvalPage(GymTracker.Web.Features.Admin.EvalJob? Job, string ParserModel, string MatcherModel, bool HasKey);

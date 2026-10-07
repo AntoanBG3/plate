@@ -69,6 +69,7 @@ public class OpenRouterSettings(
         {
             AiTask.Parser => string.IsNullOrWhiteSpace(options.Value.Model) ? OpenRouterOptions.DefaultModel : options.Value.Model.Trim(),
             AiTask.Onboarding or AiTask.Weekly => await GetModelAsync(AiTask.Parser, ct),
+            AiTask.Label => AiTasks.DefaultLabelModel,
             _ => AiTasks.Off,
         };
 
@@ -78,6 +79,7 @@ public class OpenRouterSettings(
         AiTask.Parser => await catalog.ListAsync(ct),
         AiTask.Onboarding => await catalog.ListAsync(ct) is { } models ? [AiTasks.OnboardingOff, .. models] : null,
         AiTask.Weekly => await catalog.ListAsync(ct) is { } weekly ? [AiTasks.WeeklyOff, .. weekly] : null,
+        AiTask.Label => await catalog.ListAsync(ct) is { } vision ? [AiTasks.LabelOff, .. vision.Where(m => m.AcceptsImages)] : null,
         _ => AiTasks.MatcherModels,
     };
 
@@ -96,6 +98,7 @@ public class OpenRouterSettings(
                 AiTask.Parser => "That model can't parse food.",
                 AiTask.Matcher => "That model can't match food.",
                 AiTask.Weekly => "That model can't write the weekly summary.",
+                AiTask.Label => "That model can't read labels.",
                 _ => "That model can't run the setup chat.",
             });
         }

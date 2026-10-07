@@ -1,0 +1,51 @@
+@model AdminLabelList
+@{
+    ViewData["Title"] = "Labels";
+    ViewData["BackUrl"] = "/admin";
+    ViewData["BackLabel"] = "Admin";
+}
+<header class="page-head">
+    <h1 class="large-title">Labels</h1>
+</header>
+<partial name="_AdminNav" />
+
+<form method="get" action="/admin/labels" class="section" data-autosubmit>
+    <div class="list">
+        <div class="field-row">
+            <label for="since">Since</label>
+            <select id="since" name="since">
+                @foreach (var s in new[] { "7d", "30d", "90d", "180d" })
+                {
+                    <option value="@s" selected="@(s == Model.Since)">@s</option>
+                }
+            </select>
+        </div>
+        <div class="field-row">
+            <label for="edited">Edited before saving only</label>
+            <input id="edited" class="check-input" type="checkbox" name="edited" value="true" checked="@Model.Edited" />
+        </div>
+        <div class="field-row">
+            <label for="failed">Failed reads only</label>
+            <input id="failed" class="check-input" type="checkbox" name="failed" value="true" checked="@Model.Failed" />
+        </div>
+    </div>
+</form>
+
+<section class="section">
+    <div class="list">
+        @foreach (var scan in Model.Scans)
+        {
+            <a class="row row-link" href="/admin/labels/@scan.Id">
+                <span class="row-main">
+                    <span class="row-title">#@scan.Id · @scan.Model</span>
+                    <span class="row-sub" style="display: block">@scan.CreatedAt.ToUniversalTime().ToString("d MMM HH:mm") · @scan.Reporter · @scan.LatencyMs ms · @(scan.Error is not null ? "failed" : !scan.Saved ? "not saved" : scan.Edited ? "saved with edits" : "saved as read")@(scan.HasPhoto ? "" : " · photo deleted")</span>
+                </span>
+                @Ui.Icon("chevron", "row-chevron")
+            </a>
+        }
+        @if (Model.Scans.Count == 0)
+        {
+            <div class="row"><span class="row-main footnote">Nothing here.</span></div>
+        }
+    </div>
+</section>

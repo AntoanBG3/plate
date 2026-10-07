@@ -119,6 +119,9 @@ public class AdminTests(PostgresFixture fixture) : IDisposable
         var settings = await client.GetStringAsync("/settings");
         settings.Should().Contain("AI models").And.Contain("Simple built-in parser").And.Contain("The developer manages the AI models.");
         settings.Should().NotContain("apiKey").And.NotContain("OpenRouter, with").And.NotContain("Key ending").And.NotContain("href=\"/admin\"");
+        // Each task is named for what it does; the label reader isn't listed as another setup chat.
+        settings.Should().Contain("Label reader").And.Contain("Off: no label photos");
+        System.Text.RegularExpressions.Regex.Matches(settings, "Setup chat").Count.Should().Be(1);
     }
 
     [Fact]

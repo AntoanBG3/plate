@@ -50,7 +50,7 @@
   "A food reading rated wrong.": [
     "src/GymTracker.Web/Views/Feedback/Index.cshtml"
   ],
-  "A food with that barcode already exists.": [
+  "A food with that barcode is already shared. Scan it again to use it.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
   ],
   "A name is 1 to {0} characters.": [
@@ -180,6 +180,11 @@
     "src/GymTracker.Web/Controllers/TemplatesController.cs",
     "src/GymTracker.Web/Controllers/TrainController.cs"
   ],
+  "Added by another user": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/Barcode.cshtml",
+    "src/GymTracker.Web/Views/Food/Entry.cshtml"
+  ],
   "Added something I didn't eat": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
@@ -251,6 +256,10 @@
   "At least {0} g protein in this meal": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
+  "Attach a photo (JPEG, PNG or WebP).": [
+    "src/GymTracker.Web/Controllers/FoodController.cs",
+    "src/GymTracker.Web/Features/Food/LabelScanService.cs"
+  ],
   "Attach a screenshot or photo (JPEG, PNG or WebP).": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
   ],
@@ -299,7 +308,8 @@
     "exercise"
   ],
   "Barcode": [
-    "src/GymTracker.Web/Views/Food/Barcode.cshtml"
+    "src/GymTracker.Web/Views/Food/Barcode.cshtml",
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Barcode digits": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
@@ -309,9 +319,6 @@
   ],
   "Barcode {0}": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
-  ],
-  "Barcode {0}. Saved for both of you, so it only needs entering once.": [
-    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Based on {0} kg, a healthy weight for your height.": [
     "src/GymTracker.Web/Views/Settings/_ProteinNote.cshtml"
@@ -476,14 +483,24 @@
   "Couldn't add the passkey. Try again.": [
     "wwwroot/js"
   ],
+  "Couldn't find a nutrition table in that photo.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
   "Couldn't read that photo. Type the digits instead.": [
     "wwwroot/js"
   ],
   "Couldn't read that picture. Try a screenshot.": [
     "wwwroot/js"
   ],
+  "Couldn't read that picture. Try another photo.": [
+    "wwwroot/js"
+  ],
   "Couldn't read that.": [
     "src/GymTracker.Web/Controllers/FoodController.cs"
+  ],
+  "Couldn't read the label. Enter the values by hand.": [
+    "src/GymTracker.Web/Integrations/OpenRouterLabelReader.cs",
+    "wwwroot/js"
   ],
   "Create a custom exercise": [
     "src/GymTracker.Web/Views/Shared/ExercisePicker.cshtml"
@@ -1003,6 +1020,9 @@
   "Kind": [
     "src/GymTracker.Web/Views/Feedback/New.cshtml"
   ],
+  "Label reader": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Language": [
     "src/GymTracker.Web/Views/Join/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -1230,6 +1250,9 @@
   "Name, e.g. Upper A": [
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
+  "Needs a connection": [
+    "wwwroot/js"
+  ],
   "Needs more detail": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
@@ -1391,6 +1414,9 @@
   "Off: database ranking only": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Off: no label photos": [
+    "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
   "Off: no weekly summary": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
@@ -1448,6 +1474,9 @@
     "enum",
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
+  "Others who scan this barcode get this food instead of entering it again. Your name isn't shown.": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
   "Overhead cable triceps extension": [
     "exercise"
   ],
@@ -1492,11 +1521,17 @@
   "Per 100 g, from the label": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
+  "Per 100 ml, used as per 100 g.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
   "Per meal: about 0.3 g of protein per kg at breakfast, lunch and dinner; 0.4 g and at least 25 g from 65. Morton 2018.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
   "Per side": [
     "src/GymTracker.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Photograph a label": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
   "Pick sex, goal and activity level from the list.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
@@ -1578,6 +1613,9 @@
   "Protein must be between {0} and {1} g per kg.": [
     "src/GymTracker.Core/Domain/ProfileRules.cs"
   ],
+  "Protein, carbs and fat add up to more than 100 g. Check them.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
   "Protein, carbs and fat must be between 0 and 500 g.": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
   ],
@@ -1633,8 +1671,18 @@
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Read from the photo. Check each value against the label.": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
   "Read it": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
+  "Read the label from a photo": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Reading the label…": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Reading the photo…": [
     "wwwroot/js"
@@ -1749,6 +1797,9 @@
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "Saturated fat is more than fat. Check both.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
   ],
   "Save": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
@@ -1899,6 +1950,9 @@
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
   ],
+  "Share with other users": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
   "Should be split or joined": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
@@ -1959,6 +2013,9 @@
   ],
   "Some foods have no fiber or saturated fat value, so these are at least what is shown.": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "Some values were outside what a food can have and were left empty.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
   ],
   "Something else": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -2086,6 +2143,9 @@
   "That model can't parse food.": [
     "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
+  "That model can't read labels.": [
+    "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
+  ],
   "That model can't run the setup chat.": [
     "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
   ],
@@ -2100,6 +2160,10 @@
   ],
   "That passkey didn't work. Try again.": [
     "wwwroot/js"
+  ],
+  "That photo is too large.": [
+    "src/GymTracker.Web/Controllers/FoodController.cs",
+    "src/GymTracker.Web/Features/Food/LabelScanService.cs"
   ],
   "That picture is too large. Try a screenshot instead of a photo.": [
     "src/GymTracker.Web/Controllers/FeedbackController.cs",
@@ -2158,6 +2222,9 @@
   "The calories don't add up from the macros.": [
     "src/GymTracker.Web/Features/Food/FoodMatcher.cs"
   ],
+  "The calories don't match the protein, carbs and fat. Check the energy row.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
   "The camera may ask for permission each time the app opens.": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
@@ -2206,8 +2273,17 @@
   "The food parser took too long. Try again, or enter the food by hand.": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
   ],
+  "The label only gives values per serving. Enter them by hand or photograph the per-100 g column.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
+  "The label's kJ and kcal disagree; the kcal value was used.": [
+    "src/GymTracker.Core/Nutrition/LabelReading.cs"
+  ],
   "The list changed while you were reordering. Try again.": [
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
+  ],
+  "The model misread the sample label (read {0} kcal, expected {1}).": [
+    "src/GymTracker.Web/Integrations/OpenRouterLabelReader.cs"
   ],
   "The model returned no food for \"1 banana\".": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"
@@ -2226,6 +2302,10 @@
   ],
   "The password needs at least 12 characters.": [
     "src/GymTracker.Web/Features/Users/UserCreator.cs"
+  ],
+  "The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked.": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "The plate calculator uses this bar and these plates. Set a different bar for one exercise under Notes & bar.": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
@@ -2302,6 +2382,9 @@
   ],
   "Too many failed attempts. Try again in 15 minutes.": [
     "src/GymTracker.Web/Controllers/AccountController.cs"
+  ],
+  "Too many photos for now. Try again in a few minutes.": [
+    "wwwroot/js"
   ],
   "Train": [
     "src/GymTracker.Web/Views/Shared/_Layout.cshtml",
@@ -2530,6 +2613,9 @@
   ],
   "Yesterday": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "You already have a food with that barcode.": [
+    "src/GymTracker.Web/Features/Food/FoodItemService.cs"
   ],
   "You are already signed in. Log out first to use this invite.": [
     "src/GymTracker.Web/Views/Join/Index.cshtml"

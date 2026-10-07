@@ -17,6 +17,16 @@ public class ModelAccuracyReport(AppDbContext db, TimeProvider time)
     public async Task<Dictionary<string, ModelStats>> ForAsync(AiTask task, CancellationToken ct)
     {
         var since = time.GetUtcNow() - Window;
+        if (task == AiTask.Label)
+        {
+            // For labels: "corrected" is a saved scan with any value changed, "rated down" a read that failed.
+            var scans = await db.LabelScans.IgnoreQueryFilters()
+                .Where(s => s.CreatedAt >= since)
+                .Select(s => new RunOutcome(s.Model, s.FoodItemId != null || s.Saved != null, s.Edited, s.Error != null))
+                .ToListAsync(ct);
+            return ModelAccuracy.Summarize(scans);
+        }
+
         var feedback = db.Feedback.IgnoreQueryFilters();
         var runs = await db.ParseRuns.IgnoreQueryFilters()
             .Where(r => r.CreatedAt >= since && r.ParserError == null)

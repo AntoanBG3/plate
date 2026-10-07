@@ -165,7 +165,9 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime
             var invite = await db.Invites.SingleAsync(i => i.Id == inviteId);
             invite.RedeemedByUserId.Should().BeNull();
             invite.RedeemedAt.Should().NotBeNull();
-            (await db.FoodItems.IgnoreQueryFilters().AnyAsync(f => f.Id == owned.SharedFoodId)).Should().BeTrue("shared foods stay");
+            (await db.FoodItems.IgnoreQueryFilters().SingleAsync(f => f.Id == owned.SharedFoodId)).AddedByUserId.Should().Be(id,
+                "shared foods stay, still credited to an account that no longer exists, so others keep seeing it as another user's");
+            (await db.LabelScanPhotos.IgnoreQueryFilters().AnyAsync(p => p.LabelScanId == owned.LabelScanId)).Should().BeFalse("label photos go with the account");
             (await db.AdminAudit.AnyAsync(a => a.Action == AuditActions.UserDelete && a.Target == id && a.Detail == doomed)).Should().BeTrue();
         }
 
@@ -173,7 +175,7 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime
         AppFactory.IsRedirectTo(await AppFactory.LoginAsync(own.NewClient(), other, "correct horse battery"), "/").Should().BeTrue();
     }
 
-    private sealed record Owned(int[] SetIds, int[] SessionExerciseIds, int[] TemplateExerciseIds, int FeedbackId, int ErrorEventId, int SharedFoodId);
+    private sealed record Owned(int[] SetIds, int[] SessionExerciseIds, int[] TemplateExerciseIds, int FeedbackId, int ErrorEventId, int SharedFoodId, int LabelScanId);
 
     /// <summary>
     /// One of everything an account can own, including a custom exercise used in a session and a template: the
@@ -197,7 +199,7 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime
         await new BodyweightService(db, user).SetAsync(new DateOnly(2026, 10, 1), 80, default);
 
         var privateFood = new FoodItem { Name = "Mum's banitsa", OwnerUserId = userId, KcalPer100g = 300 };
-        var sharedFood = new FoodItem { Name = $"Scanned bar {userId[..4]}", Barcode = Random.Shared.NextInt64(1_000_000_000, 9_999_999_999).ToString(), KcalPer100g = 400 };
+        var sharedFood = new FoodItem { Name = $"Scanned bar {userId[..4]}", Barcode = Random.Shared.NextInt64(1_000_000_000, 9_999_999_999).ToString(), KcalPer100g = 400, AddedByUserId = userId, Source = FoodSource.Manual };
         var run = new ParseRun { UserId = userId, CreatedAt = DateTimeOffset.UtcNow, Text = "banitsa" };
         db.AddRange(privateFood, sharedFood, run);
         await db.SaveChangesAsync();
@@ -208,10 +210,15 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime
             Attachment = new FeedbackAttachment { ContentType = "image/png", Bytes = [1, 2, 3] },
         };
         var error = new ErrorEvent { Fingerprint = Guid.NewGuid().ToString("N")[..16], Type = "Boom", Message = "boom", UserId = userId, FirstSeenAt = DateTimeOffset.UtcNow, LastSeenAt = DateTimeOffset.UtcNow, Count = 1 };
-        db.AddRange(feedback, error, new OnboardingChat { UserId = userId });
+        var scan = new LabelScan
+        {
+            UserId = userId, CreatedAt = DateTimeOffset.UtcNow, Model = "test/label", FoodItemId = sharedFood.Id,
+            Photo = new LabelScanPhoto { ContentType = "image/jpeg", Bytes = [0xFF, 0xD8, 0xFF] },
+        };
+        db.AddRange(feedback, error, new OnboardingChat { UserId = userId }, scan);
         await db.SaveChangesAsync();
 
-        return new Owned([set.Id], [.. session.Exercises.Select(e => e.Id)], [.. template.Exercises.Select(e => e.Id)], feedback.Id, error.Id, sharedFood.Id);
+        return new Owned([set.Id], [.. session.Exercises.Select(e => e.Id)], [.. template.Exercises.Select(e => e.Id)], feedback.Id, error.Id, sharedFood.Id, scan.Id);
     }
 
     /// <summary>"Table: count" for every table with a user column that still has rows for the account, except the audit log.</summary>
@@ -230,7 +237,9 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime
             foreach (var property in entity.GetProperties().Where(p => p.Name is "UserId" or "OwnerUserId" or "RedeemedByUserId"))
             {
                 var column = property.GetColumnName();
-                var count = await db.Database.SqlQueryRaw<int>($"SELECT count(*)::int AS \"Value\" FROM \"{table}\" WHERE \"{column}\" = {{0}}", userId).SingleAsync();
+                // Table and column names come from the EF model, never from input; the user id is a parameter.
+                var sql = $"SELECT count(*)::int AS \"Value\" FROM \"{table}\" WHERE \"{column}\" = {{0}}";
+                var count = await db.Database.SqlQueryRaw<int>(sql, userId).SingleAsync();
                 if (count > 0)
                 {
                     found.Add($"{table}.{column}: {count}");

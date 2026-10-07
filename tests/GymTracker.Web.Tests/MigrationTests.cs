@@ -31,6 +31,44 @@ public class MigrationTests(PostgresFixture fixture)
         }
     }
 
+    [Fact]
+    public async Task Rolling_back_label_scans_keeps_shared_barcodes_and_clears_colliding_private_ones()
+    {
+        // Phase 13 lets private foods repeat a barcode; the older schema had one barcode per food overall.
+        var connection = await fixture.NewDatabaseAsync("label_rollback");
+        await using (var db = fixture.CreateContext(null, connection))
+        {
+            await db.Database.MigrateAsync();
+            db.Users.AddRange(
+                new AppUser { Id = "someone", UserName = "someone@test", Email = "someone@test" },
+                new AppUser { Id = "someone else", UserName = "else@test", Email = "else@test" });
+            await db.SaveChangesAsync();
+            await db.Database.ExecuteSqlRawAsync("""
+                INSERT INTO "FoodItems" ("Name", "Barcode", "OwnerUserId", "KcalPer100g", "ProteinPer100g", "CarbsPer100g", "FatPer100g", "Source")
+                VALUES ('shared', '5901234123457', NULL, 1, 0, 0, 0, 'Manual'),
+                       ('private copy', '5901234123457', 'someone', 1, 0, 0, 0, 'Manual'),
+                       ('two private a', '4006381333931', 'someone', 1, 0, 0, 0, 'Manual'),
+                       ('two private b', '4006381333931', 'someone else', 1, 0, 0, 0, 'Manual'),
+                       ('alone', '96385074', 'someone', 1, 0, 0, 0, 'Manual');
+                """);
+
+            await db.GetService<IMigrator>().MigrateAsync("AddInvites");
+
+            var barcodes = await db.Database.SqlQueryRaw<NameAndBarcode>("""SELECT "Name", "Barcode" FROM "FoodItems" WHERE "Name" IN ('shared', 'private copy', 'two private a', 'two private b', 'alone')""").ToListAsync();
+            barcodes.Should().BeEquivalentTo([
+                new NameAndBarcode("shared", "5901234123457"),
+                new NameAndBarcode("private copy", null),
+                new NameAndBarcode("two private a", null),
+                new NameAndBarcode("two private b", null),
+                new NameAndBarcode("alone", "96385074"),
+            ]);
+
+            await db.Database.MigrateAsync();
+        }
+    }
+
+    private sealed record NameAndBarcode(string Name, string? Barcode);
+
     /// <summary>Plain SQL, since the current model has columns the old schema lacks.</summary>
     private static async Task AddUserAsync(AppDbContext db, string id, decimal proteinPerKg)
     {

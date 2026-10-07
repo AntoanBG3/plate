@@ -103,8 +103,8 @@ public class AdminEvalTests(PostgresFixture fixture)
             .Select(e => e.Metadata.GetMetadata<ControllerActionDescriptor>()!.ControllerTypeInfo.AsType())
             .Distinct().Should().Equal([typeof(AdminUnlockController)], "only the unlock itself may go without an unlock");
 
-        // FeedbackAdmin reads both accounts' data; AiAdmin and EvalJobs change shared settings and spend credit.
-        Type[] adminServices = [typeof(FeedbackAdmin), typeof(AiAdmin), typeof(EvalJobs), typeof(IParseEvaluator)];
+        // FeedbackAdmin and LabelScanReport read every account's data; AiAdmin and EvalJobs change shared settings and spend credit.
+        Type[] adminServices = [typeof(FeedbackAdmin), typeof(LabelScanReport), typeof(AiAdmin), typeof(EvalJobs), typeof(IParseEvaluator)];
         var controllers = endpoints.Select(e => e.Metadata.GetMetadata<ControllerActionDescriptor>()?.ControllerTypeInfo.AsType()).OfType<Type>().Distinct();
         foreach (var controller in controllers)
         {

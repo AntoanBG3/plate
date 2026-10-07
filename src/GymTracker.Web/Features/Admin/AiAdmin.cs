@@ -8,7 +8,7 @@ namespace GymTracker.Web.Features.Admin;
 /// Changes to the shared OpenRouter key and AI models, for the admin area and the CLI (SPEC 12). Every change is
 /// audited, and a key change also sends a Telegram alert. The key is never returned, logged or audited.
 /// </summary>
-public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, JevFoodMatchDecider matcher, OpenRouterOnboardingAssistant onboarding, OpenRouterWeeklySummaryWriter weekly, AdminAuditLog audit, IFeedbackNotifier notifier)
+public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, JevFoodMatchDecider matcher, OpenRouterOnboardingAssistant onboarding, OpenRouterWeeklySummaryWriter weekly, OpenRouterLabelReader label, AdminAuditLog audit, IFeedbackNotifier notifier)
 {
     public async Task SetKeyAsync(string key, CancellationToken ct)
     {
@@ -98,6 +98,25 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
 
         var error = await weekly.TestAsync(key, model, ct);
         await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Weekly), error is null ? "works" : "fails", ct);
+        return error;
+    }
+
+    /// <summary>Reads the bundled sample label with the label model: null when it reads it right or labels are off.</summary>
+    public async Task<LocalText?> TestLabelAsync(CancellationToken ct)
+    {
+        var model = await settings.GetModelAsync(AiTask.Label, ct);
+        if (model == AiTasks.Off)
+        {
+            return null;
+        }
+
+        if (await settings.GetKeyAsync(ct) is not { } key)
+        {
+            return new LocalText("No OpenRouter key is set.");
+        }
+
+        var error = await label.TestAsync(key, model, ct);
+        await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Label), error is null ? "works" : "fails", ct);
         return error;
     }
 }

@@ -333,6 +333,10 @@ namespace GymTracker.Web.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AddedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
                     b.Property<string>("Barcode")
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
@@ -390,7 +394,8 @@ namespace GymTracker.Web.Data.Migrations
 
                     b.HasIndex("Barcode")
                         .IsUnique()
-                        .HasFilter("\"Barcode\" IS NOT NULL");
+                        .HasDatabaseName("IX_FoodItems_Barcode_Shared")
+                        .HasFilter("\"Barcode\" IS NOT NULL AND \"OwnerUserId\" IS NULL");
 
                     b.HasIndex("Name");
 
@@ -403,6 +408,11 @@ namespace GymTracker.Web.Data.Migrations
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("NameBg"), new[] { "gin_trgm_ops" });
 
                     b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("OwnerUserId", "Barcode")
+                        .IsUnique()
+                        .HasDatabaseName("IX_FoodItems_Owner_Barcode")
+                        .HasFilter("\"Barcode\" IS NOT NULL AND \"OwnerUserId\" IS NOT NULL");
 
                     b.ToTable("FoodItems");
                 });
@@ -542,6 +552,93 @@ namespace GymTracker.Web.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Invites");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.LabelScan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Edited")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int?>("FoodItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LatencyMs")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Reading")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Saved")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Values")
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("FoodItemId");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("LabelScans");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.LabelScanPhoto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<byte[]>("Bytes")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LabelScanId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabelScanId")
+                        .IsUnique();
+
+                    b.ToTable("LabelScanPhotos");
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.MaintenanceEstimate", b =>
@@ -1536,6 +1633,31 @@ namespace GymTracker.Web.Data.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("GymTracker.Core.Domain.LabelScan", b =>
+                {
+                    b.HasOne("GymTracker.Core.Domain.FoodItem", null)
+                        .WithMany()
+                        .HasForeignKey("FoodItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("GymTracker.Web.Data.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.LabelScanPhoto", b =>
+                {
+                    b.HasOne("GymTracker.Core.Domain.LabelScan", "LabelScan")
+                        .WithOne("Photo")
+                        .HasForeignKey("GymTracker.Core.Domain.LabelScanPhoto", "LabelScanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LabelScan");
+                });
+
             modelBuilder.Entity("GymTracker.Core.Domain.MaintenanceEstimate", b =>
                 {
                     b.HasOne("GymTracker.Web.Data.AppUser", null)
@@ -1800,6 +1922,11 @@ namespace GymTracker.Web.Data.Migrations
             modelBuilder.Entity("GymTracker.Core.Domain.Feedback", b =>
                 {
                     b.Navigation("Attachment");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.LabelScan", b =>
+                {
+                    b.Navigation("Photo");
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.SavedMeal", b =>

@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Features.Food;
 
 /// <summary>A food from a name search, with how closely it matched (0 to 1).</summary>
-public record FoodMatch(int Id, string Name, string? NameBg, string? Brand, decimal KcalPer100g, decimal ProteinPer100g, decimal CarbsPer100g, decimal FatPer100g, decimal? FiberPer100g, decimal? SaturatedFatPer100g, decimal? DefaultServingGrams, bool Own, double Score)
+/// <param name="ByOther">A shared manual food another account added (SPEC 7); says nothing about who.</param>
+public record FoodMatch(int Id, string Name, string? NameBg, string? Brand, decimal KcalPer100g, decimal ProteinPer100g, decimal CarbsPer100g, decimal FatPer100g, decimal? FiberPer100g, decimal? SaturatedFatPer100g, decimal? DefaultServingGrams, bool Own, bool ByOther, double Score)
 {
     public Per100g Per100 => new(KcalPer100g, ProteinPer100g, CarbsPer100g, FatPer100g, FiberPer100g, SaturatedFatPer100g);
 
@@ -35,6 +36,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
         return await db.Database.SqlQuery<FoodMatch>($"""
             SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                    f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
+                   (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
                    GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')))::float8 AS "Score"
             FROM "FoodItems" f
             WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {userId})
@@ -46,7 +48,18 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
 
     /// <summary>The food's name as shown (Bulgarian when the reader uses it), or null when it isn't visible to this user.</summary>
     public async Task<string?> DisplayNameOrNullAsync(int id, CancellationToken ct) =>
-        (await db.FoodItems.SingleOrDefaultAsync(f => f.Id == id, ct)) is { } item ? Localization.FoodNames.DisplayName(item) : null;
+        await FindVisibleAsync(id, ct) is { } item ? Localization.FoodNames.DisplayName(item) : null;
+
+    /// <summary>The food when this user may see it (their own or a shared one), otherwise null.</summary>
+    public Task<FoodItem?> FindVisibleAsync(int id, CancellationToken ct) =>
+        db.FoodItems.SingleOrDefaultAsync(f => f.Id == id, ct);
+
+    /// <summary>
+    /// A shared manual food another account added, deleted accounts included (SPEC 7). Says nothing about who; an
+    /// unknown creator (older foods nobody logged) claims nothing.
+    /// </summary>
+    public static bool AddedByAnother(FoodItem item, string? userId) =>
+        item.Source == FoodSource.Manual && item.OwnerUserId is null && item.AddedByUserId is { } addedBy && addedBy != userId;
 
     /// <summary>
     /// The Search tab's ranking (SPEC 7 Food): the user's own foods first, then names that start with what was typed
@@ -67,6 +80,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             WITH m AS (
                 SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                        f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
+                       (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
                        GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) AS sim,
                        starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre
                 FROM "FoodItems" f
@@ -74,7 +88,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
                   AND GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) >= 0.3
             )
             SELECT "Id", "Name", "NameBg", "Brand", "KcalPer100g", "ProteinPer100g", "CarbsPer100g", "FatPer100g",
-                   "FiberPer100g", "SaturatedFatPer100g", "DefaultServingGrams", "Own", (sim + CASE WHEN pre THEN 1 ELSE 0 END)::float8 AS "Score"
+                   "FiberPer100g", "SaturatedFatPer100g", "DefaultServingGrams", "Own", "ByOther", (sim + CASE WHEN pre THEN 1 ELSE 0 END)::float8 AS "Score"
             FROM m
             -- Among names that start with the search, the shortest is the plain food ("Bananas, raw" before
             -- "Bananas, dehydrated, or banana powder"); the rest by similarity.
@@ -102,7 +116,10 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             throw new ValidationException("That isn't a valid EAN or UPC barcode.");
         }
 
-        var cached = await db.FoodItems.SingleOrDefaultAsync(f => f.Barcode == barcode, ct);
+        // The user's own food first, then a shared one (SPEC 4); the query filter hides other users' private foods.
+        var cached = await db.FoodItems.Where(f => f.Barcode == barcode)
+            .OrderBy(f => f.OwnerUserId == null)
+            .FirstOrDefaultAsync(ct);
         if (cached is not null)
         {
             return new BarcodeResult(LookupStatus.Found, cached);
@@ -123,7 +140,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     /// <summary>Stores an Open Food Facts product as a shared food so repeat scans need no API call.</summary>
     public async Task<FoodItem> CacheAsync(ProductInfo p, CancellationToken ct)
     {
-        if (!string.IsNullOrEmpty(p.Barcode) && await db.FoodItems.IgnoreQueryFilters().SingleOrDefaultAsync(f => f.Barcode == p.Barcode, ct) is { } existing)
+        if (!string.IsNullOrEmpty(p.Barcode) && await db.FoodItems.IgnoreQueryFilters().SingleOrDefaultAsync(f => f.Barcode == p.Barcode && f.OwnerUserId == null, ct) is { } existing)
         {
             return existing;
         }
@@ -148,10 +165,10 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     }
 
     /// <summary>
-    /// A food typed in by hand. With a barcode it is shared, so the other user can scan the same product;
-    /// without one it belongs to this user only.
+    /// A food typed in by hand. With a barcode and <paramref name="share"/> it is shared, so others who scan the same
+    /// product get it; otherwise it belongs to this user only (SPEC 4).
     /// </summary>
-    public async Task<FoodItem> CreateManualAsync(string name, string? barcode, Per100g per100, decimal? servingGrams, CancellationToken ct)
+    public async Task<FoodItem> CreateManualAsync(string name, string? barcode, Per100g per100, decimal? servingGrams, bool share, CancellationToken ct)
     {
         name = name?.Trim() ?? "";
         if (name.Length is 0 or > 200)
@@ -164,20 +181,27 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             throw new ValidationException(error);
         }
 
-        barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim();
+        barcode = string.IsNullOrWhiteSpace(barcode) ? null : Barcodes.Normalize(barcode);
         if (barcode is not null && !Barcodes.IsValid(barcode))
         {
             throw new ValidationException("That isn't a valid EAN or UPC barcode.");
         }
 
-        if (barcode is not null && await db.FoodItems.IgnoreQueryFilters().AnyAsync(f => f.Barcode == barcode, ct))
+        var userId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.");
+        var shared = barcode is not null && share;
+        var taken = new ValidationException(shared
+            ? "A food with that barcode is already shared. Scan it again to use it."
+            : "You already have a food with that barcode.");
+        if (barcode is not null && await db.FoodItems.IgnoreQueryFilters().AnyAsync(
+                f => f.Barcode == barcode && (shared ? f.OwnerUserId == null : f.OwnerUserId == userId), ct))
         {
-            throw new ValidationException("A food with that barcode already exists.");
+            throw taken;
         }
 
         var item = new FoodItem
         {
-            OwnerUserId = barcode is null ? currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.") : null,
+            OwnerUserId = shared ? null : userId,
+            AddedByUserId = userId,
             Name = name,
             Barcode = barcode,
             KcalPer100g = per100.Kcal,
@@ -190,7 +214,17 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             Source = FoodSource.Manual,
         };
         db.FoodItems.Add(item);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException { SqlState: Npgsql.PostgresErrorCodes.UniqueViolation })
+        {
+            // Someone saved the same barcode between the check above and this insert.
+            db.Entry(item).State = EntityState.Detached;
+            throw taken;
+        }
+
         return item;
     }
 

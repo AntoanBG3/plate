@@ -121,8 +121,8 @@ public class NutritionTests(PostgresFixture fixture)
         await using var b = new UserScope(fixture, await fixture.CreateUserAsync());
         var per100 = new Per100g(250, 10, 30, 10);
 
-        var secret = await a.Foods.CreateManualAsync("Grandma's banitsa qwv", null, per100, null, default);
-        var shared = await a.Foods.CreateManualAsync("Local yoghurt qwv", "96385074", per100, 400, default);
+        var secret = await a.Foods.CreateManualAsync("Grandma's banitsa qwv", null, per100, null, share: false, default);
+        var shared = await a.Foods.CreateManualAsync("Local yoghurt qwv", "96385074", per100, 400, share: true, default);
 
         await b.Invoking(x => x.Foods.GetAsync(secret.Id, default)).Should().ThrowAsync<NotFoundException>();
         (await b.Foods.GetAsync(shared.Id, default)).Barcode.Should().Be("96385074");

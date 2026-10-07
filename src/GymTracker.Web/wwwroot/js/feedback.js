@@ -250,33 +250,14 @@
 
     // ---- the Send feedback form ----
 
-    // Draws the picked image no larger than MAX_SIDE and as JPEG, so it stays far under the 1 MB request limit.
-    // A busy photo can still be large, so quality and then size step down until it fits the server's cap.
-    // An <img> decodes whatever Safari can show, HEIC included.
-    async function shrink(file) {
-        const url = URL.createObjectURL(file);
-        try {
-            const img = new Image();
-            img.src = url;
-            await img.decode();
-            for (const [side, quality] of [[MAX_SIDE, JPEG_QUALITY], [MAX_SIDE, 0.6], [1200, 0.6], [900, 0.5]]) {
-                const scale = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight));
-                const canvas = document.createElement("canvas");
-                canvas.width = Math.round(img.naturalWidth * scale);
-                canvas.height = Math.round(img.naturalHeight * scale);
-                canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-                const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
-                if (!blob) {
-                    return null;
-                }
-                if (blob.size <= MAX_BYTES) {
-                    return { blob, width: canvas.width, height: canvas.height };
-                }
-            }
-            throw new Error("too large");
-        } finally {
-            URL.revokeObjectURL(url);
-        }
+    // Screenshots stay far under the 1 MB request limit (image.js does the drawing).
+    function shrink(file) {
+        return window.gymImage.shrink(file, {
+            maxSide: MAX_SIDE,
+            quality: JPEG_QUALITY,
+            maxBytes: MAX_BYTES,
+            steps: [[MAX_SIDE, 0.6], [1200, 0.6], [900, 0.5]],
+        });
     }
 
     window.gymModule("feedback-form", (form) => {

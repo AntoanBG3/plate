@@ -63,6 +63,42 @@ public class LayoutTests(E2EFixture app)
         phone.ShouldHaveNoErrors();
     }
 
+    /// <summary>Distance between the middle of the composer's first text line and the middle of its send button.</summary>
+    private static Task<double> ComposerOffsetAsync(Phone phone) => phone.Page.EvaluateAsync<double>("""
+        () => {
+          const ta = document.querySelector('.composer textarea');
+          const btn = document.querySelector('.composer .send-btn');
+          const s = getComputedStyle(ta);
+          const r = ta.getBoundingClientRect();
+          const lineMid = r.top + parseFloat(s.paddingTop) + parseFloat(s.lineHeight) / 2;
+          const b = btn.getBoundingClientRect();
+          return Math.abs(lineMid - (b.top + b.height / 2));
+        }
+        """);
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium, false)]
+    [InlineData(E2EFixture.Chromium, true)]
+    [InlineData(E2EFixture.WebKit, false)]
+    [InlineData(E2EFixture.WebKit, true)]
+    public async Task The_composer_text_sits_level_with_the_send_button(string browser, bool bulgarian)
+    {
+        var (email, password) = await app.App.CreateUserAsync(onboarded: false);
+        await using var phone = await app.PhoneAsync(browser, ai: true);
+        await phone.SignInAsync(email, password);
+        phone.Email = email;
+        await phone.WithTargetsAsync(app, bulgarian);
+
+        await phone.GoAsync("/welcome");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/welcome/start'] button[type=submit]").TapAsync());
+        (await ComposerOffsetAsync(phone)).Should().BeLessThanOrEqualTo(1, "in the setup chat");
+
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/welcome/skip'] button, a[href*='/welcome/skip']").First.TapAsync());
+        await phone.GoAsync("/food/add?tab=text");
+        (await ComposerOffsetAsync(phone)).Should().BeLessThanOrEqualTo(1, "in the food composer");
+        phone.ShouldHaveNoErrors();
+    }
+
     [Theory]
     [InlineData(E2EFixture.Chromium)]
     [InlineData(E2EFixture.WebKit)]

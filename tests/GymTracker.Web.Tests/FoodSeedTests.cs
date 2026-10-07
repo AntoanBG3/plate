@@ -44,6 +44,34 @@ public class FoodSeedTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task A_private_food_with_a_seed_barcode_neither_blocks_the_shared_product_nor_gets_its_values()
+    {
+        // Private barcodes can repeat a shared one since Phase 13; the seed only looks at shared foods.
+        var tag = Guid.NewGuid().ToString("N")[..8];
+        var barcode = "38" + Random.Shared.NextInt64(10_000_000_000, 99_999_999_999);
+        var userId = await fixture.CreateUserAsync();
+        await using (var db = fixture.CreateContext(userId))
+        {
+            db.FoodItems.Add(new FoodItem { Name = $"My yogurt {tag}", OwnerUserId = userId, AddedByUserId = userId, Barcode = barcode, KcalPer100g = 60, Source = FoodSource.Manual });
+            await db.SaveChangesAsync();
+        }
+
+        var csv = TempCsv(
+            "kind,barcode,name_bg,name_en,brand,kcal,protein,carbs,fat,serving_g,source,fiber,satfat",
+            $"product,{barcode},Кисело мляко {tag},,Верея,62,3.3,4.2,3.6,400,https://world.openfoodfacts.org/product/{barcode},0.5,2.3");
+
+        await using (var db = fixture.CreateContext(null))
+        {
+            await BgFoodSeed.SeedAsync(db, csv, default);
+        }
+
+        await using var check = fixture.CreateContext(null);
+        var rows = await check.FoodItems.IgnoreQueryFilters().Where(f => f.Barcode == barcode).ToListAsync();
+        rows.Should().ContainSingle(f => f.OwnerUserId == null && f.Source == FoodSource.OpenFoodFacts && f.FiberPer100g == 0.5m);
+        rows.Single(f => f.OwnerUserId == userId).Should().Match<FoodItem>(f => f.FiberPer100g == null && f.SaturatedFatPer100g == null);
+    }
+
+    [Fact]
     public async Task USDA_foods_seeded_earlier_get_their_Bulgarian_names_once()
     {
         var tag = Guid.NewGuid().ToString("N")[..8];

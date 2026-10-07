@@ -25,6 +25,7 @@ public class DataExport(AppDbContext db)
             ["maintenance_estimates.csv"] = await EstimatesAsync(ct),
             ["weekly_summaries.csv"] = await WeeklySummariesAsync(ct),
             ["feedback.csv"] = await FeedbackAsync(ct),
+            ["label_scans.csv"] = await LabelScansAsync(ct),
         };
 
         using var stream = new MemoryStream();
@@ -190,6 +191,19 @@ public class DataExport(AppDbContext db)
         {
             csv.Row(f.CreatedAt, f.Source.ToString(), f.Kind.ToString(), f.Area.ToString(), f.Rating?.ToString(),
                 f.Reasons == GymTracker.Core.Domain.ParseReason.None ? null : f.Reasons.ToString(), f.Message, f.Status.ToString(), f.Reply);
+        }
+
+        return csv;
+    }
+
+    /// <summary>What the label model read and what was saved; the photos stay out (SPEC 11).</summary>
+    private async Task<Csv> LabelScansAsync(CancellationToken ct)
+    {
+        var csv = new Csv("created_at_utc", "model", "latency_ms", "error", "edited", "values", "saved");
+        var scans = await db.LabelScans.AsNoTracking().OrderBy(s => s.CreatedAt).ToListAsync(ct);
+        foreach (var s in scans)
+        {
+            csv.Row(s.CreatedAt, s.Model, s.LatencyMs, s.Error, s.Edited, s.Values, s.Saved);
         }
 
         return csv;

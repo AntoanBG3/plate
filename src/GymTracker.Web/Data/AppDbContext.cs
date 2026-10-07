@@ -32,6 +32,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<ParseRun> ParseRuns => Set<ParseRun>();
     public DbSet<Feedback> Feedback => Set<Feedback>();
     public DbSet<FeedbackAttachment> FeedbackAttachments => Set<FeedbackAttachment>();
+    public DbSet<LabelScan> LabelScans => Set<LabelScan>();
+    public DbSet<LabelScanPhoto> LabelScanPhotos => Set<LabelScanPhoto>();
     public DbSet<ErrorEvent> ErrorEvents => Set<ErrorEvent>();
     public DbSet<ChangelogEntry> Changelog => Set<ChangelogEntry>();
     public DbSet<AdminAudit> AdminAudit => Set<AdminAudit>();
@@ -157,7 +159,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.SaturatedFatPer100g).HasPrecision(6, 2);
             e.Property(x => x.DefaultServingGrams).HasPrecision(7, 1);
             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
-            e.HasIndex(x => x.Barcode).IsUnique().HasFilter("\"Barcode\" IS NOT NULL");
+            // A barcode is unique among shared foods, and per owner among private ones (SPEC 4).
+            e.HasIndex(x => x.Barcode).IsUnique().HasFilter("\"Barcode\" IS NOT NULL AND \"OwnerUserId\" IS NULL").HasDatabaseName("IX_FoodItems_Barcode_Shared");
+            e.HasIndex(x => new { x.OwnerUserId, x.Barcode }).IsUnique().HasFilter("\"Barcode\" IS NOT NULL AND \"OwnerUserId\" IS NOT NULL").HasDatabaseName("IX_FoodItems_Owner_Barcode");
+            // AddedByUserId has no foreign key, like Invite.CreatedByUserId: a deleted account's id stays, so its shared
+            // foods still read as another user's, and null means only "creator unknown" (SPEC 4).
+            e.Property(x => x.AddedByUserId).HasMaxLength(450);
+            // The owner index above is filtered to barcodes, so the foreign key keeps its own.
+            e.HasIndex(x => x.OwnerUserId);
             e.HasIndex(x => x.Name).HasMethod("gin").HasOperators("gin_trgm_ops");
             e.HasIndex(x => x.NameBg).HasMethod("gin").HasOperators("gin_trgm_ops");
             e.HasQueryFilter(x => x.OwnerUserId == null || x.OwnerUserId == CurrentUserId);
@@ -265,6 +274,28 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasIndex(x => new { x.UserId, x.CreatedAt });
             e.HasIndex(x => x.CreatedAt);
             e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
+        // Label photos read by the label model (SPEC 6.6); the photo sits in its own table so lists never load it.
+        builder.Entity<LabelScan>(e =>
+        {
+            e.Property(x => x.Model).HasMaxLength(100);
+            e.Property(x => x.Error).HasMaxLength(300);
+            e.Property(x => x.Reading).HasColumnType("jsonb");
+            e.Property(x => x.Values).HasColumnType("jsonb");
+            e.Property(x => x.Saved).HasColumnType("jsonb");
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<FoodItem>().WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Photo).WithOne(p => p.LabelScan).HasForeignKey<LabelScanPhoto>(p => p.LabelScanId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.UserId, x.CreatedAt });
+            e.HasIndex(x => x.CreatedAt);
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
+        });
+
+        builder.Entity<LabelScanPhoto>(e =>
+        {
+            e.Property(x => x.ContentType).HasMaxLength(20);
+            e.HasQueryFilter(x => x.LabelScan.UserId == CurrentUserId);
         });
 
         builder.Entity<Feedback>(e =>

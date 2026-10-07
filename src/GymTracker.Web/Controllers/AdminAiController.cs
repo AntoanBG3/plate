@@ -89,9 +89,13 @@ public class AdminAiController(OpenRouterSettings openRouter, AiAdmin ai, ModelA
         {
             Report(await ai.TestOnboardingAsync(ct), "Model saved: the setup chat works.", "Model saved, but it doesn't work yet: {0}");
         }
-        else
+        else if (t == AiTask.Weekly)
         {
             Report(await ai.TestWeeklyAsync(ct), "Model saved: the weekly summary works.", "Model saved, but it doesn't work yet: {0}");
+        }
+        else
+        {
+            Report(await ai.TestLabelAsync(ct), "Model saved: label reading works.", "Model saved, but it doesn't work yet: {0}");
         }
 
         return Redirect("/admin/ai");
