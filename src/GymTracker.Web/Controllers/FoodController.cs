@@ -21,6 +21,7 @@ public class FoodController(
     NutritionTargets targets,
     ProfileService profiles,
     UserTime userTime,
+    GymTracker.Web.Data.ICurrentUser currentUser,
     TimeProvider time) : Controller
 {
     private static readonly string[] Tabs = ["text", "barcode", "search", "recent", "manual"];
@@ -127,7 +128,9 @@ public class FoodController(
                 "That isn't a valid EAN or UPC barcode.", null, [], null, [], []));
         }
 
-        return View(new BarcodeViewModel(date, meal, digits, await foods.LookupBarcodeAsync(digits, ct)));
+        var result = await foods.LookupBarcodeAsync(digits, ct);
+        return View(new BarcodeViewModel(date, meal, digits, result,
+            AddedByAnother: result.Item is { } item && FoodItemService.AddedByAnother(item, currentUser.UserId)));
     }
 
     [HttpPost("log-item")]
@@ -142,10 +145,10 @@ public class FoodController(
     }
 
     [HttpPost("items")]
-    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, CancellationToken ct)
+    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, CancellationToken ct)
     {
-        var item = await foods.CreateManualAsync(name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, ct);
-        await log.AddAsync([new NewEntry(date, meal, item.Name, grams, item.Per100(), item.Id, barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
+        var item = await foods.CreateManualAsync(name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, share, ct);
+        await log.AddAsync([new NewEntry(date, meal, item.Name, grams, item.Per100(), item.Id, item.Barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
         FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
@@ -210,8 +213,12 @@ public class FoodController(
         var entry = await log.GetAsync(id, ct);
         if (entry.FoodItemId is { } foodId)
         {
-            // Another user's food stays hidden: the name is then left out rather than shown.
-            ViewData["MatchedName"] = await foods.DisplayNameOrNullAsync(foodId, ct);
+            // Another user's private food stays hidden: the name is then left out rather than shown.
+            if (await foods.FindVisibleAsync(foodId, ct) is { } food)
+            {
+                ViewData["MatchedName"] = GymTracker.Web.Features.Localization.FoodNames.DisplayName(food);
+                ViewData["AddedByAnother"] = FoodItemService.AddedByAnother(food, currentUser.UserId);
+            }
         }
 
         return View(entry);

@@ -1,0 +1,245 @@
+using System.Net;
+using FluentAssertions;
+using GymTracker.Core.Domain;
+using GymTracker.Core.Nutrition;
+using GymTracker.Web.Features;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace GymTracker.Web.Tests;
+
+/// <summary>Sharing a barcode food or keeping it private, and the anonymous "Added by another user" mark (SPEC 4, 7).</summary>
+[Collection(PostgresCollection.Name)]
+public class SharedFoodTests(PostgresFixture fixture)
+{
+    private const string Mark = "Added by another user";
+    private static readonly DateOnly Day = new(2026, 10, 5);
+
+    /// <summary>A random valid EAN-13, so tests never collide on the barcode indexes.</summary>
+    private static string NewEan()
+    {
+        var digits = Enumerable.Range(0, 12).Select(i => i == 0 ? Random.Shared.Next(1, 10) : Random.Shared.Next(10)).ToArray();
+        var sum = digits.Select((d, i) => i % 2 == 0 ? d : d * 3).Sum();
+        return string.Concat(digits) + (10 - sum % 10) % 10;
+    }
+
+    private static string Unique(string name) => $"{name} {Guid.NewGuid():N}"[..(name.Length + 9)];
+
+    private AppFactory NewApp() =>
+        new(fixture, services: s => s.AddSingleton<IFoodDatabase, FakeFoodDatabase>());
+
+    private sealed record Account(HttpClient Client, string Email, string UserId);
+
+    private async Task<Account> SignInAsync(AppFactory app, string? displayName = null)
+    {
+        var (client, email) = await app.SignedInClientAsync();
+        await using var db = fixture.CreateContext(null);
+        var id = await db.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
+        if (displayName is not null)
+        {
+            await db.Profiles.IgnoreQueryFilters().Where(p => p.UserId == id).ExecuteUpdateAsync(p => p.SetProperty(x => x.DisplayName, displayName));
+        }
+
+        return new Account(client, email, id);
+    }
+
+    private static async Task<HttpResponseMessage> SaveManualAsync(Account a, string name, string? barcode, bool? share)
+    {
+        var token = await AppFactory.TokenAsync(a.Client, "/food/add?date=2026-10-05&meal=Lunch&tab=manual");
+        var fields = new List<KeyValuePair<string, string>>
+        {
+            new("__RequestVerificationToken", token),
+            new("date", "2026-10-05"),
+            new("meal", "Lunch"),
+            new("name", name),
+            new("barcode", barcode ?? ""),
+            new("kcal", "62"),
+            new("protein", "3.2"),
+            new("carbs", "4.1"),
+            new("fat", "3.6"),
+            new("grams", "150"),
+        };
+        if (share is { } s)
+        {
+            // As a browser sends it: the ticked checkbox first, then the hidden "false" after it.
+            if (s)
+            {
+                fields.Add(new("share", "true"));
+            }
+
+            fields.Add(new("share", "false"));
+        }
+
+        return await a.Client.PostAsync("/food/items", new FormUrlEncodedContent(fields));
+    }
+
+    private static async Task<string> PageAsync(Account a, string path) =>
+        WebUtility.HtmlDecode(await a.Client.GetStringAsync(path));
+
+    private static string Scan(string code) => $"/food/barcode?date=2026-10-05&meal=Lunch&code={code}";
+
+    [Fact]
+    public async Task A_shared_food_is_found_by_another_users_scan_with_the_mark_and_no_name()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app, "Zelda Quixote");
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        var name = Unique("Ayran qsf");
+
+        (await SaveManualAsync(a, name, code, share: true)).StatusCode.Should().Be(HttpStatusCode.Redirect);
+
+        var html = await PageAsync(b, Scan(code));
+        html.Should().Contain(name).And.Contain(Mark);
+        html.Should().NotContain("Zelda").And.NotContain(a.Email);
+    }
+
+    [Fact]
+    public async Task The_account_that_added_a_food_sees_no_mark()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var code = NewEan();
+        await SaveManualAsync(a, Unique("Kefir qsf"), code, share: true);
+
+        (await PageAsync(a, Scan(code))).Should().NotContain(Mark);
+    }
+
+    [Fact]
+    public async Task An_unticked_food_stays_private_and_the_other_user_can_save_their_own()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        var name = Unique("Boza qsf");
+
+        (await SaveManualAsync(a, name, code, share: false)).StatusCode.Should().Be(HttpStatusCode.Redirect);
+
+        (await PageAsync(b, Scan(code))).Should().NotContain(name).And.Contain("Not found");
+        (await SaveManualAsync(b, Unique("Boza mine qsf"), code, share: false)).StatusCode.Should().Be(HttpStatusCode.Redirect);
+        (await PageAsync(a, Scan(code))).Should().Contain(name);
+    }
+
+    [Fact]
+    public async Task A_users_own_private_food_comes_before_a_shared_one()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        var mine = Unique("Mine qsf");
+        await SaveManualAsync(b, mine, code, share: false);
+        await SaveManualAsync(a, Unique("Theirs qsf"), code, share: true);
+
+        (await PageAsync(b, Scan(code))).Should().Contain(mine).And.NotContain(Mark);
+    }
+
+    [Fact]
+    public async Task The_search_line_and_the_entry_sheet_show_the_mark()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+        var name = Unique("Lyutenitsa qsf");
+        await SaveManualAsync(a, name, NewEan(), share: true);
+
+        var search = await PageAsync(b, $"/food/add?date=2026-10-05&meal=Lunch&tab=search&q={Uri.EscapeDataString(name)}");
+        search.Should().Contain(name).And.Contain(Mark);
+
+        await using var db = fixture.CreateContext(b.UserId);
+        var food = await db.FoodItems.SingleAsync(f => f.Name == name);
+        db.FoodLog.Add(new FoodLogEntry { UserId = b.UserId, Date = Day, Meal = Meal.Lunch, Description = name, Grams = 100, FoodItemId = food.Id, Source = EntrySource.Search, CreatedAt = DateTimeOffset.UtcNow });
+        await db.SaveChangesAsync();
+        var entryId = await db.FoodLog.Where(e => e.FoodItemId == food.Id).Select(e => e.Id).SingleAsync();
+
+        (await PageAsync(b, $"/food/entries/{entryId}")).Should().Contain(Mark);
+    }
+
+    [Fact]
+    public async Task Open_Food_Facts_and_USDA_foods_show_no_mark()
+    {
+        var off = new FakeFoodDatabase();
+        var code = NewEan();
+        off.Products[code] = new ProductLookup(LookupStatus.Found, new ProductInfo(code, "Cached cola qsf", "Brand", new Per100g(42, 0, 10.6m, 0), 330));
+        await using var app = new AppFactory(fixture, services: s => s.AddSingleton<IFoodDatabase>(off));
+        var b = await SignInAsync(app);
+
+        (await PageAsync(b, Scan(code))).Should().Contain("Cached cola qsf").And.NotContain(Mark);
+        (await PageAsync(b, "/food/add?date=2026-10-05&meal=Lunch&tab=search&q=rice")).Should().NotContain(Mark);
+    }
+
+    [Fact]
+    public async Task A_food_whose_creator_was_deleted_still_reads_as_another_users()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        await SaveManualAsync(a, Unique("Orphan qsf"), code, share: true);
+        await using (var db = fixture.CreateContext(null))
+        {
+            await db.FoodItems.IgnoreQueryFilters().Where(f => f.Barcode == code).ExecuteUpdateAsync(f => f.SetProperty(x => x.AddedByUserId, (string?)null));
+        }
+
+        (await PageAsync(b, Scan(code))).Should().Contain(Mark);
+    }
+
+    [Fact]
+    public async Task Sharing_a_barcode_someone_already_shared_gives_a_message_not_an_error()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        await SaveManualAsync(a, Unique("First qsf"), code, share: true);
+
+        // A plain form post with a validation error goes back with the message shown on the next page.
+        var response = await SaveManualAsync(b, Unique("Second qsf"), code, share: true);
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        (await PageAsync(b, response.Headers.Location!.OriginalString)).Should().Contain("A food with that barcode is already shared. Scan it again to use it.");
+    }
+
+    [Fact]
+    public async Task Two_concurrent_shares_of_one_barcode_save_one_food_and_refuse_the_other()
+    {
+        var (u1, u2) = (await fixture.CreateUserAsync(), await fixture.CreateUserAsync());
+        var code = NewEan();
+        await using var s1 = new UserScope(fixture, u1);
+        await using var s2 = new UserScope(fixture, u2);
+        var per100 = new Per100g(62, 3.2m, 4.1m, 3.6m);
+
+        var results = await Task.WhenAll(
+            Attempt(() => s1.Foods.CreateManualAsync("Race one qsf", code, per100, null, share: true, default)),
+            Attempt(() => s2.Foods.CreateManualAsync("Race two qsf", code, per100, null, share: true, default)));
+
+        results.Count(r => r is null).Should().Be(1, "exactly one share wins");
+        results.Single(r => r is not null)!.Text.Should().Be(new GymTracker.Core.Text.LocalText("A food with that barcode is already shared. Scan it again to use it."));
+
+        static async Task<ValidationException?> Attempt(Func<Task<FoodItem>> create)
+        {
+            try
+            {
+                await create();
+                return null;
+            }
+            catch (ValidationException ex)
+            {
+                return ex;
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Without_a_barcode_a_food_is_always_private()
+    {
+        var (u1, u2) = (await fixture.CreateUserAsync(), await fixture.CreateUserAsync());
+        await using var s1 = new UserScope(fixture, u1);
+        await using var s2 = new UserScope(fixture, u2);
+        var food = await s1.Foods.CreateManualAsync("No code qsf", null, new Per100g(100, 1, 1, 1), null, share: true, default);
+
+        food.OwnerUserId.Should().Be(u1);
+        food.AddedByUserId.Should().Be(u1);
+        await s2.Invoking(x => x.Foods.GetAsync(food.Id, default)).Should().ThrowAsync<NotFoundException>();
+    }
+}

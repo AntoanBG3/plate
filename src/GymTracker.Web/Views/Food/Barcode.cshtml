@@ -12,6 +12,10 @@
     <header class="page-head">
         <p class="eyebrow">@(item.Brand ?? L["Barcode {0}", Model.Code])</p>
         <h1 class="large-title" style="font-size: var(--text-title-1)">@item.DisplayName()</h1>
+        @if (Model.AddedByAnother)
+        {
+            <p class="footnote">@L["Added by another user"]</p>
+        }
     </header>
     <div class="card stat-grid" style="grid-template-columns: repeat(4, 1fr)">
         <div class="stat"><div class="stat-value num">@Math.Round(item.KcalPer100g)</div><div class="stat-label">@L["kcal"]</div></div>
@@ -46,7 +50,7 @@ else
             _ => L["This product isn't in Open Food Facts. Enter it from the label once and it's saved for both of you."],
         })</p>
     </header>
-    <partial name="_ManualFoodForm" model="(Model.Date, Model.Meal, (string?)Model.Code, (string?)null)" />
+    <partial name="_ManualFoodForm" model="new ManualFoodFormModel(Model.Date, Model.Meal, Model.Code, null, BarcodeField: false, LabelAvailable: Model.LabelAvailable)" />
 }
 
 @functions {

@@ -44,7 +44,7 @@ public class FoodMatchingTests(PostgresFixture fixture)
     public async Task The_users_own_food_at_the_top_of_the_ranking_stands()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
-        var own = await s.Foods.CreateManualAsync("Chicken breast", null, new Per100g(110, 23, 0, 1.5m), null, default);
+        var own = await s.Foods.CreateManualAsync("Chicken breast", null, new Per100g(110, 23, 0, 1.5m), null, share: false, default);
         var ranked = (await s.Matcher.ResolveAsync("200g chicken breast", [Parsed("chicken breast", 200, FoodState.Raw)], default)).Single();
         ranked.FoodItemId.Should().Be(own.Id, "precondition: Rank puts the user's own food first");
         s.MatchDecider.Calls.Clear();

@@ -190,7 +190,24 @@ public record FoodAddViewModel(
 
 public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, GymTracker.Core.Text.LocalText? Warning, int? ParseRunId = null);
 
-public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result);
+/// <param name="AddedByAnother">The food is a shared manual one another account added (SPEC 7).</param>
+public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result, bool AddedByAnother = false, bool LabelAvailable = false);
+
+/// <summary>The manual food form (SPEC 7), on the Manual tab, after a barcode miss, and filled from a label photo (6.6).</summary>
+/// <param name="Barcode">A scanned code, sent as a hidden field after a barcode miss.</param>
+/// <param name="BarcodeField">Whether the optional barcode field is shown (everywhere except after a barcode miss).</param>
+/// <param name="BarcodeValue">Pre-fills the optional barcode field, e.g. with a code found in the label photo.</param>
+public record ManualFoodFormModel(
+    DateOnly Date,
+    Meal Meal,
+    string? Barcode,
+    string? Name,
+    bool BarcodeField,
+    GymTracker.Core.Nutrition.LabelValues? Label = null,
+    int? LabelScanId = null,
+    bool LabelAvailable = false,
+    GymTracker.Core.Text.LocalText? LabelError = null,
+    string? BarcodeValue = null);
 
 /// <param name="ModelInfo">The current model's catalog entry, or null when the catalog can't be loaded or no longer lists it.</param>
 /// <param name="ModelInfo">Null when the model isn't in the task's list (e.g. OpenRouter's list can't be loaded).</param>

@@ -50,7 +50,7 @@
   "A food reading rated wrong.": [
     "src/GymTracker.Web/Views/Feedback/Index.cshtml"
   ],
-  "A food with that barcode already exists.": [
+  "A food with that barcode is already shared. Scan it again to use it.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
   ],
   "A name is 1 to {0} characters.": [
@@ -180,6 +180,11 @@
     "src/GymTracker.Web/Controllers/TemplatesController.cs",
     "src/GymTracker.Web/Controllers/TrainController.cs"
   ],
+  "Added by another user": [
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/Barcode.cshtml",
+    "src/GymTracker.Web/Views/Food/Entry.cshtml"
+  ],
   "Added something I didn't eat": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
@@ -299,7 +304,8 @@
     "exercise"
   ],
   "Barcode": [
-    "src/GymTracker.Web/Views/Food/Barcode.cshtml"
+    "src/GymTracker.Web/Views/Food/Barcode.cshtml",
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Barcode digits": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
@@ -309,9 +315,6 @@
   ],
   "Barcode {0}": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
-  ],
-  "Barcode {0}. Saved for both of you, so it only needs entering once.": [
-    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Based on {0} kg, a healthy weight for your height.": [
     "src/GymTracker.Web/Views/Settings/_ProteinNote.cshtml"
@@ -1448,6 +1451,9 @@
     "enum",
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
+  "Others who scan this barcode get this food instead of entering it again. Your name isn't shown.": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
   "Overhead cable triceps extension": [
     "exercise"
   ],
@@ -1898,6 +1904,9 @@
   "Sex": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Share with other users": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Should be split or joined": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -2530,6 +2539,9 @@
   ],
   "Yesterday": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "You already have a food with that barcode.": [
+    "src/GymTracker.Web/Features/Food/FoodItemService.cs"
   ],
   "You are already signed in. Log out first to use this invite.": [
     "src/GymTracker.Web/Views/Join/Index.cshtml"

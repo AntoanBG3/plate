@@ -13,7 +13,6 @@
   "A cut can't be faster than {0}% of bodyweight per week.": "Отслабването не може да е по-бързо от {0}% от телесното тегло на седмица.",
   "A few quick questions and your calorie and protein targets are ready. It takes about two minutes.": "Няколко бързи въпроса и целите ти за калории и протеин са готови. Отнема около две минути.",
   "A food reading rated wrong.": "Разчитане на храна, отбелязано като грешно.",
-  "A food with that barcode already exists.": "Храна с този баркод вече съществува.",
   "Everyday life plus about two hours of activity a day, some of it hard (cycling, a sport), or a job on your feet with lifting and carrying.": "Ежедневие плюс около два часа активност на ден, част от нея тежка (колоездене, спорт), или работа на крак с вдигане и носене.",
   "A template is the list of exercises for one workout, like Upper A or Legs.": "Шаблонът е списъкът с упражнения за една тренировка, като Горна част А или Крака.",
   "AI estimate": "AI оценка",
@@ -70,7 +69,6 @@
   "Barcode digits": "Цифри на баркода",
   "Barcode scanning": "Сканиране на баркод",
   "Barcode {0}": "Баркод {0}",
-  "Barcode {0}. Saved for both of you, so it only needs entering once.": "Баркод {0}. Запазен е и за двама ви, така че се въвежда само веднъж.",
   "Bench press": "Лежанка",
   "Biceps": "Бицепс",
   "Birth year": "Година на раждане",
@@ -857,5 +855,10 @@
   "Your email is only for signing in. Nothing is ever sent to it.": "Имейлът е само за влизане. На него никога не се изпращат писма.",
   "An account with this email already exists.": "Вече има профил с този имейл.",
   "Enter a valid email address.": "Въведи валиден имейл адрес.",
-  "The password needs at least 12 characters.": "Паролата трябва да има поне 12 символа."
+  "The password needs at least 12 characters.": "Паролата трябва да има поне 12 символа.",
+  "Share with other users": "Сподели с другите потребители",
+  "Others who scan this barcode get this food instead of entering it again. Your name isn't shown.": "Който сканира този баркод, ще получи храната, без да я въвежда отново. Името ти не се показва.",
+  "Added by another user": "Добавено от друг потребител",
+  "A food with that barcode is already shared. Scan it again to use it.": "Вече има споделена храна с този баркод. Сканирай го отново, за да я използваш.",
+  "You already have a food with that barcode.": "Вече имаш храна с този баркод."
 }

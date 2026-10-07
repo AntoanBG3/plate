@@ -1,6 +1,7 @@
-@model (DateOnly Date, Meal Meal, string? Barcode, string? Name)
+@model ManualFoodFormModel
 @{
     var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    var hasBarcode = Model.Barcode is not null || !string.IsNullOrEmpty(Model.BarcodeValue);
 }
 <form method="post" asp-antiforgery="true" action="/food/items">
     <input type="hidden" name="date" value="@date" />
@@ -11,6 +12,10 @@
     }
     <div class="list">
         <div class="field-row stacked"><label for="m-name" class="sr-only">@L["Name"]</label><input id="m-name" type="text" name="name" value="@Model.Name" maxlength="200" required placeholder="@L["Food name, e.g. Кисело мляко 2%"]" /></div>
+        @if (Model.BarcodeField)
+        {
+            <div class="field-row"><label for="m-barcode">@L["Barcode"]</label><input id="m-barcode" class="num" type="text" name="barcode" value="@Model.BarcodeValue" inputmode="numeric" pattern="[0-9 -]{8,16}" autocomplete="off" placeholder="@L["Optional"]" data-barcode-input /></div>
+        }
     </div>
     <h2 class="section-header" style="margin-top: var(--s-5)">@L["Per 100 g, from the label"]</h2>
     <div class="list">
@@ -26,9 +31,14 @@
         <div class="field-row"><label for="m-serving">@L["One serving"]</label><input id="m-serving" class="num" type="text" name="servingGrams" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
         <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="text" name="grams" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
     </div>
-    @if (Model.Barcode is not null)
-    {
-        <p class="section-footer">@L["Barcode {0}. Saved for both of you, so it only needs entering once.", Model.Barcode]</p>
-    }
+    @* Shown only with a barcode: others find a shared food by scanning it (SPEC 4). Without one the server keeps it private. *@
+    <div class="list" data-share style="margin-top: var(--s-5)" hidden="@(!hasBarcode)">
+        <label class="field-row switch-row">
+            <span>@L["Share with other users"]</span>
+            <input type="checkbox" class="switch" name="share" value="true" checked />
+            <input type="hidden" name="share" value="false" />
+        </label>
+    </div>
+    <p class="section-footer" data-share hidden="@(!hasBarcode)">@L["Others who scan this barcode get this food instead of entering it again. Your name isn't shown."]</p>
     <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Save and add"]</button>
 </form>
