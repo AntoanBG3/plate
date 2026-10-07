@@ -43,13 +43,13 @@ public class SharedFoodTests(PostgresFixture fixture)
         return new Account(client, email, id);
     }
 
-    private static async Task<HttpResponseMessage> SaveManualAsync(Account a, string name, string? barcode, bool? share)
+    private static async Task<HttpResponseMessage> SaveManualAsync(Account a, string name, string? barcode, bool? share, string grams = "150", string date = "2026-10-05")
     {
         var token = await AppFactory.TokenAsync(a.Client, "/food/add?date=2026-10-05&meal=Lunch&tab=manual");
         var fields = new List<KeyValuePair<string, string>>
         {
             new("__RequestVerificationToken", token),
-            new("date", "2026-10-05"),
+            new("date", date),
             new("meal", "Lunch"),
             new("name", name),
             new("barcode", barcode ?? ""),
@@ -57,7 +57,7 @@ public class SharedFoodTests(PostgresFixture fixture)
             new("protein", "3.2"),
             new("carbs", "4.1"),
             new("fat", "3.6"),
-            new("grams", "150"),
+            new("grams", grams),
         };
         if (share is { } s)
         {
@@ -241,5 +241,28 @@ public class SharedFoodTests(PostgresFixture fixture)
         food.OwnerUserId.Should().Be(u1);
         food.AddedByUserId.Should().Be(u1);
         await s2.Invoking(x => x.Foods.GetAsync(food.Id, default)).Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Theory]
+    [InlineData("5000", "2026-10-05")]
+    [InlineData("150", "2099-01-01")]
+    public async Task A_refused_entry_saves_no_food_so_a_retry_works(string grams, string date)
+    {
+        // Too many grams or a future day used to leave the (shared) food saved, and the retry said "already shared".
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var code = NewEan();
+        var name = Unique("Retry qsf");
+
+        (await SaveManualAsync(a, name, code, share: true, grams: grams, date: date)).StatusCode.Should().Be(HttpStatusCode.Redirect);
+        await using (var db = fixture.CreateContext(null))
+        {
+            (await db.FoodItems.IgnoreQueryFilters().AnyAsync(f => f.Barcode == code)).Should().BeFalse("nothing is kept from a refused save");
+        }
+
+        var retry = await SaveManualAsync(a, name, code, share: true);
+        retry.Headers.Location!.OriginalString.Should().StartWith("/food?date=2026-10-05");
+        await using var check = fixture.CreateContext(a.UserId);
+        (await check.FoodLog.CountAsync(e => e.Description == name)).Should().Be(1);
     }
 }

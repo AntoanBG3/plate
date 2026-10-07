@@ -18,6 +18,7 @@ public class FoodController(
     SavedMealService savedMeals,
     FoodItemService foods,
     LabelScanService labels,
+    ManualFoodService manualFoods,
     ParseRunService parseRuns,
     NutritionTargets targets,
     ProfileService profiles,
@@ -150,9 +151,7 @@ public class FoodController(
     [HttpPost("items")]
     public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, CancellationToken ct)
     {
-        var item = await foods.CreateManualAsync(name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, share, ct);
-        await labels.RecordSaveAsync(labelScanId, item, ct);
-        await log.AddAsync([new NewEntry(date, meal, item.Name, grams, item.Per100(), item.Id, item.Barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
+        await manualFoods.SaveAndLogAsync(date, meal, name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, grams, share, labelScanId, ct);
         FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }

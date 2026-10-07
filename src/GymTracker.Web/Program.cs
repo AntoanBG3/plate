@@ -161,6 +161,7 @@ builder.Services.AddScoped<GymTracker.Web.Features.Summary.WeeklySummaryService>
 // The label model when a key is set and it isn't off; otherwise label photos are hidden (SPEC 6.6).
 builder.Services.AddScoped<ILabelReader, SwitchingLabelReader>();
 builder.Services.AddScoped<GymTracker.Web.Features.Food.LabelScanService>();
+builder.Services.AddScoped<GymTracker.Web.Features.Food.ManualFoodService>();
 
 builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>
 {
