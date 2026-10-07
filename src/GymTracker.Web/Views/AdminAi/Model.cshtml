@@ -42,7 +42,7 @@ else
                                     @if (Model.Accuracy?.GetValueOrDefault(m.Id) is { } stats)
                                     {
                                         <span class="row-sub" style="display: block">@(stats.Enough && Model.Task == AiTask.Label
-                                            ? $"Last 90 days: {stats.Runs} reads, {Percent(stats.CorrectionRate ?? 0)}% of saved ones edited, {Percent(stats.DownRate)}% failed"
+                                            ? L["Last 90 days: {0} reads, {1}% of saved ones edited, {2}% failed", stats.Runs, Percent(stats.CorrectionRate ?? 0), Percent(stats.DownRate)]
                                             : stats.Enough
                                             ? (stats.CorrectionRate is { } corrected
                                                 ? L["Last 90 days: {0} entries, {1}% corrected before saving, {2}% rated wrong", stats.Runs, Percent(corrected), Percent(stats.DownRate)]

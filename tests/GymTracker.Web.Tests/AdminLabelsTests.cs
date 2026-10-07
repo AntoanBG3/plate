@@ -149,4 +149,22 @@ public class AdminLabelsTests(PostgresFixture fixture)
         (await FeedbackCommand.RunAsync(app.Services, ["feedback", "digest", "--since", "1d"], digest)).Should().Be(0);
         digest.ToString().Should().MatchRegex(@"Label reads: \d+ \(\d+ failed, \d+ edited\)");
     }
+
+    [Fact]
+    public async Task The_label_model_picker_shows_reads_edits_and_failures()
+    {
+        const string model = "google/gemini-3.5-flash-lite";
+        for (var i = 0; i < 20; i++)
+        {
+            await ScanAsync(model, edited: i < 5, error: i is 18 or 19 ? "Couldn't read the label. Enter the values by hand." : null);
+        }
+
+        // OpenRouter's model list comes from the stub, so the picker lists the vision model the scans used.
+        await using var app = new AppFactory(fixture, services: s => s.AddHttpClient<OpenRouterModels>().ConfigurePrimaryHttpMessageHandler(() => new StubOpenRouter()));
+        var admin = await AdminTests.UnlockedDevAsync(app);
+
+        var page = WebUtility.HtmlDecode(await admin.GetStringAsync("/admin/ai/model/label"));
+
+        page.Should().Contain("Last 90 days: 20 reads, 28% of saved ones edited, 10% failed");
+    }
 }
