@@ -206,7 +206,8 @@ public class SwitchingLabelReader(OpenRouterSettings settings, IServiceProvider 
         var model = await settings.GetModelAsync(AiTask.Label, ct);
         if (model == AiTasks.Off || await settings.GetKeyAsync(ct) is not { } key)
         {
-            return LabelReadResult.Failed("Couldn't read the label. Enter the values by hand.");
+            // Named after the configured model, so the scan isn't grouped under a blank one (SPEC 11 accuracy).
+            return LabelReadResult.Failed("Couldn't read the label. Enter the values by hand.", model);
         }
 
         return await services.GetRequiredService<OpenRouterLabelReader>().ReadAsync(image, contentType, key, model, ct);

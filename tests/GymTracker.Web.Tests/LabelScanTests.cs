@@ -384,4 +384,17 @@ public class LabelScanTests(PostgresFixture fixture)
 
         (await db.LabelScans.CountAsync(s => s.UserId == userId)).Should().Be(1);
     }
+
+    [Fact]
+    public async Task A_failure_without_a_model_is_stored_as_unknown_not_blank()
+    {
+        var userId = await fixture.CreateUserAsync();
+        await using var db = fixture.CreateContext(userId);
+        var reader = new FakeLabelReader { Next = LabelReadResult.Failed("Couldn't read the label. Enter the values by hand.") };
+        var service = new GymTracker.Web.Features.Food.LabelScanService(db, reader, new GymTracker.Web.Data.FixedCurrentUser(userId), TimeProvider.System);
+
+        await service.ReadAsync(Jpeg(100), 10, 10, default);
+
+        (await db.LabelScans.SingleAsync(s => s.UserId == userId)).Model.Should().Be("unknown");
+    }
 }

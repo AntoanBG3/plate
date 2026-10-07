@@ -33,7 +33,7 @@ public class LabelScanService(AppDbContext db, ILabelReader reader, ICurrentUser
         {
             UserId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user."),
             CreatedAt = time.GetUtcNow(),
-            Model = result.Model ?? "",
+            Model = string.IsNullOrEmpty(result.Model) ? "unknown" : result.Model,
             LatencyMs = (int)time.GetElapsedTime(started).TotalMilliseconds,
             Error = (result.Error ?? outcome.Error)?.ToString(),
             Reading = result.Raw is null ? null : ValidJson(result.Raw),

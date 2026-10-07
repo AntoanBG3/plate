@@ -489,4 +489,17 @@ public class LabelReaderSwitchTests(PostgresFixture fixture)
             await db.AppSettings.Where(x => x.Name == "OpenRouter:Model:Label").ExecuteDeleteAsync();
         }
     }
+
+    [Fact]
+    public async Task A_read_that_cannot_run_names_the_configured_model()
+    {
+        await using var db = fixture.CreateContext(null);
+        await db.AppSettings.Where(x => x.Name == "OpenRouter:Model:Label").ExecuteDeleteAsync();
+        await using var noKey = new AppFactory(fixture);
+        using var scope = noKey.Services.CreateScope();
+
+        var result = await scope.ServiceProvider.GetRequiredService<ILabelReader>().ReadAsync([0xFF, 0xD8, 0xFF], "image/jpeg", default);
+
+        (result.Error, result.Model).Should().Be((new GymTracker.Core.Text.LocalText("Couldn't read the label. Enter the values by hand."), AiTasks.DefaultLabelModel));
+    }
 }
