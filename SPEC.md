@@ -483,7 +483,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - **Exercise picker** (adding to a template or a session): pick several at once, added in the order tapped; exercises already there are marked. When nothing matches the search, it offers to create a custom exercise with that name.
 
 ### Food
-- Date selector (defaults to today), entries grouped by meal, daily totals at the top. Future days can't be opened or logged. A past day shows the targets in force that day (the maintenance estimate of that day, 5.5, with the profile's goal rules, 5.6); days before the first estimate say when targets start.
+- Date selector (defaults to today), entries grouped by meal, daily totals at the top. Future days, and days before 2000 (which only come from hand-typed or broken links), can't be opened or logged; opening one goes to today. A past day shows the targets in force that day (the maintenance estimate of that day, 5.5, with the profile's goal rules, 5.6); days before the first estimate say when targets start.
 - The totals card shows each macro against its target (5.6): protein against the aim with the minimum, fat and carbs against their ranges, fiber against its minimum and saturated fat against its maximum, with the coverage note when a day is under 80% (5.8). Each of Breakfast, Lunch and Dinner shows its protein, with a check once it reaches the per-meal aim.
 - A This week card with the 5.8 averages.
 - Add entry with four methods:

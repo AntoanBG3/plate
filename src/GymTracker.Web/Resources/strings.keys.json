@@ -499,6 +499,7 @@
     "src/GymTracker.Web/Controllers/FoodController.cs"
   ],
   "Couldn't read the label. Enter the values by hand.": [
+    "src/GymTracker.Web/Controllers/FoodController.cs",
     "src/GymTracker.Web/Integrations/OpenRouterLabelReader.cs",
     "wwwroot/js"
   ],
@@ -2127,6 +2128,9 @@
   ],
   "Thanks. What was wrong?": [
     "wwwroot/js"
+  ],
+  "That day is too far back.": [
+    "src/GymTracker.Web/Features/Food/FoodDays.cs"
   ],
   "That doesn't look like an API key.": [
     "src/GymTracker.Web/Integrations/OpenRouterSettings.cs"
