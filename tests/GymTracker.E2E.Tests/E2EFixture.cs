@@ -35,12 +35,13 @@ public sealed class E2EFixture : IAsyncLifetime
         await db.InitializeAsync();
 
         var port = FreePort();
-        // Every test signs in from the same address, so the login and passkey limits are raised for the run.
+        // Every test signs in from the same address, so the login, passkey and join limits are raised for the run.
         var settings = new Dictionary<string, string?>
         {
             ["Auth:HostCookies"] = "false",
             ["RateLimits:LoginGlobalPerWindow"] = "10000",
             ["RateLimits:PasskeyOptionsPerWindow"] = "10000",
+            ["RateLimits:JoinPerWindow"] = "10000",
         };
         factory = new AppFactory(db, settings: settings);
         factory.UseKestrel(o => o.ListenLocalhost(port));
