@@ -488,6 +488,9 @@
   "Couldn't read that.": [
     "src/GymTracker.Web/Controllers/FoodController.cs"
   ],
+  "Couldn't read the label. Enter the values by hand.": [
+    "src/GymTracker.Web/Integrations/OpenRouterLabelReader.cs"
+  ],
   "Create a custom exercise": [
     "src/GymTracker.Web/Views/Shared/ExercisePicker.cshtml"
   ],
@@ -2226,6 +2229,9 @@
   ],
   "The list changed while you were reordering. Try again.": [
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
+  ],
+  "The model misread the sample label (read {0} kcal, expected {1}).": [
+    "src/GymTracker.Web/Integrations/OpenRouterLabelReader.cs"
   ],
   "The model returned no food for \"1 banana\".": [
     "src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs"

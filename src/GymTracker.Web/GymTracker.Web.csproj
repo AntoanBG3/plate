@@ -23,6 +23,11 @@
     <None Update="Data/Seed/bg-foods.csv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The synthetic label `ai test label` sends (tools/labels/make-sample.sh). -->
+    <EmbeddedResource Include="Integrations/Assets/sample-label.jpg" LogicalName="GymTracker.Web.Integrations.Assets.sample-label.jpg" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>

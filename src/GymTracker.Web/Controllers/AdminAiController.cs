@@ -95,7 +95,7 @@ public class AdminAiController(OpenRouterSettings openRouter, AiAdmin ai, ModelA
         }
         else
         {
-            TempData.Notice("Model saved.");
+            Report(await ai.TestLabelAsync(ct), "Model saved: label reading works.", "Model saved, but it doesn't work yet: {0}");
         }
 
         return Redirect("/admin/ai");

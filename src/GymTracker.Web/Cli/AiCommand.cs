@@ -20,7 +20,7 @@ public static class AiCommand
           set-model parser|matcher|onboarding|weekly|label <model id>
           set-key                         reads the key from standard input
           clear-key
-          test
+          test [label]
         """;
 
     public static async Task<int> RunAsync(IServiceProvider services, string[] args, TextWriter? output = null, TextReader? input = null)
@@ -76,6 +76,11 @@ public static class AiCommand
                         : "Key removed.");
                     return 0;
 
+                case ["test", "label"]:
+                    var labelError = await ai.TestLabelAsync(ct);
+                    o.WriteLine(labelError is null ? "Label: works or off." : $"Label: {localizer[labelError]}");
+                    return labelError is null ? 0 : 1;
+
                 case ["test", ..]:
                     return await TestAsync(ai, localizer, o, ct);
 
@@ -101,6 +106,8 @@ public static class AiCommand
         o.WriteLine(onboarding is null ? "Onboarding: works or off." : $"Onboarding: {localizer[onboarding]}");
         var weekly = await ai.TestWeeklyAsync(ct);
         o.WriteLine(weekly is null ? "Weekly: works or off." : $"Weekly: {localizer[weekly]}");
-        return parser is null && matcher is null && onboarding is null && weekly is null ? 0 : 1;
+        var label = await ai.TestLabelAsync(ct);
+        o.WriteLine(label is null ? "Label: works or off." : $"Label: {localizer[label]}");
+        return parser is null && matcher is null && onboarding is null && weekly is null && label is null ? 0 : 1;
     }
 }

@@ -140,6 +140,11 @@ builder.Services.AddHttpClient<OpenRouterWeeklySummaryWriter>(c =>
     OpenRouterClient(c);
     c.Timeout = TimeSpan.FromSeconds(50);
 });
+builder.Services.AddHttpClient<OpenRouterLabelReader>(c =>
+{
+    OpenRouterClient(c);
+    c.Timeout = TimeSpan.FromSeconds(50);
+});
 builder.Services.AddScoped<OpenRouterSettings>();
 
 // OpenRouter when a key is set (in Settings or OPENROUTER_API_KEY), otherwise a simple built-in parser.
@@ -152,6 +157,8 @@ builder.Services.AddScoped<GymTracker.Web.Features.Onboarding.OnboardingService>
 // The weekly model when a key is set and it isn't off; otherwise Today has no weekly summary.
 builder.Services.AddScoped<GymTracker.Core.Summary.IWeeklySummaryWriter, SwitchingWeeklySummaryWriter>();
 builder.Services.AddScoped<GymTracker.Web.Features.Summary.WeeklySummaryService>();
+// The label model when a key is set and it isn't off; otherwise label photos are hidden (SPEC 6.6).
+builder.Services.AddScoped<ILabelReader, SwitchingLabelReader>();
 
 builder.Services.AddHttpClient<IFoodDatabase, OpenFoodFactsClient>(c =>
 {

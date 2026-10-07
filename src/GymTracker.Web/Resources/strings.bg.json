@@ -863,5 +863,7 @@
   "You already have a food with that barcode.": "Вече имаш храна с този баркод.",
   "Off: no label photos": "Изключено: без снимки на етикети",
   "Label reader": "Четене на етикети",
-  "That model can't read labels.": "Този модел не може да чете етикети."
+  "That model can't read labels.": "Този модел не може да чете етикети.",
+  "Couldn't read the label. Enter the values by hand.": "Етикетът не можа да се прочете. Въведи стойностите ръчно.",
+  "The model misread the sample label (read {0} kcal, expected {1}).": "Моделът прочете грешно примерния етикет ({0} ккал вместо {1})."
 }
