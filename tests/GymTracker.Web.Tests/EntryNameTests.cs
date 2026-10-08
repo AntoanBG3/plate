@@ -25,11 +25,28 @@ public class EntryNameTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task A_status_is_saved_beside_the_name_and_kept_when_a_meal_is_copied()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var rice = new Per100g(130, 2.7m, 28, 0.3m);
+        await s.FoodLog.AddAsync([
+            new NewEntry(Day, Meal.Lunch, "White rice,\nlong-grain", 150, rice, null, EntrySource.Ai, Status: " boiled "),
+            new NewEntry(Day, Meal.Lunch, "Rice", 100, rice, null, EntrySource.Ai, Status: new string('x', 31)),
+        ], default);
+        await s.FoodLog.CopyMealAsync(Day, Day.AddDays(1), Meal.Lunch, default);
+
+        var day = (await s.FoodLog.DayAsync(Day, default)).Entries;
+        day.Select(e => (e.Description, e.Status)).Should().Equal(("White rice, long-grain", "boiled"), ("Rice", (string?)null));
+        (await s.FoodLog.DayAsync(Day.AddDays(1), default)).Entries.Select(e => e.Status).Should().Equal("boiled", null);
+    }
+
+    [Fact]
     public async Task The_fallback_parser_keeps_the_amount_out_of_the_name()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
         var (_, items, _) = await s.ParseRuns.ParseAsync("150 g cooked rice, 200g chicken breast", default);
-        items.Select(i => (i.Description, i.Grams)).Should().Equal(("cooked rice", 150m), ("chicken breast", 200m));
+        items.Select(i => (i.Typed, i.Grams)).Should().Equal(("cooked rice", 150m), ("chicken breast", 200m));
+        items.Should().OnlyContain(i => !char.IsDigit(i.Description[0]), "a matched row takes the food's name, which has no amount either");
     }
 
     [Fact]

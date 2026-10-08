@@ -149,11 +149,11 @@ public class DataExport(AppDbContext db)
 
     private async Task<Csv> FoodLogAsync(CancellationToken ct)
     {
-        var csv = new Csv("date", "meal", "description", "grams", "kcal", "protein_g", "carbs_g", "fat_g", "fiber_g", "saturated_fat_g", "source", "ai_model", "match_model", "created_at_utc");
+        var csv = new Csv("date", "meal", "description", "status", "grams", "kcal", "protein_g", "carbs_g", "fat_g", "fiber_g", "saturated_fat_g", "source", "ai_model", "match_model", "created_at_utc");
         var entries = await db.FoodLog.AsNoTracking().OrderBy(e => e.Date).ThenBy(e => e.CreatedAt).ToListAsync(ct);
         foreach (var e in entries)
         {
-            csv.Row(e.Date, e.Meal.ToString(), e.Description, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG, e.Source.ToString(), e.AiModel, e.MatchModel, e.CreatedAt);
+            csv.Row(e.Date, e.Meal.ToString(), e.Description, e.Status, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG, e.Source.ToString(), e.AiModel, e.MatchModel, e.CreatedAt);
         }
 
         return csv;

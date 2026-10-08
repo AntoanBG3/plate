@@ -108,7 +108,7 @@ public class FoodController(
             items.Select(i => new SavedItem(i.Include, i.Description ?? "", i.Grams, i.Per100, i.FoodItemId)).ToList(), ct);
         var entries = items
             .Where(i => i.Include)
-            .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, i.Per100, i.FoodItemId, EntrySource.Ai, aiModel, string.IsNullOrWhiteSpace(i.MatchModel) ? null : i.MatchModel.Trim(), runId))
+            .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, i.Per100, i.FoodItemId, EntrySource.Ai, aiModel, string.IsNullOrWhiteSpace(i.MatchModel) ? null : i.MatchModel.Trim(), runId, i.Status))
             .ToList();
         await log.AddAsync(entries, ct);
         FocusMeal(meal);
@@ -313,6 +313,7 @@ public class FoodController(
         public decimal? SaturatedFat { get; set; }
         public int? FoodItemId { get; set; }
         public string? MatchModel { get; set; }
+        public string? Status { get; set; }
 
         public Per100g Per100 => new(Kcal, Protein, Carbs, Fat, Fiber, SaturatedFat);
     }

@@ -93,6 +93,12 @@ public class FoodLogEntry
     /// <summary>The text parse this entry came from, so it can be reported later (SPEC 11).</summary>
     public int? ParseRunId { get; set; }
 
+    /// <summary>
+    /// How the food is, shown beside its name ("raw", "boiled", "dried"), in the language it was logged in. Set for parsed
+    /// entries; for others the raw or cooked state is read from the linked food's name when shown.
+    /// </summary>
+    public string? Status { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>Set when deleted; the row is hidden and can be restored for a while (undo), then purged.</summary>

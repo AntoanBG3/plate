@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Features.Food;
 
-public record NewEntry(DateOnly Date, Meal Meal, string Description, decimal Grams, Per100g Per100, int? FoodItemId, EntrySource Source, string? AiModel = null, string? MatchModel = null, int? ParseRunId = null);
+public record NewEntry(DateOnly Date, Meal Meal, string Description, decimal Grams, Per100g Per100, int? FoodItemId, EntrySource Source, string? AiModel = null, string? MatchModel = null, int? ParseRunId = null, string? Status = null);
 
 /// <summary>A frequently logged food for one-tap re-logging.</summary>
 public record RecentFood(string Description, int? FoodItemId, decimal LastGrams, Per100g Per100, int Times);
@@ -101,6 +101,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 AiModel = e.AiModel,
                 MatchModel = e.MatchModel is { Length: > 100 } m ? m[..100] : e.MatchModel,
                 ParseRunId = e.ParseRunId,
+                Status = CleanStatus(e.Status),
                 CreatedAt = time.GetUtcNow(),
             });
         }
@@ -238,6 +239,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 FiberG = e.FiberG,
                 SaturatedFatG = e.SaturatedFatG,
                 FoodItemId = e.FoodItemId,
+                Status = e.Status,
                 Source = e.Source == EntrySource.Quick ? EntrySource.Quick : EntrySource.Recent,
                 CreatedAt = now,
             });
@@ -260,10 +262,18 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
 
     private static decimal? Round(decimal? value, int decimals = 1) => value is { } v ? Math.Round(v, decimals) : null;
 
+    /// <summary>A short status as the form sent it, or null; anything too long is dropped rather than refused.</summary>
+    private static string? CleanStatus(string? status)
+    {
+        var s = string.Join(' ', (status ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return s.Length is 0 or > FoodNaming.MaxStatusLength ? null : s;
+    }
+
     /// <summary>A trimmed name without a leading amount ("150 g rice" is "rice"; the grams are stored apart).</summary>
     private static string CleanDescription(string? description)
     {
-        var d = FoodText.StripAmount(description?.Trim() ?? "");
+        // The Check foods name field is a growing text area; a line break typed into it is a space.
+        var d = FoodText.StripAmount(string.Join(' ', (description ?? "").Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)));
         if (d.Length is 0 or > 200)
         {
             throw new ValidationException("Description must be 1 to 200 characters.");
