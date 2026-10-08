@@ -1,7 +1,7 @@
 {
-  "name": "GymTracker",
-  "short_name": "Gym",
-  "description": "Workouts and food log",
+  "name": "Ряпа",
+  "short_name": "Ряпа",
+  "description": "Тренировки и хранене",
   "start_url": "/today",
   "scope": "/",
   "display": "standalone",

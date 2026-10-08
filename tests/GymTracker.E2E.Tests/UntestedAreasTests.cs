@@ -149,7 +149,7 @@ public class UntestedAreasTests(E2EFixture app)
             await phone.Page.Context.SetOfflineAsync(false);
         }
 
-        (await phone.Page.TitleAsync()).Should().Be("Offline · Gym");
+        (await phone.Page.TitleAsync()).Should().Be("Offline · Repa");
     }
 
     // Chromium only: the virtual authenticator is a Chrome DevTools feature. It stands in for Face ID: resident key,
