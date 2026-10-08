@@ -484,6 +484,7 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .result-head .name-input { resize: none; overflow: hidden; line-height: 1.3; padding: 6px 0; field-sizing: content; }
 /* An entry's name with its amount and status beside it: "Chicken breast · 200 g [raw]". */
 .entry-title { display: block; }
+.entry-tail { white-space: nowrap; }
 .entry-grams { font-weight: var(--weight-regular); color: var(--label-2); }
 .status-chip { margin-left: var(--s-2); vertical-align: 1px; }
 .result-head .status-chip { margin-left: 0; }
