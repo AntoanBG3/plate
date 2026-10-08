@@ -32,6 +32,39 @@ public partial class ParseRunTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task A_matched_row_is_named_as_the_database_food_and_an_estimate_as_typed()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+
+        var outcome = await s.ParseRuns.ParseAsync("200g chicken breast raw, 50g zzqx", default);
+
+        var chicken = outcome.Items[0];
+        chicken.Description.Should().Be(chicken.MatchedName).And.Contain("raw");
+        chicken.Typed.Should().Be("chicken breast raw");
+        chicken.State.Should().Be(FoodState.Raw);
+        outcome.Items[1].FoodItemId.Should().BeNull();
+        outcome.Items[1].Description.Should().Be("zzqx");
+        s.Namer.Calls.Should().ContainSingle().Which.Should().ContainSingle("only matched rows are named")
+            .Which.DatabaseName.Should().Be(chicken.MatchedName);
+    }
+
+    [Fact]
+    public async Task A_fitting_short_name_replaces_the_database_name_and_a_misleading_one_does_not()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.Namer.Answer = _ => ["Chicken breast, raw", "Bananas, boiled"];
+
+        var outcome = await s.ParseRuns.ParseAsync("200g chicken breast raw, a banana", default);
+
+        outcome.Items[0].Description.Should().Be("Chicken breast, raw");
+        outcome.Items[1].Description.Should().Be(outcome.Items[1].MatchedName, "a raw banana can't be named boiled");
+        var run = await s.Db.ParseRuns.SingleAsync(r => r.Id == outcome.RunId);
+        var resolved = FeedbackJson.Read<List<ResolvedRow>>(run.Resolved)!;
+        resolved[0].Description.Should().Be("Chicken breast, raw");
+        resolved[1].ProposedName.Should().Be("Bananas, boiled", "a rejected name is kept for feedback");
+    }
+
+    [Fact]
     public async Task Confirming_stores_what_was_saved_and_what_changed()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

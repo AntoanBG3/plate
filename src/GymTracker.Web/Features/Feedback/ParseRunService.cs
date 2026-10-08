@@ -11,8 +11,9 @@ namespace GymTracker.Web.Features.Feedback;
 public record ParseOutcome(FoodParseResult Result, IReadOnlyList<ConfirmItem> Items, int? RunId);
 
 /// <summary>One suggested row as stored in <see cref="ParseRun.Resolved"/>.</summary>
+/// <param name="ProposedName">The namer's answer as it came back, kept even when it was rejected.</param>
 public record ResolvedRow(string Description, decimal Grams, Per100g Per100, int? FoodItemId, string? MatchedName, Confidence Confidence,
-    IReadOnlyList<string> Notes, string? MatchModel, MatchTrace? Match);
+    IReadOnlyList<string> Notes, string? MatchModel, MatchTrace? Match, string? ProposedName = null);
 
 /// <summary>One submitted row as stored in <see cref="ParseRun.Saved"/>.</summary>
 public record SavedRow(bool Included, string Description, decimal Grams, Per100g Per100, int? FoodItemId, ParseCorrection Corrections);
@@ -21,7 +22,7 @@ public record SavedRow(bool Included, string Description, decimal Grams, Per100g
 /// Parses typed food and records the run: what the parser and matcher suggested and, on confirm, what the user
 /// saved and how it differs (SPEC 11). Recording never gets in the way of logging food.
 /// </summary>
-public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodParser parser, FoodMatcher matcher, TimeProvider time, ILogger<ParseRunService> log)
+public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodParser parser, FoodMatcher matcher, IFoodNamer namer, TimeProvider time, ILogger<ParseRunService> log)
 {
     public async Task<ParseOutcome> ParseAsync(string text, CancellationToken ct)
     {
@@ -39,6 +40,9 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             matchMs = (int)clock.ElapsedMilliseconds;
         }
 
+        var proposed = await NameAsync(items, ct);
+        items = items.Select((item, n) => FoodNaming.Accept(proposed[n], item.State) is { } name ? item with { Description = name } : item).ToList();
+
         var run = new ParseRun
         {
             UserId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user."),
@@ -52,7 +56,7 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             ParserError = result.Error is { } error ? Trim(error.ToString(), 500) : null,
             Parsed = FeedbackJson.Write(result.Items),
             Resolved = FeedbackJson.Write(items.Select((item, n) => new ResolvedRow(item.Description, item.Grams, item.Per100, item.FoodItemId,
-                item.MatchedName, item.Confidence, item.Notes.Select(n => n.ToString()).ToList(), item.MatchModel, trace.ElementAtOrDefault(n))).ToList()),
+                item.MatchedName, item.Confidence, item.Notes.Select(n => n.ToString()).ToList(), item.MatchModel, trace.ElementAtOrDefault(n), proposed[n])).ToList()),
         };
 
         try
@@ -69,6 +73,28 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
         }
 
         return new ParseOutcome(result, items, run.Id);
+    }
+
+    /// <summary>
+    /// Short names for the rows matched to a database food, by row (null where there is none). A database name is
+    /// already on the row, so a failed or missing name changes nothing.
+    /// </summary>
+    private async Task<string?[]> NameAsync(IReadOnlyList<ConfirmItem> items, CancellationToken ct)
+    {
+        var result = new string?[items.Count];
+        var matched = items.Select((item, n) => (item, n)).Where(x => x.item.MatchedName is not null).ToList();
+        if (matched.Count == 0)
+        {
+            return result;
+        }
+
+        var names = await namer.NameAsync(matched.Select(x => new NameRequest(x.item.Typed, x.item.MatchedName!, x.item.MatchedNameEn, x.item.State)).ToList(), ct);
+        for (var i = 0; i < matched.Count && names is not null; i++)
+        {
+            result[matched[i].n] = names.ElementAtOrDefault(i);
+        }
+
+        return result;
     }
 
     /// <summary>
