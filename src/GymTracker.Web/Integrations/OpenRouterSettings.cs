@@ -157,6 +157,15 @@ public class SwitchingFoodParser(OpenRouterSettings settings, IServiceProvider s
             : await new FakeFoodParser().ParseAsync(text, ct);
 }
 
+/// <summary>Names matched foods with the parser's model when there is a key; otherwise no names, so the database names stand.</summary>
+public class SwitchingFoodNamer(OpenRouterSettings settings, IServiceProvider services) : GymTracker.Core.Nutrition.IFoodNamer
+{
+    public async Task<IReadOnlyList<string?>?> NameAsync(IReadOnlyList<GymTracker.Core.Nutrition.NameRequest> items, CancellationToken ct) =>
+        await settings.GetKeyAsync(ct) is { } key
+            ? await services.GetRequiredService<OpenRouterFoodNamer>().NameAsync(items, key, await settings.GetModelAsync(AiTask.Parser, ct), ct)
+            : null;
+}
+
 /// <summary>Asks the matcher model picked in Settings when there is a key; otherwise no decision, so the ranking decides.</summary>
 public class SwitchingMatchDecider(OpenRouterSettings settings, IServiceProvider services) : GymTracker.Core.Nutrition.IFoodMatchDecider
 {
