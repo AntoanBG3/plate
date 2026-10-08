@@ -56,7 +56,8 @@ public static class ParseCorrections
             result |= ParseCorrection.ValuesEdited;
         }
 
-        if (Normalize(s.Description) != Normalize(saved.Description))
+        // Picking another food renames the row after it, so a new name only counts as an edit on the same food.
+        if (s.FoodItemId == saved.FoodItemId && Normalize(s.Description) != Normalize(saved.Description))
         {
             result |= ParseCorrection.DescriptionEdited;
         }
