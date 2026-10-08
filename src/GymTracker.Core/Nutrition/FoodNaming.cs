@@ -1,0 +1,47 @@
+using GymTracker.Core.Text;
+
+namespace GymTracker.Core.Nutrition;
+
+/// <summary>One matched food to name.</summary>
+/// <param name="Typed">What the user wrote for it, as context only.</param>
+/// <param name="DatabaseName">The food's name in the account's language.</param>
+/// <param name="DatabaseNameEn">The food's English name when <paramref name="DatabaseName"/> is another language.</param>
+/// <param name="State">Raw or cooked as the database names say; the name must not contradict it.</param>
+public record NameRequest(string Typed, string DatabaseName, string? DatabaseNameEn, FoodState State);
+
+/// <summary>Writes a short everyday name for each matched food, from its database name (SPEC 6.1).</summary>
+public interface IFoodNamer
+{
+    /// <summary>One proposal per request, in order (null where none came back); null when naming failed or is unavailable.</summary>
+    Task<IReadOnlyList<string?>?> NameAsync(IReadOnlyList<NameRequest> items, CancellationToken ct);
+}
+
+public static class FoodNaming
+{
+    public const int MaxLength = 60;
+
+    /// <summary>
+    /// The proposed name, tidied, or null when it can't stand in for the database name: empty, longer than
+    /// <see cref="MaxLength"/>, starting with an amount, or raw where the food is cooked (or the other way round).
+    /// A name that leaves the state out is fine; the chip beside it shows the state.
+    /// </summary>
+    public static string? Accept(string? proposed, FoodState databaseState)
+    {
+        if (string.IsNullOrWhiteSpace(proposed))
+        {
+            return null;
+        }
+
+        var name = string.Join(' ', proposed.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        if (name.Length > MaxLength || FoodText.StripAmount(name) != name)
+        {
+            return null;
+        }
+
+        var state = FoodStates.FromName(name);
+        var contradicts = (state, databaseState) is (FoodState.Raw, FoodState.Cooked) or (FoodState.Cooked, FoodState.Raw)
+            // A state the database name doesn't say is something the model added.
+            || (state != FoodState.NotApplicable && databaseState == FoodState.NotApplicable);
+        return contradicts ? null : name;
+    }
+}
