@@ -568,6 +568,10 @@
   "Database values come from USDA or foods you saved. AI estimates are the model's own numbers; check them against the label if you can.": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
+  "Database: {0}": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml",
+    "wwwroot/js"
+  ],
   "Day": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
@@ -2485,10 +2489,6 @@
   "Use the form instead": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
-  "Using: {0}": [
-    "src/GymTracker.Web/Views/Food/Confirm.cshtml",
-    "wwwroot/js"
-  ],
   "Values per 100 g are impossible (over 900 kcal or over 100 g of macros).": [
     "src/GymTracker.Core/Nutrition/FoodMath.cs"
   ],
@@ -2710,6 +2710,9 @@
     "src/GymTracker.Web/Views/Settings/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/Profile.cshtml"
   ],
+  "cooked": [
+    "src/GymTracker.Web/Features/Localization/Localizer.cs"
+  ],
   "fat": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
@@ -2810,6 +2813,9 @@
   "protein left": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
+  "raw": [
+    "src/GymTracker.Web/Features/Localization/Localizer.cs"
+  ],
   "reps": [
     "src/GymTracker.Web/Views/Shared/_SetRow.cshtml"
   ],
@@ -2826,6 +2832,8 @@
     "src/GymTracker.Web/Views/Templates/Index.cshtml"
   ],
   "{0} g": [
+    "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/Index.cshtml",
     "src/GymTracker.Web/Views/Today/Index.cshtml",
     "wwwroot/js"
   ],
@@ -2838,9 +2846,6 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "{0} g saturated fat, up to {1} g": [
-    "src/GymTracker.Web/Views/Food/Index.cshtml"
-  ],
-  "{0} g · {1} kcal · {2} g protein": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "{0} g · {1}–{2}": [

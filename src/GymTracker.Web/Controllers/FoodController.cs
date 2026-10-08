@@ -257,6 +257,7 @@ public class FoodController(
             if (await foods.FindVisibleAsync(foodId, ct) is { } food)
             {
                 ViewData["MatchedName"] = GymTracker.Web.Features.Localization.FoodNames.DisplayName(food);
+                ViewData["FoodState"] = FoodStates.FromName(food.Name, food.NameBg);
                 ViewData["AddedByAnother"] = FoodItemService.AddedByAnother(food, currentUser.UserId);
             }
         }

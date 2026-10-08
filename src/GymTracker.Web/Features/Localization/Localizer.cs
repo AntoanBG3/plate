@@ -65,6 +65,25 @@ public class Localizer
     public string Entry(string description) =>
         string.IsNullOrWhiteSpace(description) ? this["Quick add"] : GymTracker.Core.Text.FoodText.StripAmount(description);
 
+    /// <summary>
+    /// The status shown beside an entry's name: the one saved with it ("boiled", in the language it was logged in), or
+    /// raw or cooked as the food's database name says; null when neither says.
+    /// </summary>
+    public string? Status(string? saved, GymTracker.Core.Nutrition.FoodState fromFood) =>
+        !string.IsNullOrWhiteSpace(saved) ? saved : State(fromFood);
+
+    /// <summary>"raw" or "cooked" in the user's language; null for a food that is neither.</summary>
+    public string? State(GymTracker.Core.Nutrition.FoodState state) => state switch
+    {
+        GymTracker.Core.Nutrition.FoodState.Raw => this["raw"],
+        GymTracker.Core.Nutrition.FoodState.Cooked => this["cooked"],
+        _ => null,
+    };
+
+    /// <summary>An entry's status: its own, or from the linked food when the query loaded it.</summary>
+    public string? Status(GymTracker.Core.Domain.FoodLogEntry entry) =>
+        Status(entry.Status, entry.FoodItem is { } food ? GymTracker.Core.Nutrition.FoodStates.FromName(food.Name, food.NameBg) : default);
+
     public string Exercise(GymTracker.Core.Domain.Exercise exercise) =>
         exercise.OwnerUserId is null ? this[exercise.Name] : exercise.Name;
 

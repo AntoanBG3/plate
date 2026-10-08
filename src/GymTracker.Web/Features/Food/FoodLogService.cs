@@ -31,6 +31,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
     {
         var entries = await db.FoodLog
             .AsNoTracking()
+            .Include(e => e.FoodItem) // its name says raw or cooked for entries without a saved status
             .Where(e => e.Date == date)
             .OrderBy(e => e.CreatedAt).ThenBy(e => e.Id)
             .ToListAsync(ct);

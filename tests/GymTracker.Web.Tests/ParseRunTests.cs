@@ -115,10 +115,13 @@ public partial class ParseRunTests(PostgresFixture fixture)
 
         // Submit the suggestion exactly as shown: nothing was corrected.
         var fields = new Dictionary<string, string> { ["date"] = "2026-10-04", ["meal"] = "Lunch", ["aiModel"] = "fake", ["parseRunId"] = runId, ["items[0].Include"] = "true" };
-        foreach (var name in new[] { "Description", "Grams", "Kcal", "Protein", "Carbs", "Fat", "FoodItemId" })
+        foreach (var name in new[] { "Grams", "Kcal", "Protein", "Carbs", "Fat", "FoodItemId", "Status" })
         {
             fields[$"items[0].{name}"] = System.Net.WebUtility.HtmlDecode(Regex.Match(html, $"name=\"items\\[0\\]\\.{name}\" value=\"([^\"]*)\"").Groups[1].Value);
         }
+        // The name is a growing text area, so its value is its content.
+        fields["items[0].Description"] = System.Net.WebUtility.HtmlDecode(Regex.Match(html, "name=\"items\\[0\\]\\.Description\"[^>]*>([^<]*)</textarea>").Groups[1].Value);
+        fields["items[0].Description"].Should().NotBeEmpty();
 
         AppFactory.IsRedirectTo(await AppFactory.PostAsync(client, "/food/confirm", token, fields), "/food").Should().BeTrue();
 
@@ -127,6 +130,8 @@ public partial class ParseRunTests(PostgresFixture fixture)
         var run = await db.ParseRuns.IgnoreQueryFilters().SingleAsync(r => r.Id == entry.ParseRunId);
         run.ConfirmedAt.Should().NotBeNull();
         run.Corrections.Should().Be(ParseCorrection.None);
+        entry.Description.Should().StartWith("Bananas", "the row was named after the database food");
+        entry.Status.Should().Be("raw", "without a namer the status comes from the database name");
         email.Should().NotBeEmpty();
     }
 
