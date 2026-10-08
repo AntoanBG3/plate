@@ -57,8 +57,6 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
         // The same niches in the Bulgarian names (the English ones above don't appear in them).
         "консерв", "замразен", "сушен", "на прах", "бебешк", "ресторант", "панир", "с кожа"];
 
-    private static readonly string[] CookedWordsBg = ["варен", "печен", "на скара", "пържен", "задушен", "сготвен", "на фурна", "запечен"];
-
     /// <param name="trace">When given, receives one <see cref="MatchTrace"/> per item.</param>
     public async Task<List<ConfirmItem>> ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct, List<MatchTrace>? trace = null)
     {
@@ -220,8 +218,9 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
     internal static double Rank(FoodMatch food, string query, FoodState state, bool bulgarian = false)
     {
         var name = (bulgarian ? food.NameBg ?? "" : food.Name).ToLowerInvariant();
-        var cooked = (bulgarian ? CookedWordsBg : CookedWords).Any(name.Contains);
-        var raw = name.Contains(bulgarian ? "суров" : "raw");
+        var nameState = FoodStates.FromName(name);
+        var cooked = nameState == FoodState.Cooked;
+        var raw = nameState == FoodState.Raw;
         var score = food.Score + (food.Own ? 0.15 : 0);
 
         var queryWords = Words(query).ToHashSet();
