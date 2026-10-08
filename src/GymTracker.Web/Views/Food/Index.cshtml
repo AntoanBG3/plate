@@ -169,10 +169,12 @@
                 <a href="/food/entries/@e.Id" class="row row-link swipe-content" draggable="false">
                     <span class="row-main">
                         @* Name, amount and status together: "Chicken breast · 200 g [raw]". *@
-                        @* The amount and the status wrap together, so the chip never sits on a line of its own. *@
-                        <span class="row-title entry-title">@L.Entry(e.Description) <span class="entry-tail">@if (e.Source != EntrySource.Quick)
-                            {<span class="entry-grams num">· @L["{0} g", e.Grams.Kg()]</span>}@if (L.Status(e) is { } status)
-                            {<span class="chip status-chip" data-status>@status</span>}</span></span>
+                        @* The amount and the status wrap together, so the chip never sits on a line of its own. A quick entry has neither. *@
+                        @{ var status = L.Status(e); var grams = e.Source != EntrySource.Quick; }
+                        <span class="row-title entry-title">@L.Entry(e.Description)@if (grams || status is not null)
+                            {<text> </text><span class="entry-tail">@if (grams)
+                                {<span class="entry-grams num">· @L["{0} g", e.Grams.Kg()]</span>}@if (status is not null)
+                                {<span class="chip status-chip" data-status>@status</span>}</span>}</span>
                         <span class="row-sub num" style="display: block">@L["{0} kcal · {1} g protein", Math.Round(e.Kcal), e.ProteinG.Kg(1)]</span>
                     </span>
                     @Ui.Icon("chevron", "row-chevron")
