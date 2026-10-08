@@ -52,6 +52,7 @@ public sealed class E2EFixture : IAsyncLifetime
         aiFactory = new AppFactory(db, settings: settings, services: s =>
         {
             s.AddScoped<GymTracker.Core.Nutrition.IFoodParser, StubFoodParser>();
+            s.AddScoped<GymTracker.Core.Nutrition.IFoodNamer, StubFoodNamer>();
             s.AddScoped<GymTracker.Core.Onboarding.IOnboardingAssistant, StubOnboardingAssistant>();
             s.AddScoped<GymTracker.Core.Summary.IWeeklySummaryWriter, StubWeeklySummaryWriter>();
             s.AddHttpContextAccessor();
