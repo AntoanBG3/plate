@@ -386,11 +386,11 @@ public class OpenRouterNamerTests
     [Fact]
     public async Task Sends_each_database_name_with_a_strict_schema()
     {
-        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion("""{"names":[{"index":0,"name":"Chicken breast, raw"},{"index":1,"name":"White rice, cooked"}]}"""));
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion("""{"names":[{"index":0,"name":"Chicken breast","status":"raw"},{"index":1,"name":"White rice","status":null}]}"""));
 
         var names = await stub.Namer().NameAsync(Two, "sk-or-v1-key", "google/gemini-3.5-flash-lite", default);
 
-        names.Should().Equal("Chicken breast, raw", "White rice, cooked");
+        names.Should().Equal(new FoodName("Chicken breast", "raw"), new FoodName("White rice", null));
         stub.Calls.Should().Be(1);
         var body = stub.SentBody!;
         body["response_format"]!["json_schema"]!["strict"]!.GetValue<bool>().Should().BeTrue();
@@ -402,9 +402,9 @@ public class OpenRouterNamerTests
     [Fact]
     public async Task Names_follow_their_index_and_missing_ones_are_null()
     {
-        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion("""{"names":[{"index":1,"name":"White rice, cooked"},{"index":7,"name":"stray"}]}"""));
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion("""{"names":[{"index":1,"name":"White rice","status":"boiled"},{"index":7,"name":"stray","status":null}]}"""));
 
-        (await stub.Namer().NameAsync(Two, "k", "openai/gpt-x", default)).Should().Equal(null, "White rice, cooked");
+        (await stub.Namer().NameAsync(Two, "k", "openai/gpt-x", default)).Should().Equal(null, new FoodName("White rice", "boiled"));
     }
 
     [Theory]

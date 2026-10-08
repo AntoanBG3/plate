@@ -16,6 +16,10 @@ public enum Confidence
 /// <param name="MatchedNameEn">The matched food's English name when <paramref name="MatchedName"/> is Bulgarian.</param>
 /// <param name="Typed">What the user wrote for this food, without the amount.</param>
 /// <param name="State">Raw or cooked: from the matched food's names, or the parser's reading for an estimate.</param>
+/// <param name="Status">
+/// How the food is, shown beside its name ("boiled", "dried"): the namer's for a matched food, the parser's preparation for an
+/// estimate. When null the view shows <paramref name="State"/>.
+/// </param>
 public record ConfirmItem(
     string Description,
     decimal Grams,
@@ -27,7 +31,8 @@ public record ConfirmItem(
     string? MatchModel = null,
     string Typed = "",
     FoodState State = FoodState.NotApplicable,
-    string? MatchedNameEn = null);
+    string? MatchedNameEn = null,
+    string? Status = null);
 
 /// <summary>How one item was matched, kept with the parse run for feedback (SPEC 11): the ranking's top candidates and the decider's answer.</summary>
 /// <param name="DeciderModel">The decision model that answered for this parse, even where its answer was not used.</param>
@@ -225,7 +230,8 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
         }
 
         var typed = Description(item);
-        return new ConfirmItem(typed, item.Grams, item.Estimated, null, null, Confidence.Low, notes, matchModel, Typed: typed, State: item.State);
+        return new ConfirmItem(typed, item.Grams, item.Estimated, null, null, Confidence.Low, notes, matchModel, Typed: typed, State: item.State,
+            Status: FoodNaming.AcceptStatus(item.Preparation, item.State));
     }
 
     /// <summary>

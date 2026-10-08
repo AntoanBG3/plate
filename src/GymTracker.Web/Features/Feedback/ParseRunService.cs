@@ -11,9 +11,9 @@ namespace GymTracker.Web.Features.Feedback;
 public record ParseOutcome(FoodParseResult Result, IReadOnlyList<ConfirmItem> Items, int? RunId);
 
 /// <summary>One suggested row as stored in <see cref="ParseRun.Resolved"/>.</summary>
-/// <param name="ProposedName">The namer's answer as it came back, kept even when it was rejected.</param>
+/// <param name="Proposed">The namer's answer as it came back, kept even when it was rejected.</param>
 public record ResolvedRow(string Description, decimal Grams, Per100g Per100, int? FoodItemId, string? MatchedName, Confidence Confidence,
-    IReadOnlyList<string> Notes, string? MatchModel, MatchTrace? Match, string? ProposedName = null);
+    IReadOnlyList<string> Notes, string? MatchModel, MatchTrace? Match, FoodName? Proposed = null, string? Status = null);
 
 /// <summary>One submitted row as stored in <see cref="ParseRun.Saved"/>.</summary>
 public record SavedRow(bool Included, string Description, decimal Grams, Per100g Per100, int? FoodItemId, ParseCorrection Corrections);
@@ -41,7 +41,11 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
         }
 
         var proposed = await NameAsync(items, ct);
-        items = items.Select((item, n) => FoodNaming.Accept(proposed[n], item.State) is { } name ? item with { Description = name } : item).ToList();
+        items = items.Select((item, n) => item with
+        {
+            Description = FoodNaming.Accept(proposed[n]?.Name, item.State) ?? item.Description,
+            Status = FoodNaming.AcceptStatus(proposed[n]?.Status, item.State) ?? item.Status,
+        }).ToList();
 
         var run = new ParseRun
         {
@@ -56,7 +60,7 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             ParserError = result.Error is { } error ? Trim(error.ToString(), 500) : null,
             Parsed = FeedbackJson.Write(result.Items),
             Resolved = FeedbackJson.Write(items.Select((item, n) => new ResolvedRow(item.Description, item.Grams, item.Per100, item.FoodItemId,
-                item.MatchedName, item.Confidence, item.Notes.Select(n => n.ToString()).ToList(), item.MatchModel, trace.ElementAtOrDefault(n), proposed[n])).ToList()),
+                item.MatchedName, item.Confidence, item.Notes.Select(n => n.ToString()).ToList(), item.MatchModel, trace.ElementAtOrDefault(n), proposed[n], item.Status)).ToList()),
         };
 
         try
@@ -76,12 +80,12 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
     }
 
     /// <summary>
-    /// Short names for the rows matched to a database food, by row (null where there is none). A database name is
-    /// already on the row, so a failed or missing name changes nothing.
+    /// Short names and statuses for the rows matched to a database food, by row (null where there is none). A database
+    /// name is already on the row, so a failed or missing name changes nothing.
     /// </summary>
-    private async Task<string?[]> NameAsync(IReadOnlyList<ConfirmItem> items, CancellationToken ct)
+    private async Task<FoodName?[]> NameAsync(IReadOnlyList<ConfirmItem> items, CancellationToken ct)
     {
-        var result = new string?[items.Count];
+        var result = new FoodName?[items.Count];
         var matched = items.Select((item, n) => (item, n)).Where(x => x.item.MatchedName is not null).ToList();
         if (matched.Count == 0)
         {

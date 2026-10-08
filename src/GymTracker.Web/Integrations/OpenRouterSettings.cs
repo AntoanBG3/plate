@@ -157,10 +157,10 @@ public class SwitchingFoodParser(OpenRouterSettings settings, IServiceProvider s
             : await new FakeFoodParser().ParseAsync(text, ct);
 }
 
-/// <summary>Names matched foods with the parser's model when there is a key; otherwise no names, so the database names stand.</summary>
+/// <summary>Names matched foods and their status with the parser's model when there is a key; otherwise no names, so the database names stand.</summary>
 public class SwitchingFoodNamer(OpenRouterSettings settings, IServiceProvider services) : GymTracker.Core.Nutrition.IFoodNamer
 {
-    public async Task<IReadOnlyList<string?>?> NameAsync(IReadOnlyList<GymTracker.Core.Nutrition.NameRequest> items, CancellationToken ct) =>
+    public async Task<IReadOnlyList<GymTracker.Core.Nutrition.FoodName?>?> NameAsync(IReadOnlyList<GymTracker.Core.Nutrition.NameRequest> items, CancellationToken ct) =>
         await settings.GetKeyAsync(ct) is { } key
             ? await services.GetRequiredService<OpenRouterFoodNamer>().NameAsync(items, key, await settings.GetModelAsync(AiTask.Parser, ct), ct)
             : null;

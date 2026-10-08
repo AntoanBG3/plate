@@ -52,16 +52,19 @@ public partial class ParseRunTests(PostgresFixture fixture)
     public async Task A_fitting_short_name_replaces_the_database_name_and_a_misleading_one_does_not()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
-        s.Namer.Answer = _ => ["Chicken breast, raw", "Bananas, boiled"];
+        s.Namer.Answer = _ => [new FoodName("Chicken breast", "Raw"), new FoodName("Bananas, boiled", "boiled")];
 
         var outcome = await s.ParseRuns.ParseAsync("200g chicken breast raw, a banana", default);
 
-        outcome.Items[0].Description.Should().Be("Chicken breast, raw");
+        outcome.Items[0].Description.Should().Be("Chicken breast");
+        outcome.Items[0].Status.Should().Be("raw");
         outcome.Items[1].Description.Should().Be(outcome.Items[1].MatchedName, "a raw banana can't be named boiled");
+        outcome.Items[1].Status.Should().BeNull("nor given the status boiled; the view then shows raw from the database name");
         var run = await s.Db.ParseRuns.SingleAsync(r => r.Id == outcome.RunId);
         var resolved = FeedbackJson.Read<List<ResolvedRow>>(run.Resolved)!;
-        resolved[0].Description.Should().Be("Chicken breast, raw");
-        resolved[1].ProposedName.Should().Be("Bananas, boiled", "a rejected name is kept for feedback");
+        resolved[0].Description.Should().Be("Chicken breast");
+        resolved[0].Status.Should().Be("raw");
+        resolved[1].Proposed.Should().Be(new FoodName("Bananas, boiled", "boiled"), "a rejected answer is kept for feedback");
     }
 
     [Fact]
