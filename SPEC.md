@@ -531,7 +531,7 @@ Settings is a short hub, not one long page (progressive disclosure: NN/g, and th
 
 ## 8. PWA and resilience
 
-- Web app manifest with name, icons (192 and 512), `display: standalone`, dark theme colour, start URL `/today`.
+- Web app manifest per language (`/manifest.en.webmanifest` named "Repa", `/manifest.bg.webmanifest` named "Ряпа"; the layout links the one for the account language, and the page title and iPhone home-screen label follow it too), icons (192 and 512, a turnip on orange drawn in `tools/icons/icon.svg`), `display: standalone`, dark theme colour, start URL `/today`.
 - Service worker that precaches static assets (CSS, JS including the vendored libraries and the scanner `.wasm`, icons) and one offline fallback page. Static files carry a content-hash query string, so the worker serves a cached copy of the exact URL without revalidating ("No connection. Sets you log are saved on the phone and will send when you're back online."). Pages and data are otherwise always fetched from the server.
 - **Set logging must survive bad gym signal.** iOS has no Background Sync, so the page drives all retries. The queue is write-ahead:
   - When the check button is tapped, generate the `ClientId` Guid, write the set (including `CompletedAt`) to the pending queue in `localStorage`, render it as "pending", and only then send it. A set is never only in flight; this way it survives the app being closed or suspended mid-request.

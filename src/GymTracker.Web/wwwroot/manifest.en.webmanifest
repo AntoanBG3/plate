@@ -1,6 +1,6 @@
 {
-  "name": "GymTracker",
-  "short_name": "Gym",
+  "name": "Repa",
+  "short_name": "Repa",
   "description": "Workouts and food log",
   "start_url": "/today",
   "scope": "/",
