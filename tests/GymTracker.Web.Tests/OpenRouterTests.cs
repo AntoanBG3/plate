@@ -83,6 +83,8 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
 
     public OpenRouterOnboardingAssistant Onboarding() => new(Client(), Catalog(), NullLogger<OpenRouterOnboardingAssistant>.Instance);
 
+    public OpenRouterFoodNamer Namer() => new(Client(), Catalog(), NullLogger<OpenRouterFoodNamer>.Instance);
+
     public OpenRouterLabelReader Label() => new(Client(), Catalog(), NullLogger<OpenRouterLabelReader>.Instance);
 
     /// <summary>A chat completion whose content is <paramref name="json"/>.</summary>
@@ -370,6 +372,58 @@ public class OpenRouterParserTests
         var stub = new StubOpenRouter(status, """{"error":{"message":"nope"}}""");
 
         (await stub.Parser().TestAsync("sk-or-v1-key", "google/gemini-3.5-flash-lite", default))!.ToString().Should().Contain(expected);
+    }
+}
+
+public class OpenRouterNamerTests
+{
+    private static readonly NameRequest[] Two =
+    [
+        new("200g пилешко", "Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw", null, FoodState.Raw),
+        new("ориз", "Rice, white, long-grain, regular, enriched, cooked", null, FoodState.Cooked),
+    ];
+
+    [Fact]
+    public async Task Sends_each_database_name_with_a_strict_schema()
+    {
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion("""{"names":[{"index":0,"name":"Chicken breast","status":"raw"},{"index":1,"name":"White rice","status":null}]}"""));
+
+        var names = await stub.Namer().NameAsync(Two, "sk-or-v1-key", "google/gemini-3.5-flash-lite", default);
+
+        names.Should().Equal(new FoodName("Chicken breast", "raw"), new FoodName("White rice", null));
+        stub.Calls.Should().Be(1);
+        var body = stub.SentBody!;
+        body["response_format"]!["json_schema"]!["strict"]!.GetValue<bool>().Should().BeTrue();
+        body["provider"]!["require_parameters"]!.GetValue<bool>().Should().BeTrue();
+        var sent = body["messages"]![1]!["content"]!.GetValue<string>();
+        sent.Should().Contain("meat only, raw").And.Contain("200g пилешко");
+    }
+
+    [Fact]
+    public async Task Names_follow_their_index_and_missing_ones_are_null()
+    {
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion("""{"names":[{"index":1,"name":"White rice","status":"boiled"},{"index":7,"name":"stray","status":null}]}"""));
+
+        (await stub.Namer().NameAsync(Two, "k", "openai/gpt-x", default)).Should().Equal(null, new FoodName("White rice", "boiled"));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.InternalServerError, "{}")]
+    [InlineData(HttpStatusCode.OK, "not json")]
+    public async Task A_failure_gives_no_names_and_no_retry(HttpStatusCode status, string content)
+    {
+        var stub = new StubOpenRouter(status, StubOpenRouter.Completion(content));
+
+        (await stub.Namer().NameAsync(Two, "k", "openai/gpt-x", default)).Should().BeNull();
+        stub.Calls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task A_slow_answer_gives_no_names()
+    {
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion("""{"names":[]}""")) { Delay = OpenRouterFoodNamer.Timeout + TimeSpan.FromSeconds(1) };
+
+        (await stub.Namer().NameAsync(Two, "k", "openai/gpt-x", default)).Should().BeNull();
     }
 }
 

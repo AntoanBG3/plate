@@ -15,7 +15,7 @@ public static class ScriptText
         "OK",
         "Add",
         "Add {0}",
-        "Using: {0}",
+        "Database: {0}",
         "Database",
         // session.js
         "1 set is saved on this phone and will send when the connection is back.",

@@ -189,6 +189,7 @@ Seed about 90 common exercises, each with a Bulgarian name in the gym vocabulary
 - `FoodItemId` (nullable), `Source` (Barcode, Search, Ai, Manual, Recent, Quick). A Quick entry is calories and macros typed directly: no food, `Grams` 0, edited by its numbers and never scaled.
 - `AiModel` (nullable; the OpenRouter model id for AI-parsed entries, so a shift in estimates after a model change can be traced)
 - `MatchModel` (nullable; the decision model version that chose the matched food or decided there is none, for the same reason; null when the database ranking decided)
+- `Status` (nullable, up to 30 characters; how the food is, shown beside its name: "raw", "boiled", "dried", in the language it was logged in. Set for parsed entries and kept when a meal is copied; other entries show raw or cooked read from the linked food's name)
 - `CreatedAt`
 
 **MaintenanceEstimate**
@@ -354,7 +355,7 @@ Implementation `OpenRouterFoodParser`:
 Resolving nutrition values (a Web feature service, not the parser):
 1. Match `NameEn`/`NameOriginal` and `State` against the user's own `FoodItem`s and recent entries, then shared items including the USDA subset (PostgreSQL `pg_trgm` similarity on names). A ranking adds bonuses for the user's own foods, the food's main word, the right raw or cooked state, and fewer niche variants, and its top candidate is the match.
 2. When a matcher model is chosen in Settings and a key exists, a decision model chooses instead (below). Otherwise, and whenever it gives no usable answer, the ranking's top candidate stands.
-3. If a match is found, compute totals from its per-100 g values and show the matched item's name, with a control to pick a different match.
+3. If a match is found, compute totals from its per-100 g values. The row is named after the matched food (its name in the account's language), shortened by the namer below, with the full database name under it and a control to pick a different match. Picking another food renames the row after that food.
 4. If not, use the model's estimated values and mark the item Low confidence. If `|Kcal - (4*Protein + 4*Carbs + 9*Fat)|` exceeds 15% of `Kcal` for those values, also say so.
 5. Reject negative values or grams above 3,000.
 
@@ -366,6 +367,13 @@ Matcher (`IFoodMatchDecider`, interface in Core; `JevFoodMatchDecider` in Integr
 - A picked food is the match: High confidence when Jev's confidence is 0.95 or more, otherwise Medium. `none` at confidence 0.9 or more is no match (step 4). A `none` below 0.9, an option that was not offered, or a missing answer leaves that item to the ranking.
 - 3-second timeout, no retry; any error, timeout or unreadable response falls back to the ranking silently. One log line per call with the version, latency, input tokens and cost (input tokens only, about $0.0002 per parse).
 - Jev's main training language is English. It was evaluated on Bulgarian and English entries before adoption (gated rule: 29 of 32 held-out items against the ranking's 24), but its Bulgarian accuracy is the thing to watch.
+
+Naming (`IFoodNamer` in Core, `OpenRouterFoodNamer` in Integrations):
+- After matching, one call per parse with the parser's model and request shape (strict structured output, `provider: {require_parameters: true}`, temperature and lowest effort only when listed). For each matched row it sends the database name (and the English name for a Bulgarian account) and what the user typed, as context only. Schema: per row `index`, `name` (2 to 6 words, at most 60 characters, without how the food was prepared) and `status` (one or two lowercase words the database name says: raw, cooked, boiled, grilled, fried, baked, roasted, steamed, dried, canned, frozen, smoked, pickled, processed; null when it says none), in the account's language.
+- The server keeps a name or status only when it can't mislead (`FoodNaming` in Core): not empty, within its length, no leading amount, and no raw or cooked state the database name contradicts or doesn't say. Otherwise the database name stands, and the status falls back to raw or cooked as the database name says. An estimate keeps what the user typed, with the parser's preparation as its status.
+- 5-second timeout, no retry; any failure leaves the database names. Without a key, no call. The answer is kept in the run's `Resolved` even when rejected. One log line per call with the model, latency, tokens and cost.
+
+Display: a food entry reads "Chicken breast · 200 g" with its status as a chip beside it, on the confirmation list (where the grams are their own field), the food log and the entry page. The amount is drawn from `Grams`, never stored in the name.
 
 Results are never saved directly. The user always sees an editable confirmation list first. Saved entries record `AiModel`.
 
@@ -621,7 +629,7 @@ Users report problems and ideas from their phones, food parsing collects ratings
 
 ### Food parsing
 
-- Every parse stores a ParseRun. Confirming stores what was saved and compares it with what was suggested (`ParseCorrections` in Core): an item unticked, grams changed by more than 10% and more than 10 g, any per-100 g value edited, the description edited, a different food. This needs no tap. A missing or foreign run id never blocks saving food.
+- Every parse stores a ParseRun. Confirming stores what was saved and compares it with what was suggested (`ParseCorrections` in Core): an item unticked, grams changed by more than 10% and more than 10 g, any per-100 g value edited, the description edited (on the same food; a new name that came with a different food is not an edit), a different food. This needs no tap. A missing or foreign run id never blocks saving food.
 - The Check foods screen asks "Did this read your food right?" with thumbs up and down, and each item has its own thumbs down. A tap records at once without submitting the form; a thumbs down then opens a sheet with the reasons and an optional comment. An AI entry's page offers "Report a parsing problem" for the same run.
 
 ### Reporting

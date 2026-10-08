@@ -19,6 +19,13 @@ public sealed class StubFoodParser : IFoodParser
     ], null, "test/parser"));
 }
 
+/// <summary>Names every matched food the way a model would shorten a USDA name: "Bananas, raw" is "Banana", raw.</summary>
+public sealed class StubFoodNamer : IFoodNamer
+{
+    public Task<IReadOnlyList<FoodName?>?> NameAsync(IReadOnlyList<NameRequest> items, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<FoodName?>?>(items.Select(i => (FoodName?)new FoodName(i.DatabaseName.Split(',')[0].TrimEnd('s'), "raw")).ToList());
+}
+
 /// <summary>Learns everything from the first message, as a chatty model would from "I'm a 30-year-old man...".</summary>
 public sealed class StubOnboardingAssistant : IOnboardingAssistant
 {

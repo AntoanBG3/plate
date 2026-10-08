@@ -24,7 +24,7 @@ public sealed class UserScope : IAsyncDisposable
         FoodLog = new GymTracker.Web.Features.Food.FoodLogService(Db, currentUser, TimeProvider.System);
         SavedMeals = new GymTracker.Web.Features.Food.SavedMealService(Db, currentUser, TimeProvider.System);
         Undo = new GymTracker.Web.Features.Undo.UndoService(Db, TimeProvider.System);
-        ParseRuns = new GymTracker.Web.Features.Feedback.ParseRunService(Db, currentUser, new GymTracker.Web.Integrations.FakeFoodParser(), Matcher, TimeProvider.System,
+        ParseRuns = new GymTracker.Web.Features.Feedback.ParseRunService(Db, currentUser, new GymTracker.Web.Integrations.FakeFoodParser(), Matcher, Namer, TimeProvider.System,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<GymTracker.Web.Features.Feedback.ParseRunService>.Instance);
     }
 
@@ -34,6 +34,9 @@ public sealed class UserScope : IAsyncDisposable
 
     /// <summary>Makes no decision unless a test scripts one, so the matcher behaves as without Jev.</summary>
     public StubMatchDecider MatchDecider { get; } = new();
+
+    /// <summary>Names nothing unless a test scripts it, so rows keep their database names as without a key.</summary>
+    public StubFoodNamer Namer { get; } = new();
     public GymTracker.Web.Features.Food.FoodItemService Foods { get; }
     public GymTracker.Web.Features.Food.FoodMatcher Matcher { get; }
     public GymTracker.Web.Features.Food.FoodLogService FoodLog { get; }

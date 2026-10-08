@@ -11,6 +11,15 @@ public enum Confidence
 }
 
 /// <summary>One row of the confirmation list shown after parsing text. Nothing is saved until the user confirms.</summary>
+/// <param name="Description">The row's name: the matched food's (or a short name for it), or what the user typed for an estimate.</param>
+/// <param name="MatchedName">The matched food's database name in the account's language.</param>
+/// <param name="MatchedNameEn">The matched food's English name when <paramref name="MatchedName"/> is Bulgarian.</param>
+/// <param name="Typed">What the user wrote for this food, without the amount.</param>
+/// <param name="State">Raw or cooked: from the matched food's names, or the parser's reading for an estimate.</param>
+/// <param name="Status">
+/// How the food is, shown beside its name ("boiled", "dried"): the namer's for a matched food, the parser's preparation for an
+/// estimate. When null the view shows <paramref name="State"/>.
+/// </param>
 public record ConfirmItem(
     string Description,
     decimal Grams,
@@ -19,7 +28,11 @@ public record ConfirmItem(
     string? MatchedName,
     Confidence Confidence,
     IReadOnlyList<LocalText> Notes,
-    string? MatchModel = null);
+    string? MatchModel = null,
+    string Typed = "",
+    FoodState State = FoodState.NotApplicable,
+    string? MatchedNameEn = null,
+    string? Status = null);
 
 /// <summary>How one item was matched, kept with the parse run for feedback (SPEC 11): the ranking's top candidates and the decider's answer.</summary>
 /// <param name="DeciderModel">The decision model that answered for this parse, even where its answer was not used.</param>
@@ -56,8 +69,6 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
         "растителен", "вегетариан", "веган", "заместител",
         // The same niches in the Bulgarian names (the English ones above don't appear in them).
         "консерв", "замразен", "сушен", "на прах", "бебешк", "ресторант", "панир", "с кожа"];
-
-    private static readonly string[] CookedWordsBg = ["варен", "печен", "на скара", "пържен", "задушен", "сготвен", "на фурна", "запечен"];
 
     /// <param name="trace">When given, receives one <see cref="MatchTrace"/> per item.</param>
     public async Task<List<ConfirmItem>> ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct, List<MatchTrace>? trace = null)
@@ -112,7 +123,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             if (decision is { FoodItemId: { } id } && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
             {
                 var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
-                result.Add(new ConfirmItem(Description(item), Portion(item, pick, notes), pick.Per100, pick.Id, pick.DisplayName, confidence, notes, decisions!.Model));
+                result.Add(Matched(item, pick, Portion(item, pick, notes), confidence, notes, decisions!.Model));
             }
             else if (decision is { FoodItemId: null } && decision.Confidence >= NoneGate)
             {
@@ -125,7 +136,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
                 var english = best.Food.NameBg is null || string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase);
                 var confidence = best.Score >= HighConfidence && HeadMatches(best.Food, english ? item.NameEn : item.NameOriginal, !english)
                     ? Confidence.High : Confidence.Medium;
-                result.Add(new ConfirmItem(Description(item), Portion(item, best.Food, notes), best.Food.Per100, best.Food.Id, best.Food.DisplayName, confidence, notes));
+                result.Add(Matched(item, best.Food, Portion(item, best.Food, notes), confidence, notes, null));
             }
             else
             {
@@ -200,6 +211,15 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
         return head.Count > 0 && head.Any(queryWords.Contains);
     }
 
+    /// <summary>A database food: the row takes its name, so the log says which food the numbers are (a namer may shorten it later).</summary>
+    private static ConfirmItem Matched(ParsedFoodItem item, FoodMatch food, decimal grams, Confidence confidence, List<LocalText> notes, string? matchModel)
+    {
+        var name = food.DisplayName.Length > 200 ? food.DisplayName[..200] : food.DisplayName;
+        return new ConfirmItem(name, grams, food.Per100, food.Id, food.DisplayName, confidence, notes, matchModel,
+            Typed: Description(item), State: FoodStates.FromName(food.Name, food.NameBg),
+            MatchedNameEn: food.DisplayName == food.Name ? null : food.Name);
+    }
+
     /// <summary>No database food: the parser's own numbers, marked Low.</summary>
     private static ConfirmItem Estimate(ParsedFoodItem item, List<LocalText> notes, string? matchModel)
     {
@@ -209,7 +229,9 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             notes.Add(new LocalText("The calories don't add up from the macros."));
         }
 
-        return new ConfirmItem(Description(item), item.Grams, item.Estimated, null, null, Confidence.Low, notes, matchModel);
+        var typed = Description(item);
+        return new ConfirmItem(typed, item.Grams, item.Estimated, null, null, Confidence.Low, notes, matchModel, Typed: typed, State: item.State,
+            Status: FoodNaming.AcceptStatus(item.Preparation, item.State));
     }
 
     /// <summary>
@@ -220,8 +242,9 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
     internal static double Rank(FoodMatch food, string query, FoodState state, bool bulgarian = false)
     {
         var name = (bulgarian ? food.NameBg ?? "" : food.Name).ToLowerInvariant();
-        var cooked = (bulgarian ? CookedWordsBg : CookedWords).Any(name.Contains);
-        var raw = name.Contains(bulgarian ? "суров" : "raw");
+        var nameState = FoodStates.FromName(name);
+        var cooked = nameState == FoodState.Cooked;
+        var raw = nameState == FoodState.Raw;
         var score = food.Score + (food.Own ? 0.15 : 0);
 
         var queryWords = Words(query).ToHashSet();

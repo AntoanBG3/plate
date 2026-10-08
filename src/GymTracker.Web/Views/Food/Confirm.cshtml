@@ -42,10 +42,13 @@
                 Confidence.Medium => ("check", L["Check match"]),
                 _ => ("ai", L["AI estimate"]),
             };
+            var status = L.Status(item.Status, item.State);
             <div class="result portion" data-row="@i" data-per100="@item.Per100.Kcal.Kg(),@item.Per100.Protein.Kg()" style="animation-delay: @(i * 70)ms">
                 <div class="result-head">
                     <input type="checkbox" class="check-input" name="items[@i].Include" value="true" checked aria-label="@L["Include {0}", item.Description]" />
-                    <input type="text" class="input" name="items[@i].Description" value="@item.Description" maxlength="200" aria-label="@L["Description"]" required />
+                    @* Grows to fit a long food name (field-sizing); Enter doesn't add a line (site.js). *@
+                    <textarea class="input name-input" name="items[@i].Description" rows="1" maxlength="200" aria-label="@L["Description"]" data-one-line required>@item.Description</textarea>
+                    <span class="chip status-chip" data-status @(status is null ? "hidden" : null)>@status</span>
                     <span class="chip @chip" data-chip>@label</span>
                     @if (Model.ParseRunId is not null)
                     {
@@ -57,12 +60,13 @@
                     <span class="footnote num" data-totals>@L["{0} kcal · {1} g protein", Math.Round(item.Per100.Kcal * item.Grams / 100), (item.Per100.Protein * item.Grams / 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)]</span>
                 </div>
                 <div class="result-notes footnote">
-                    <span data-using @(item.MatchedName is null ? "hidden" : null)>@(item.MatchedName is null ? "" : L["Using: {0}", item.MatchedName])</span>
+                    @* The full database name under the short one, so it's clear which food the numbers are. *@
+                    <span data-using @(item.MatchedName is null ? "hidden" : null)>@(item.MatchedName is null ? "" : L["Database: {0}", item.MatchedName])</span>
                     @foreach (var note in item.Notes)
                     {
                         <span data-note>@L[note]</span>
                     }
-                    <button type="button" class="btn btn-plain btn-small change-food" data-change-food="@i" data-query="@item.Description">@L["Change food"]</button>
+                    <button type="button" class="btn btn-plain btn-small change-food" data-change-food="@i" data-query="@item.Typed">@L["Change food"]</button>
                 </div>
                 <details>
                     <summary>@L["Per 100 g values"]</summary>
@@ -77,6 +81,7 @@
                 </details>
                 <input type="hidden" name="items[@i].FoodItemId" value="@item.FoodItemId" />
                 <input type="hidden" name="items[@i].MatchModel" value="@item.MatchModel" />
+                <input type="hidden" name="items[@i].Status" value="@status" />
             </div>
         }
     </div>

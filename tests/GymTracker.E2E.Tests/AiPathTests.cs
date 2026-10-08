@@ -83,8 +83,12 @@ public class AiPathTests(E2EFixture app)
 
         var rows = phone.Page.Locator(".result");
         (await rows.CountAsync()).Should().Be(2);
+        // The matched banana gets the namer's short name and status; the full database name is under it.
+        (await rows.Nth(0).Locator("textarea[name$='Description']").InputValueAsync()).Should().Be("Banana");
+        (await rows.Nth(0).Locator("[data-status]").TextContentAsync()).Should().Be("raw");
+        (await rows.Nth(0).Locator("[data-using]").TextContentAsync()).Should().StartWith("Database: Bananas");
         // Nothing in the database is like it, so the row keeps the model's own numbers.
-        (await rows.Nth(1).InnerTextAsync()).Should().Contain("AI estimate").And.NotContain("Using:");
+        (await rows.Nth(1).InnerTextAsync()).Should().Contain("AI estimate").And.NotContain("Database:");
 
         await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/confirm'] button[type=submit]").Last.TapAsync());
         await using var db = app.Db.CreateContext(await UserIdAsync(phone.Email));

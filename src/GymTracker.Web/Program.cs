@@ -138,6 +138,12 @@ builder.Services.AddHttpClient<JevFoodMatchDecider>(c =>
     // The decider cancels each call after 3 s itself; this is only a backstop.
     c.Timeout = TimeSpan.FromSeconds(10);
 });
+builder.Services.AddHttpClient<OpenRouterFoodNamer>(c =>
+{
+    OpenRouterClient(c);
+    // The namer cancels each call after 5 s itself; this is only a backstop.
+    c.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddHttpClient<OpenRouterOnboardingAssistant>(c =>
 {
     OpenRouterClient(c);
@@ -159,6 +165,8 @@ builder.Services.AddScoped<OpenRouterSettings>();
 builder.Services.AddScoped<IFoodParser, SwitchingFoodParser>();
 // The matcher model picked in Settings when a key is set; otherwise the database ranking alone.
 builder.Services.AddScoped<IFoodMatchDecider, SwitchingMatchDecider>();
+// Short names for matched foods with the parser's model when a key is set; otherwise the database names.
+builder.Services.AddScoped<IFoodNamer, SwitchingFoodNamer>();
 // The setup chat's model when a key is set and it isn't off; otherwise the setup page shows only the form.
 builder.Services.AddScoped<GymTracker.Core.Onboarding.IOnboardingAssistant, SwitchingOnboardingAssistant>();
 builder.Services.AddScoped<GymTracker.Web.Features.Onboarding.OnboardingService>();

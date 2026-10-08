@@ -8,6 +8,11 @@
 <header class="page-head">
     <p class="eyebrow">@Ui.ShortDate(Model.Date) · @L.Enum(Model.Meal)</p>
     <h1 class="large-title" style="font-size: var(--text-title-1)">@L.Entry(Model.Description)</h1>
+    @if (Model.Source != EntrySource.Quick)
+    {
+        <p class="subhead entry-title"><span class="num">@L["{0} g", Model.Grams.Kg()]</span>@if (L.Status(Model.Status, ViewData["FoodState"] as GymTracker.Core.Nutrition.FoodState? ?? default) is { } status)
+            {<span class="chip status-chip" data-status>@status</span>}</p>
+    }
 </header>
 
 <div class="card stat-grid" style="grid-template-columns: repeat(4, 1fr)">

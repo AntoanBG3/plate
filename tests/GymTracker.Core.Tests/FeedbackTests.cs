@@ -57,9 +57,16 @@ public class ParseCorrectionsTests
         One(Same() with { FoodItemId = 8 }).Should().Be(ParseCorrection.MatchChanged);
 
     [Fact]
-    public void Several_edits_combine() =>
-        One(Same() with { Grams = 300, Description = "thigh", FoodItemId = null }).Should()
-            .Be(ParseCorrection.GramsChanged | ParseCorrection.DescriptionEdited | ParseCorrection.MatchChanged);
+    public void A_new_name_that_came_with_a_different_food_is_not_a_description_edit() =>
+        One(Same() with { Description = "Chicken thigh, raw", FoodItemId = 8 }).Should().Be(ParseCorrection.MatchChanged);
+
+    [Fact]
+    public void Several_edits_combine()
+    {
+        One(Same() with { Grams = 300, Description = "thigh", Per100 = Chicken with { Carbs = 3 } }).Should()
+            .Be(ParseCorrection.GramsChanged | ParseCorrection.DescriptionEdited | ParseCorrection.ValuesEdited);
+        One(Same() with { Grams = 300, FoodItemId = null }).Should().Be(ParseCorrection.GramsChanged | ParseCorrection.MatchChanged);
+    }
 
     [Fact]
     public void Items_missing_from_a_tampered_form_count_as_removed_and_extras_are_ignored()

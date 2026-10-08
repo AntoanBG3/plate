@@ -376,9 +376,15 @@
         set("Fiber", pick.dataset.fiber);
         set("SaturatedFat", pick.dataset.satfat);
         set("MatchModel", "");
+        // The row is named after the food it now is, with that food's raw or cooked state.
+        set("Description", pick.dataset.name);
+        set("Status", pick.dataset.status);
+        const status = changeRow.querySelector("[data-status]");
+        status.textContent = pick.dataset.status || "";
+        status.hidden = !pick.dataset.status;
         changeRow.dataset.per100 = `${pick.dataset.kcal},${pick.dataset.protein}`;
         const using = changeRow.querySelector("[data-using]");
-        using.textContent = t("Using: {0}", pick.dataset.name);
+        using.textContent = t("Database: {0}", pick.dataset.name);
         using.hidden = false;
         changeRow.querySelectorAll("[data-note]").forEach((note) => note.remove());
         const chip = changeRow.querySelector("[data-chip]");
@@ -459,6 +465,13 @@
     if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
+
+    // A one-line text area (a food name that wraps to fit): Enter doesn't add a line break.
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && event.target.matches && event.target.matches("textarea[data-one-line]")) {
+            event.preventDefault();
+        }
+    });
 
     // Live per-row totals on the food confirmation list and portion forms.
     document.addEventListener("input", (event) => {
