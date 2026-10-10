@@ -50,18 +50,18 @@ public class LabelScanReport(AppDbContext db, AdminAuditLog audit)
             scan.Reading, scan.Values, scan.Saved, scan.FoodItemId);
     }
 
-        /// <summary>The scan's nth photo (1-based) while it is kept (30 days). Every download is audited: it is a picture from someone's kitchen.</summary>
-        public async Task<LabelScanPhoto?> PhotoAsync(int id, int number, CancellationToken ct)
+    /// <summary>The scan's nth photo (1-based) while it is kept (30 days). Every download is audited: it is a picture from someone's kitchen.</summary>
+    public async Task<LabelScanPhoto?> PhotoAsync(int id, int number, CancellationToken ct)
+    {
+        var photo = await db.LabelScanPhotos.IgnoreQueryFilters().AsNoTracking()
+            .SingleOrDefaultAsync(p => p.LabelScanId == id && p.Position == number - 1, ct);
+        if (photo is not null)
         {
-            var photo = await db.LabelScanPhotos.IgnoreQueryFilters().AsNoTracking()
-                .SingleOrDefaultAsync(p => p.LabelScanId == id && p.Position == number - 1, ct);
-            if (photo is not null)
-            {
-                await audit.WriteAsync(AuditActions.LabelPhotoDownload, number == 1 ? $"label scan #{id}" : $"label scan #{id} photo {number}", null, ct);
-            }
-
-            return photo;
+            await audit.WriteAsync(AuditActions.LabelPhotoDownload, number == 1 ? $"label scan #{id}" : $"label scan #{id} photo {number}", null, ct);
         }
+
+        return photo;
+    }
 
     public async Task<LabelScanCounts> CountsAsync(DateTimeOffset since, CancellationToken ct)
     {

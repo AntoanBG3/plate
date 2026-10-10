@@ -243,8 +243,8 @@ public class LabelScanTests(PostgresFixture fixture)
         (await big.Content.ReadAsStringAsync()).Should().Be("That photo is too large.");
         reader.Calls.Should().Be(1);
 
-        // Over the endpoint's 3 MB limit Kestrel answers 413; the test server reads the body, so the app's own check answers.
-        (await ReadAsync(a, Jpeg(3_500_000))).StatusCode.Should().BeOneOf(HttpStatusCode.RequestEntityTooLarge, HttpStatusCode.BadRequest);
+        // Over the endpoint's 7 MB limit Kestrel answers 413; the test server reads the body, so the app's own check answers.
+        (await ReadAsync(a, Jpeg(7_500_000))).StatusCode.Should().BeOneOf(HttpStatusCode.RequestEntityTooLarge, HttpStatusCode.BadRequest);
         reader.Calls.Should().Be(1);
     }
 

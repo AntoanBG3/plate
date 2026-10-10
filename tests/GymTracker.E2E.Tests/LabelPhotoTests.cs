@@ -244,7 +244,7 @@ public class LabelPhotoTests(E2EFixture app)
     [Fact]
     public async Task A_photo_between_1_and_2_MB_gets_through_Kestrels_request_limit()
     {
-        // Program.cs caps request bodies at 1 MB in Kestrel; /food/label raises it to 3 MB (SPEC 9). The test server
+        // Program.cs caps request bodies at 1 MB in Kestrel; /food/label raises it to 7 MB (SPEC 9). The test server
         // in the Web tests doesn't apply Kestrel's limit, so this goes through the real server.
         await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium, ai: true);
         await phone.GoAsync(Manual);
