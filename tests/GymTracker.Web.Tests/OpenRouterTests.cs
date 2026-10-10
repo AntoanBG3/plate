@@ -432,12 +432,43 @@ public class OpenRouterLabelReaderTests
     private const string Ayran = """{"is_label":true,"name":"Айрян","brand":null,"basis":"per_100ml","serving_grams":null,"energy_kcal":38,"energy_kj":159,"protein":1.8,"carbs":2.6,"fat":2.2,"saturated_fat":1.4,"fiber":null}""";
     private static readonly byte[] Jpeg = [0xFF, 0xD8, 0xFF, 0x01];
 
+    private static readonly byte[] Png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+
+    [Fact]
+    public async Task One_photo_asks_to_read_this_nutrition_label()
+    {
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(Ayran));
+
+        await stub.Label().ReadAsync([new LabelImage(Jpeg, "image/jpeg")], "k", "google/gemini-3.5-flash-lite", default);
+
+        var content = stub.SentBody!["messages"]![1]!["content"]!.AsArray();
+        content.Count.Should().Be(2);
+        content[0]!["text"]!.GetValue<string>().Should().Be("Read this nutrition label.");
+    }
+
+    [Fact]
+    public async Task Several_photos_go_in_order_as_image_parts_of_one_message()
+    {
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(Ayran));
+
+        await stub.Label().ReadAsync([new LabelImage(Jpeg, "image/jpeg"), new LabelImage(Png, "image/png"), new LabelImage(Jpeg, "image/jpeg")],
+            "k", "google/gemini-3.5-flash-lite", default);
+
+        var content = stub.SentBody!["messages"]![1]!["content"]!.AsArray();
+        content.Count.Should().Be(4);
+        content[0]!["text"]!.GetValue<string>().Should().Be("These 3 photos show the same package. Read its nutrition label, using every photo.");
+        content[1]!["image_url"]!["url"]!.GetValue<string>().Should().StartWith("data:image/jpeg;base64,");
+        content[2]!["image_url"]!["url"]!.GetValue<string>().Should().StartWith("data:image/png;base64,");
+        content[3]!["image_url"]!["url"]!.GetValue<string>().Should().StartWith("data:image/jpeg;base64,");
+        stub.SentBody!["messages"]![0]!["content"]!.GetValue<string>().Should().Contain("Up to three photos show the same package");
+    }
+
     [Fact]
     public async Task Sends_the_photo_as_a_data_url_with_a_strict_schema()
     {
         var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(Ayran));
 
-        await stub.Label().ReadAsync(Jpeg, "image/jpeg", "sk-test", "google/gemini-3.5-flash-lite", default);
+        await stub.Label().ReadAsync([new LabelImage(Jpeg, "image/jpeg")], "sk-test", "google/gemini-3.5-flash-lite", default);
 
         stub.SentKey.Should().Be("sk-test");
         var body = stub.SentBody!;
@@ -452,7 +483,7 @@ public class OpenRouterLabelReaderTests
     public async Task Reads_the_answer_into_a_label_reading()
     {
         var result = await new StubOpenRouter(completion: StubOpenRouter.Completion(Ayran)).Label()
-            .ReadAsync(Jpeg, "image/jpeg", "k", "google/gemini-3.5-flash-lite", default);
+            .ReadAsync([new LabelImage(Jpeg, "image/jpeg")], "k", "google/gemini-3.5-flash-lite", default);
 
         result.Error.Should().BeNull();
         result.Model.Should().Be("google/gemini-3.5-flash-lite");
@@ -464,7 +495,7 @@ public class OpenRouterLabelReaderTests
     public async Task An_unreadable_answer_fails_and_keeps_what_came_back()
     {
         var result = await new StubOpenRouter(completion: StubOpenRouter.Completion("not json")).Label()
-            .ReadAsync(Jpeg, "image/jpeg", "k", "google/gemini-3.5-flash-lite", default);
+            .ReadAsync([new LabelImage(Jpeg, "image/jpeg")], "k", "google/gemini-3.5-flash-lite", default);
 
         result.Reading.Should().BeNull();
         result.Error.Should().Be(new GymTracker.Core.Text.LocalText("Couldn't read the label. Enter the values by hand."));
@@ -477,7 +508,7 @@ public class OpenRouterLabelReaderTests
         var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(Ayran));
         stub.Statuses.Enqueue(HttpStatusCode.BadGateway);
 
-        var result = await stub.Label().ReadAsync(Jpeg, "image/jpeg", "k", "google/gemini-3.5-flash-lite", default);
+        var result = await stub.Label().ReadAsync([new LabelImage(Jpeg, "image/jpeg")], "k", "google/gemini-3.5-flash-lite", default);
 
         result.Reading.Should().NotBeNull();
         stub.Calls.Should().Be(2);
@@ -490,7 +521,7 @@ public class OpenRouterLabelReaderTests
         var reader = stub.Label();
         reader.AttemptTimeout = TimeSpan.FromMilliseconds(50);
 
-        var result = await reader.ReadAsync(Jpeg, "image/jpeg", "k", "google/gemini-3.5-flash-lite", default);
+        var result = await reader.ReadAsync([new LabelImage(Jpeg, "image/jpeg")], "k", "google/gemini-3.5-flash-lite", default);
 
         result.Error.Should().Be(new GymTracker.Core.Text.LocalText("Couldn't read the label. Enter the values by hand."));
         stub.Calls.Should().Be(1);
@@ -552,7 +583,7 @@ public class LabelReaderSwitchTests(PostgresFixture fixture)
         await using var noKey = new AppFactory(fixture);
         using var scope = noKey.Services.CreateScope();
 
-        var result = await scope.ServiceProvider.GetRequiredService<ILabelReader>().ReadAsync([0xFF, 0xD8, 0xFF], "image/jpeg", default);
+        var result = await scope.ServiceProvider.GetRequiredService<ILabelReader>().ReadAsync([new LabelImage([0xFF, 0xD8, 0xFF], "image/jpeg")], default);
 
         (result.Error, result.Model).Should().Be((new GymTracker.Core.Text.LocalText("Couldn't read the label. Enter the values by hand."), AiTasks.DefaultLabelModel));
     }

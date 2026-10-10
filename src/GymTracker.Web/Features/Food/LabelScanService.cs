@@ -27,7 +27,7 @@ public class LabelScanService(AppDbContext db, ILabelReader reader, ICurrentUser
         var started = time.GetTimestamp();
         // Not cancelled with the request: a second photo or leaving the page aborts it, but the model may already
         // have been paid for, and every read is recorded (SPEC 6.6). The reader's own timeouts bound the wait.
-        var result = await reader.ReadAsync(bytes, type, CancellationToken.None);
+        var result = await reader.ReadAsync([new LabelImage(bytes, type)], CancellationToken.None);
         var outcome = result.Reading is { } reading ? LabelValues.Normalize(reading) : new LabelOutcome(null, result.Error);
         var scan = new LabelScan
         {

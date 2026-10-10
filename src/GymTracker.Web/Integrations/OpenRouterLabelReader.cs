@@ -30,8 +30,11 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
         - Labels are usually Bulgarian: Енергийна стойност (energy), Мазнини (fat), от които наситени мастни киселини
           (saturated_fat), Въглехидрати (carbs), от които захари (sugars: NOT carbs, ignore), Фибри or Хранителни
           влакна (fiber), Белтъчини (protein), Сол (salt, ignore). Other EU languages use the same rows.
-        - name and brand only when printed in this photo, as written; otherwise null.
-        - is_label is false when the photo doesn't show a nutrition table.
+        - name and brand only when printed in one of the photos, as written; otherwise null.
+        - Up to three photos show the same package: the nutrition table and other sides of it. Use them together:
+          take each value from the photo that prints it clearly. If two photos print different numbers for the same
+          row, use the earlier photo's.
+        - is_label is false only when no photo shows a nutrition table.
         """;
 
     private static readonly JsonObject Schema = JsonNode.Parse("""
@@ -66,7 +69,7 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
             ?? throw new InvalidOperationException("The sample label isn't embedded.");
         using var buffer = new MemoryStream();
         await stream.CopyToAsync(buffer, ct);
-        var result = await ReadAsync(buffer.ToArray(), "image/jpeg", apiKey, model, ct);
+        var result = await ReadAsync([new LabelImage(buffer.ToArray(), "image/jpeg")], apiKey, model, ct);
         if (result.Reading is not { } reading)
         {
             return result.Error;
@@ -78,9 +81,9 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
             : new LocalText("The model misread the sample label (read {0} kcal, expected {1}).", kcal?.ToString(CultureInfo.InvariantCulture) ?? "nothing", SampleKcal);
     }
 
-    public async Task<LabelReadResult> ReadAsync(byte[] image, string contentType, string apiKey, string model, CancellationToken ct)
+    public async Task<LabelReadResult> ReadAsync(IReadOnlyList<LabelImage> images, string apiKey, string model, CancellationToken ct)
     {
-        var body = await BodyAsync(image, contentType, model, ct);
+        var body = await BodyAsync(images, model, ct);
         for (var attempt = 1; attempt <= 2; attempt++)
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -121,25 +124,31 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
         return LabelReadResult.Failed(Unreadable, model);
     }
 
-    private async Task<JsonObject> BodyAsync(byte[] image, string contentType, string model, CancellationToken ct)
+    private async Task<JsonObject> BodyAsync(IReadOnlyList<LabelImage> images, string model, CancellationToken ct)
     {
         var info = await catalog.FindAsync(model, ct);
+        var content = new JsonArray(new JsonObject
+        {
+            ["type"] = "text",
+            ["text"] = images.Count == 1
+                ? "Read this nutrition label."
+                : $"These {images.Count} photos show the same package. Read its nutrition label, using every photo.",
+        });
+        foreach (var image in images)
+        {
+            content.Add(new JsonObject
+            {
+                ["type"] = "image_url",
+                ["image_url"] = new JsonObject { ["url"] = $"data:{image.ContentType};base64,{Convert.ToBase64String(image.Bytes)}" },
+            });
+        }
+
         var body = new JsonObject
         {
             ["model"] = model,
             ["messages"] = new JsonArray(
                 new JsonObject { ["role"] = "system", ["content"] = Instructions },
-                new JsonObject
-                {
-                    ["role"] = "user",
-                    ["content"] = new JsonArray(
-                        new JsonObject { ["type"] = "text", ["text"] = "Read this nutrition label." },
-                        new JsonObject
-                        {
-                            ["type"] = "image_url",
-                            ["image_url"] = new JsonObject { ["url"] = $"data:{contentType};base64,{Convert.ToBase64String(image)}" },
-                        }),
-                }),
+                new JsonObject { ["role"] = "user", ["content"] = content }),
             ["response_format"] = new JsonObject
             {
                 ["type"] = "json_schema",
@@ -201,7 +210,7 @@ public class SwitchingLabelReader(OpenRouterSettings settings, IServiceProvider 
     public async Task<bool> IsAvailableAsync(CancellationToken ct) =>
         await settings.GetModelAsync(AiTask.Label, ct) != AiTasks.Off && await settings.GetKeyAsync(ct) is not null;
 
-    public async Task<LabelReadResult> ReadAsync(byte[] image, string contentType, CancellationToken ct)
+    public async Task<LabelReadResult> ReadAsync(IReadOnlyList<LabelImage> images, CancellationToken ct)
     {
         var model = await settings.GetModelAsync(AiTask.Label, ct);
         if (model == AiTasks.Off || await settings.GetKeyAsync(ct) is not { } key)
@@ -210,6 +219,6 @@ public class SwitchingLabelReader(OpenRouterSettings settings, IServiceProvider 
             return LabelReadResult.Failed("Couldn't read the label. Enter the values by hand.", model);
         }
 
-        return await services.GetRequiredService<OpenRouterLabelReader>().ReadAsync(image, contentType, key, model, ct);
+        return await services.GetRequiredService<OpenRouterLabelReader>().ReadAsync(images, key, model, ct);
     }
 }
