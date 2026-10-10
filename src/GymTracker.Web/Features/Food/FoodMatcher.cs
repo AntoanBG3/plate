@@ -166,6 +166,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
     private async Task<List<(FoodMatch Food, double Score)>> RankAsync(ParsedFoodItem item, CancellationToken ct)
     {
         var ranked = (await foods.SearchAsync(FoodWords(item.NameEn), 120, MatchThreshold, ct))
+            .Where(c => !MatchesOnlyItsUse(c, item.NameEn))
             .Select(c => (Food: c, Score: Rank(c, item.NameEn, item.State)))
             .ToList();
         if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
@@ -173,7 +174,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             // Typed in Bulgarian: Bulgarian dishes and products, and USDA foods by their Bulgarian names, are
             // ranked by how well their Bulgarian name fits what the user wrote.
             ranked.AddRange((await foods.SearchAsync(item.NameOriginal, 120, MatchThreshold, ct))
-                .Where(c => !string.IsNullOrEmpty(c.NameBg))
+                .Where(c => !string.IsNullOrEmpty(c.NameBg) && !MatchesOnlyItsUse(c, item.NameOriginal, bulgarian: true))
                 .Select(c => (Food: c, Score: Rank(c, item.NameOriginal, item.State, bulgarian: true))));
         }
 
@@ -205,10 +206,37 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
     /// <summary>The food's main word (before the first comma, in USDA's naming) is one the user wrote.</summary>
     internal static bool HeadMatches(FoodMatch food, string query, bool bulgarian = false)
     {
-        var name = (bulgarian ? food.NameBg ?? "" : food.Name).ToLowerInvariant();
-        var head = Words(name.Split(',')[0]).ToList();
+        var head = Head((bulgarian ? food.NameBg ?? "" : food.Name).ToLowerInvariant());
         var queryWords = Words(query).ToHashSet();
         return head.Count > 0 && head.Any(queryWords.Contains);
+    }
+
+    /// <summary>
+    /// The main food words: before the first comma (USDA's naming) and before "for" or "за", which says what the
+    /// food is used for ("Пилешко месо за дюнер" is meat, not a doner).
+    /// </summary>
+    private static List<string> Head(string name)
+    {
+        var words = Words(name.Split(',')[0]).ToList();
+        var use = words.FindIndex(w => w is "for" or "за");
+        return use > 0 ? words[..use] : words;
+    }
+
+    /// <summary>
+    /// The user's words appear in the food's name only after "for" or "за": the food is something used for what they
+    /// ate, not that food (feedback #4: a "голям дюнер" became the BIM doner meat).
+    /// </summary>
+    internal static bool MatchesOnlyItsUse(FoodMatch food, string query, bool bulgarian = false)
+    {
+        var words = Words((bulgarian ? food.NameBg ?? "" : food.Name).ToLowerInvariant()).ToList();
+        var use = words.FindIndex(w => w is "for" or "за");
+        if (use <= 0)
+        {
+            return false;
+        }
+
+        var queryWords = Words(query).ToHashSet();
+        return !words[..use].Any(queryWords.Contains) && words[(use + 1)..].Any(queryWords.Contains);
     }
 
     /// <summary>A database food: the row takes its name, so the log says which food the numbers are (a namer may shorten it later).</summary>
@@ -253,7 +281,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             score += 0.3; // exactly the food the user named, e.g. "Боб чорба" for "боб чорба"
         }
 
-        var head = Words(name.Split(',')[0]).ToList();
+        var head = Head(name);
         if (head.Count > 0 && head.All(queryWords.Contains))
         {
             score += 0.2;
