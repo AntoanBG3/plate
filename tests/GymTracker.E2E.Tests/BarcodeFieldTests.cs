@@ -84,4 +84,91 @@ public class BarcodeFieldTests(E2EFixture app)
 
         (await phone.Page.Locator("form [data-share]").First.IsVisibleAsync()).Should().BeTrue();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_scanned_code_the_account_already_saved_is_offered_and_yes_opens_it(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var code = NewEan();
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await SaveManualAsync(phone, "Known kefir e2e", code, share: false);
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await ScanIntoFieldAsync(phone, code);
+        var card = phone.Page.Locator("[data-known-food]");
+        await card.WaitForAsync();
+        (await card.InnerTextAsync()).Should().Contain("Known kefir e2e").And.Contain("Is this the same food?");
+
+        await phone.NavigateByAsync(() => card.Locator("a", new() { HasText = "Yes, use it" }).TapAsync());
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food/barcode");
+        (await phone.Page.Locator("main").InnerTextAsync()).Should().Contain("Known kefir e2e");
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Rejecting_a_shared_match_unticks_share_and_saves(string browser)
+    {
+        var code = NewEan();
+        await using (var other = await app.SignedInPhoneAsync(browser))
+        {
+            await other.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+            await SaveManualAsync(other, "Shared boza e2e", code, share: true);
+        }
+
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await phone.Page.FillAsync("#m-name", "My boza e2e");
+        await ScanIntoFieldAsync(phone, code);
+        await phone.Page.Locator("[data-known-food]").WaitForAsync();
+        (await phone.Page.Locator("[data-known-food]").InnerTextAsync()).Should().Contain("Added by another user");
+
+        await phone.Page.Locator("[data-known-reject]").TapAsync();
+
+        (await phone.Page.Locator("form input.switch[name=share]").IsCheckedAsync()).Should().BeFalse();
+        (await phone.Page.InputValueAsync("#m-barcode")).Should().Be(code);
+        (await phone.Page.Locator("[data-known]").InnerTextAsync()).Should().Contain("kept for you only");
+        await FillNumbersAsync(phone);
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/items'] button[type=submit]").TapAsync());
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task Rejecting_your_own_match_clears_the_barcode(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var code = NewEan();
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await SaveManualAsync(phone, "Own ayran e2e", code, share: false);
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await ScanIntoFieldAsync(phone, code);
+        await phone.Page.Locator("[data-known-reject]").TapAsync();
+
+        (await phone.Page.InputValueAsync("#m-barcode")).Should().BeEmpty();
+        (await phone.Page.Locator("form [data-share]").First.IsVisibleAsync()).Should().BeFalse();
+    }
+
+    private static async Task FillNumbersAsync(Phone phone)
+    {
+        await phone.Page.FillAsync("#m-kcal", "60");
+        await phone.Page.FillAsync("#m-protein", "3");
+        await phone.Page.FillAsync("#m-carbs", "4");
+        await phone.Page.FillAsync("#m-fat", "3");
+        await phone.Page.FillAsync("#m-grams", "200");
+    }
+
+    /// <summary>Saves a manual food with a barcode through the form, as a user would.</summary>
+    private static async Task SaveManualAsync(Phone phone, string name, string code, bool share)
+    {
+        await phone.Page.FillAsync("#m-name", name);
+        await phone.Page.FillAsync("#m-barcode", code);
+        await FillNumbersAsync(phone);
+        await phone.Page.Locator("form input.switch[name=share]").SetCheckedAsync(share);
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/items'] button[type=submit]").TapAsync());
+    }
 }

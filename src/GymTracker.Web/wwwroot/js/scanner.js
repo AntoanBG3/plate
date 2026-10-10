@@ -24,9 +24,92 @@ window.gymModule("scanner", (root) => {
     };
     document.addEventListener("input", onInput);
 
+    // The food the app already has for this barcode, if any (SPEC 7). Only the latest check's answer is shown.
+    let known = null;
+
+    async function checkKnown(input) {
+        const form = input.closest("form");
+        const slot = form && form.querySelector("[data-known]");
+        if (!slot) {
+            return;
+        }
+        known?.abort();
+        known = null;
+        slot.replaceChildren();
+        slot.hidden = true;
+        const digits = input.value.replace(/\D/g, "");
+        if (digits.length < 8 || !navigator.onLine) {
+            return;
+        }
+        const controller = new AbortController();
+        known = controller;
+        try {
+            const query = new URLSearchParams({ date: form.elements.date.value, meal: form.elements.meal.value, code: digits });
+            const response = await fetch(`/food/barcode/known?${query}`, { headers: { "HX-Request": "true" }, signal: controller.signal });
+            if (response.status !== 200) {
+                return;
+            }
+            const card = new DOMParser().parseFromString(await response.text(), "text/html").querySelector("[data-known-food]");
+            if (card && known === controller) {
+                slot.replaceChildren(document.importNode(card, true));
+                slot.hidden = false;
+            }
+        } catch {
+            // Offline or replaced by a newer check: the form works without it.
+        }
+    }
+
+    // "No, it's different": keep the manual entry and make sure it can be saved (SPEC 7).
+    function reject(button) {
+        const card = button.closest("[data-known-food]");
+        const form = card.closest("form");
+        if (card.dataset.own === "true") {
+            const input = form.querySelector("[data-barcode-input]");
+            input.value = "";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        } else {
+            const share = form.querySelector("input[type=checkbox][name=share]");
+            if (share) {
+                share.checked = false;
+            }
+        }
+        const note = document.createElement("p");
+        note.className = "section-footer";
+        note.textContent = card.dataset.rejectNote;
+        card.replaceWith(note);
+    }
+
+    const onChange = (event) => {
+        if (event.target.matches("[data-barcode-input]")) {
+            checkKnown(event.target);
+        }
+    };
+    const onRejectClick = (event) => {
+        const button = event.target.closest("[data-known-reject]");
+        if (button) {
+            reject(button);
+        }
+    };
+    const onLabelBarcode = (event) => {
+        const input = event.target.querySelector("[data-barcode-input]");
+        if (input && input.value) {
+            checkKnown(input);
+        }
+    };
+    document.addEventListener("change", onChange);
+    document.addEventListener("click", onRejectClick);
+    document.addEventListener("label:barcode", onLabelBarcode);
+    const offField = () => {
+        known?.abort();
+        document.removeEventListener("input", onInput);
+        document.removeEventListener("change", onChange);
+        document.removeEventListener("click", onRejectClick);
+        document.removeEventListener("label:barcode", onLabelBarcode);
+    };
+
     const api = window.BarcodeDetectionAPI;
     if (!api) {
-        return () => document.removeEventListener("input", onInput);
+        return offField;
     }
 
     api.prepareZXingModule({
@@ -156,7 +239,7 @@ window.gymModule("scanner", (root) => {
     window.addEventListener("pagehide", stop);
     return () => {
         stop();
-        document.removeEventListener("input", onInput);
+        offField();
         document.removeEventListener("click", onClick);
         window.removeEventListener("pagehide", stop);
     };

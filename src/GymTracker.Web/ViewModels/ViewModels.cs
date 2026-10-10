@@ -215,6 +215,10 @@ public record ManualFoodFormModel(
     decimal? TypedGrams = null,
     decimal? TypedServing = null);
 
+/// <summary>A food the app already has for a barcode in the manual form, offered instead of a new one (SPEC 7).</summary>
+/// <param name="Own">The user's own private food; rejecting it clears the barcode, since one account can't have two foods with it.</param>
+public record KnownBarcodeModel(DateOnly Date, Meal Meal, string Code, FoodItem Item, bool Own, bool AddedByAnother);
+
 /// <param name="ModelInfo">The current model's catalog entry, or null when the catalog can't be loaded or no longer lists it.</param>
 /// <param name="ModelInfo">Null when the model isn't in the task's list (e.g. OpenRouter's list can't be loaded).</param>
 public record AiTaskStatus(GymTracker.Web.Integrations.AiTask Task, string Model, GymTracker.Web.Integrations.OpenRouterModel? ModelInfo);

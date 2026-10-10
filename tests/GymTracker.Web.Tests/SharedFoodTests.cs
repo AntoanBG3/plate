@@ -360,4 +360,77 @@ public class SharedFoodTests(PostgresFixture fixture)
         await using var check = fixture.CreateContext(a.UserId);
         (await check.FoodLog.CountAsync(e => e.Description == name)).Should().Be(1);
     }
+
+    private static string Known(string code) => $"/food/barcode/known?date=2026-10-05&meal=Lunch&code={code}";
+
+    [Fact]
+    public async Task A_known_barcode_offers_the_users_own_food()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var code = NewEan();
+        var name = Unique("Kefir mine kbt");
+        await SaveManualAsync(a, name, code, share: false);
+
+        var response = await a.Client.GetAsync(Known(code));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+        html.Should().Contain(name).And.Contain("Is this the same food?").And.Contain("data-own=\"true\"").And.NotContain(Mark);
+        html.Should().Contain($"/food/barcode?date=2026-10-05&meal=Lunch&code={code}");
+        html.Should().Contain("You already have a food with this barcode, so this one is saved without it.");
+    }
+
+    [Fact]
+    public async Task A_known_barcode_shared_by_another_account_carries_the_mark_and_no_name()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app, "Zelda Quixote");
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        var name = Unique("Kefir theirs kbt");
+        await SaveManualAsync(a, name, code, share: true);
+
+        var html = WebUtility.HtmlDecode(await (await b.Client.GetAsync(Known(code))).Content.ReadAsStringAsync());
+
+        html.Should().Contain(name).And.Contain(Mark).And.Contain("data-own=\"false\"").And.NotContain("Zelda");
+        html.Should().Contain("Another food already shares this barcode, so this one is kept for you only.");
+    }
+
+    [Fact]
+    public async Task Another_accounts_private_food_is_not_offered()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        await SaveManualAsync(a, Unique("Kefir private kbt"), code, share: false);
+
+        (await b.Client.GetAsync(Known(code))).StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task An_unknown_or_invalid_barcode_is_no_content_and_open_food_facts_is_not_asked()
+    {
+        var off = new FakeFoodDatabase();
+        await using var app = new AppFactory(fixture, services: s => s.AddSingleton<IFoodDatabase>(off));
+        var a = await SignInAsync(app);
+
+        (await a.Client.GetAsync(Known(NewEan()))).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await a.Client.GetAsync(Known("123"))).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        off.Lookups.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Saving_privately_after_rejecting_a_shared_match_succeeds()
+    {
+        // What the reject button leaves: the same barcode with share unticked (Review Focus 3).
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        await SaveManualAsync(a, Unique("Boza theirs kbt"), code, share: true);
+
+        (await SaveManualAsync(b, Unique("Boza mine kbt"), code, share: false)).StatusCode.Should().Be(HttpStatusCode.Redirect);
+    }
 }

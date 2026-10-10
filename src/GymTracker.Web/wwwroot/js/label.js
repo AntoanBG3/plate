@@ -132,6 +132,10 @@ window.gymModule("label", (root) => {
             } else {
                 host.replaceWith(placed);
             }
+            // A barcode the detector found in the photo may already be a food (SPEC 7); scanner.js offers it.
+            if (!knownBarcode && placed.querySelector("[data-barcode-input]")?.value) {
+                placed.dispatchEvent(new CustomEvent("label:barcode", { bubbles: true }));
+            }
             setOnline();
             placed.querySelector(".banner")?.scrollIntoView({ block: "start", behavior: "smooth" });
         } catch (error) {

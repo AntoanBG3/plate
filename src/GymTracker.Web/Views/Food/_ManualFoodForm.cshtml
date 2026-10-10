@@ -46,9 +46,13 @@
             <div class="field-row stacked"><label for="m-name" class="sr-only">@L["Name"]</label><input id="m-name" type="text" name="name" value="@(Model.Name ?? label?.Name)" maxlength="200" required placeholder="@L["Food name, e.g. Кисело мляко 2%"]" /></div>
             @if (Model.BarcodeField)
             {
-                <div class="field-row"><label for="m-barcode">@L["Barcode"]</label><input id="m-barcode" class="num" type="text" name="barcode" value="@Model.BarcodeValue" inputmode="numeric" pattern="[0-9 -]{8,16}" autocomplete="off" placeholder="@L["Optional"]" data-barcode-input /><button type="button" class="icon-btn" data-scan-into aria-label="@L["Scan the barcode"]">@Ui.Icon("barcode")</button></div>
+                <div class="field-row"><label for="m-barcode">@L["Barcode"]</label><input id="m-barcode" class="num" type="text" name="barcode" value="@Model.BarcodeValue" inputmode="numeric" pattern="[0-9 \-]{8,16}" autocomplete="off" placeholder="@L["Optional"]" data-barcode-input /><button type="button" class="icon-btn" data-scan-into aria-label="@L["Scan the barcode"]">@Ui.Icon("barcode")</button></div>
             }
         </div>
+        @if (Model.BarcodeField)
+        {
+            <div data-known hidden></div>
+        }
         <h2 class="section-header" style="margin-top: var(--s-5)">@L["Per 100 g, from the label"]</h2>
         <div class="list">
             <div class="field-row"><label for="m-kcal">@L["Energy"]</label><input id="m-kcal" class="@Mark(label?.Kcal, LabelField.Kcal)" type="text" name="kcal" value="@Value(label?.Kcal)" min="0" max="900" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required /><span class="unit">@L["kcal"]</span></div>

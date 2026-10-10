@@ -137,6 +137,21 @@ public class FoodController(
             LabelAvailable: result.Item is null && await labels.IsAvailableAsync(ct)));
     }
 
+    /// <summary>The food the app already has for a barcode typed or scanned into the manual form (SPEC 7). Local only: no Open Food Facts call.</summary>
+    [HttpGet("barcode/known")]
+    public async Task<IActionResult> KnownBarcode(DateOnly date, Meal meal, string? code, CancellationToken ct)
+    {
+        var digits = Barcodes.Normalize(code);
+        if (!Barcodes.IsValid(digits) || await foods.FindByBarcodeAsync(digits, ct) is not { } item)
+        {
+            return NoContent();
+        }
+
+        return PartialView("_KnownBarcode", new KnownBarcodeModel(date, meal, digits, item,
+            Own: item.OwnerUserId is not null && item.OwnerUserId == currentUser.UserId,
+            AddedByAnother: FoodItemService.AddedByAnother(item, currentUser.UserId)));
+    }
+
     [HttpPost("log-item")]
     public async Task<IActionResult> LogItem(DateOnly date, Meal meal, int foodItemId, decimal grams, EntrySource source, string? name, CancellationToken ct)
     {

@@ -887,5 +887,11 @@
   "raw": "сурово",
   "cooked": "сготвено",
   "Open Food Facts has no name for this product. The name you give it is saved for both of you.": "Open Food Facts няма име за този продукт. Името, което му дадеш, ще се запази и за двама ви.",
-  "Scan the barcode": "Сканирай баркода"
+  "Scan the barcode": "Сканирай баркода",
+  "Already in the app": "Вече е в приложението",
+  "Is this the same food?": "Същата храна ли е?",
+  "Yes, use it": "Да, използвай я",
+  "No, it's different": "Не, друга е",
+  "You already have a food with this barcode, so this one is saved without it.": "Вече имаш храна с този баркод, затова тази ще се запази без него.",
+  "Another food already shares this barcode, so this one is kept for you only.": "С този баркод вече има споделена храна, затова тази остава само за теб."
 }

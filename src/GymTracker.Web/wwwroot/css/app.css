@@ -180,6 +180,9 @@ a.section-aside { color: var(--accent-text) !important; }
 .field-row.stacked input { text-align: left; color: var(--label); flex: none; }
 /* The scan button beside a barcode field: 44 px to tap, reaching into the row's padding so the row keeps its height. */
 .field-row .icon-btn { margin: -6px calc(-1 * var(--s-2)) -6px calc(-1 * var(--s-1)); }
+.known-food { margin-top: var(--s-3); }
+.known-actions { display: flex; gap: var(--s-2); margin-top: var(--s-3); }
+.known-actions .btn { flex: 1; min-height: 44px; }
 
 /* ---------- buttons ---------- */
 
