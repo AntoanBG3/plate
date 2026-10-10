@@ -38,7 +38,7 @@ public class LabelScanService(AppDbContext db, ILabelReader reader, ICurrentUser
             Error = (result.Error ?? outcome.Error)?.ToString(),
             Reading = result.Raw is null ? null : ValidJson(result.Raw),
             Values = outcome.Values is null ? null : JsonSerializer.Serialize(StoredLabelValues.From(outcome.Values), Json),
-            Photo = new LabelScanPhoto { ContentType = type, Width = Math.Clamp(width, 0, 10_000), Height = Math.Clamp(height, 0, 10_000), Bytes = bytes },
+            Photos = [new LabelScanPhoto { Position = 0, ContentType = type, Width = Math.Clamp(width, 0, 10_000), Height = Math.Clamp(height, 0, 10_000), Bytes = bytes }],
         };
         db.LabelScans.Add(scan);
         await db.SaveChangesAsync(CancellationToken.None);

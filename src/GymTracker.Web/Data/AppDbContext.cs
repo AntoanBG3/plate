@@ -277,7 +277,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasQueryFilter(x => x.UserId == CurrentUserId);
         });
 
-        // Label photos read by the label model (SPEC 6.6); the photo sits in its own table so lists never load it.
+        // Label photos read by the label model (SPEC 6.6), up to three per scan, in their own table so lists never load them.
         builder.Entity<LabelScan>(e =>
         {
             e.Property(x => x.Model).HasMaxLength(100);
@@ -287,7 +287,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.Saved).HasColumnType("jsonb");
             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<FoodItem>().WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
-            e.HasOne(x => x.Photo).WithOne(p => p.LabelScan).HasForeignKey<LabelScanPhoto>(p => p.LabelScanId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Photos).WithOne(p => p.LabelScan).HasForeignKey(p => p.LabelScanId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => new { x.UserId, x.CreatedAt });
             e.HasIndex(x => x.CreatedAt);
             e.HasQueryFilter(x => x.UserId == CurrentUserId);
@@ -296,6 +296,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
         builder.Entity<LabelScanPhoto>(e =>
         {
             e.Property(x => x.ContentType).HasMaxLength(20);
+            e.HasIndex(x => new { x.LabelScanId, x.Position }).IsUnique();
             e.HasQueryFilter(x => x.LabelScan.UserId == CurrentUserId);
         });
 

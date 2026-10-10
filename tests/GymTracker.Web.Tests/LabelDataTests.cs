@@ -84,7 +84,7 @@ public class LabelDataTests(PostgresFixture fixture)
                 UserId = a,
                 CreatedAt = DateTimeOffset.UtcNow,
                 Model = "test/label",
-                Photo = new LabelScanPhoto { ContentType = "image/jpeg", Width = 10, Height = 10, Bytes = [0xFF, 0xD8, 0xFF] },
+                Photos = [new LabelScanPhoto { ContentType = "image/jpeg", Width = 10, Height = 10, Bytes = [0xFF, 0xD8, 0xFF] }],
             });
             await mine.SaveChangesAsync();
             (await mine.LabelScans.CountAsync()).Should().Be(1);

@@ -38,7 +38,7 @@
             <a class="row row-link" href="/admin/labels/@scan.Id">
                 <span class="row-main">
                     <span class="row-title">#@scan.Id · @scan.Model</span>
-                    <span class="row-sub" style="display: block">@scan.CreatedAt.ToUniversalTime().ToString("d MMM HH:mm") · @scan.Reporter · @scan.LatencyMs ms · @(scan.Error is not null ? "failed" : !scan.Saved ? "not saved" : scan.Edited ? "saved with edits" : "saved as read")@(scan.HasPhoto ? "" : " · photo deleted")</span>
+                    <span class="row-sub" style="display: block">@scan.CreatedAt.ToUniversalTime().ToString("d MMM HH:mm") · @scan.Reporter · @scan.LatencyMs ms · @(scan.Error is not null ? "failed" : !scan.Saved ? "not saved" : scan.Edited ? "saved with edits" : "saved as read")@(scan.PhotoCount == 0 ? " · photo deleted" : scan.PhotoCount > 1 ? $" · {scan.PhotoCount} photos" : "")</span>
                 </span>
                 @Ui.Icon("chevron", "row-chevron")
             </a>

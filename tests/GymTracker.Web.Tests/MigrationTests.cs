@@ -79,4 +79,24 @@ public class MigrationTests(PostgresFixture fixture)
             VALUES ({id}, {id}, 'Europe/Sofia', 'Maintain', 0, {proteinPerKg}, 2.5)
             """);
     }
+
+    [Fact]
+    public async Task Rolling_back_label_photo_slots_keeps_the_first_photo()
+    {
+        var connection = await fixture.NewDatabaseAsync("label_slots_rollback");
+        await using var db = fixture.CreateContext(null, connection);
+        await db.Database.MigrateAsync();
+        db.Users.Add(new AppUser { Id = "someone", UserName = "someone@test", Email = "someone@test" });
+        await db.SaveChangesAsync();
+        await db.Database.ExecuteSqlRawAsync("""
+            INSERT INTO "LabelScans" ("Id", "UserId", "CreatedAt", "Model", "LatencyMs", "Edited") VALUES (1, 'someone', now(), 'test/label', 1, false);
+            INSERT INTO "LabelScanPhotos" ("LabelScanId", "Position", "ContentType", "Width", "Height", "Bytes")
+            VALUES (1, 0, 'image/jpeg', 1, 1, '\x01'), (1, 1, 'image/jpeg', 1, 1, '\x02'), (1, 2, 'image/jpeg', 1, 1, '\x03');
+            """);
+
+        await db.GetService<IMigrator>().MigrateAsync("UnnamedFoods");
+
+        var left = await db.Database.SqlQueryRaw<int>("""SELECT COUNT(*)::int AS "Value" FROM "LabelScanPhotos" WHERE "LabelScanId" = 1""").SingleAsync();
+        left.Should().Be(1);
+    }
 }

@@ -25,10 +25,10 @@ public class AdminLabelsController(LabelScanReport labels, TimeProvider time) : 
         View(await labels.GetAsync(id, ct) ?? throw new NotFoundException());
 
     /// <summary>The photo, sandboxed like a report's screenshot: it is user content served from the app's own origin.</summary>
-    [HttpGet("{id:int}/photo")]
-    public async Task<IActionResult> Photo(int id, CancellationToken ct)
+    [HttpGet("{id:int}/photo/{number:int=1}")]
+    public async Task<IActionResult> Photo(int id, int number, CancellationToken ct)
     {
-        var photo = await labels.PhotoAsync(id, ct) ?? throw new NotFoundException();
+        var photo = await labels.PhotoAsync(id, number, ct) ?? throw new NotFoundException();
         Response.Headers.ContentSecurityPolicy = "sandbox; default-src 'none'";
         return File(photo.Bytes, photo.ContentType);
     }

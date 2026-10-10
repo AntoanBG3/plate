@@ -637,12 +637,15 @@ namespace GymTracker.Web.Data.Migrations
                     b.Property<int>("LabelScanId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Width")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LabelScanId")
+                    b.HasIndex("LabelScanId", "Position")
                         .IsUnique();
 
                     b.ToTable("LabelScanPhotos");
@@ -1657,8 +1660,8 @@ namespace GymTracker.Web.Data.Migrations
             modelBuilder.Entity("GymTracker.Core.Domain.LabelScanPhoto", b =>
                 {
                     b.HasOne("GymTracker.Core.Domain.LabelScan", "LabelScan")
-                        .WithOne("Photo")
-                        .HasForeignKey("GymTracker.Core.Domain.LabelScanPhoto", "LabelScanId")
+                        .WithMany("Photos")
+                        .HasForeignKey("LabelScanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1933,7 +1936,7 @@ namespace GymTracker.Web.Data.Migrations
 
             modelBuilder.Entity("GymTracker.Core.Domain.LabelScan", b =>
                 {
-                    b.Navigation("Photo");
+                    b.Navigation("Photos");
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.SavedMeal", b =>

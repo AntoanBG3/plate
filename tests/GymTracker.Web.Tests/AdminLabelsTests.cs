@@ -17,7 +17,7 @@ public class AdminLabelsTests(PostgresFixture fixture)
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0x42];
 
     /// <summary>A scan by a new account under a model name only this test uses, so the shared database's other scans don't interfere.</summary>
-    private async Task<LabelScan> ScanAsync(string model, bool edited = false, string? error = null, bool photo = true, int daysAgo = 0)
+    private async Task<LabelScan> ScanAsync(string model, bool edited = false, string? error = null, int photos = 1, int daysAgo = 0)
     {
         var userId = await fixture.CreateUserAsync();
         await using var db = fixture.CreateContext(userId);
@@ -33,7 +33,10 @@ public class AdminLabelsTests(PostgresFixture fixture)
             Saved = error is null ? """{"kcalPer100g":64}""" : null,
             Edited = edited,
             FoodItemId = null,
-            Photo = photo ? new LabelScanPhoto { ContentType = "image/jpeg", Width = 10, Height = 10, Bytes = Photo } : null,
+            Photos = Enumerable.Range(0, photos).Select(i => new LabelScanPhoto
+            {
+                Position = i, ContentType = "image/jpeg", Width = 10, Height = 10, Bytes = [.. Photo, (byte)i],
+            }).ToList(),
         };
         db.LabelScans.Add(scan);
         await db.SaveChangesAsync();
@@ -67,13 +70,13 @@ public class AdminLabelsTests(PostgresFixture fixture)
         var scan = await ScanAsync(Unique("show"));
 
         var page = WebUtility.HtmlDecode(await admin.GetStringAsync($"/admin/labels/{scan.Id}"));
-        page.Should().Contain($"src=\"/admin/labels/{scan.Id}/photo\"").And.Contain("energy_kcal").And.Contain("kcalPer100g");
+        page.Should().Contain($"src=\"/admin/labels/{scan.Id}/photo/1\"").And.Contain("energy_kcal").And.Contain("kcalPer100g");
 
         var photo = await admin.GetAsync($"/admin/labels/{scan.Id}/photo");
         photo.StatusCode.Should().Be(HttpStatusCode.OK);
         photo.Content.Headers.ContentType!.MediaType.Should().Be("image/jpeg");
         photo.Headers.CacheControl!.NoStore.Should().BeTrue();
-        (await photo.Content.ReadAsByteArrayAsync()).Should().Equal(Photo);
+        (await photo.Content.ReadAsByteArrayAsync()).Should().Equal([.. Photo, 0]);
         await using var db = fixture.CreateContext(null);
         (await db.AdminAudit.AnyAsync(a => a.Action == AuditActions.LabelPhotoDownload && a.Target == $"label scan #{scan.Id}")).Should().BeTrue();
     }
@@ -83,9 +86,9 @@ public class AdminLabelsTests(PostgresFixture fixture)
     {
         await using var app = new AppFactory(fixture);
         var admin = await AdminTests.UnlockedDevAsync(app);
-        var scan = await ScanAsync(Unique("gone"), photo: false);
+        var scan = await ScanAsync(Unique("gone"), photos: 0);
 
-        WebUtility.HtmlDecode(await admin.GetStringAsync($"/admin/labels/{scan.Id}")).Should().Contain("Photo deleted after 30 days.");
+        WebUtility.HtmlDecode(await admin.GetStringAsync($"/admin/labels/{scan.Id}")).Should().Contain("Photos deleted after 30 days.");
         (await admin.GetAsync($"/admin/labels/{scan.Id}/photo")).StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -139,7 +142,7 @@ public class AdminLabelsTests(PostgresFixture fixture)
 
         using var bytes = new MemoryStream();
         (await FeedbackCommand.RunAsync(app.Services, ["feedback", "label-photo", edited.Id.ToString()], new StringWriter(), bytes)).Should().Be(0);
-        bytes.ToArray().Should().Equal(Photo);
+        bytes.ToArray().Should().Equal([.. Photo, 0]);
         await using (var db = fixture.CreateContext(null))
         {
             (await db.AdminAudit.AnyAsync(a => a.Action == AuditActions.LabelPhotoDownload && a.Target == $"label scan #{edited.Id}")).Should().BeTrue();
@@ -166,5 +169,38 @@ public class AdminLabelsTests(PostgresFixture fixture)
         var page = WebUtility.HtmlDecode(await admin.GetStringAsync("/admin/ai/model/label"));
 
         page.Should().Contain("Last 90 days: 20 reads, 28% of saved ones edited, 10% failed");
+    }
+
+    [Fact]
+    public async Task A_scan_with_three_photos_shows_and_serves_each_and_audits_each_download()
+    {
+        await using var app = new AppFactory(fixture);
+        var admin = await AdminTests.UnlockedDevAsync(app);
+        var scan = await ScanAsync(Unique("three"), photos: 3);
+
+        var page = WebUtility.HtmlDecode(await admin.GetStringAsync($"/admin/labels/{scan.Id}"));
+        page.Should().Contain($"src=\"/admin/labels/{scan.Id}/photo/1\"").And.Contain($"src=\"/admin/labels/{scan.Id}/photo/3\"");
+        (await admin.GetByteArrayAsync($"/admin/labels/{scan.Id}/photo/3")).Should().Equal([.. Photo, 2]);
+        (await admin.GetByteArrayAsync($"/admin/labels/{scan.Id}/photo")).Should().Equal([.. Photo, 0]);
+        (await admin.GetAsync($"/admin/labels/{scan.Id}/photo/4")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        var list = WebUtility.HtmlDecode(await admin.GetStringAsync("/admin/labels?since=7d"));
+        list.Should().Contain("3 photos");
+        await using var db = fixture.CreateContext(null);
+        (await db.AdminAudit.AnyAsync(a => a.Action == AuditActions.LabelPhotoDownload && a.Target == $"label scan #{scan.Id} photo 3")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task The_cli_prints_the_nth_photo()
+    {
+        await using var app = new AppFactory(fixture);
+        var scan = await ScanAsync(Unique("cli-nth"), photos: 2);
+
+        using var second = new MemoryStream();
+        (await FeedbackCommand.RunAsync(app.Services, ["feedback", "label-photo", scan.Id.ToString(), "2"], new StringWriter(), second)).Should().Be(0);
+        second.ToArray().Should().Equal([.. Photo, 1]);
+
+        using var none = new MemoryStream();
+        (await FeedbackCommand.RunAsync(app.Services, ["feedback", "label-photo", scan.Id.ToString(), "3"], new StringWriter(), none)).Should().Be(1);
     }
 }

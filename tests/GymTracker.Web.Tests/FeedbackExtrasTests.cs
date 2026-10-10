@@ -141,7 +141,7 @@ public class FeedbackExtrasTests(PostgresFixture fixture)
         LabelScan Scan(int daysAgo) => new()
         {
             UserId = userId, CreatedAt = DateTimeOffset.UtcNow.AddDays(-daysAgo), Model = $"purge/{daysAgo}",
-            Photo = new LabelScanPhoto { ContentType = "image/jpeg", Bytes = [0xFF, 0xD8, 0xFF] },
+            Photos = [new LabelScanPhoto { ContentType = "image/jpeg", Bytes = [0xFF, 0xD8, 0xFF] }],
         };
         var fresh = Scan(29);
         var month = Scan(31);
@@ -152,9 +152,9 @@ public class FeedbackExtrasTests(PostgresFixture fixture)
         await SoftDeletePurge.PurgeFeedbackAsync(db, DateTimeOffset.UtcNow, default);
 
         db.ChangeTracker.Clear();
-        var left = await db.LabelScans.Include(s => s.Photo).Where(s => s.UserId == userId).ToDictionaryAsync(s => s.Id);
+        var left = await db.LabelScans.Include(s => s.Photos).Where(s => s.UserId == userId).ToDictionaryAsync(s => s.Id);
         left.Keys.Should().BeEquivalentTo([fresh.Id, month.Id]);
-        left[fresh.Id].Photo.Should().NotBeNull();
-        left[month.Id].Photo.Should().BeNull("the photo is kept 30 days, the scan 180");
+        left[fresh.Id].Photos.Should().NotBeEmpty();
+        left[month.Id].Photos.Should().BeEmpty("the photo is kept 30 days, the scan 180");
     }
 }

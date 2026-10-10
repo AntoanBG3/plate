@@ -28,7 +28,7 @@ public static class FeedbackCommand
           eval [--since 365d] [--flagged] [--limit 20] [--parser <model>] [--matcher off|jev]
           labels [--since 30d] [--edited] [--failed] [--limit 50]
           label <id>                      what the label model read, the values offered and what was saved
-          label-photo <id>                raw photo bytes to stdout, while it is kept (30 days); audited
+          label-photo <id> [n]            the nth photo's raw bytes (1 by default) to stdout, while kept (30 days); audited
           errors [--since 7d]
           digest [--since 7d|<date>]
           changelog add --en "..." --bg "..." [--feedback <id>] [--version <sha>]
@@ -206,10 +206,11 @@ public static class FeedbackCommand
                     return 0;
 
                 case "label-photo":
-                    var photo = await labels.PhotoAsync(Id(rest), ct);
+                    var number = rest.Length > 2 && int.TryParse(rest[2], NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n > 0 ? n : 1;
+                    var photo = await labels.PhotoAsync(Id(rest), number, ct);
                     if (photo is null)
                     {
-                        Console.Error.WriteLine($"Label scan #{Id(rest)} has no photo (deleted after 30 days, or no such scan).");
+                        Console.Error.WriteLine($"Label scan #{Id(rest)} has no photo {number} (deleted after 30 days, or no such scan or photo).");
                         return 1;
                     }
 
@@ -496,7 +497,7 @@ public static class FeedbackCommand
     private static string LabelLine(LabelScanRow s) =>
         $"#{s.Id} {When(s.CreatedAt)} {s.Reporter} {s.Model} {s.LatencyMs} ms "
         + (s.Error is not null ? $"failed: {s.Error}" : !s.Saved ? "not saved" : s.Edited ? "saved with edits" : "saved as read")
-        + (s.HasPhoto ? "" : " (photo deleted)");
+        + (s.PhotoCount == 0 ? " (photo deleted)" : s.PhotoCount > 1 ? $" ({s.PhotoCount} photos)" : "");
 
     /// <summary>A label scan as the CLI prints it, for the admin area's scan page.</summary>
     internal static string LabelText(LabelScanDetail detail)

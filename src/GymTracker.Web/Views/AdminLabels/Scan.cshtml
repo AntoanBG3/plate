@@ -10,13 +10,16 @@
     <p class="subhead">@scan.Reporter · @scan.CreatedAt.ToUniversalTime().ToString("d MMM yyyy HH:mm") UTC · @scan.Model · @scan.LatencyMs ms</p>
 </header>
 <section class="section">
-    @if (scan.HasPhoto)
+    @if (scan.PhotoCount > 0)
     {
-        <img src="/admin/labels/@scan.Id/photo" alt="Label photo" style="width: 100%; border-radius: var(--r-md)" />
+        @for (var n = 1; n <= scan.PhotoCount; n++)
+        {
+            <img src="/admin/labels/@scan.Id/photo/@n" alt="Label photo @n" style="width: 100%; border-radius: var(--r-md); margin-bottom: var(--s-3)" />
+        }
     }
     else
     {
-        <p class="footnote">Photo deleted after 30 days.</p>
+        <p class="footnote">Photos deleted after 30 days.</p>
     }
 </section>
 <section class="section">

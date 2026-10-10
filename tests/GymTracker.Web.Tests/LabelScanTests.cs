@@ -147,9 +147,10 @@ public class LabelScanTests(PostgresFixture fixture)
         await ReadAsync(a, Jpeg(5000));
 
         await using var db = fixture.CreateContext(a.UserId);
-        var scan = await db.LabelScans.Include(s => s.Photo).SingleAsync();
+        var scan = await db.LabelScans.Include(s => s.Photos).SingleAsync();
         (scan.Model, scan.Error, scan.Values is null).Should().Be(("test/label", (string?)null, false));
-        (scan.Photo!.ContentType, scan.Photo.Bytes.Length, scan.Photo.Width).Should().Be(("image/jpeg", 5000, 1200));
+        var photo = scan.Photos.Single();
+        (photo.Position, photo.ContentType, photo.Bytes.Length, photo.Width).Should().Be((0, "image/jpeg", 5000, 1200));
     }
 
     [Fact]

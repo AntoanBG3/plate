@@ -213,7 +213,7 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime
         var scan = new LabelScan
         {
             UserId = userId, CreatedAt = DateTimeOffset.UtcNow, Model = "test/label", FoodItemId = sharedFood.Id,
-            Photo = new LabelScanPhoto { ContentType = "image/jpeg", Bytes = [0xFF, 0xD8, 0xFF] },
+            Photos = [new LabelScanPhoto { ContentType = "image/jpeg", Bytes = [0xFF, 0xD8, 0xFF] }],
         };
         db.AddRange(feedback, error, new OnboardingChat { UserId = userId }, scan);
         await db.SaveChangesAsync();
