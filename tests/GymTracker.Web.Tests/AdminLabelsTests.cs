@@ -203,4 +203,18 @@ public class AdminLabelsTests(PostgresFixture fixture)
         using var none = new MemoryStream();
         (await FeedbackCommand.RunAsync(app.Services, ["feedback", "label-photo", scan.Id.ToString(), "3"], new StringWriter(), none)).Should().Be(1);
     }
+
+    [Theory]
+    [InlineData("two")]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public async Task The_cli_refuses_a_photo_number_that_isnt_one(string number)
+    {
+        await using var app = new AppFactory(fixture);
+        var scan = await ScanAsync(Unique("cli-bad-n"), photos: 2);
+
+        using var bytes = new MemoryStream();
+        (await FeedbackCommand.RunAsync(app.Services, ["feedback", "label-photo", scan.Id.ToString(), number], new StringWriter(), bytes)).Should().Be(1);
+        bytes.Length.Should().Be(0);
+    }
 }

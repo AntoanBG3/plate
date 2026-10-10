@@ -206,7 +206,13 @@ public static class FeedbackCommand
                     return 0;
 
                 case "label-photo":
-                    var number = rest.Length > 2 && int.TryParse(rest[2], NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n > 0 ? n : 1;
+                    var number = 1;
+                    if (rest.Length > 2 && !(int.TryParse(rest[2], NumberStyles.None, CultureInfo.InvariantCulture, out number) && number > 0))
+                    {
+                        Console.Error.WriteLine($"The photo number must be 1 or more, not \"{rest[2]}\".");
+                        return 1;
+                    }
+
                     var photo = await labels.PhotoAsync(Id(rest), number, ct);
                     if (photo is null)
                     {
