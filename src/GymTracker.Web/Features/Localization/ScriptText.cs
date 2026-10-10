@@ -34,6 +34,7 @@ public static class ScriptText
         "Try again",
         // scanner.js
         "This browser can't open the camera. Type the digits or take a photo instead.",
+        "Barcode scanning isn't available here. Type the digits instead.",
         "Camera access was refused. Type the digits or take a photo instead.",
         "Point the camera at the barcode.",
         "Found {0}. Looking it up…",

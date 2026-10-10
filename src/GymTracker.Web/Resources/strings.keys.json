@@ -341,6 +341,9 @@
   "Barcode scanning": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
+  "Barcode scanning isn't available here. Type the digits instead.": [
+    "wwwroot/js"
+  ],
   "Barcode {0}": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],

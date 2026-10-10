@@ -201,6 +201,27 @@ public class BarcodeFieldTests(E2EFixture app)
         (await phone.Page.Locator("form input.switch[name=share]").IsCheckedAsync()).Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Without_the_barcode_reader_the_scan_buttons_say_so(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        // As if the ponyfill failed to load: it never defines the API.
+        await phone.Page.AddInitScriptAsync("Object.defineProperty(window, 'BarcodeDetectionAPI', { get: () => undefined, set: () => {} });");
+        const string message = "Barcode scanning isn't available here. Type the digits instead.";
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await phone.Page.Locator("[data-scan-into]").TapAsync();
+        await phone.Page.Locator("#toast", new() { HasText = message }).WaitForAsync();
+        (await phone.Page.Locator("#scanner").IsVisibleAsync()).Should().BeFalse();
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=barcode");
+        await phone.Page.Locator("[data-start]").TapAsync();
+        await phone.Page.Locator("#toast", new() { HasText = message }).WaitForAsync();
+        (await phone.Page.Locator("#scanner").IsVisibleAsync()).Should().BeFalse();
+    }
+
     private static async Task FillNumbersAsync(Phone phone)
     {
         await phone.Page.FillAsync("#m-kcal", "60");
