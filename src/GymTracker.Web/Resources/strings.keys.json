@@ -273,6 +273,10 @@
   "Attach a screenshot or photo (JPEG, PNG or WebP).": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
   ],
+  "Attach one to three photos.": [
+    "src/GymTracker.Web/Controllers/FoodController.cs",
+    "src/GymTracker.Web/Features/Food/LabelScanService.cs"
+  ],
   "Auto": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
     "src/GymTracker.Web/Views/Settings/Goal.cshtml"

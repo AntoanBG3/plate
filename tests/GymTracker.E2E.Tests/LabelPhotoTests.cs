@@ -217,6 +217,31 @@ public class LabelPhotoTests(E2EFixture app)
     }
 
     [Fact]
+    public async Task Three_photos_near_2_MB_each_get_through_Kestrels_request_limit()
+    {
+        await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium, ai: true);
+        await phone.GoAsync(Manual);
+
+        var status = await phone.Page.EvaluateAsync<int>("""
+            async () => {
+              const data = new FormData();
+              for (let i = 0; i < 3; i++) {
+                const bytes = new Uint8Array(1_950_000);
+                bytes.set([0xFF, 0xD8, 0xFF]);
+                data.append("photo", new Blob([bytes], { type: "image/jpeg" }), `label${i}.jpg`);
+                data.append("width", "2000");
+                data.append("height", "1500");
+              }
+              for (const [k, v] of [["date", document.querySelector("[name=date]").value], ["meal", "Lunch"], ["barcodeField", "true"]]) data.set(k, v);
+              const r = await fetch("/food/label", { method: "POST", body: data, headers: { "RequestVerificationToken": window.gymToken(), "HX-Request": "true" } });
+              return r.status;
+            }
+            """);
+
+        status.Should().Be(200);
+    }
+
+    [Fact]
     public async Task A_photo_between_1_and_2_MB_gets_through_Kestrels_request_limit()
     {
         // Program.cs caps request bodies at 1 MB in Kestrel; /food/label raises it to 3 MB (SPEC 9). The test server

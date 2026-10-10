@@ -175,31 +175,43 @@ public class FoodController(
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
 
-    /// <summary>Reads a label photo and answers with the manual food form filled from it (SPEC 6.6).</summary>
+    /// <summary>Reads one to three label photos and answers with the manual food form filled from them (SPEC 6.6).</summary>
     [HttpPost("label")]
     [EnableRateLimiting(RateLimits.AiLabel)]
-    // The one endpoint above the 1 MB request limit (SPEC 9): the phone shrinks a photo to under 2 MB.
-    [RequestSizeLimit(3 * 1024 * 1024)]
-    public async Task<IActionResult> Label(DateOnly date, Meal meal, string? barcode, bool barcodeField, string? name, bool? share, decimal? grams, decimal? servingGrams, int width, int height, IFormFile? photo, CancellationToken ct)
+    // The one endpoint above the 1 MB request limit (SPEC 9): up to three photos the phone shrank to under 2 MB each.
+    [RequestSizeLimit(7 * 1024 * 1024)]
+    public async Task<IActionResult> Label(DateOnly date, Meal meal, string? barcode, bool barcodeField, string? name, bool? share, decimal? grams, decimal? servingGrams,
+        List<int> width, List<int> height, List<IFormFile> photo, CancellationToken ct)
     {
         if (!await labels.IsAvailableAsync(ct))
         {
             return NotFound();
         }
 
-        if (photo is null || photo.Length == 0)
+        if (photo.Count == 0 || photo.Any(p => p.Length == 0))
         {
             throw new ValidationException("Attach a photo (JPEG, PNG or WebP).");
         }
 
-        if (photo.Length > LabelScanPhoto.MaxBytes)
+        if (photo.Count > LabelScanPhoto.MaxPerScan)
+        {
+            throw new ValidationException("Attach one to three photos.");
+        }
+
+        if (photo.Any(p => p.Length > LabelScanPhoto.MaxBytes))
         {
             throw new ValidationException("That photo is too large.");
         }
 
-        using var buffer = new MemoryStream((int)photo.Length);
-        await photo.CopyToAsync(buffer, ct);
-        var result = await labels.ReadAsync(buffer.ToArray(), width, height, ct);
+        var uploads = new List<LabelPhotoUpload>(photo.Count);
+        for (var i = 0; i < photo.Count; i++)
+        {
+            using var buffer = new MemoryStream((int)photo[i].Length);
+            await photo[i].CopyToAsync(buffer, ct);
+            uploads.Add(new LabelPhotoUpload(buffer.ToArray(), width.ElementAtOrDefault(i), height.ElementAtOrDefault(i)));
+        }
+
+        var result = await labels.ReadAsync(uploads, ct);
         if (result.Values is null)
         {
             // Only the message goes back: the form the user already filled in stays as it is (SPEC 6.6).
