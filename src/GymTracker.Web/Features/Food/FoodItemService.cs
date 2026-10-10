@@ -134,6 +134,40 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
         return new BarcodeResult(LookupStatus.Found, await CacheAsync(p, ct));
     }
 
+    /// <summary>
+    /// Names a shared product Open Food Facts had no name for. Only the first name counts: the update is conditional,
+    /// so a second user (or a stale page) leaves it as it is. The user's own entries still carrying the stand-in name
+    /// get the new one.
+    /// </summary>
+    public async Task<FoodItem> NameUnnamedAsync(FoodItem item, string name, CancellationToken ct)
+    {
+        name = string.Join(' ', name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        if (!item.Unnamed || name.Length == 0)
+        {
+            return item;
+        }
+
+        // Short enough that the entry's "name (brand)" stays within its 200 characters.
+        name = name.Length > MaxGivenName ? name[..MaxGivenName] : name;
+        var named = await db.FoodItems.Where(f => f.Id == item.Id && f.Unnamed)
+            .ExecuteUpdateAsync(s => s.SetProperty(f => f.Name, name).SetProperty(f => f.Unnamed, false), ct);
+        if (named == 1)
+        {
+            var old = EntryDescription(item.Name, item.Brand);
+            await db.FoodLog.Where(e => e.FoodItemId == item.Id && e.Description == old)
+                .ExecuteUpdateAsync(s => s.SetProperty(e => e.Description, Clip(EntryDescription(name, item.Brand))), ct);
+        }
+
+        await db.Entry(item).ReloadAsync(ct);
+        return item;
+    }
+
+    public const int MaxGivenName = 100;
+
+    /// <summary>How a logged packaged food is described: its name, then the brand in brackets unless the name starts with it.</summary>
+    public static string EntryDescription(string name, string? brand) =>
+        brand is null || name.StartsWith(brand, StringComparison.OrdinalIgnoreCase) ? name : $"{name} ({brand})";
+
     public Task<ProductSearch> SearchOpenFoodFactsAsync(string query, CancellationToken ct) =>
         query.Trim().Length < 2 ? Task.FromResult(new ProductSearch(LookupStatus.NotFound, [])) : foodDatabase.SearchAsync(query.Trim(), ct);
 
@@ -158,6 +192,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             SaturatedFatPer100g = p.Per100.SaturatedFat,
             DefaultServingGrams = p.ServingGrams,
             Source = FoodSource.OpenFoodFacts,
+            Unnamed = p.Unnamed,
         };
         db.FoodItems.Add(item);
         await db.SaveChangesAsync(ct);

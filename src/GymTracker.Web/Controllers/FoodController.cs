@@ -138,11 +138,15 @@ public class FoodController(
     }
 
     [HttpPost("log-item")]
-    public async Task<IActionResult> LogItem(DateOnly date, Meal meal, int foodItemId, decimal grams, EntrySource source, CancellationToken ct)
+    public async Task<IActionResult> LogItem(DateOnly date, Meal meal, int foodItemId, decimal grams, EntrySource source, string? name, CancellationToken ct)
     {
         var item = await foods.GetAsync(foodItemId, ct);
-        var name = item.DisplayName();
-        var description = item.Brand is null ? name : $"{name} ({item.Brand})";
+        if (item.Unnamed && name is not null)
+        {
+            item = await foods.NameUnnamedAsync(item, name, ct);
+        }
+
+        var description = FoodItemService.EntryDescription(item.DisplayName(), item.Brand);
         await log.AddAsync([new NewEntry(date, meal, description, grams, item.Per100(), item.Id, source)], ct);
         FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");

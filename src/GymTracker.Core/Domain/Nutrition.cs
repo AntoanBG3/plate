@@ -60,6 +60,12 @@ public class FoodItem
 
     public decimal? DefaultServingGrams { get; set; }
     public FoodSource Source { get; set; }
+
+    /// <summary>
+    /// Open Food Facts had no name, so <see cref="Name"/> is the brand and quantity; the first user to log it names it
+    /// for everyone (feedback #5).
+    /// </summary>
+    public bool Unnamed { get; set; }
 }
 
 /// <summary>One logged food. Totals are stored so the entry stays the same if its FoodItem changes.</summary>

@@ -19,7 +19,7 @@ public class OpenFoodFactsOptions
 /// </summary>
 public class OpenFoodFactsClient(HttpClient http, ILogger<OpenFoodFactsClient> log) : IFoodDatabase
 {
-    private const string Fields = "code,product_name,brands,nutriments,serving_quantity";
+    private const string Fields = "code,product_name,product_name_en,generic_name,generic_name_en,brands,quantity,nutriments,serving_quantity";
 
     public async Task<ProductLookup> GetByBarcodeAsync(string barcode, CancellationToken ct)
     {
@@ -103,14 +103,21 @@ public class OpenFoodFactsClient(HttpClient http, ILogger<OpenFoodFactsClient> l
             return null;
         }
 
-        var name = product["product_name"]?.ToString().Trim();
+        var name = new[] { "product_name", "product_name_en", "generic_name", "generic_name_en" }
+            .Select(f => product[f]?.ToString().Trim())
+            .FirstOrDefault(v => !string.IsNullOrEmpty(v));
         var brand = product["brands"]?.ToString().Split(',')[0].Trim();
+        brand = string.IsNullOrEmpty(brand) ? null : brand;
+
+        // No name in any field (feedback #5, a Monster can): the brand and quantity stand in until a user names it.
+        var stand = string.Join(' ', new[] { brand, product["quantity"]?.ToString().Trim() }.Where(v => !string.IsNullOrEmpty(v)));
         return new ProductInfo(
             barcode,
-            string.IsNullOrEmpty(name) ? $"Product {barcode}" : name,
-            string.IsNullOrEmpty(brand) ? null : brand,
+            name ?? (brand is null ? $"Product {barcode}" : stand),
+            brand,
             new Per100g(kcal.Value, protein.Value, carbs.Value, fat.Value, Optional(n?["fiber_100g"], 100), Optional(n?["saturated-fat_100g"], fat.Value + 0.5m)),
-            Num(product["serving_quantity"]) is { } s and > 0 ? s : null);
+            Num(product["serving_quantity"]) is { } s and > 0 ? s : null,
+            Unnamed: name is null);
     }
 
     /// <summary>A value that is not required to log the product; dropped when it is negative or above <paramref name="max"/>.</summary>

@@ -1234,6 +1234,7 @@
     "src/GymTracker.Web/Views/Shared/Reorder.cshtml"
   ],
   "Name": [
+    "src/GymTracker.Web/Views/Food/Barcode.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
@@ -1439,6 +1440,9 @@
   ],
   "Open Food Facts didn't answer. Try again later, or add the food by hand.": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
+  ],
+  "Open Food Facts has no name for this product. The name you give it is saved for both of you.": [
+    "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
   "Open Food Facts is limiting requests right now. Try again in a minute.": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"

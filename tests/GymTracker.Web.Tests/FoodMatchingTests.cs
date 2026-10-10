@@ -98,6 +98,31 @@ public class FoodMatchingTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task A_food_named_only_in_what_a_product_is_for_is_not_that_product()
+    {
+        // Feedback #4: "голям дюнер" became the BIM "Пилешко месо за дюнер" as Database after Jev's unsure "none".
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, null, 0.86m);
+
+        var item = (await s.Matcher.ResolveAsync("голям дюнер",
+            [new ParsedFoodItem("doner kebab sandwich", "дюнер", 450, FoodState.Cooked, null, null, new Per100g(220, 10, 25, 9))], default)).Single();
+
+        item.MatchedName.Should().NotContain("за дюнер", "meat for a doner is an ingredient, not the doner");
+    }
+
+    [Theory]
+    [InlineData("Пилешко месо за дюнер", "дюнер", false)]
+    [InlineData("Пилешко месо за дюнер", "пилешко месо", true)]
+    [InlineData("Sauce for pasta", "pasta", false)]
+    [InlineData("Chicken, breast", "chicken breast", true)]
+    public void Words_after_for_are_not_the_main_food(string name, string query, bool matches)
+    {
+        var food = new FoodMatch(1, name, name, null, 100, 1, 1, 1, null, null, null, false, false, 1);
+
+        FoodMatcher.HeadMatches(food, query, bulgarian: true).Should().Be(matches);
+    }
+
+    [Fact]
     public async Task Items_without_candidates_are_not_sent()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

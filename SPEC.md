@@ -162,6 +162,7 @@ Seed about 90 common exercises, each with a Bulgarian name in the gym vocabulary
 - `FiberPer100g`, `SaturatedFatPer100g` (nullable; null means unknown, not zero)
 - `DefaultServingGrams` (nullable)
 - `Source` (OpenFoodFacts, Usda, Manual, Ai)
+- `Unnamed`: Open Food Facts had no name for the product, so `Name` stands in from its brand and quantity (6.2) until a user names it.
 - A manual item with a barcode is shared (`OwnerUserId` null) when the user leaves "Share with other users" ticked (the default), so others who scan the same packaged product don't re-enter it; Open Food Facts coverage of Bulgarian products is thin, so this path will be common. Unticked, it is private like a manual item without a barcode. Sharing can't be changed after saving.
 - Barcode lookup checks the user's own items first, then shared items, then Open Food Facts.
 - Existing shared manual items get `AddedByUserId` once, from the user of the earliest entry that logged them; with no entry it stays null, and the item shows no mark.
@@ -388,6 +389,7 @@ Also provide `FakeFoodParser` for tests and local development without a key (sel
 - Set the `User-Agent` OFF requires: `GymTracker/<version> (<contact email from config>)`.
 - Rate limits are 15 product reads and 10 searches per minute per IP, shared by all users because all calls leave from wizard. Call OFF search only on explicit submit (never as-you-type), and treat HTTP 429 as "try again shortly" without breaking the page.
 - Cache every successful lookup as a shared `FoodItem` so repeat scans are instant and work offline from the API.
+- The name is `product_name`, else `product_name_en`, `generic_name` or `generic_name_en`. With none of them, the brand and `quantity` stand in ("Monster 500ml"; "Product <barcode>" without a brand) and the item is `Unnamed`. Its barcode result then has a name field above the grams, filled with the stand-in, with "Open Food Facts has no name for this product. The name you give it is saved for both of you." The first name saved replaces the stand-in on the shared item for everyone, along with that user's entries still carrying it; later names are ignored. A logged packaged food reads "name (brand)", without the brand when the name already starts with it.
 - If the product is missing or has no nutrition data, offer to create a manual `FoodItem` with that barcode (shared, see section 4).
 
 ### 6.3 USDA FoodData Central subset

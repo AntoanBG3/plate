@@ -1,7 +1,8 @@
 namespace GymTracker.Core.Nutrition;
 
 /// <summary>A packaged product from an external food database such as Open Food Facts.</summary>
-public record ProductInfo(string Barcode, string Name, string? Brand, Per100g Per100, decimal? ServingGrams);
+/// <param name="Unnamed">The database had no name, so <paramref name="Name"/> is made up from the brand and quantity.</param>
+public record ProductInfo(string Barcode, string Name, string? Brand, Per100g Per100, decimal? ServingGrams, bool Unnamed = false);
 
 public enum LookupStatus
 {

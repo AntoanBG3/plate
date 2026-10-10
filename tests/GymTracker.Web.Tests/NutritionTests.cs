@@ -266,6 +266,21 @@ public class IntegrationParsingTests
         OpenFoodFactsClient.ReadProduct(JsonNode.Parse("""{"product_name":"x","nutriments":{}}""")!, "1").Should().BeNull();
     }
 
+    [Theory]
+    [InlineData("\"product_name\":\"Kiselo mlyako\",\"product_name_en\":\"Yoghurt\"", "Kiselo mlyako", false)]
+    [InlineData("\"product_name\":\"\",\"product_name_en\":\"Yoghurt\",\"generic_name\":\"Dairy\"", "Yoghurt", false)]
+    [InlineData("\"product_name\":\" \",\"generic_name\":\"Energy drink\"", "Energy drink", false)]
+    [InlineData("\"product_name\":\"\",\"brands\":\"Monster, Monster Energy\",\"quantity\":\"500ml\"", "Monster 500ml", true)]
+    [InlineData("\"brands\":\"Monster\"", "Monster", true)]
+    [InlineData("\"quantity\":\"500ml\"", "Product 5060337500135", true)]
+    public void Open_food_facts_products_without_a_name_are_named_for_now_and_marked(string fields, string name, bool unnamed)
+    {
+        var info = OpenFoodFactsClient.ReadProduct(JsonNode.Parse(
+            "{" + fields + ""","nutriments":{"energy-kcal_100g":2,"proteins_100g":0,"carbohydrates_100g":0.9,"fat_100g":0}}""")!, "5060337500135")!;
+
+        (info.Name, info.Unnamed).Should().Be((name, unnamed));
+    }
+
     [Fact]
     public void Open_food_facts_fiber_and_saturated_fat_are_read_when_present_and_sane()
     {
