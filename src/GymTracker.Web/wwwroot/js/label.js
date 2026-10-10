@@ -46,6 +46,7 @@ window.gymModule("label", (root) => {
             remove.disabled = reading;
             slot.querySelector("[data-label-slot-photo]").disabled = reading;
         });
+        panel.querySelector("[data-label-less]").disabled = reading;
         panel.querySelector("[data-label-read]").disabled = reading || !navigator.onLine || !list.some(Boolean);
     }
 
@@ -71,6 +72,7 @@ window.gymModule("label", (root) => {
         }
         const panel = input.closest("[data-label-panel]");
         const index = Number(input.closest("[data-label-slot-index]").dataset.labelSlotIndex);
+        const list = pickedIn(panel);
         let shot;
         try {
             shot = await window.gymImage.shrink(file, SHRINK);
@@ -78,7 +80,10 @@ window.gymModule("label", (root) => {
             toast(t("Couldn't read that picture. Try another photo."));
             return;
         }
-        const list = pickedIn(panel);
+        // The slots were closed or replaced while it shrank: the photo was dropped with them.
+        if (picks.get(panel) !== list) {
+            return;
+        }
         if (list[index]) {
             URL.revokeObjectURL(list[index].url);
         }
@@ -217,6 +222,7 @@ window.gymModule("label", (root) => {
                 return;
             }
             const placed = document.importNode(fresh, true);
+            (slot || host).querySelectorAll("[data-label-panel]").forEach(forget);
             if (slot) {
                 slot.replaceChildren(placed);
             } else {
