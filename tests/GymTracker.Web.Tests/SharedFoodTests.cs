@@ -169,6 +169,79 @@ public class SharedFoodTests(PostgresFixture fixture)
         (await PageAsync(b, "/food/add?date=2026-10-05&meal=Lunch&tab=search&q=rice")).Should().NotContain(Mark);
     }
 
+    private static async Task<HttpResponseMessage> LogScannedAsync(Account a, string code, int foodItemId, string? name)
+    {
+        var token = await AppFactory.TokenAsync(a.Client, Scan(code));
+        var fields = new List<KeyValuePair<string, string>>
+        {
+            new("__RequestVerificationToken", token),
+            new("date", "2026-10-05"),
+            new("meal", "Lunch"),
+            new("foodItemId", foodItemId.ToString()),
+            new("grams", "500"),
+            new("source", "Barcode"),
+        };
+        if (name is not null)
+        {
+            fields.Add(new("name", name));
+        }
+
+        return await a.Client.PostAsync("/food/log-item", new FormUrlEncodedContent(fields));
+    }
+
+    [Fact]
+    public async Task The_first_name_given_to_a_product_without_one_is_kept_for_everyone()
+    {
+        // Feedback #5: Open Food Facts had no name for a Monster can, and it was saved as "Product <barcode>".
+        var off = new FakeFoodDatabase();
+        var code = NewEan();
+        off.Products[code] = new ProductLookup(LookupStatus.Found, new ProductInfo(code, "Monster 500ml", "Monster", new Per100g(2, 0, 0.9m, 0), 500, Unnamed: true));
+        await using var app = new AppFactory(fixture, services: s => s.AddSingleton<IFoodDatabase>(off));
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+
+        var html = await PageAsync(a, Scan(code));
+        html.Should().Contain("name=\"name\"").And.Contain("value=\"Monster 500ml\"");
+        int id;
+        await using (var db = fixture.CreateContext(null))
+        {
+            id = await db.FoodItems.Where(f => f.Barcode == code).Select(f => f.Id).SingleAsync();
+        }
+
+        var name = Unique("Ultra white qsf");
+        (await LogScannedAsync(a, code, id, $"  {name} ")).StatusCode.Should().Be(HttpStatusCode.Redirect);
+        (await LogScannedAsync(b, code, id, "Someone else's name")).StatusCode.Should().Be(HttpStatusCode.Redirect);
+
+        await using (var db = fixture.CreateContext(null))
+        {
+            var food = await db.FoodItems.SingleAsync(f => f.Id == id);
+            food.Name.Should().Be(name);
+            food.Unnamed.Should().BeFalse();
+            var entries = await db.FoodLog.IgnoreQueryFilters().Where(e => e.FoodItemId == id).OrderBy(e => e.Id).Select(e => e.Description).ToListAsync();
+            entries.Should().Equal($"{name} (Monster)", $"{name} (Monster)");
+        }
+
+        (await PageAsync(b, Scan(code))).Should().Contain(name).And.NotContain("name=\"name\"", "a named product is no longer asked about");
+    }
+
+    [Fact]
+    public async Task A_name_is_not_taken_for_a_product_that_has_one()
+    {
+        var off = new FakeFoodDatabase();
+        var code = NewEan();
+        var name = Unique("Named cola qsf");
+        off.Products[code] = new ProductLookup(LookupStatus.Found, new ProductInfo(code, name, "Brand", new Per100g(42, 0, 10.6m, 0), 330));
+        await using var app = new AppFactory(fixture, services: s => s.AddSingleton<IFoodDatabase>(off));
+        var a = await SignInAsync(app);
+
+        (await PageAsync(a, Scan(code))).Should().NotContain("name=\"name\"");
+        await using var db = fixture.CreateContext(null);
+        var id = await db.FoodItems.Where(f => f.Barcode == code).Select(f => f.Id).SingleAsync();
+        (await LogScannedAsync(a, code, id, "Renamed")).StatusCode.Should().Be(HttpStatusCode.Redirect);
+
+        (await db.FoodItems.SingleAsync(f => f.Id == id)).Name.Should().Be(name);
+    }
+
     [Fact]
     public async Task A_food_whose_creator_was_deleted_still_reads_as_another_users()
     {

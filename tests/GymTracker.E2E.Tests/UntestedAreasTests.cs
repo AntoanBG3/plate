@@ -214,6 +214,35 @@ public class UntestedAreasTests(E2EFixture app)
         phone.Page.Url.Should().Contain($"code={code}");
     }
 
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_product_without_a_name_is_named_when_it_is_logged(string browser)
+    {
+        // Feedback #5: Open Food Facts had no name for a Monster can.
+        var digits = Enumerable.Range(0, 12).Select(i => i == 0 ? Random.Shared.Next(1, 10) : Random.Shared.Next(10)).ToArray();
+        var code = string.Concat(digits) + (10 - digits.Select((d, i) => i % 2 == 0 ? d : d * 3).Sum() % 10) % 10;
+        await using (var db = app.Db.CreateContext(null))
+        {
+            db.FoodItems.Add(new FoodItem { Name = "Monster 500ml", Brand = "Monster", Barcode = code, KcalPer100g = 2, CarbsPer100g = 0.9m, Source = FoodSource.OpenFoodFacts, Unnamed = true });
+            await db.SaveChangesAsync();
+        }
+
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync($"/food/barcode?date={Today}&meal=Lunch&code={code}");
+        var name = phone.Page.Locator("#b-name");
+        (await name.InputValueAsync()).Should().Be("Monster 500ml");
+        var box = await Phone.BoxAsync(name);
+        (box.X + box.Width).Should().BeLessThanOrEqualTo(390);
+        box.Height.Should().BeGreaterThanOrEqualTo(44);
+
+        await name.FillAsync("Monster Ultra White");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/log-item'] button[type=submit]").TapAsync());
+
+        (await phone.Page.Locator("#meal-lunch").InnerTextAsync()).Should().Contain("Monster Ultra White").And.NotContain("(Monster)");
+        phone.ShouldHaveNoErrors();
+    }
+
     // An EAN-13 drawn as black bars on white: 4 px per module, quiet zones of 12 modules (GS1 asks for 11 and 7).
     internal static byte[] Ean13Png(string code)
     {
