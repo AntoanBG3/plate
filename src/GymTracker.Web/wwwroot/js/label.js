@@ -181,6 +181,8 @@ window.gymModule("label", (root) => {
                     data.set(field, value.replace(",", "."));
                 }
             }
+            // "No, it's different" on the known-barcode card (scanner.js) holds for this code in the new form too.
+            const declined = !!(form && form.querySelector("[data-known-declined]"));
             const share = form && form.querySelector("input[type=checkbox][name=share]");
             if (share) {
                 data.set("share", String(share.checked));
@@ -233,8 +235,10 @@ window.gymModule("label", (root) => {
             if (scope && trigger.matches("[data-label-read]")) {
                 setMore(scope, false);
             }
-            // A barcode the detector found in the photo may already be a food (SPEC 7); scanner.js offers it.
-            if (!knownBarcode && placed.querySelector("[data-barcode-input]")?.value) {
+            // The barcode, typed or found in the photo, may already be a food (SPEC 7); scanner.js offers it again in the
+            // new form, unless the user already said this code is a different food.
+            const code = placed.querySelector("[data-barcode-input]")?.value.replace(/\D/g, "") || "";
+            if (code && !(declined && code === knownBarcode.replace(/\D/g, ""))) {
                 placed.dispatchEvent(new CustomEvent("label:barcode", { bubbles: true }));
             }
             setOnline();

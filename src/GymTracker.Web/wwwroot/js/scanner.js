@@ -75,6 +75,8 @@ window.gymModule("scanner", (root) => {
         }
         const note = document.createElement("p");
         note.className = "section-footer";
+        // label.js reads this so a label read doesn't offer the same food again.
+        note.dataset.knownDeclined = "";
         note.textContent = card.dataset.rejectNote;
         card.replaceWith(note);
     }
