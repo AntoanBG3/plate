@@ -5,6 +5,8 @@ window.gymModule("label", (root) => {
     "use strict";
 
     let pending = null;
+    // What the running read marked busy; a newer read that aborts it clears it, since the old one no longer can.
+    let pendingBusy = null;
     let detector = null;
     const SHRINK = { maxSide: 2000, quality: 0.85, maxBytes: 2 * 1024 * 1024, steps: [[2000, 0.7], [1600, 0.7], [1200, 0.6]] };
 
@@ -134,8 +136,10 @@ window.gymModule("label", (root) => {
         const busy = slot ? root : host.querySelector("[data-label]");
 
         pending?.abort();
+        pendingBusy?.classList.remove("is-busy");
         const controller = new AbortController();
         pending = controller;
+        pendingBusy = busy;
         busy.classList.add("is-busy");
         drawPanels();
         try {
@@ -238,6 +242,7 @@ window.gymModule("label", (root) => {
             if (pending === controller) {
                 busy.classList.remove("is-busy");
                 pending = null;
+                pendingBusy = null;
                 drawPanels();
             }
         }

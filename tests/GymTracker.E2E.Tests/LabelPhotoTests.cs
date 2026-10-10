@@ -457,4 +457,46 @@ public class LabelPhotoTests(E2EFixture app)
         (await Panel(phone, scan).IsVisibleAsync()).Should().BeFalse();
         new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food/add");
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task A_read_replaced_by_another_doesnt_leave_the_scan_tab_spinning(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=barcode");
+        await phone.Page.Locator("input[data-label-start]").SetInputFilesAsync(Fixture("label.jpg"));
+        await phone.Page.Locator("[data-label-slot] .banner").WaitForAsync();
+
+        // The next read answers late, so the one after it replaces it while it is still running.
+        var calls = 0;
+        await phone.Page.RouteAsync("**/food/label", async route =>
+        {
+            if (Interlocked.Increment(ref calls) == 1)
+            {
+                await Task.Delay(2000);
+            }
+
+            try
+            {
+                await route.ContinueAsync();
+            }
+            catch (PlaywrightException)
+            {
+                // The page aborted it.
+            }
+        });
+        const string scan = "[data-label-photos]:not([data-label-form] *)";
+        await phone.Page.Locator($"{scan} [data-label-more]").TapAsync();
+        await PickIntoSlotAsync(phone, 0, scope: scan);
+        await ThumbAsync(phone, 0, scan);
+        await phone.Page.Locator($"{scan} [data-label-read]").TapAsync();
+        await phone.Page.Locator("[data-module=\"label\"].is-busy").WaitForAsync();
+
+        await phone.Page.Locator("[data-label-slot] [data-label-single] input").SetInputFilesAsync(Fixture("label.jpg"));
+        await phone.Page.WaitForFunctionAsync("() => !document.querySelector('[data-label-slot] .is-busy') && document.querySelector('[data-label-slot] .banner')");
+        await phone.Page.WaitForTimeoutAsync(2500);
+
+        (await phone.Page.Locator("[data-module=\"label\"].is-busy").CountAsync()).Should().Be(0, "the replaced read's spinner is cleared");
+        (await phone.Page.Locator("[data-label-status]").IsVisibleAsync()).Should().BeFalse();
+    }
 }
