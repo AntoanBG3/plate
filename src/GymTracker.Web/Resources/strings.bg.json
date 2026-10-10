@@ -886,5 +886,6 @@
   "Database: {0}": "База данни: {0}",
   "raw": "сурово",
   "cooked": "сготвено",
-  "Open Food Facts has no name for this product. The name you give it is saved for both of you.": "Open Food Facts няма име за този продукт. Името, което му дадеш, ще се запази и за двама ви."
+  "Open Food Facts has no name for this product. The name you give it is saved for both of you.": "Open Food Facts няма име за този продукт. Името, което му дадеш, ще се запази и за двама ви.",
+  "Scan the barcode": "Сканирай баркода"
 }

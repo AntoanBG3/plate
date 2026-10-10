@@ -324,7 +324,8 @@ public class LabelScanTests(PostgresFixture fixture)
         var html = WebUtility.HtmlDecode(await a.Client.GetStringAsync(AddPage));
 
         html.Should().Contain("Read the label from a photo").And.Contain("data-label-photo").And.Contain(PrivacyLine);
-        html.Should().Contain("accept=\"image/*\"").And.NotContain("capture=");
+        // The label photo offers camera and library (no capture); the scanner sheet's own photo button may use the camera.
+        html.Should().MatchRegex("<input type=\"file\" accept=\"image/\\*\" class=\"sr-only\" data-label-photo />");
         html.Should().Contain("data-barcode-input").And.Contain("data-module=\"label\"");
     }
 
@@ -423,5 +424,30 @@ public class LabelScanTests(PostgresFixture fixture)
         reader.Next = new LabelReadResult(FakeLabelReader.Yogurt with { ServingGrams = null }, "{}", null, "test/label");
         var noServing = await HtmlAsync(await ReadAsync(a, Jpeg(100), grams: "80", servingGrams: "30"));
         noServing.Should().MatchRegex("id=\"m-grams\"[^>]*value=\"80\"").And.MatchRegex("id=\"m-serving\"[^>]*value=\"30\"");
+    }
+
+    [Fact]
+    public async Task The_manual_tab_has_a_scan_button_beside_the_barcode_field_and_the_scanner_sheet()
+    {
+        var (app, _) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var html = await a.Client.GetStringAsync(AddPage);
+
+        html.Should().MatchRegex("data-barcode-input[^>]*/>\\s*<button type=\"button\" class=\"icon-btn\" data-scan-into");
+        html.Should().Contain("id=\"scanner\"").And.Contain("/js/scanner.js").And.Contain("barcode-detector-3.2.2.ponyfill.js");
+    }
+
+    [Fact]
+    public async Task The_form_after_a_barcode_miss_has_no_scan_button()
+    {
+        var (app, _) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var html = await a.Client.GetStringAsync("/food/barcode?date=2026-10-05&meal=Lunch&code=4006381333931");
+
+        html.Should().NotContain("data-scan-into");
     }
 }

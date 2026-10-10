@@ -402,11 +402,11 @@
     "wwwroot/js"
   ],
   "Cancel": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
+    "src/GymTracker.Web/Views/Food/_ScannerSheet.cshtml",
     "src/GymTracker.Web/Views/SettingsExercises/Edit.cshtml",
     "src/GymTracker.Web/Views/Shared/ExercisePicker.cshtml",
     "src/GymTracker.Web/Views/Shared/Reorder.cshtml",
@@ -1569,7 +1569,7 @@
     "src/GymTracker.Web/Views/Settings/Training.cshtml"
   ],
   "Point the camera at the barcode.": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/_ScannerSheet.cshtml",
     "wwwroot/js"
   ],
   "Portion": [
@@ -1884,7 +1884,11 @@
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
   "Scan a barcode": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml"
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/_ScannerSheet.cshtml"
+  ],
+  "Scan the barcode": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Screenshot": [
     "src/GymTracker.Web/Views/Feedback/Index.cshtml"
@@ -2117,7 +2121,7 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Take a photo instead": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml"
+    "src/GymTracker.Web/Views/Food/_ScannerSheet.cshtml"
   ],
   "Target": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",

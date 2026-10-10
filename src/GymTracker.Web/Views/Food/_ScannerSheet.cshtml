@@ -1,0 +1,18 @@
+@* The camera sheet (SPEC 7). scanner.js opens it from "Scan a barcode" (looks the code up) or from the scan button beside a barcode field (fills the field). *@
+<div class="sheet" id="scanner" data-module="scanner" hidden>
+    <div class="sheet-scrim"></div>
+    <div class="sheet-panel full scanner-panel" role="dialog" aria-modal="true" aria-labelledby="scanner-title">
+        <div class="sheet-grabber" aria-hidden="true" style="background: rgb(255 255 255 / 0.4)"></div>
+        <div class="sheet-head"><span></span><span class="sheet-title" id="scanner-title">@L["Scan a barcode"]</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
+        <div class="viewfinder">
+            <video playsinline muted hidden></video>
+            <div class="viewfinder-frame" aria-hidden="true"></div>
+            <p class="viewfinder-status" data-status role="status">@L["Point the camera at the barcode."]</p>
+        </div>
+        <div class="scanner-actions">
+            <label class="btn btn-secondary">@Ui.Icon("photo")@L["Take a photo instead"]
+                <input type="file" accept="image/*" capture="environment" data-photo class="sr-only" />
+            </label>
+        </div>
+    </div>
+</div>

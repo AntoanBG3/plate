@@ -246,35 +246,15 @@
             <div id="food-sheet-body"></div>
         </div>
     </div>
-    @if (Model.Tab == "barcode")
+    @if (Model.Tab is "barcode" or "manual")
     {
-        <div class="sheet" id="scanner" data-module="scanner" hidden>
-            <div class="sheet-scrim"></div>
-            <div class="sheet-panel full scanner-panel" role="dialog" aria-modal="true" aria-labelledby="scanner-title">
-                <div class="sheet-grabber" aria-hidden="true" style="background: rgb(255 255 255 / 0.4)"></div>
-                <div class="sheet-head"><span></span><span class="sheet-title" id="scanner-title">@L["Scan a barcode"]</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
-                <div class="viewfinder">
-                    <video playsinline muted hidden></video>
-                    <div class="viewfinder-frame" aria-hidden="true"></div>
-                    <p class="viewfinder-status" data-status role="status">@L["Point the camera at the barcode."]</p>
-                </div>
-                <div class="scanner-actions">
-                    <label class="btn btn-secondary">@Ui.Icon("photo")@L["Take a photo instead"]
-                        <input type="file" accept="image/*" capture="environment" data-photo class="sr-only" />
-                    </label>
-                </div>
-            </div>
-        </div>
+        <partial name="_ScannerSheet" />
+        @* Also reads a barcode out of a label photo (label.js), so it loads before label.js. *@
         <script src="~/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js" asp-append-version="true"></script>
         <script src="~/js/scanner.js" asp-append-version="true"></script>
     }
     @if (Model.LabelAvailable)
     {
-        @if (Model.Tab == "manual")
-        {
-            @* Reads a barcode out of the label photo (label.js). *@
-            <script src="~/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js" asp-append-version="true"></script>
-        }
         <script src="~/js/label.js" asp-append-version="true"></script>
     }
 }

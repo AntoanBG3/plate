@@ -35,16 +35,6 @@ window.gymModule("label", (root) => {
         }
     }
 
-    // Others find a shared food by its barcode, so the share choice shows only once there is one (SPEC 4).
-    function toggleShare(form) {
-        const input = form && form.querySelector("[data-barcode-input]");
-        if (!input) {
-            return;
-        }
-        const show = input.value.replace(/\D/g, "").length >= 8;
-        form.querySelectorAll("[data-share]").forEach((el) => { el.hidden = !show; });
-    }
-
     function setOnline() {
         const online = navigator.onLine;
         root.querySelectorAll("[data-label-photo]").forEach((input) => { input.disabled = !online; });
@@ -142,7 +132,6 @@ window.gymModule("label", (root) => {
             } else {
                 host.replaceWith(placed);
             }
-            toggleShare(placed.querySelector("form"));
             setOnline();
             placed.querySelector(".banner")?.scrollIntoView({ block: "start", behavior: "smooth" });
         } catch (error) {
@@ -163,15 +152,9 @@ window.gymModule("label", (root) => {
             read(event.target);
         }
     };
-    const onInput = (event) => {
-        if (event.target.matches("[data-barcode-input]")) {
-            toggleShare(event.target.closest("form"));
-        }
-    };
     const onLeave = () => pending?.abort();
 
     root.addEventListener("change", onChange);
-    root.addEventListener("input", onInput);
     window.addEventListener("online", setOnline);
     window.addEventListener("offline", setOnline);
     window.addEventListener("pagehide", onLeave);
@@ -179,7 +162,6 @@ window.gymModule("label", (root) => {
     return () => {
         onLeave();
         root.removeEventListener("change", onChange);
-        root.removeEventListener("input", onInput);
         window.removeEventListener("online", setOnline);
         window.removeEventListener("offline", setOnline);
         window.removeEventListener("pagehide", onLeave);
