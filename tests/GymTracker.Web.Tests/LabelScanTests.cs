@@ -516,4 +516,20 @@ public class LabelScanTests(PostgresFixture fixture)
         (await ReadAsync(a, Jpeg(100))).StatusCode.Should().Be(HttpStatusCode.OK);
         (await ReadAsync(a, Jpeg(100))).StatusCode.Should().Be((HttpStatusCode)429);
     }
+
+    [Fact]
+    public async Task The_extra_photo_slots_are_there_but_closed_until_asked_for()
+    {
+        var (app, _) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        foreach (var path in new[] { AddPage, "/food/add?date=2026-10-05&meal=Lunch&tab=barcode" })
+        {
+            var html = WebUtility.HtmlDecode(await a.Client.GetStringAsync(path));
+            html.Should().Contain("data-label-more").And.Contain("Add more photos").And.Contain("Nutrition table");
+            System.Text.RegularExpressions.Regex.Matches(html, "data-label-slot-photo").Count.Should().Be(3, path);
+            html.Should().MatchRegex("data-label-read[^>]*disabled");
+        }
+    }
 }

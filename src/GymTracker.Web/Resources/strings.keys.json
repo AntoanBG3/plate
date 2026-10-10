@@ -143,11 +143,17 @@
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
     "src/GymTracker.Web/Views/Train/Session.cshtml"
   ],
+  "Add more photos": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
   "Add set": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
   ],
   "Add the first exercise to start logging sets.": [
     "src/GymTracker.Web/Views/Train/Session.cshtml"
+  ],
+  "Add the front or another side of the pack if the table doesn't show the name or serving.": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
   ],
   "Add to breakfast": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
@@ -1428,6 +1434,9 @@
   "Nothing was logged for lunch the day before.": [
     "src/GymTracker.Web/Controllers/FoodController.cs"
   ],
+  "Nutrition table": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
   "Nutrition values": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
@@ -1484,6 +1493,7 @@
   ],
   "Optional": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
   ],
@@ -1705,6 +1715,9 @@
   "Read it": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "Read the label": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
   "Read the label from a photo": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
@@ -1741,6 +1754,9 @@
   ],
   "Remove exercise": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
+  ],
+  "Remove photo": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
   ],
   "Remove this passkey? You can still sign in with your password.": [
     "src/GymTracker.Web/Views/Settings/Security.cshtml"
@@ -2511,6 +2527,9 @@
   ],
   "Upright row": [
     "exercise"
+  ],
+  "Use one photo": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
   ],
   "Use the form instead": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"

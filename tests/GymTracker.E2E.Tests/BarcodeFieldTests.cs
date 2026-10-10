@@ -60,7 +60,7 @@ public class BarcodeFieldTests(E2EFixture app)
     {
         await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
         await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=barcode");
-        await phone.Page.Locator("[data-label-start]").SetInputFilesAsync(Fixture("label.jpg"));
+        await phone.Page.Locator("input[data-label-start]").SetInputFilesAsync(Fixture("label.jpg"));
         await phone.Page.Locator("[data-label-slot] .banner").WaitForAsync();
         var code = NewEan();
 

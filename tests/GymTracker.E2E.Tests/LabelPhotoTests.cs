@@ -279,4 +279,182 @@ public class LabelPhotoTests(E2EFixture app)
         (await phone.Page.InputValueAsync("#m-grams")).Should().Be("80");
         phone.ShouldHaveNoErrors();
     }
+
+    private static ILocator Panel(Phone phone, string scope = "[data-label-form]") => phone.Page.Locator($"{scope} [data-label-panel]");
+
+    private static Task PickIntoSlotAsync(Phone phone, int slot, string file = "label.jpg", string scope = "[data-label-form]") =>
+        phone.Page.Locator($"{scope} [data-label-slot-index=\"{slot}\"] [data-label-slot-photo]").SetInputFilesAsync(Fixture(file));
+
+    private static Task ThumbAsync(Phone phone, int slot, string scope = "[data-label-form]") =>
+        phone.Page.Locator($"{scope} [data-label-slot-index=\"{slot}\"] [data-label-thumb] img").WaitForAsync();
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium, false)]
+    [InlineData(E2EFixture.WebKit, false)]
+    [InlineData(E2EFixture.Chromium, true)]
+    public async Task The_extra_slots_open_on_a_press_and_fit_the_phone(string browser, bool bulgarian)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.WithTargetsAsync(app, bulgarian);
+        await phone.GoAsync(Manual);
+        (await Panel(phone).IsVisibleAsync()).Should().BeFalse();
+
+        var more = phone.Page.Locator("[data-label-form] [data-label-more]");
+        (await Phone.BoxAsync(more)).Height.Should().BeGreaterThanOrEqualTo(44);
+        await more.TapAsync();
+
+        (await Panel(phone).IsVisibleAsync()).Should().BeTrue();
+        (await phone.Page.Locator("[data-label-form] [data-label-single]").IsVisibleAsync()).Should().BeFalse();
+        (await phone.Page.Locator("[data-label-form] [data-label-read]").IsDisabledAsync()).Should().BeTrue();
+        for (var i = 0; i < 3; i++)
+        {
+            var box = await Phone.BoxAsync(phone.Page.Locator($"[data-label-form] [data-label-slot-index=\"{i}\"] .label-slot-pick"));
+            box.Height.Should().BeGreaterThanOrEqualTo(44);
+            (box.X + box.Width).Should().BeLessThanOrEqualTo(390);
+        }
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Photos_in_the_slots_are_read_together_when_read_is_pressed(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync(Manual);
+        await phone.Page.Locator("[data-label-form] [data-label-more]").TapAsync();
+
+        await PickIntoSlotAsync(phone, 0);
+        await ThumbAsync(phone, 0);
+        await PickIntoSlotAsync(phone, 1);
+        await ThumbAsync(phone, 1);
+        (await phone.Page.Locator("[data-label-form] .banner").CountAsync()).Should().Be(0, "picking into a slot sends nothing");
+
+        await phone.Page.Locator("[data-label-form] [data-label-read]").TapAsync();
+        await FilledAsync(phone);
+
+        (await phone.Page.InputValueAsync("#m-name")).Should().Be("Айрян Верея");
+        (await phone.Page.InputValueAsync("#m-serving")).Should().Be("250");
+        (await Panel(phone).IsVisibleAsync()).Should().BeFalse("a read closes the slots");
+        await phone.NavigateByAsync(() => phone.Page.Locator("[data-label-form] button[type=submit]").TapAsync());
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task A_removed_photo_is_left_out(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync(Manual);
+        await phone.Page.Locator("[data-label-form] [data-label-more]").TapAsync();
+        await PickIntoSlotAsync(phone, 0);
+        await PickIntoSlotAsync(phone, 2);
+        await ThumbAsync(phone, 2);
+
+        await phone.Page.Locator("[data-label-form] [data-label-slot-index=\"2\"] [data-label-remove]").TapAsync();
+        await phone.Page.Locator("[data-label-form] [data-label-read]").TapAsync();
+        await FilledAsync(phone);
+
+        (await phone.Page.InputValueAsync("#m-name")).Should().Be("Айрян", "only one photo was sent");
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task Use_one_photo_closes_the_slots_and_drops_them(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync(Manual);
+        var more = phone.Page.Locator("[data-label-form] [data-label-more]");
+        await more.TapAsync();
+        await PickIntoSlotAsync(phone, 1);
+        await ThumbAsync(phone, 1);
+
+        await phone.Page.Locator("[data-label-form] [data-label-less]").TapAsync();
+        (await phone.Page.Locator("[data-label-form] [data-label-single]").IsVisibleAsync()).Should().BeTrue();
+        (await Panel(phone).IsVisibleAsync()).Should().BeFalse();
+
+        await more.TapAsync();
+        (await phone.Page.Locator("[data-label-form] [data-label-thumb] img").CountAsync()).Should().Be(0);
+        (await phone.Page.Locator("[data-label-form] [data-label-read]").IsDisabledAsync()).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_failed_read_keeps_the_slots_filled(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync(Manual);
+        // The stub reads no table when the typed name is "no label".
+        await phone.Page.FillAsync("#m-name", "no label");
+        await phone.Page.Locator("[data-label-form] [data-label-more]").TapAsync();
+        await PickIntoSlotAsync(phone, 0);
+        await PickIntoSlotAsync(phone, 1);
+        await ThumbAsync(phone, 1);
+
+        await phone.Page.Locator("[data-label-form] [data-label-read]").TapAsync();
+        await phone.Page.Locator("#toast", new() { HasText = "Couldn't find a nutrition table in that photo." }).WaitForAsync();
+
+        (await phone.Page.Locator("[data-label-form] [data-label-thumb] img").CountAsync()).Should().Be(2);
+        (await phone.Page.Locator("[data-label-form] [data-label-read]").IsEnabledAsync()).Should().BeTrue();
+        (await phone.Page.InputValueAsync("#m-name")).Should().Be("no label");
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task Slots_and_read_are_disabled_while_reading(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync(Manual);
+        // The stub answers slowly when the typed name is "slow".
+        await phone.Page.FillAsync("#m-name", "slow");
+        await phone.Page.Locator("[data-label-form] [data-label-more]").TapAsync();
+        await PickIntoSlotAsync(phone, 0);
+        await ThumbAsync(phone, 0);
+
+        await phone.Page.Locator("[data-label-form] [data-label-read]").TapAsync();
+
+        (await phone.Page.Locator("[data-label-form] [data-label-read]").IsDisabledAsync()).Should().BeTrue();
+        (await phone.Page.Locator("[data-label-form] [data-label-slot-index=\"1\"] [data-label-slot-photo]").IsDisabledAsync()).Should().BeTrue();
+        await FilledAsync(phone);
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task A_photo_the_browser_cannot_open_leaves_its_slot_empty(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync(Manual);
+        await phone.Page.Locator("[data-label-form] [data-label-more]").TapAsync();
+
+        await PickIntoSlotAsync(phone, 0, "not-an-image.jpg");
+
+        await phone.Page.Locator("#toast", new() { HasText = "Couldn't read that picture. Try another photo." }).WaitForAsync();
+        (await phone.Page.Locator("[data-label-form] [data-label-thumb] img").CountAsync()).Should().Be(0);
+        (await phone.Page.Locator("[data-label-form] [data-label-read]").IsDisabledAsync()).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task More_photos_on_the_scan_tab_open_the_filled_form_below(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=barcode");
+        const string scan = "[data-label-photos]:not([data-label-form] *)";
+        await phone.Page.Locator($"{scan} [data-label-more]").TapAsync();
+        (await phone.Page.Locator($"{scan} [data-label-single]").IsVisibleAsync()).Should().BeFalse();
+        (await phone.Page.Locator("[data-start]").IsVisibleAsync()).Should().BeTrue("Scan a barcode stays");
+
+        await PickIntoSlotAsync(phone, 0, scope: scan);
+        await PickIntoSlotAsync(phone, 1, scope: scan);
+        await ThumbAsync(phone, 1, scan);
+        await phone.Page.Locator($"{scan} [data-label-read]").TapAsync();
+        await phone.Page.Locator("[data-label-slot] .banner").WaitForAsync();
+
+        (await phone.Page.InputValueAsync("[data-label-slot] #m-serving")).Should().Be("250");
+        (await Panel(phone, scan).IsVisibleAsync()).Should().BeFalse();
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food/add");
+    }
 }

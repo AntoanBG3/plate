@@ -1,0 +1,23 @@
+@model bool
+@using GymTracker.Core.Domain
+@* Up to three photos read together (SPEC 6.6). Closed until "Add more photos"; then the single photo button gives way to
+   the slots and nothing is sent until "Read the label". The model is true on the Scan tab, where the filled form opens below. *@
+<button type="button" class="btn btn-plain btn-block label-more" data-label-more aria-expanded="false">@Ui.Icon("plus")@L["Add more photos"]</button>
+<div class="label-panel" data-label-panel>
+    <div class="label-slots">
+        @for (var i = 0; i < LabelScanPhoto.MaxPerScan; i++)
+        {
+            <div class="label-slot" data-label-slot-index="@i">
+                <label class="label-slot-pick">
+                    <span class="label-slot-thumb" data-label-thumb></span>
+                    <span class="label-slot-name">@(i == 0 ? L["Nutrition table"] : L["Optional"])</span>
+                    <input type="file" accept="image/*" class="sr-only" data-label-slot-photo />
+                </label>
+                <button type="button" class="label-slot-remove" data-label-remove aria-label="@L["Remove photo"]" hidden>@Ui.Icon("close", "icon-sm")</button>
+            </div>
+        }
+    </div>
+    <p class="section-footer">@L["Add the front or another side of the pack if the table doesn't show the name or serving."]</p>
+    <button type="button" class="btn btn-primary btn-block" data-label-read data-label-start="@(Model ? "" : null)" disabled>@L["Read the label"]</button>
+    <button type="button" class="btn btn-plain btn-block" data-label-less>@L["Use one photo"]</button>
+</div>
