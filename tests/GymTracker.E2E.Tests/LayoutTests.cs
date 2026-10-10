@@ -204,4 +204,28 @@ public class LayoutTests(E2EFixture app)
             bad.Should().BeEmpty($"every segment label on {path} fits");
         }
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Bulgarian_optional_placeholders_fit_the_number_rows(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.WithTargetsAsync(app, bulgarian: true);
+        await phone.GoAsync("/food/add?meal=Lunch&tab=manual");
+
+        // The placeholder's drawn width against the room the input gives it.
+        var cut = await phone.Page.EvaluateAsync<string[]>("""
+            () => {
+                const ctx = document.createElement("canvas").getContext("2d");
+                return [...document.querySelectorAll(".field-row input[inputmode=decimal][placeholder]")].filter((input) => {
+                    const style = getComputedStyle(input);
+                    ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+                    return ctx.measureText(input.placeholder).width > input.clientWidth;
+                }).map((input) => `${input.id}: ${input.placeholder}`);
+            }
+            """);
+
+        cut.Should().BeEmpty("\"По желание\" shows in full at 390 px");
+    }
 }
