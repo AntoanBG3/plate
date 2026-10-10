@@ -894,6 +894,7 @@
   "No, it's different": "Не, друга е",
   "You already have a food with this barcode, so this one is saved without it.": "Вече имаш храна с този баркод, затова тази ще се запази без него.",
   "Another food already shares this barcode, so this one is kept for you only.": "С този баркод вече има споделена храна, затова тази остава само за теб.",
+  "You already shared a food with this barcode, so this one is kept for you only.": "Вече има храна с този баркод, която ти сподели, затова тази остава само за теб.",
   "Attach one to three photos.": "Прикачи от една до три снимки.",
   "Add more photos": "Добави още снимки",
   "Nutrition table": "Таблица",

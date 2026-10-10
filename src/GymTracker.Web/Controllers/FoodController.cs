@@ -149,7 +149,8 @@ public class FoodController(
 
         return PartialView("_KnownBarcode", new KnownBarcodeModel(date, meal, digits, item,
             Own: item.OwnerUserId is not null && item.OwnerUserId == currentUser.UserId,
-            AddedByAnother: FoodItemService.AddedByAnother(item, currentUser.UserId)));
+            AddedByAnother: FoodItemService.AddedByAnother(item, currentUser.UserId),
+            SharedByYou: item.OwnerUserId is null && item.AddedByUserId is not null && item.AddedByUserId == currentUser.UserId));
     }
 
     [HttpPost("log-item")]

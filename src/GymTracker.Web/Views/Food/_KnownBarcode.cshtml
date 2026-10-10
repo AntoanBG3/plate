@@ -6,7 +6,9 @@
     var date = Model.Date.ToString("yyyy-MM-dd", inv);
     string note = Model.Own
         ? L["You already have a food with this barcode, so this one is saved without it."]
-        : L["Another food already shares this barcode, so this one is kept for you only."];
+        : Model.SharedByYou
+            ? L["You already shared a food with this barcode, so this one is kept for you only."]
+            : L["Another food already shares this barcode, so this one is kept for you only."];
 }
 @* Offered when the manual form's barcode is already a food (SPEC 7). Rejecting is handled in scanner.js. *@
 <div class="card known-food" role="status" data-known-food data-own="@(Model.Own ? "true" : "false")" data-reject-note="@note">

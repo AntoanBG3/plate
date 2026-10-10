@@ -2684,6 +2684,9 @@
   "You already have a food with this barcode, so this one is saved without it.": [
     "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml"
   ],
+  "You already shared a food with this barcode, so this one is kept for you only.": [
+    "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
   "You are already signed in. Log out first to use this invite.": [
     "src/GymTracker.Web/Views/Join/Index.cshtml"
   ],
