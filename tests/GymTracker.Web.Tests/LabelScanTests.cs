@@ -44,6 +44,10 @@ public class LabelScanTests(PostgresFixture fixture)
     }
 
     private static Task<HttpResponseMessage> ReadAsync(Account a, byte[] photo, string? name = null, string? barcode = null, bool barcodeField = true, bool? share = null,
+        string? grams = null, string? servingGrams = null) =>
+        ReadManyAsync(a, [photo], name, barcode, barcodeField, share, grams, servingGrams);
+
+    private static Task<HttpResponseMessage> ReadManyAsync(Account a, IReadOnlyList<byte[]> photos, string? name = null, string? barcode = null, bool barcodeField = true, bool? share = null,
         string? grams = null, string? servingGrams = null)
     {
         var form = new MultipartFormDataContent
@@ -51,8 +55,6 @@ public class LabelScanTests(PostgresFixture fixture)
             { new StringContent("2026-10-05"), "date" },
             { new StringContent("Lunch"), "meal" },
             { new StringContent(barcodeField ? "true" : "false"), "barcodeField" },
-            { new StringContent("1200"), "width" },
-            { new StringContent("900"), "height" },
         };
         if (name is not null)
         {
@@ -79,9 +81,15 @@ public class LabelScanTests(PostgresFixture fixture)
             form.Add(new StringContent(servingGrams), "servingGrams");
         }
 
-        var file = new ByteArrayContent(photo);
-        file.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-        form.Add(file, "photo", "label.jpg");
+        for (var i = 0; i < photos.Count; i++)
+        {
+            var file = new ByteArrayContent(photos[i]);
+            file.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            form.Add(file, "photo", $"label{i}.jpg");
+            form.Add(new StringContent((1200 - 200 * i).ToString()), "width");
+            form.Add(new StringContent("900"), "height");
+        }
+
         var request = new HttpRequestMessage(HttpMethod.Post, "/food/label") { Content = form };
         request.Headers.Add("RequestVerificationToken", a.Token);
         request.Headers.Add("HX-Request", "true");
@@ -147,9 +155,10 @@ public class LabelScanTests(PostgresFixture fixture)
         await ReadAsync(a, Jpeg(5000));
 
         await using var db = fixture.CreateContext(a.UserId);
-        var scan = await db.LabelScans.Include(s => s.Photo).SingleAsync();
+        var scan = await db.LabelScans.Include(s => s.Photos).SingleAsync();
         (scan.Model, scan.Error, scan.Values is null).Should().Be(("test/label", (string?)null, false));
-        (scan.Photo!.ContentType, scan.Photo.Bytes.Length, scan.Photo.Width).Should().Be(("image/jpeg", 5000, 1200));
+        var photo = scan.Photos.Single();
+        (photo.Position, photo.ContentType, photo.Bytes.Length, photo.Width).Should().Be((0, "image/jpeg", 5000, 1200));
     }
 
     [Fact]
@@ -324,7 +333,8 @@ public class LabelScanTests(PostgresFixture fixture)
         var html = WebUtility.HtmlDecode(await a.Client.GetStringAsync(AddPage));
 
         html.Should().Contain("Read the label from a photo").And.Contain("data-label-photo").And.Contain(PrivacyLine);
-        html.Should().Contain("accept=\"image/*\"").And.NotContain("capture=");
+        // The label photo offers camera and library (no capture); the scanner sheet's own photo button may use the camera.
+        html.Should().MatchRegex("<input type=\"file\" accept=\"image/\\*\" class=\"sr-only\" data-label-photo />");
         html.Should().Contain("data-barcode-input").And.Contain("data-module=\"label\"");
     }
 
@@ -391,7 +401,7 @@ public class LabelScanTests(PostgresFixture fixture)
         using var aborted = new CancellationTokenSource();
         await aborted.CancelAsync();
 
-        await service.ReadAsync(Jpeg(100), 10, 10, aborted.Token);
+        await service.ReadAsync([new GymTracker.Web.Features.Food.LabelPhotoUpload(Jpeg(100), 10, 10)], aborted.Token);
 
         (await db.LabelScans.CountAsync(s => s.UserId == userId)).Should().Be(1);
     }
@@ -404,7 +414,7 @@ public class LabelScanTests(PostgresFixture fixture)
         var reader = new FakeLabelReader { Next = LabelReadResult.Failed("Couldn't read the label. Enter the values by hand.") };
         var service = new GymTracker.Web.Features.Food.LabelScanService(db, reader, new GymTracker.Web.Data.FixedCurrentUser(userId), TimeProvider.System);
 
-        await service.ReadAsync(Jpeg(100), 10, 10, default);
+        await service.ReadAsync([new GymTracker.Web.Features.Food.LabelPhotoUpload(Jpeg(100), 10, 10)], default);
 
         (await db.LabelScans.SingleAsync(s => s.UserId == userId)).Model.Should().Be("unknown");
     }
@@ -423,5 +433,103 @@ public class LabelScanTests(PostgresFixture fixture)
         reader.Next = new LabelReadResult(FakeLabelReader.Yogurt with { ServingGrams = null }, "{}", null, "test/label");
         var noServing = await HtmlAsync(await ReadAsync(a, Jpeg(100), grams: "80", servingGrams: "30"));
         noServing.Should().MatchRegex("id=\"m-grams\"[^>]*value=\"80\"").And.MatchRegex("id=\"m-serving\"[^>]*value=\"30\"");
+    }
+
+    [Fact]
+    public async Task The_manual_tab_has_a_scan_button_beside_the_barcode_field_and_the_scanner_sheet()
+    {
+        var (app, _) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var html = await a.Client.GetStringAsync(AddPage);
+
+        html.Should().MatchRegex("data-barcode-input[^>]*/>\\s*<button type=\"button\" class=\"icon-btn\" data-scan-into");
+        html.Should().Contain("id=\"scanner\"").And.Contain("/js/scanner.js").And.Contain("barcode-detector-3.2.2.ponyfill.js");
+    }
+
+    [Fact]
+    public async Task The_form_after_a_barcode_miss_has_no_scan_button()
+    {
+        var (app, _) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var html = await a.Client.GetStringAsync("/food/barcode?date=2026-10-05&meal=Lunch&code=4006381333931");
+
+        html.Should().NotContain("data-scan-into");
+    }
+
+    [Fact]
+    public async Task Three_photos_are_read_together_and_stored_in_order()
+    {
+        var (app, reader) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var response = await ReadManyAsync(a, [Jpeg(5000), Jpeg(4000), Jpeg(3000)]);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await HtmlAsync(response)).Should().Contain("Read from the photo. Check each value against the label.");
+        reader.Calls.Should().Be(1);
+        reader.LastImages!.Select(i => i.Bytes.Length).Should().Equal(5000, 4000, 3000);
+        await using var db = fixture.CreateContext(a.UserId);
+        var scan = await db.LabelScans.Include(s => s.Photos).SingleAsync();
+        scan.Photos.OrderBy(p => p.Position).Select(p => (p.Position, p.Bytes.Length, p.Width)).Should().Equal((0, 5000, 1200), (1, 4000, 1000), (2, 3000, 800));
+    }
+
+    [Fact]
+    public async Task A_fourth_photo_is_refused_before_the_model_is_called()
+    {
+        var (app, reader) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var response = await ReadManyAsync(a, [Jpeg(100), Jpeg(100), Jpeg(100), Jpeg(100)]);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("Attach one to three photos.");
+        reader.Calls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task One_bad_photo_among_three_refuses_the_read()
+    {
+        var (app, reader) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        var response = await ReadManyAsync(a, [Jpeg(100), "not an image"u8.ToArray(), Jpeg(100)]);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        reader.Calls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task A_three_photo_read_counts_once_toward_the_limit()
+    {
+        var (app, _) = NewApp(new Dictionary<string, string?> { ["RateLimits:AiLabelPerWindow"] = "2" });
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        (await ReadManyAsync(a, [Jpeg(100), Jpeg(100), Jpeg(100)])).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReadAsync(a, Jpeg(100))).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReadAsync(a, Jpeg(100))).StatusCode.Should().Be((HttpStatusCode)429);
+    }
+
+    [Fact]
+    public async Task The_extra_photo_slots_are_there_but_closed_until_asked_for()
+    {
+        var (app, _) = NewApp();
+        await using var _app = app;
+        var a = await SignInAsync(app);
+
+        foreach (var path in new[] { AddPage, "/food/add?date=2026-10-05&meal=Lunch&tab=barcode" })
+        {
+            var html = WebUtility.HtmlDecode(await a.Client.GetStringAsync(path));
+            html.Should().Contain("data-label-more").And.Contain("Add more photos").And.Contain("Nutrition table");
+            System.Text.RegularExpressions.Regex.Matches(html, "data-label-slot-photo").Count.Should().Be(3, path);
+            html.Should().MatchRegex("data-label-read[^>]*disabled");
+        }
     }
 }

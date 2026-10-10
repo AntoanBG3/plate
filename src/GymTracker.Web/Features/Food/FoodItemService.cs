@@ -108,6 +108,11 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     public async Task<FoodItem> GetAsync(int id, CancellationToken ct) =>
         await db.FoodItems.SingleOrDefaultAsync(f => f.Id == id, ct) ?? throw new NotFoundException("Food not found.");
 
+    /// <summary>The user's own food with this barcode, else a shared one. Never asks Open Food Facts.</summary>
+    public async Task<FoodItem?> FindByBarcodeAsync(string barcode, CancellationToken ct) =>
+        // The query filter hides other users' private foods (SPEC 4).
+        await db.FoodItems.Where(f => f.Barcode == barcode).OrderBy(f => f.OwnerUserId == null).FirstOrDefaultAsync(ct);
+
     /// <summary>The cached food for a barcode, else an Open Food Facts lookup that is cached as a shared food.</summary>
     public async Task<BarcodeResult> LookupBarcodeAsync(string barcode, CancellationToken ct)
     {
@@ -116,10 +121,8 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             throw new ValidationException("That isn't a valid EAN or UPC barcode.");
         }
 
-        // The user's own food first, then a shared one (SPEC 4); the query filter hides other users' private foods.
-        var cached = await db.FoodItems.Where(f => f.Barcode == barcode)
-            .OrderBy(f => f.OwnerUserId == null)
-            .FirstOrDefaultAsync(ct);
+        // The user's own food first, then a shared one (SPEC 4).
+        var cached = await FindByBarcodeAsync(barcode, ct);
         if (cached is not null)
         {
             return new BarcodeResult(LookupStatus.Found, cached);

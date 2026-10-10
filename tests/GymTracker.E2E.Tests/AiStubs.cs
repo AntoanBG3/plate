@@ -47,13 +47,14 @@ public sealed class StubWeeklySummaryWriter : IWeeklySummaryWriter
 
 /// <summary>
 /// Reads every photo as a carton of ayran. A form posted with the name "slow" answers late (the second-photo test), and
-/// one named "no label" finds no nutrition table (the failed-read test).
+/// one named "no label" finds no nutrition table (the failed-read test). A second or third photo stands for the front of
+/// the pack: it adds the brand and a 250 g serving.
 /// </summary>
 public sealed class StubLabelReader(Microsoft.AspNetCore.Http.IHttpContextAccessor http) : ILabelReader
 {
     public Task<bool> IsAvailableAsync(CancellationToken ct) => Task.FromResult(true);
 
-    public async Task<LabelReadResult> ReadAsync(byte[] image, string contentType, CancellationToken ct)
+    public async Task<LabelReadResult> ReadAsync(IReadOnlyList<LabelImage> images, CancellationToken ct)
     {
         var name = http.HttpContext?.Request.Form["name"].ToString();
         if (name == "no label")
@@ -67,6 +68,8 @@ public sealed class StubLabelReader(Microsoft.AspNetCore.Http.IHttpContextAccess
             await Task.Delay(1500, ct);
         }
 
-        return new(new LabelReading(true, slow ? "Slow ayran" : "Айрян", null, LabelBasis.Per100ml, null, 38, 159, 1.8m, 2.6m, 2.2m, 1.4m, null), "{}", null, "test/label");
+        var more = images.Count > 1;
+        return new(new LabelReading(true, slow ? "Slow ayran" : more ? "Айрян Верея" : "Айрян", more ? "Верея" : null, LabelBasis.Per100ml,
+            more ? 250 : null, 38, 159, 1.8m, 2.6m, 2.2m, 1.4m, null), "{}", null, "test/label");
     }
 }

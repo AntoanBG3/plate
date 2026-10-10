@@ -22,17 +22,24 @@ public class LabelScan
     public string? Saved { get; set; }
 
     public bool Edited { get; set; }
-    public LabelScanPhoto? Photo { get; set; }
+    public List<LabelScanPhoto> Photos { get; set; } = [];
 }
 
-/// <summary>The scan's photo, in its own table so lists never load it. Deleted after 30 days.</summary>
+/// <summary>One of a scan's photos (up to three, in the order taken), in its own table so lists never load them. Deleted after 30 days.</summary>
 public class LabelScanPhoto
 {
     public const int MaxBytes = 2 * 1024 * 1024;
 
+    /// <summary>A label read takes up to three photos of the same package (SPEC 6.6).</summary>
+    public const int MaxPerScan = 3;
+
     public int Id { get; set; }
     public int LabelScanId { get; set; }
     public LabelScan LabelScan { get; set; } = null!;
+
+    /// <summary>0-based order in which the photos were taken.</summary>
+    public int Position { get; set; }
+
     public string ContentType { get; set; } = "";
     public int Width { get; set; }
     public int Height { get; set; }

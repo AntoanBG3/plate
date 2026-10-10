@@ -51,13 +51,19 @@
     case "barcode":
         @* One label module holds the photo button and the slot the filled form opens in (SPEC 6.6). *@
         <div data-module="label">
-        <div class="btn-stack">
-            <button type="button" class="btn btn-primary" data-start>@Ui.Icon("barcode")@L["Scan a barcode"]</button>
+        <div data-label-photos>
+            <div class="btn-stack">
+                <button type="button" class="btn btn-primary" data-start>@Ui.Icon("barcode")@L["Scan a barcode"]</button>
+                @if (Model.LabelAvailable)
+                {
+                    <label class="btn btn-secondary" data-label-button data-label-single>@Ui.Icon("photo")@L["Photograph a label"]
+                        <input type="file" accept="image/*" class="sr-only" data-label-photo data-label-start />
+                    </label>
+                }
+            </div>
             @if (Model.LabelAvailable)
             {
-                <label class="btn btn-secondary" data-label-button>@Ui.Icon("photo")@L["Photograph a label"]
-                    <input type="file" accept="image/*" class="sr-only" data-label-photo data-label-start />
-                </label>
+                <partial name="_LabelPhotoSlots" model="true" />
             }
         </div>
         @if (Model.LabelAvailable)
@@ -75,7 +81,7 @@
             <div class="list">
                 <div class="field-row">
                     <label for="code" class="sr-only">@L["Barcode digits"]</label>
-                    <input id="code" class="num" type="text" name="code" value="@Model.Text" inputmode="numeric" pattern="[0-9 -]{8,16}" placeholder="@L["Digits under the barcode"]" required style="text-align: left; flex: 1; color: var(--label)" />
+                    <input id="code" class="num" type="text" name="code" value="@Model.Text" inputmode="numeric" pattern="[0-9 \-]{8,16}" placeholder="@L["Digits under the barcode"]" required style="text-align: left; flex: 1; color: var(--label)" />
                     <button type="submit" class="btn btn-plain">@L["Look up"]</button>
                 </div>
                 @if (Model.Error is { } barcodeError)
@@ -246,35 +252,15 @@
             <div id="food-sheet-body"></div>
         </div>
     </div>
-    @if (Model.Tab == "barcode")
+    @if (Model.Tab is "barcode" or "manual")
     {
-        <div class="sheet" id="scanner" data-module="scanner" hidden>
-            <div class="sheet-scrim"></div>
-            <div class="sheet-panel full scanner-panel" role="dialog" aria-modal="true" aria-labelledby="scanner-title">
-                <div class="sheet-grabber" aria-hidden="true" style="background: rgb(255 255 255 / 0.4)"></div>
-                <div class="sheet-head"><span></span><span class="sheet-title" id="scanner-title">@L["Scan a barcode"]</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
-                <div class="viewfinder">
-                    <video playsinline muted hidden></video>
-                    <div class="viewfinder-frame" aria-hidden="true"></div>
-                    <p class="viewfinder-status" data-status role="status">@L["Point the camera at the barcode."]</p>
-                </div>
-                <div class="scanner-actions">
-                    <label class="btn btn-secondary">@Ui.Icon("photo")@L["Take a photo instead"]
-                        <input type="file" accept="image/*" capture="environment" data-photo class="sr-only" />
-                    </label>
-                </div>
-            </div>
-        </div>
+        <partial name="_ScannerSheet" />
+        @* Also reads a barcode out of a label photo (label.js), so it loads before label.js. *@
         <script src="~/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js" asp-append-version="true"></script>
         <script src="~/js/scanner.js" asp-append-version="true"></script>
     }
     @if (Model.LabelAvailable)
     {
-        @if (Model.Tab == "manual")
-        {
-            @* Reads a barcode out of the label photo (label.js). *@
-            <script src="~/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js" asp-append-version="true"></script>
-        }
         <script src="~/js/label.js" asp-append-version="true"></script>
     }
 }

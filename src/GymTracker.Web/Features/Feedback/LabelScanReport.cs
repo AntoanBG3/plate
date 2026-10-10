@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Features.Feedback;
 
-public record LabelScanRow(int Id, DateTimeOffset CreatedAt, string Reporter, string Model, int LatencyMs, string? Error, bool Saved, bool Edited, bool HasPhoto);
+public record LabelScanRow(int Id, DateTimeOffset CreatedAt, string Reporter, string Model, int LatencyMs, string? Error, bool Saved, bool Edited, int PhotoCount);
 
 public record LabelScanDetail(LabelScanRow Scan, string? Reading, string? Values, string? Saved, int? FoodItemId);
 
@@ -31,7 +31,7 @@ public class LabelScanReport(AppDbContext db, AdminAuditLog audit)
             .OrderByDescending(s => s.CreatedAt).ThenByDescending(s => s.Id)
             .Take(limit)
             .Select(s => new LabelScanRow(s.Id, s.CreatedAt, names.Where(p => p.UserId == s.UserId).Select(p => p.DisplayName).FirstOrDefault() ?? "?",
-                s.Model, s.LatencyMs, s.Error, s.FoodItemId != null, s.Edited, photos.Any(p => p.LabelScanId == s.Id)))
+                s.Model, s.LatencyMs, s.Error, s.FoodItemId != null, s.Edited, photos.Count(p => p.LabelScanId == s.Id)))
             .ToListAsync(ct);
     }
 
@@ -44,23 +44,24 @@ public class LabelScanReport(AppDbContext db, AdminAuditLog audit)
         }
 
         var reporter = await db.Profiles.IgnoreQueryFilters().Where(p => p.UserId == scan.UserId).Select(p => p.DisplayName).FirstOrDefaultAsync(ct) ?? "?";
-        var hasPhoto = await db.LabelScanPhotos.IgnoreQueryFilters().AnyAsync(p => p.LabelScanId == id, ct);
+        var photoCount = await db.LabelScanPhotos.IgnoreQueryFilters().CountAsync(p => p.LabelScanId == id, ct);
         return new LabelScanDetail(
-            new LabelScanRow(scan.Id, scan.CreatedAt, reporter, scan.Model, scan.LatencyMs, scan.Error, scan.FoodItemId != null, scan.Edited, hasPhoto),
+            new LabelScanRow(scan.Id, scan.CreatedAt, reporter, scan.Model, scan.LatencyMs, scan.Error, scan.FoodItemId != null, scan.Edited, photoCount),
             scan.Reading, scan.Values, scan.Saved, scan.FoodItemId);
     }
 
-    /// <summary>The photo while it is kept (30 days). Every download is audited: it is a picture from someone's kitchen.</summary>
-    public async Task<LabelScanPhoto?> PhotoAsync(int id, CancellationToken ct)
-    {
-        var photo = await db.LabelScanPhotos.IgnoreQueryFilters().AsNoTracking().SingleOrDefaultAsync(p => p.LabelScanId == id, ct);
-        if (photo is not null)
+        /// <summary>The scan's nth photo (1-based) while it is kept (30 days). Every download is audited: it is a picture from someone's kitchen.</summary>
+        public async Task<LabelScanPhoto?> PhotoAsync(int id, int number, CancellationToken ct)
         {
-            await audit.WriteAsync(AuditActions.LabelPhotoDownload, $"label scan #{id}", null, ct);
-        }
+            var photo = await db.LabelScanPhotos.IgnoreQueryFilters().AsNoTracking()
+                .SingleOrDefaultAsync(p => p.LabelScanId == id && p.Position == number - 1, ct);
+            if (photo is not null)
+            {
+                await audit.WriteAsync(AuditActions.LabelPhotoDownload, number == 1 ? $"label scan #{id}" : $"label scan #{id} photo {number}", null, ct);
+            }
 
-        return photo;
-    }
+            return photo;
+        }
 
     public async Task<LabelScanCounts> CountsAsync(DateTimeOffset since, CancellationToken ct)
     {

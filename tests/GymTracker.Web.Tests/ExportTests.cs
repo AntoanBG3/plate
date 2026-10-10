@@ -75,7 +75,7 @@ public class ExportTests(PostgresFixture fixture)
         {
             UserId = s.UserId, CreatedAt = new DateTimeOffset(2026, 10, 7, 8, 0, 0, TimeSpan.Zero), Model = "test/label", LatencyMs = 1234, Edited = true,
             Values = """{"kcal":62}""", Saved = """{"kcalPer100g":64}""",
-            Photo = new LabelScanPhoto { ContentType = "image/jpeg", Bytes = "PHOTOBYTES"u8.ToArray() },
+            Photos = [new LabelScanPhoto { ContentType = "image/jpeg", Bytes = "PHOTOBYTES"u8.ToArray() }],
         });
         await s.Db.SaveChangesAsync();
 

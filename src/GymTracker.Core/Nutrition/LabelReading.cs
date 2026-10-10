@@ -30,11 +30,15 @@ public record LabelReadResult(LabelReading? Reading, string? Raw, LocalText? Err
     public static LabelReadResult Failed(LocalText error, string? model = null, string? raw = null) => new(null, raw, error, model);
 }
 
+/// <summary>One photo for the label model: its bytes and the content type sniffed from them.</summary>
+public record LabelImage(byte[] Bytes, string ContentType);
+
 public interface ILabelReader
 {
     Task<bool> IsAvailableAsync(CancellationToken ct);
 
-    Task<LabelReadResult> ReadAsync(byte[] image, string contentType, CancellationToken ct);
+    /// <summary>Reads one to three photos of the same package in one call (SPEC 6.6).</summary>
+    Task<LabelReadResult> ReadAsync(IReadOnlyList<LabelImage> images, CancellationToken ct);
 }
 
 [Flags]

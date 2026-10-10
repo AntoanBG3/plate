@@ -178,6 +178,11 @@ a.section-aside { color: var(--accent-text) !important; }
 .field-row .unit { color: var(--label-2); flex: none; margin-left: -6px; }
 .field-row.stacked { flex-direction: column; align-items: stretch; gap: var(--s-1); padding-top: var(--s-3); padding-bottom: var(--s-3); }
 .field-row.stacked input { text-align: left; color: var(--label); flex: none; }
+/* The scan button beside a barcode field: 44 px to tap, reaching into the row's padding so the row keeps its height. */
+.field-row .icon-btn { margin: -6px calc(-1 * var(--s-2)) -6px calc(-1 * var(--s-1)); }
+.known-food { margin-top: var(--s-3); }
+.known-actions { display: flex; gap: var(--s-2); margin-top: var(--s-3); }
+.known-actions .btn { flex: 1; min-height: 44px; }
 
 /* ---------- buttons ---------- */
 
@@ -410,6 +415,22 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .label-pick.is-busy .thinking, [data-module="label"].is-busy > .thinking { display: flex; }
 .field-row input.is-converted { color: var(--accent-text); }
 .field-row input.is-missing { box-shadow: inset 0 -1.5px 0 var(--warning); }
+/* Extra label photos (SPEC 6.6): closed until asked for, then they replace the single photo button. */
+[data-label-photos]:not(.is-more) .label-panel, [data-label-photos].is-more [data-label-single], [data-label-photos].is-more .label-more { display: none; }
+.label-more { margin-top: var(--s-2); min-height: var(--tap); }
+/* On the Scan tab the slots follow "Scan a barcode". */
+.btn-stack ~ .label-panel { margin-top: var(--s-3); }
+.label-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.label-slot { position: relative; }
+.label-slot-pick { position: relative; display: grid; place-items: center; aspect-ratio: 1; min-height: var(--tap); border: 1.5px dashed var(--separator); border-radius: var(--r-md); overflow: hidden; color: var(--label-2); font-size: var(--text-footnote); text-align: center; cursor: pointer; }
+.label-slot-thumb { position: absolute; inset: 0; }
+.label-slot-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.label-slot.is-filled .label-slot-pick { border-style: solid; }
+.label-slot.is-filled .label-slot-name { display: none; }
+.label-slot-pick:has(input:disabled) { opacity: 0.5; cursor: default; }
+.label-slot-remove { position: absolute; top: 0; right: 0; width: var(--tap); height: var(--tap); display: grid; place-items: center; color: var(--label); }
+.label-slot-remove .icon { padding: 3px; border-radius: 50%; background: var(--material); }
+.label-panel .btn + .btn, .label-panel .section-footer + .btn { margin-top: var(--s-2); }
 [data-label-button]:has(input:disabled) { opacity: 0.5; }
 .thinking { display: none; align-items: center; gap: var(--s-2); margin: var(--s-4) var(--s-4) 0; color: var(--label-2); font-size: var(--text-subhead); }
 form.is-busy + .thinking, form.is-busy .thinking { display: flex; }

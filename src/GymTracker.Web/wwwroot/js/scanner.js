@@ -1,14 +1,115 @@
-// Barcode scanning for the Food page (SPEC 7). Safari ships BarcodeDetector disabled, so this uses the
+// Barcode scanning on the Food add page (SPEC 7). Safari ships BarcodeDetector disabled, so this uses the
 // barcode-detector ponyfill (ZXing-C++ in WebAssembly), served from this app rather than a CDN.
 // The camera opens in a full-screen sheet without changing the URL, since a route change can stop the
-// stream or re-prompt on iOS. Closing the sheet stops the camera.
+// stream or re-prompt on iOS. Closing the sheet stops the camera. "Scan a barcode" looks the code up; the scan
+// button beside a barcode field puts the code in that field instead. This module also runs the barcode field itself:
+// the share row shows only once there is a barcode (SPEC 4).
 window.gymModule("scanner", (root) => {
     "use strict";
 
+    // Others find a shared food by its barcode, so the share choice shows only once there is one (SPEC 4).
+    function toggleShare(form) {
+        const input = form && form.querySelector("[data-barcode-input]");
+        if (!input) {
+            return;
+        }
+        const show = input.value.replace(/\D/g, "").length >= 8;
+        form.querySelectorAll("[data-share]").forEach((el) => { el.hidden = !show; });
+    }
+
+    const onInput = (event) => {
+        if (event.target.matches("[data-barcode-input]")) {
+            toggleShare(event.target.closest("form"));
+        }
+    };
+    document.addEventListener("input", onInput);
+
+    // The food the app already has for this barcode, if any (SPEC 7). Only the latest check's answer is shown.
+    let known = null;
+
+    async function checkKnown(input) {
+        const form = input.closest("form");
+        const slot = form && form.querySelector("[data-known]");
+        if (!slot) {
+            return;
+        }
+        known?.abort();
+        known = null;
+        slot.replaceChildren();
+        slot.hidden = true;
+        const digits = input.value.replace(/\D/g, "");
+        if (digits.length < 8 || !navigator.onLine) {
+            return;
+        }
+        const controller = new AbortController();
+        known = controller;
+        try {
+            const query = new URLSearchParams({ date: form.elements.date.value, meal: form.elements.meal.value, code: digits });
+            const response = await fetch(`/food/barcode/known?${query}`, { headers: { "HX-Request": "true" }, signal: controller.signal });
+            if (response.status !== 200) {
+                return;
+            }
+            const card = new DOMParser().parseFromString(await response.text(), "text/html").querySelector("[data-known-food]");
+            if (card && known === controller) {
+                slot.replaceChildren(document.importNode(card, true));
+                slot.hidden = false;
+            }
+        } catch {
+            // Offline or replaced by a newer check: the form works without it.
+        }
+    }
+
+    // "No, it's different": keep the manual entry and make sure it can be saved (SPEC 7).
+    function reject(button) {
+        const card = button.closest("[data-known-food]");
+        const form = card.closest("form");
+        if (card.dataset.own === "true") {
+            const input = form.querySelector("[data-barcode-input]");
+            input.value = "";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        } else {
+            const share = form.querySelector("input[type=checkbox][name=share]");
+            if (share) {
+                share.checked = false;
+            }
+        }
+        const note = document.createElement("p");
+        note.className = "section-footer";
+        note.textContent = card.dataset.rejectNote;
+        card.replaceWith(note);
+    }
+
+    const onChange = (event) => {
+        if (event.target.matches("[data-barcode-input]")) {
+            checkKnown(event.target);
+        }
+    };
+    const onRejectClick = (event) => {
+        const button = event.target.closest("[data-known-reject]");
+        if (button) {
+            reject(button);
+        }
+    };
+    const onLabelBarcode = (event) => {
+        const input = event.target.querySelector("[data-barcode-input]");
+        if (input && input.value) {
+            checkKnown(input);
+        }
+    };
+    document.addEventListener("change", onChange);
+    document.addEventListener("click", onRejectClick);
+    document.addEventListener("label:barcode", onLabelBarcode);
+    const offField = () => {
+        known?.abort();
+        document.removeEventListener("input", onInput);
+        document.removeEventListener("change", onChange);
+        document.removeEventListener("click", onRejectClick);
+        document.removeEventListener("label:barcode", onLabelBarcode);
+    };
+
     const api = window.BarcodeDetectionAPI;
-    const start = document.querySelector("[data-start]");
-    if (!api || !start) {
-        return undefined;
+    if (!api) {
+        return offField;
     }
 
     api.prepareZXingModule({
@@ -26,10 +127,10 @@ window.gymModule("scanner", (root) => {
     video.hidden = true;
     root.querySelector("video").replaceWith(video);
     const status = root.querySelector("[data-status]");
-    const form = document.getElementById("barcode-form");
-    const codeInput = form.querySelector('input[name="code"]');
     let stream = null;
     let timer = null;
+    // The field a found code goes into; null means look it up (the Scan tab's main button).
+    let target = null;
 
     function say(text) {
         status.textContent = text;
@@ -47,14 +148,23 @@ window.gymModule("scanner", (root) => {
 
     function found(code) {
         stop();
+        const field = target;
+        if (field) {
+            target = null;
+            field.value = code;
+            field.dispatchEvent(new Event("input", { bubbles: true }));
+            field.dispatchEvent(new Event("change", { bubbles: true }));
+            window.gymSheet.hide();
+            return;
+        }
+        const form = document.getElementById("barcode-form");
         say(t("Found {0}. Looking it up…", code));
-        codeInput.value = code;
+        form.querySelector('input[name="code"]').value = code;
         form.requestSubmit();
     }
 
-    root.addEventListener("sheet:close", stop);
-
-    start.addEventListener("click", async () => {
+    async function open(field) {
+        target = field;
         window.gymSheet.show(root);
         say(t("Point the camera at the barcode."));
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -89,10 +199,26 @@ window.gymModule("scanner", (root) => {
                 busy = false;
             }
         }, 250);
+    }
+
+    // Delegated: the manual form is replaced after a label photo (label.js), and its scan button with it.
+    const onClick = (event) => {
+        const button = event.target.closest("[data-start], [data-scan-into]");
+        if (!button) {
+            return;
+        }
+        open(button.matches("[data-scan-into]") ? button.closest(".field-row").querySelector("[data-barcode-input]") : null);
+    };
+    document.addEventListener("click", onClick);
+
+    root.addEventListener("sheet:close", () => {
+        stop();
+        target = null;
     });
 
     root.querySelector("[data-photo]").addEventListener("change", async (event) => {
         const file = event.target.files && event.target.files[0];
+        event.target.value = "";
         if (!file) {
             return;
         }
@@ -113,6 +239,8 @@ window.gymModule("scanner", (root) => {
     window.addEventListener("pagehide", stop);
     return () => {
         stop();
+        offField();
+        document.removeEventListener("click", onClick);
         window.removeEventListener("pagehide", stop);
     };
 });

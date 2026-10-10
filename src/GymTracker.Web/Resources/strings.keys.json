@@ -143,11 +143,17 @@
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
     "src/GymTracker.Web/Views/Train/Session.cshtml"
   ],
+  "Add more photos": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
   "Add set": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
   ],
   "Add the first exercise to start logging sets.": [
     "src/GymTracker.Web/Views/Train/Session.cshtml"
+  ],
+  "Add the front or another side of the pack if the table doesn't show the name or serving.": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
   ],
   "Add to breakfast": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
@@ -186,7 +192,8 @@
   "Added by another user": [
     "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
-    "src/GymTracker.Web/Views/Food/Entry.cshtml"
+    "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml"
   ],
   "Added something I didn't eat": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -210,6 +217,9 @@
   "All sets hit {0}, +{1} kg": [
     "src/GymTracker.Core/Training/Progression.cs"
   ],
+  "Already in the app": [
+    "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
   "Also works": [
     "src/GymTracker.Web/Views/SettingsExercises/Edit.cshtml"
   ],
@@ -224,6 +234,9 @@
   ],
   "An exercise keeps at least one set.": [
     "src/GymTracker.Web/Controllers/TrainController.cs"
+  ],
+  "Another food already shares this barcode, so this one is kept for you only.": [
+    "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml"
   ],
   "Anything else?": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
@@ -265,6 +278,10 @@
   ],
   "Attach a screenshot or photo (JPEG, PNG or WebP).": [
     "src/GymTracker.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "Attach one to three photos.": [
+    "src/GymTracker.Web/Controllers/FoodController.cs",
+    "src/GymTracker.Web/Features/Food/LabelScanService.cs"
   ],
   "Auto": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml",
@@ -402,11 +419,11 @@
     "wwwroot/js"
   ],
   "Cancel": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml",
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SaveMealForm.cshtml",
     "src/GymTracker.Web/Views/Food/_SavedMeal.cshtml",
+    "src/GymTracker.Web/Views/Food/_ScannerSheet.cshtml",
     "src/GymTracker.Web/Views/SettingsExercises/Edit.cshtml",
     "src/GymTracker.Web/Views/Shared/ExercisePicker.cshtml",
     "src/GymTracker.Web/Views/Shared/Reorder.cshtml",
@@ -1004,6 +1021,9 @@
   "Inverted row": [
     "exercise"
   ],
+  "Is this the same food?": [
+    "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
   "It adapts weekly once you have 2 weeks of weigh-ins on most days and food logged on 80% of days.": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
@@ -1356,6 +1376,9 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml",
     "src/GymTracker.Web/Views/Train/History.cshtml"
   ],
+  "No, it's different": [
+    "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
   "No, something is wrong": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
@@ -1410,6 +1433,9 @@
   ],
   "Nothing was logged for lunch the day before.": [
     "src/GymTracker.Web/Controllers/FoodController.cs"
+  ],
+  "Nutrition table": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
   ],
   "Nutrition values": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -1467,6 +1493,7 @@
   ],
   "Optional": [
     "src/GymTracker.Web/Views/Food/Entry.cshtml",
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml",
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/GymTracker.Web/Views/Food/_QuickAddForm.cshtml"
   ],
@@ -1519,7 +1546,8 @@
     "exercise"
   ],
   "Per 100 g": [
-    "src/GymTracker.Web/Views/Food/Barcode.cshtml"
+    "src/GymTracker.Web/Views/Food/Barcode.cshtml",
+    "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml"
   ],
   "Per 100 g values": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
@@ -1569,7 +1597,7 @@
     "src/GymTracker.Web/Views/Settings/Training.cshtml"
   ],
   "Point the camera at the barcode.": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/_ScannerSheet.cshtml",
     "wwwroot/js"
   ],
   "Portion": [
@@ -1687,6 +1715,9 @@
   "Read it": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
+  "Read the label": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
   "Read the label from a photo": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
@@ -1723,6 +1754,9 @@
   ],
   "Remove exercise": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
+  ],
+  "Remove photo": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
   ],
   "Remove this passkey? You can still sign in with your password.": [
     "src/GymTracker.Web/Views/Settings/Security.cshtml"
@@ -1884,7 +1918,11 @@
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
   "Scan a barcode": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml"
+    "src/GymTracker.Web/Views/Food/Add.cshtml",
+    "src/GymTracker.Web/Views/Food/_ScannerSheet.cshtml"
+  ],
+  "Scan the barcode": [
+    "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Screenshot": [
     "src/GymTracker.Web/Views/Feedback/Index.cshtml"
@@ -2117,7 +2155,7 @@
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
   "Take a photo instead": [
-    "src/GymTracker.Web/Views/Food/Add.cshtml"
+    "src/GymTracker.Web/Views/Food/_ScannerSheet.cshtml"
   ],
   "Target": [
     "src/GymTracker.Web/Views/Progress/Index.cshtml",
@@ -2490,6 +2528,9 @@
   "Upright row": [
     "exercise"
   ],
+  "Use one photo": [
+    "src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
   "Use the form instead": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
   ],
@@ -2631,11 +2672,17 @@
   "Yes, it read it right": [
     "src/GymTracker.Web/Views/Food/Confirm.cshtml"
   ],
+  "Yes, use it": [
+    "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
   "Yesterday": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],
   "You already have a food with that barcode.": [
     "src/GymTracker.Web/Features/Food/FoodItemService.cs"
+  ],
+  "You already have a food with this barcode, so this one is saved without it.": [
+    "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml"
   ],
   "You are already signed in. Log out first to use this invite.": [
     "src/GymTracker.Web/Views/Join/Index.cshtml"
@@ -2883,6 +2930,7 @@
     "src/GymTracker.Web/Views/Food/Barcode.cshtml",
     "src/GymTracker.Web/Views/Food/Confirm.cshtml",
     "src/GymTracker.Web/Views/Food/Index.cshtml",
+    "src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml",
     "wwwroot/js"
   ],
   "{0} kcal, {1} g protein per 100 g": [

@@ -9,25 +9,37 @@ namespace GymTracker.Web.Features.Food;
 
 public record LabelScanResult(int ScanId, LabelValues? Values, LocalText? Error);
 
-/// <summary>Reads a label photo, stores the scan with its photo, and records what the user saved (SPEC 6.6).</summary>
+public record LabelPhotoUpload(byte[] Bytes, int Width, int Height);
+
+/// <summary>Reads one to three label photos, stores the scan with its photos, and records what the user saved (SPEC 6.6).</summary>
 public class LabelScanService(AppDbContext db, ILabelReader reader, ICurrentUser currentUser, TimeProvider time)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     public Task<bool> IsAvailableAsync(CancellationToken ct) => reader.IsAvailableAsync(ct);
 
-    public async Task<LabelScanResult> ReadAsync(byte[] bytes, int width, int height, CancellationToken ct)
+    public async Task<LabelScanResult> ReadAsync(IReadOnlyList<LabelPhotoUpload> photos, CancellationToken ct)
     {
-        if (bytes.Length > LabelScanPhoto.MaxBytes)
+        if (photos.Count is 0 or > LabelScanPhoto.MaxPerScan)
         {
-            throw new ValidationException("That photo is too large.");
+            throw new ValidationException("Attach one to three photos.");
         }
 
-        var type = ImageSniffer.ContentType(bytes) ?? throw new ValidationException("Attach a photo (JPEG, PNG or WebP).");
+        var images = new List<LabelImage>(photos.Count);
+        foreach (var photo in photos)
+        {
+            if (photo.Bytes.Length > LabelScanPhoto.MaxBytes)
+            {
+                throw new ValidationException("That photo is too large.");
+            }
+
+            images.Add(new LabelImage(photo.Bytes, ImageSniffer.ContentType(photo.Bytes) ?? throw new ValidationException("Attach a photo (JPEG, PNG or WebP).")));
+        }
+
         var started = time.GetTimestamp();
         // Not cancelled with the request: a second photo or leaving the page aborts it, but the model may already
         // have been paid for, and every read is recorded (SPEC 6.6). The reader's own timeouts bound the wait.
-        var result = await reader.ReadAsync(bytes, type, CancellationToken.None);
+        var result = await reader.ReadAsync(images, CancellationToken.None);
         var outcome = result.Reading is { } reading ? LabelValues.Normalize(reading) : new LabelOutcome(null, result.Error);
         var scan = new LabelScan
         {
@@ -38,7 +50,14 @@ public class LabelScanService(AppDbContext db, ILabelReader reader, ICurrentUser
             Error = (result.Error ?? outcome.Error)?.ToString(),
             Reading = result.Raw is null ? null : ValidJson(result.Raw),
             Values = outcome.Values is null ? null : JsonSerializer.Serialize(StoredLabelValues.From(outcome.Values), Json),
-            Photo = new LabelScanPhoto { ContentType = type, Width = Math.Clamp(width, 0, 10_000), Height = Math.Clamp(height, 0, 10_000), Bytes = bytes },
+            Photos = photos.Select((p, i) => new LabelScanPhoto
+            {
+                Position = i,
+                ContentType = images[i].ContentType,
+                Width = Math.Clamp(p.Width, 0, 10_000),
+                Height = Math.Clamp(p.Height, 0, 10_000),
+                Bytes = p.Bytes,
+            }).ToList(),
         };
         db.LabelScans.Add(scan);
         await db.SaveChangesAsync(CancellationToken.None);

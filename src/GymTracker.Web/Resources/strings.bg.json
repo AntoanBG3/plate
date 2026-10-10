@@ -886,5 +886,19 @@
   "Database: {0}": "База данни: {0}",
   "raw": "сурово",
   "cooked": "сготвено",
-  "Open Food Facts has no name for this product. The name you give it is saved for both of you.": "Open Food Facts няма име за този продукт. Името, което му дадеш, ще се запази и за двама ви."
+  "Open Food Facts has no name for this product. The name you give it is saved for both of you.": "Open Food Facts няма име за този продукт. Името, което му дадеш, ще се запази и за двама ви.",
+  "Scan the barcode": "Сканирай баркода",
+  "Already in the app": "Вече е в приложението",
+  "Is this the same food?": "Същата храна ли е?",
+  "Yes, use it": "Да, използвай я",
+  "No, it's different": "Не, друга е",
+  "You already have a food with this barcode, so this one is saved without it.": "Вече имаш храна с този баркод, затова тази ще се запази без него.",
+  "Another food already shares this barcode, so this one is kept for you only.": "С този баркод вече има споделена храна, затова тази остава само за теб.",
+  "Attach one to three photos.": "Прикачи от една до три снимки.",
+  "Add more photos": "Добави още снимки",
+  "Nutrition table": "Таблица",
+  "Remove photo": "Махни снимката",
+  "Read the label": "Прочети етикета",
+  "Use one photo": "Само една снимка",
+  "Add the front or another side of the pack if the table doesn't show the name or serving.": "Добави предната или друга страна на опаковката, ако таблицата не показва името или порцията."
 }
