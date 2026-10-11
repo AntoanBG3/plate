@@ -330,6 +330,10 @@
                 const trigger = menu.parentElement.querySelector("[data-menu-trigger]");
                 if (trigger) {
                     trigger.setAttribute("aria-expanded", "false");
+                    // A closed menu can't hold focus (it becomes visibility: hidden), so focus goes back to its button.
+                    if (menu.contains(document.activeElement)) {
+                        trigger.focus({ preventScroll: true });
+                    }
                 }
             }
         });

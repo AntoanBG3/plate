@@ -691,9 +691,26 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
     background: var(--material); -webkit-backdrop-filter: saturate(180%) blur(30px); backdrop-filter: saturate(180%) blur(30px);
     border-radius: var(--r-md); box-shadow: var(--shadow-float); overflow: hidden;
     transform-origin: top right; transform: scale(0.6); opacity: 0; pointer-events: none;
-    transition: transform 300ms var(--ease-snappy), opacity 160ms var(--ease-out);
+    /* Hidden once the close animation ends, so a closed menu can't be tabbed to or read out (apple.com's nav does the
+       same with visibility step-end); visible from the first frame when it opens. */
+    visibility: hidden;
+    transition: transform 300ms var(--ease-snappy), opacity 160ms var(--ease-out), visibility 0s linear 300ms;
 }
-.menu.is-open { transform: none; opacity: 1; pointer-events: auto; }
+.menu.is-open {
+    transform: none; opacity: 1; pointer-events: auto; visibility: visible;
+    transition: transform 300ms var(--ease-snappy), opacity 160ms var(--ease-out), visibility 0s;
+}
+/* Items follow the panel in, a little apart; closing has no stagger. No menu has more than six items. */
+.menu > * { opacity: 0; transform: translateY(-4px); transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out); }
+.menu.is-open > * {
+    opacity: 1; transform: none;
+    transition: opacity 200ms var(--ease-out) calc(40ms + var(--i, 0) * 18ms), transform 200ms var(--ease-out) calc(40ms + var(--i, 0) * 18ms);
+}
+.menu > :nth-child(2) { --i: 1; }
+.menu > :nth-child(3) { --i: 2; }
+.menu > :nth-child(4) { --i: 3; }
+.menu > :nth-child(5) { --i: 4; }
+.menu > :nth-child(6) { --i: 5; }
 .menu form + form, .menu > * + * { border-top: 0.5px solid var(--separator); }
 .menu button, .menu a { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: var(--s-4); min-height: var(--tap); padding: 0 var(--s-4); color: var(--label); text-align: left; }
 .menu .danger { color: var(--destructive); }
@@ -874,8 +891,11 @@ html[data-nav="back"]::view-transition-new(large-title) { animation: var(--dur-p
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0s !important; transition-duration: 1ms !important; }
-    .sheet-scrim, .menu, .toast, .topbar, .topbar-title { transition: opacity 150ms linear !important; }
-    .menu, .topbar-title { transform: none !important; }
+    .sheet-scrim, .toast, .topbar, .topbar-title { transition: opacity 150ms linear !important; }
+    .menu { transition: opacity 150ms linear, visibility 0s linear 150ms !important; }
+    .menu.is-open { transition: opacity 150ms linear, visibility 0s !important; }
+    .menu, .menu > *, .topbar-title { transform: none !important; }
+    .menu > * { transition-delay: 0s !important; }
     .is-pressed { transform: none !important; }
     ::view-transition-group(*) { animation-duration: 1ms !important; }
     ::view-transition-old(*) { animation: 150ms linear both vt-fade-out !important; }
