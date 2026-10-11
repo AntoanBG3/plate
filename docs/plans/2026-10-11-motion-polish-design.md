@@ -16,7 +16,7 @@ Checked and already matching, so out of scope: the top bar and tab bar material 
 
 **Change.**
 - `.menu` gets `visibility: hidden` with `transition: … visibility 0s linear 300ms` (hidden after the close animation); `.menu.is-open` gets `visibility: visible` with no visibility delay. Same effect as Apple's step-end and step-start, written so it works with the existing spring transform.
-- Items stagger in when the menu opens: each direct child of `.menu` rises from `translateY(-4px)` with opacity 0, 200 ms on `--ease-out`, delayed `calc(var(--i) * 18ms)` after a 40 ms lead. `--i` is set by CSS `:nth-child` for the first six children (no menu has more), so no JavaScript change is needed. Closing has no stagger: the panel fades as now.
+- Items stagger in when the menu opens: each direct child of `.menu` rises from `translateY(-4px)` with opacity 0, 200 ms on `--ease-out`, delayed `calc(var(--i) * 18ms)` after a 40 ms lead. `--i` is set by CSS `:nth-child` for the first six children, and `:nth-child(n+7)` gives the seventh and later `--i: 6` (the exercise card menu has seven), so no JavaScript change is needed. Closing has no stagger: the panel fades as now.
 - The keyboard focus code in motion.js keeps working, since `visibility` changes before the first item is focused (the menu is opened, then focused, in the same click handler; `visibility: visible` applies without delay).
 - Reduced motion: the existing rule already drops the transform; the item stagger is removed.
 

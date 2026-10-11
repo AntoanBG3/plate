@@ -128,7 +128,7 @@ with:
     transform: none; opacity: 1; pointer-events: auto; visibility: visible;
     transition: transform 300ms var(--ease-snappy), opacity 160ms var(--ease-out), visibility 0s;
 }
-/* Items follow the panel in, a little apart; closing has no stagger. No menu has more than six items. */
+/* Items follow the panel in, a little apart; closing has no stagger. The exercise card menu has seven items, so the seventh and later share `--i: 6`. */
 .menu > * { opacity: 0; transform: translateY(-4px); transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out); }
 .menu.is-open > * {
     opacity: 1; transform: none;
@@ -139,6 +139,7 @@ with:
 .menu > :nth-child(4) { --i: 3; }
 .menu > :nth-child(5) { --i: 4; }
 .menu > :nth-child(6) { --i: 5; }
+.menu > :nth-child(n+7) { --i: 6; }
 ```
 
 In the `@media (prefers-reduced-motion: reduce)` block of `app.css`, replace:
