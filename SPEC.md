@@ -193,6 +193,10 @@ Seed about 90 common exercises, each with a Bulgarian name in the gym vocabulary
 - `Status` (nullable, up to 30 characters; how the food is, shown beside its name: "raw", "boiled", "dried", in the language it was logged in. Set for parsed entries and kept when a meal is copied; other entries show raw or cooked read from the linked food's name)
 - `CreatedAt`
 
+**UsualFood** (user-owned, section 6.1)
+- `Id`, `UserId`, `Phrase` (up to 100 characters, the 5.10 key of a food's name as the user typed it; unique per user), `FoodItemId` (cascade on delete), `LastUsedAt`
+- Which food this account means by those words. Written when a parse is confirmed, read before the ranking. Removed after 180 days unused (section 11), included in the data export, deleted with the account.
+
 **MaintenanceEstimate**
 - `Id`, `UserId`, `CalculatedOn` (DateOnly)
 - `EstimatedTdeeKcal`, `TargetKcal`, `TargetProteinG`
@@ -322,6 +326,16 @@ Only when the goal is Cut, shown on Today, each hidden for a week with "Dismiss"
 
 Test: the rate check at 1% and just over, and at 1.5 times the target; protein average just under and at the minimum; the break offer at 83 and 84 days; target kcal during and after a break; the reset of `CutStartedOn`; a dismissal hides check-ins through its day only.
 
+### 5.10 Repeat logging
+
+Most food logged is food the same account has logged before: friends scan the same products, and the same words come back in typed entries. Amounts and choices therefore come from the account's own history.
+
+- **Last amount** (`LastAmount.Pick`): for one food, the grams of the account's most recent entry for it in the last 90 days, by `CreatedAt`. Entries of 0 g (Quick) don't count. The most recent wins over the most frequent, since an amount changes when a pack size or a habit does. No entry means no last amount.
+- **Recent order** (`RecentOrder.For`): the Recent tab's foods (the last 30 days, grouped by food and name as before) ordered by the number of times logged at the chosen meal, then the number of times in all, then the latest entry, then the name. The first 20 are shown.
+- **Usual food key** (`UsualFoods.Key`): lower case; trimmed; whitespace collapsed to one space; punctuation removed except `%` and characters inside a word; then leading and trailing tokens that are an amount are removed: a number, a fraction (½, 1/2), or a number joined to or followed by a unit (g, гр, г, kg, кг, ml, мл, l, л, бр, бр.). An empty result is no key.
+
+Test: the latest entry wins over a more frequent older one; entries of 0 g and entries 91 days old are ignored and 90 days old are kept; a food logged 5 times at Breakfast and once at Dinner ranks first at Breakfast and below a food logged 3 times at Dinner at Dinner; ties fall to the total, then the latest entry; "200г извара", "Извара" and "извара  " give one key; "2 бр. банани" gives "банани"; "½ avocado" and "1/2 avocado" give "avocado"; "мляко 2%" and "7days croissant" are kept whole; "200 g" gives no key.
+
 ---
 
 ## 6. External integrations (GymTracker.Web/Integrations)
@@ -342,6 +356,7 @@ LLM nutrition estimates are unreliable on their own (published studies show ener
 `FoodParseResult` contains a list of `ParsedFoodItem` plus an overall error message if parsing failed. `ParsedFoodItem`:
 - `NameEn` (canonical English name, for matching), `NameOriginal` (as the user wrote it)
 - `Grams`, `State` (Raw, Cooked, NotApplicable), `Preparation` (nullable, e.g. "grilled")
+- `AmountGiven`: the text gives this food's amount as a weight, volume, count or fraction ("200 g", "2 eggs", "half a pack"); false when it gives none ("извара", "some rice", "a banana"; an article alone is not an amount)
 - `Assumption` (string such as "assumed one medium banana, 120 g")
 - `EstimatedKcalPer100g`, `EstimatedProteinPer100g`, `EstimatedCarbsPer100g`, `EstimatedFatPer100g`, `EstimatedFiberPer100g`, `EstimatedSaturatedFatPer100g`: the model's own values, used only as a fallback
 
@@ -350,22 +365,24 @@ Implementation `OpenRouterFoodParser`:
 - Model: each AI task has its own model setting, shared by all accounts like the key (the parser, the matcher below, the setup chat in 6.4 and the weekly summary in 6.5). The parser's is picked from OpenRouter's catalog (`GET /api/v1/models`, cached for an hour, limited to text models that support `structured_outputs` and `response_format`, `:batch` variants excluded), otherwise configuration `OpenRouter:Model`, otherwise `openai/gpt-6-luna`; a saved id must be in the catalog.
 - API key from Settings (encrypted with Data Protection) or configuration `OpenRouter:ApiKey` (environment variable `OPENROUTER_API_KEY` in Docker). Never commit it.
 - Request structured output: `response_format: {type: "json_schema", json_schema: {name, strict: true, schema}}` with a strict-compatible schema (`additionalProperties: false`, every property required, nullable ones typed `["string","null"]`) matching `ParsedFoodItem[]`, and `provider: {require_parameters: true}`. Because that excludes providers lacking any sent parameter, `temperature` and `reasoning.effort` (the model's lowest supported effort) are sent only when the catalog lists them for the model.
-- System prompt: the user writes foods in English or Bulgarian; return one item per food; estimate grams for vague quantities ("a banana", "a plate of rice") and state the assumption; assume raw weight for meat and cooked weight for rice and pasta unless stated; always fill `NameEn`.
+- System prompt: the user writes foods in English or Bulgarian; return one item per food; estimate grams for vague quantities ("a banana", "a plate of rice") and state the assumption; assume raw weight for meat and cooked weight for rice and pasta unless stated; set `AmountGiven` as defined above; always fill `NameEn`.
 - Timeout 15 seconds, one retry on 5xx or timeout. On failure, the UI falls back to manual entry with the text preserved.
 
 Resolving nutrition values (a Web feature service, not the parser):
-1. Match `NameEn`/`NameOriginal` and `State` against the user's own `FoodItem`s and recent entries, then shared items including the USDA subset (PostgreSQL `pg_trgm` similarity on names). A ranking adds bonuses for the user's own foods, the food's main word, the right raw or cooked state, and fewer niche variants, and its top candidate is the match.
-2. When a matcher model is chosen in Settings and a key exists, a decision model chooses instead (below). Otherwise, and whenever it gives no usable answer, the ranking's top candidate stands.
-3. If a match is found, compute totals from its per-100 g values. The row is named after the matched food (its name in the account's language), shortened by the namer below, with the full database name under it and a control to pick a different match. Picking another food renames the row after that food.
-4. If not, use the model's estimated values and mark the item Low confidence. If `|Kcal - (4*Protein + 4*Carbs + 9*Fat)|` exceeds 15% of `Kcal` for those values, also say so.
-5. Reject negative values or grams above 3,000.
+1. **Usual food:** when the account has a `UsualFood` for the item's `NameOriginal` key, or else its `NameEn` key (5.10), and the account can still see that food (its own or a shared one, through the query filters), that food is the match with High confidence, marked "Your usual". Steps 2 and 3 are skipped for the item.
+2. Otherwise match `NameEn`/`NameOriginal` and `State` against the user's own `FoodItem`s, then shared items including the USDA subset (PostgreSQL `pg_trgm` similarity on names). A ranking adds bonuses for the user's own foods, the food's main word, the right raw or cooked state, and fewer niche variants, and its top candidate is the match.
+3. When a matcher model is chosen in Settings and a key exists, a decision model chooses instead (below). Otherwise, and whenever it gives no usable answer, the ranking's top candidate stands.
+4. **Amount:** when `AmountGiven` is false and the account has a last amount for the matched food (5.10), the grams are that amount and the parser's assumption is replaced by "Your usual amount, {0} g". An amount the user gave is never replaced, and an estimate (step 6) keeps the parser's grams.
+5. If a match is found, compute totals from its per-100 g values. The row is named after the matched food (its name in the account's language), shortened by the namer below, with the full database name under it and a control to pick a different match. Picking another food renames the row after that food.
+6. If not, use the model's estimated values and mark the item Low confidence. If `|Kcal - (4*Protein + 4*Carbs + 9*Fat)|` exceeds 15% of `Kcal` for those values, also say so.
+7. Reject negative values or grams above 3,000.
 
 Matcher (`IFoodMatchDecider`, interface in Core; `JevFoodMatchDecider` in Integrations):
 - Settings offers Off (the ranking alone, the default) and `typesafe/jev-1.13`, pinned: Jev is not in `/api/v1/models`, and its thresholds were measured on that version, so a new version is evaluated before it is offered.
 - Per item, a shortlist of the plain trigram top 50 (similarity of at least 0.3 on `NameEn`, and on `NameOriginal` when it differs, merged by the better similarity, best first; the ranking is not used). Jev leans toward the first option, so the order is fixed.
 - One `POST https://openrouter.ai/api/alpha/decisions` per parse with the same key. State: the typed text and every item (as written, English name, state, preparation, grams). One Choice question per item that has candidates; each option names the food in English and Bulgarian, its brand, and kcal and protein per 100 g, plus a `none` option.
-- When the ranking's top candidate is one of the user's own foods, it stands: that item is sent as context only, not as a question.
-- A picked food is the match: High confidence when Jev's confidence is 0.95 or more, otherwise Medium. `none` at confidence 0.9 or more is no match (step 4). A `none` below 0.9, an option that was not offered, or a missing answer leaves that item to the ranking.
+- When the ranking's top candidate is one of the user's own foods, or the item has a usual food (step 1), it stands: that item is sent as context only, not as a question.
+- A picked food is the match: High confidence when Jev's confidence is 0.95 or more, otherwise Medium. `none` at confidence 0.9 or more is no match (step 6). A `none` below 0.9, an option that was not offered, or a missing answer leaves that item to the ranking.
 - 3-second timeout, no retry; any error, timeout or unreadable response falls back to the ranking silently. One log line per call with the version, latency, input tokens and cost (input tokens only, about $0.0002 per parse).
 - Jev's main training language is English. It was evaluated on Bulgarian and English entries before adoption (gated rule: 29 of 32 held-out items against the ranking's 24), but its Bulgarian accuracy is the thing to watch.
 
@@ -376,9 +393,11 @@ Naming (`IFoodNamer` in Core, `OpenRouterFoodNamer` in Integrations):
 
 Display: a food entry reads "Chicken breast · 200 g" with its status as a chip beside it, on the confirmation list (where the grams are their own field), the food log and the entry page. The amount is drawn from `Grams`, never stored in the name.
 
+Usual foods: confirming a parse writes, for each saved item that has a food, its `NameOriginal` key (5.10) and that food as a `UsualFood`: a new row, or the existing row moved to this food, with `LastUsedAt` set. The latest save wins, so picking another food once moves the words to it. Unticked items, estimates and names without a key write nothing. No model is involved, so this works the same without a key, and an item with a usual food is not a matcher question, so it costs nothing.
+
 Results are never saved directly. The user always sees an editable confirmation list first. Saved entries record `AiModel`.
 
-Also provide `FakeFoodParser` for tests and local development without a key (selected when no OpenRouter key is set).
+Also provide `FakeFoodParser` for tests and local development without a key (selected when no OpenRouter key is set). It sets `AmountGiven` when it read a weight or a count other than "a", "an", "един", "една" or "едно".
 
 ### 6.2 Open Food Facts
 
@@ -500,11 +519,11 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - A This week card with the 5.8 averages.
 - Add entry with four methods:
   1. **Text:** a textarea (one line to start, its text level with the send button, growing as it fills); submit sends to the parser and shows the editable confirmation list; confirm saves all items.
-  2. **Barcode:** opens the camera scanner (EAN-13, EAN-8, UPC-A, UPC-E only); on detection, looks up the product and asks for grams (pre-filled with the serving size). Installed iOS web apps do not keep camera permission, so expect a prompt on each launch, and open the scanner without changing the URL (no `hx-push-url`), since route changes can re-prompt or stop the stream. Fallbacks on the same screen: a field to type the digits, and a "take photo" button (`<input type="file" accept="image/*" capture="environment">`) decoded with the same detector. Under the scan button, "Photograph a label" (6.6) for products without a barcode.
-  3. **Search:** searches as you type: the user's own FoodItems and recent entries first, then shared items (including the USDA subset), then Open Food Facts on explicit submit. Names that start with the search (singular or plural) rank above names that merely contain it, and identical foods are listed once.
-  4. **Recent / favourites:** one-tap re-log of the 20 most frequent entries from the last 30 days, with editable grams.
+  2. **Barcode:** opens the camera scanner (EAN-13, EAN-8, UPC-A, UPC-E only); on detection, looks up the product and asks for grams, pre-filled with the account's last amount for that food (5.10) with "Last time" under the field, else the serving size, else 100 g. Under "Add to {meal}" is "Add and scan another": it logs the entry the same way and opens the Scan tab for the same day and meal with "Added {name}." above "Scan a barcode", instead of the Food day, so the next product is one tap away. The camera starts on that tap, as it does now. Installed iOS web apps do not keep camera permission, so expect a prompt on each launch, and open the scanner without changing the URL (no `hx-push-url`), since route changes can re-prompt or stop the stream. Fallbacks on the same screen: a field to type the digits, and a "take photo" button (`<input type="file" accept="image/*" capture="environment">`) decoded with the same detector. Under the scan button, "Photograph a label" (6.6) for products without a barcode.
+  3. **Search:** searches as you type: the user's own FoodItems and recent entries first, then shared items (including the USDA subset), then Open Food Facts on explicit submit. Names that start with the search (singular or plural) rank above names that merely contain it, and identical foods are listed once. Each result's grams are the last amount for that food (5.10), else its serving, else 100 g.
+  4. **Recent / favourites:** one-tap re-log of 20 foods from the last 30 days, in the 5.10 order for the chosen meal (what this account eats at that meal comes first), each with the amount used last time, editable.
 - Edit or delete any entry (open it, or swipe the row). Copy yesterday's meal into today, offered only when yesterday has entries for that meal. An entry's name never carries its amount; the grams are shown beside it.
-- On the confirmation list, each item can be switched to another food from a search, and a weak database match is marked "Check this" rather than "Database".
+- On the confirmation list, each item can be switched to another food from a search, and a weak database match is marked "Check this" rather than "Database". A food found through a usual food (6.1) is marked "Your usual", and an amount taken from the last one reads "Your usual amount, {0} g" under it.
 - Quick add per meal: a name (optional), calories, and optional protein, carbs, fat, fiber and saturated fat, for restaurant meals and labels not worth saving. Quick entries stay out of Recent.
 - Manual food (the Manual tab, and after a barcode lookup finds nothing): name, the per-100 g values from the label, an optional serving and the grams eaten, with "Read the label from a photo" at the top (6.6). Except after a barcode miss, where the scanned code is already known, an optional barcode field comes after the name, with a small scan button beside it that opens the same scanner sheet and puts the code in the field instead of looking it up (the sheet's "Take a photo instead" too). When the field holds a code the app already has as a food (the user's own first, then a shared one; Open Food Facts is not asked), a card under it shows that food: "Already in the app", its name, kcal and protein per 100 g, "Added by another user" when that applies, and "Is this the same food?" with "Yes, use it" (the barcode result screen for that code) and "No, it's different". Rejecting keeps the form: for the user's own food the barcode is cleared ("You already have a food with this barcode, so this one is saved without it."); for a shared food the share choice is unticked ("Another food already shares this barcode, so this one is kept for you only."). The check runs when the field changes (a scan, or typing and leaving the field) and when a label photo found the code; offline it is skipped and the form works without it. Saving the food and logging the portion happen together: when the entry is refused (too many grams, a future day), no food is kept, so a retry isn't told the barcode is taken. When the form has a barcode, a "Share with other users" checkbox, ticked by default, sits above Save, with the hint "Others who scan this barcode get this food instead of entering it again. Your name isn't shown." (section 4).
 - A shared manual food that another account added is marked "Added by another user" (never a name or anything else about the account): in the grams sheet after a scan, on its search result line, and in the sheet of an entry logged from it. The account that added it, a food whose creator is unknown, and every other kind of food show nothing.
@@ -625,7 +644,7 @@ Users report problems and ideas from their phones, food parsing collects ratings
 
 ### Data
 
-- **ParseRun** (user-owned): one row per text parse. `Text`, `AiModel`, `MatchModel`, `ParserMs`, `MatchMs`, `ParserError`, `Parsed` (jsonb, the parser's items as returned), `Resolved` (jsonb, per item: the chosen food, confidence, notes, the ranking's top 5 candidates with scores, and Jev's raw answer when it ran), `Saved` (jsonb, what the user saved per item, null until confirmed), `Corrections` (flags), `ConfirmedAt`. `FoodLogEntry.ParseRunId` (nullable, set null on delete) links saved entries to their run.
+- **ParseRun** (user-owned): one row per text parse. `Text`, `AiModel`, `MatchModel`, `ParserMs`, `MatchMs`, `ParserError`, `Parsed` (jsonb, the parser's items as returned), `Resolved` (jsonb, per item: the chosen food, confidence, notes, whether it came from a usual food, the ranking's top 5 candidates with scores, and Jev's raw answer when it ran), `Saved` (jsonb, what the user saved per item, null until confirmed), `Corrections` (flags), `ConfirmedAt`. `FoodLogEntry.ParseRunId` (nullable, set null on delete) links saved entries to their run.
 - **Feedback** (user-owned): `ClientId` (Guid, unique, for the offline queue), `Source` (Settings, ParseRating, Barcode, Progression, Maintenance, FoodEntry, ErrorPage), `Kind` (Problem, Idea, Other), `Area`, `Rating` (Up, Down; parse ratings only), `Reasons` (flags: wrong food, wrong amount, wrong nutrition values, missed a food, extra item, should be split or merged, language not understood), `Message` (up to 2,000 characters), `Context` (jsonb: page, app version, user agent, viewport, standalone, language, theme, local time, recent client errors, and a snapshot of what the report is about), `ParseRunId` and `ParseItemIndex`, `ErrorEventId`, `Status` (New, Seen, Planned, Fixed, WontFix, NeedsInfo), `Reply` (up to 1,000), `StatusChangedAt`, `FixedInVersion`, `ReplySeenAt`.
 - **FeedbackAttachment**: one image per report (`ContentType`, `Width`, `Height`, `Bytes`), in its own table so lists never load images. Stored in PostgreSQL so the nightly dump includes it.
 - **ErrorEvent** (not user-facing, no user filter): unhandled server exceptions and browser errors, one row per fingerprint (type, message with numbers and ids removed, first in-app stack frame, path template) with `Count`, first and last seen, last trace id, first and last app version.
@@ -663,11 +682,11 @@ Users report problems and ideas from their phones, food parsing collects ratings
 
 `dotnet GymTracker.Web.dll feedback <command>` (run on wizard as `docker exec gymtracker-app dotnet GymTracker.Web.dll feedback ...`). Logs go to stderr so stdout can be piped. Text output, or `--json`.
 - `list [--status new|open|all|<status>] [--since 7d] [--area <area>]`, `show <id>`, `attachment <id>` (raw bytes), `status <id> <status> [--reply ...] [--version <sha>]`.
-- `parses [--since 30d] [--corrected] [--export-eval]`, `eval [--parser <model>] [--matcher off|jev] [--limit N]` (re-runs the live parser and matcher on exported cases; never part of the tests).
+- `parses [--since 30d] [--corrected] [--export-eval]` (an item matched through a usual food is marked "usual"), `eval [--parser <model>] [--matcher off|jev] [--limit N]` (re-runs the live parser and matcher on exported cases; never part of the tests).
 - `labels [--since 30d] [--edited]`, `label <id>` (the model's reading, the normalized values and what was saved), `label-photo <id> [n]` (the nth photo's raw bytes, 1 by default, while the photos are kept).
 - `errors [--since 7d]`, `digest [--since <date>]` (which also counts label reads, failures and edited scans), `changelog add --en ... --bg ... [--feedback <id>] [--version <sha>]`.
 - The app version is the Git commit, passed at build time as `APP_VERSION` and stored as the assembly's informational version.
-- Retention: ParseRuns older than 180 days with no feedback, LabelScans older than 180 days, label photos older than 30 days, and ErrorEvents last seen more than 90 days ago, are removed by the hourly cleanup job. The data export includes the user's own reports and label scans (without photos).
+- Retention: ParseRuns older than 180 days with no feedback, LabelScans older than 180 days, label photos older than 30 days, UsualFoods not used for 180 days, and ErrorEvents last seen more than 90 days ago, are removed by the hourly cleanup job. The data export includes the user's own reports and label scans (without photos).
 
 ---
 
@@ -783,6 +802,12 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 - The scan button beside the manual form's barcode field, the "already in the app" card and its reject rules (section 7).
 - Up to three photos per label read: the optional slots behind "Add more photos", one read for all of them, `LabelScanPhoto.Position`, the 7 MB request limit, and the admin page and `label-photo <id> [n]` for each photo (sections 4, 6.6, 9, 11, 12).
 - **Done when:** on an iPhone at 390 px, in English and Bulgarian, the scan button fills the barcode field on the Manual tab and in the form opened by "Photograph a label", with the camera and with "Take a photo instead", without leaving the page; a code the account already saved shows the card and "Yes, use it" opens its grams screen; rejecting a shared match saves a private food; an account without a label model sees the share row appear when a barcode is typed; the extra slots stay closed until "Add more photos" and a single photo still reads at once; a table photo and a front-of-pack photo read together fill the name and serving the table lacked; the admin page shows all three photos and `label-photo <id> 3` prints the third; and the twenty-first read in 10 minutes still returns 429.
+
+### Phase 16: Log it again faster
+- Repeat logging (5.10) in Core: the last amount, the Recent order and the usual food key.
+- The last amount on the barcode result, the search results and parsed items without an amount; "Add and scan another" on the barcode result; Recent in the 5.10 order (section 7).
+- `UsualFood` (section 4), `AmountGiven` in the parser's schema and prompt, the usual-food lookup and writing, and the "Your usual" marks (6.1); the usual flag in the run's `Resolved` and `feedback parses`, retention, export and account deletion (section 11).
+- **Done when:** the Core tests for 5.10 pass; on an iPhone at 390 px, in English and Bulgarian, a product logged at 250 g offers 250 g with "Last time" on its next scan and in search, and a product never logged offers its serving; three products are logged into one meal with "Add and scan another" without passing through the Food day; Recent at Breakfast lists what the account eats at breakfast first; after confirming "200г извара" with a hand-picked food, "извара" proposes that food marked "Your usual" with 200 g, and "300г извара" keeps 300 g; picking another food once moves "извара" to it; all of this works with `FakeFoodParser` and no key; `feedback parses` marks the usual item; and the user isolation tests show that another account's entries never set a last amount or a Recent order and that a usual food pointing at another account's private food is ignored.
 
 ### Later
 Ideas kept for after Phase 9, not planned yet. The nutrition ideas should not start before real logs show fiber coverage is good.
