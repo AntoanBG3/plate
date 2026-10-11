@@ -245,4 +245,43 @@ public class MotionPolishTests(E2EFixture app) : IClassFixture<E2EFixture>
         collapses.Should().NotBeEmpty().And.OnlyContain(d => d <= 180, "the row must finish collapsing before htmx swaps it out at 180 ms");
         phone.ShouldHaveNoErrors();
     }
+
+    private static Task<string[]> FadesAsync(ILocator el) =>
+        el.EvaluateAsync<string[]>("e => [e.style.getPropertyValue('--fade-start'), e.style.getPropertyValue('--fade-end')]");
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Scroll_fades_follow_the_scroll_position(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync("/food/add?meal=Lunch&tab=text");
+        await phone.Page.Locator("textarea[name=text], input[name=text]").First.FillAsync("150 g cooked rice");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").First.TapAsync());
+        await phone.Page.Locator(".result").First.Locator("[data-change-food]").TapAsync();
+
+        var search = phone.Page.Locator("#change-food-sheet [data-change-search]");
+        var results = phone.Page.Locator("#change-food-results");
+        // Matches this search only, not the one the sheet starts with for the row's name.
+        async Task SearchAsync(string text)
+        {
+            await phone.Page.RunAndWaitForResponseAsync(() => search.FillAsync(text), r => r.Url.Contains("/food/candidates") && r.Url.EndsWith("q=" + Uri.EscapeDataString(text)));
+            await phone.Page.WaitForFunctionAsync("() => !document.querySelector('#change-food-results.htmx-settling, #change-food-results.htmx-swapping')");
+        }
+
+        await SearchAsync("rice");
+        (await results.EvaluateAsync<string>("e => { const s = getComputedStyle(e); return s.maskImage && s.maskImage !== 'none' ? s.maskImage : s.webkitMaskImage; }"))
+            .Should().Contain("gradient");
+        (await results.EvaluateAsync<bool>("e => e.scrollHeight > e.clientHeight + 16")).Should().BeTrue("the test needs a list that scrolls");
+        (await FadesAsync(results)).Should().Equal("#000", "transparent");
+
+        await results.EvaluateAsync("e => e.scrollTo(0, e.scrollHeight)");
+        await phone.Page.WaitForFunctionAsync("() => document.querySelector('#change-food-results').style.getPropertyValue('--fade-end') === '#000'");
+        (await FadesAsync(results)).Should().Equal("transparent", "#000");
+
+        // Nothing to scroll: neither edge fades.
+        await SearchAsync("zzqxv");
+        (await FadesAsync(results)).Should().Equal("#000", "#000");
+        phone.ShouldHaveNoErrors();
+    }
 }

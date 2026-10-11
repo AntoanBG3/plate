@@ -528,6 +528,40 @@
         }
     });
 
+    // ---- faded edges on scroll areas: an edge fades only while there is more past it ----
+
+    function updateFade(el) {
+        const x = el.classList.contains("scroll-fade-x");
+        const position = x ? el.scrollLeft : el.scrollTop;
+        const max = x ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight;
+        el.style.setProperty("--fade-start", position > 1 ? "transparent" : "#000");
+        el.style.setProperty("--fade-end", position < max - 1 ? "transparent" : "#000");
+    }
+
+    // Size changes cover a sheet opening (its list goes from no box to a box); content swaps are handled below.
+    const fadeResize = "ResizeObserver" in window ? new ResizeObserver((entries) => entries.forEach((entry) => updateFade(entry.target))) : null;
+    function bindFades(scope) {
+        $$(".scroll-fade", scope).forEach((el) => {
+            if (!el.gymFade) {
+                el.gymFade = true;
+                el.addEventListener("scroll", () => updateFade(el), { passive: true });
+            }
+            if (fadeResize) {
+                fadeResize.observe(el);
+            }
+            updateFade(el);
+        });
+    }
+    bindFades(document);
+    document.addEventListener("gym:beforeswap", () => fadeResize && fadeResize.disconnect());
+    document.addEventListener("gym:page", () => bindFades(document));
+    document.addEventListener("htmx:afterSwap", (event) => {
+        const el = event.detail.target.closest(".scroll-fade");
+        if (el) {
+            updateFade(el);
+        }
+    });
+
     // ---- toast ----
     // A toast with an action (Undo) belongs to the page it was shown on and goes away on another one. Its timer pauses
     // while it is pressed. The action is posted through nav.js, which shows the page again (keeping the scroll

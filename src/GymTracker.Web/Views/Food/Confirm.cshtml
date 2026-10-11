@@ -101,7 +101,7 @@
                 <input type="search" class="input" name="q" aria-label="@L["Search foods"]" autocomplete="off" data-change-search
                        hx-get="/food/candidates" hx-trigger="input changed delay:300ms, search" hx-target="#change-food-results" hx-swap="innerHTML" />
             </div>
-            <div id="change-food-results" class="change-food-results"></div>
+            <div id="change-food-results" class="change-food-results scroll-fade scroll-fade-y"></div>
         </div>
     </div>
     @if (Model.ParseRunId is not null)

@@ -736,6 +736,16 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
 /* An unticked row is left out when saving, so it fades back; its checkbox stays clear to tick again. */
 .result:has(.check-input:not(:checked)) > :not(.result-head), .result:has(.check-input:not(:checked)) .result-head > :not(.check-input) { opacity: 0.45; transition: opacity var(--dur-small) var(--ease-out); }
 .change-food-results { max-height: 55vh; overflow-y: auto; overscroll-behavior: contain; }
+/* Faded edges on scroll areas, as apple.com's scroll masks: motion.js sets --fade-start and --fade-end to transparent
+   while there is more to scroll that way, so an edge fades only when content continues past it. */
+.scroll-fade-x {
+    -webkit-mask-image: linear-gradient(to right, var(--fade-start, #000) 0, #000 16px, #000 calc(100% - 16px), var(--fade-end, #000) 100%);
+    mask-image: linear-gradient(to right, var(--fade-start, #000) 0, #000 16px, #000 calc(100% - 16px), var(--fade-end, #000) 100%);
+}
+.scroll-fade-y {
+    -webkit-mask-image: linear-gradient(to bottom, var(--fade-start, #000) 0, #000 16px, #000 calc(100% - 16px), var(--fade-end, #000) 100%);
+    mask-image: linear-gradient(to bottom, var(--fade-start, #000) 0, #000 16px, #000 calc(100% - 16px), var(--fade-end, #000) 100%);
+}
 /* The app's "are you sure" sheet (site.js). */
 .confirm-text { margin: var(--s-2) var(--s-2) var(--s-5); font-size: var(--text-body); text-align: center; color: var(--label); }
 .menu .icon { width: 20px; height: 20px; }

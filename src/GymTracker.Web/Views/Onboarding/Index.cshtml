@@ -80,7 +80,7 @@
                 {
                     @if (Model.QuickReplies.Count > 0)
                     {
-                        <div class="reply-chips">
+                        <div class="reply-chips scroll-fade scroll-fade-x">
                             @foreach (var reply in Model.QuickReplies)
                             {
                                 <form method="post" asp-antiforgery="true" action="/welcome/message" data-busy data-quick-reply>
