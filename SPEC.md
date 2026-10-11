@@ -682,7 +682,7 @@ Users report problems and ideas from their phones, food parsing collects ratings
 
 `dotnet GymTracker.Web.dll feedback <command>` (run on wizard as `docker exec gymtracker-app dotnet GymTracker.Web.dll feedback ...`). Logs go to stderr so stdout can be piped. Text output, or `--json`.
 - `list [--status new|open|all|<status>] [--since 7d] [--area <area>]`, `show <id>`, `attachment <id>` (raw bytes), `status <id> <status> [--reply ...] [--version <sha>]`.
-- `parses [--since 30d] [--corrected] [--export-eval]` (an item matched through a usual food is marked "usual"), `eval [--parser <model>] [--matcher off|jev] [--limit N]` (re-runs the live parser and matcher on exported cases; never part of the tests).
+- `parses [--since 30d] [--flagged] [--export-eval]` (an item matched through a usual food is marked "usual"), `eval [--parser <model>] [--matcher off|jev] [--limit N]` (re-runs the live parser and matcher on exported cases; never part of the tests).
 - `labels [--since 30d] [--edited]`, `label <id>` (the model's reading, the normalized values and what was saved), `label-photo <id> [n]` (the nth photo's raw bytes, 1 by default, while the photos are kept).
 - `errors [--since 7d]`, `digest [--since <date>]` (which also counts label reads, failures and edited scans), `changelog add --en ... --bg ... [--feedback <id>] [--version <sha>]`.
 - The app version is the Git commit, passed at build time as `APP_VERSION` and stored as the assembly's informational version.
