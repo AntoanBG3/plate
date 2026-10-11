@@ -3,7 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.E2E.Tests;
 
-/// <summary>The Undo toast (SPEC 7): where it sits, how long it stays, and that Undo always goes through.</summary>
+/// <summary>
+/// The Undo toast (SPEC 7): where it sits, how long it stays, and that Undo always goes through. The toast's timer runs on
+/// Playwright's clock, moved on with RunForAsync rather than waited out; the server accepts undo for minutes, not seconds.
+/// </summary>
 [Collection(E2ECollection.Name)]
 public class UndoToastTests(E2EFixture app)
 {
@@ -33,6 +36,7 @@ public class UndoToastTests(E2EFixture app)
     public async Task Undo_restores_a_deleted_entry_whenever_it_is_tapped_while_shown(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.Page.Clock.InstallAsync();
         var date = await TodayAsync(phone);
 
         foreach (var delayMs in new[] { 500, 2000, 4000, 5500 })
@@ -42,7 +46,7 @@ public class UndoToastTests(E2EFixture app)
             await phone.NavigateByAsync(() => phone.Page.Locator("form[action$='/delete'] button").TapAsync());
             (await IsDeletedAsync(id)).Should().BeTrue();
 
-            await phone.Page.WaitForTimeoutAsync(delayMs);
+            await phone.Page.Clock.RunForAsync(delayMs);
             await phone.NavigateByAsync(() => phone.Page.Locator("#toast:not([hidden]) .toast-action button").TapAsync());
             (await IsDeletedAsync(id)).Should().BeFalse($"Undo tapped {delayMs} ms after the delete should restore it");
         }
@@ -56,6 +60,7 @@ public class UndoToastTests(E2EFixture app)
     public async Task The_toast_stays_while_pressed(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.Page.Clock.InstallAsync();
         var date = await TodayAsync(phone);
         var id = await QuickEntryAsync(phone, date, $"Hold test {Guid.NewGuid():N}");
         await phone.GoAsync($"/food/entries/{id}");
@@ -64,11 +69,14 @@ public class UndoToastTests(E2EFixture app)
         var message = await Phone.BoxAsync(phone.Page.Locator("#toast > span"));
         await phone.Page.Mouse.MoveAsync(message.X + 10, message.Y + message.Height / 2);
         await phone.Page.Mouse.DownAsync();
-        await phone.Page.WaitForTimeoutAsync(7000);
+        await phone.Page.Clock.RunForAsync(7000);
+        // The fade out runs in real time, so a toast that did time out is only hidden once it finishes.
+        await phone.AnimationsDoneAsync("#toast");
         (await phone.Page.Locator("#toast").IsHiddenAsync()).Should().BeFalse("a pressed toast doesn't time out");
         await phone.Page.Mouse.UpAsync();
 
-        await phone.Page.Locator("#toast").WaitForAsync(new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden, Timeout = 8000 });
+        await phone.Page.Clock.RunForAsync(6000);
+        await phone.Page.Locator("#toast").WaitForAsync(new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden, Timeout = 2000 });
         phone.ShouldHaveNoErrors();
     }
 
@@ -78,6 +86,7 @@ public class UndoToastTests(E2EFixture app)
     public async Task During_a_rest_the_toast_sits_above_the_timer_and_a_late_tap_never_skips_the_rest(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.Page.Clock.InstallAsync();
         var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press");
         await phone.StartSessionAsync(template);
         var row = phone.Page.Locator(".rows.working .set-row").First;
@@ -106,7 +115,8 @@ public class UndoToastTests(E2EFixture app)
 
         // Where Undo was, tapped just after the toast went away.
         var undo = await Phone.BoxAsync(phone.Page.Locator("#toast .toast-action button"));
-        await phone.Page.Locator("#toast").WaitForAsync(new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden, Timeout = 8000 });
+        await phone.Page.Clock.RunForAsync(6000);
+        await phone.Page.Locator("#toast").WaitForAsync(new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden, Timeout = 2000 });
         await phone.Page.Mouse.ClickAsync(undo.X + undo.Width / 2, undo.Y + undo.Height / 2);
         (await phone.Page.Locator("#rest-timer").IsVisibleAsync()).Should().BeTrue("a late Undo tap must not land on Skip");
         phone.ShouldHaveNoErrors();
