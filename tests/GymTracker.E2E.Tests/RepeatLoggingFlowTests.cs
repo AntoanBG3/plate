@@ -145,4 +145,73 @@ public class RepeatLoggingFlowTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await row.Locator("textarea[name$='Description']").InputValueAsync()).Should().Be(matched);
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium, 320)]
+    [InlineData(E2EFixture.Chromium, 390)]
+    [InlineData(E2EFixture.WebKit, 320)]
+    [InlineData(E2EFixture.WebKit, 390)]
+    public async Task Phase_16_text_fits_in_Bulgarian(string browser, int width)
+    {
+        var (code, _) = await ProductAsync();
+        await using var phone = await app.SignedInPhoneAsync(browser, width);
+        await phone.WithTargetsAsync(app, bulgarian: true);
+        var shots = Environment.GetEnvironmentVariable("PHASE16_SHOTS");
+
+        async Task NoSidewaysScrollAsync(string where)
+        {
+            var wide = await phone.Page.EvaluateAsync<string[]>("""
+                () => document.documentElement.scrollWidth <= window.innerWidth ? [] :
+                    [`page ${document.documentElement.scrollWidth} > ${window.innerWidth}`, ...[...document.querySelectorAll("body *")]
+                        .filter((e) => e.getBoundingClientRect().right > window.innerWidth + 0.5 || e.scrollWidth > e.clientWidth + 1)
+                        .map((e) => `${e.tagName}.${e.className} right=${e.getBoundingClientRect().right} sw=${e.scrollWidth} cw=${e.clientWidth} "${e.textContent.trim().slice(0, 30)}"`)]
+                """);
+            wide.Should().BeEmpty($"{where} has no horizontal page scroll");
+        }
+
+        async Task ShotAsync(string name)
+        {
+            if (!string.IsNullOrEmpty(shots))
+            {
+                await phone.Page.ScreenshotAsync(new() { Path = Path.Combine(shots, $"{name}-{browser}-{width}.png"), FullPage = true });
+            }
+        }
+
+        await phone.PostAsync("/food/log-item", new() { ["date"] = Today, ["meal"] = "Lunch", ["foodItemId"] = FoodId(code), ["grams"] = "250", ["source"] = "Barcode" });
+        await phone.GoAsync($"/food/barcode?date={Today}&meal=Lunch&code={code}");
+        (await phone.Page.Locator("[data-last-time]").TextContentAsync())!.Trim().Should().Be("Последно");
+        var another = phone.Page.Locator("button[name=next][value=scan]");
+        (await another.TextContentAsync())!.Trim().Should().Be("Добави и сканирай още");
+        var box = await Phone.BoxAsync(another);
+        box.Height.Should().BeGreaterThanOrEqualTo(44);
+        box.X.Should().BeGreaterThanOrEqualTo(0);
+        (box.X + box.Width).Should().BeLessThanOrEqualTo(width);
+        await ShotAsync("barcode");
+        await NoSidewaysScrollAsync("the barcode result");
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=text");
+        await phone.Page.Locator("textarea[name=text], input[name=text]").First.FillAsync("200 g cottage cheese");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").First.TapAsync());
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/confirm'] button[type=submit]").Last.TapAsync());
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Dinner&tab=text");
+        await phone.Page.Locator("textarea[name=text], input[name=text]").First.FillAsync("cottage cheese");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").First.TapAsync());
+        var row = phone.Page.Locator(".result").First;
+        var chip = row.Locator("[data-chip]");
+        (await chip.TextContentAsync())!.Trim().Should().Be("Обичайно");
+        (await row.Locator("[data-note]").AllTextContentsAsync()).Should().Contain("Обичайното ти количество, 200 г");
+        var chipBox = await Phone.BoxAsync(chip);
+        var rowBox = await Phone.BoxAsync(row);
+        (chipBox.X + chipBox.Width).Should().BeLessThanOrEqualTo(Math.Min(width, rowBox.X + rowBox.Width + 1));
+        await ShotAsync("confirm");
+        await NoSidewaysScrollAsync("the confirmation list");
+        phone.ShouldHaveNoErrors();
+    }
+
+    private string FoodId(string code)
+    {
+        using var db = app.Db.CreateContext(null);
+        return db.FoodItems.Single(f => f.Barcode == code).Id.ToString();
+    }
 }
