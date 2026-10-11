@@ -1,6 +1,6 @@
 # Phase 15 deferred issues
 
-Minor findings from the review of the barcode field scan and label photo slots work (deployed as `cc717be` on 2026-10-10), left unfixed. None blocks normal use.
+Minor findings from the review of the barcode field scan and label photo slots work (deployed as `cc717be` on 2026-10-10). Items 1 to 10 were fixed on the `phase-15-deferred` branch on 2026-10-11; only the iPhone checks below remain.
 
 ## Label photos
 

@@ -75,6 +75,8 @@ window.gymModule("scanner", (root) => {
         }
         const note = document.createElement("p");
         note.className = "section-footer";
+        // label.js reads this so a label read doesn't offer the same food again.
+        note.dataset.knownDeclined = "";
         note.textContent = card.dataset.rejectNote;
         card.replaceWith(note);
     }
@@ -109,7 +111,17 @@ window.gymModule("scanner", (root) => {
 
     const api = window.BarcodeDetectionAPI;
     if (!api) {
-        return offField;
+        // The ponyfill didn't load, so neither the camera nor a photo can be read: say so instead of doing nothing.
+        const onUnavailable = (event) => {
+            if (event.target.closest("[data-start], [data-scan-into]")) {
+                window.gymToast?.(t("Barcode scanning isn't available here. Type the digits instead."));
+            }
+        };
+        document.addEventListener("click", onUnavailable);
+        return () => {
+            offField();
+            document.removeEventListener("click", onUnavailable);
+        };
     }
 
     api.prepareZXingModule({

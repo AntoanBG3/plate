@@ -398,6 +398,22 @@ public class SharedFoodTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task A_known_barcode_you_shared_yourself_says_so_when_rejected()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var code = NewEan();
+        var name = Unique("Kefir shared mine kbt");
+        await SaveManualAsync(a, name, code, share: true);
+
+        var html = WebUtility.HtmlDecode(await (await a.Client.GetAsync(Known(code))).Content.ReadAsStringAsync());
+
+        html.Should().Contain(name).And.Contain("data-own=\"false\"").And.NotContain(Mark);
+        html.Should().Contain("You already shared a food with this barcode, so this one is kept for you only.")
+            .And.NotContain("Another food already shares this barcode");
+    }
+
+    [Fact]
     public async Task Another_accounts_private_food_is_not_offered()
     {
         await using var app = NewApp();

@@ -244,7 +244,7 @@ public class LabelPhotoTests(E2EFixture app)
     [Fact]
     public async Task A_photo_between_1_and_2_MB_gets_through_Kestrels_request_limit()
     {
-        // Program.cs caps request bodies at 1 MB in Kestrel; /food/label raises it to 3 MB (SPEC 9). The test server
+        // Program.cs caps request bodies at 1 MB in Kestrel; /food/label raises it to 7 MB (SPEC 9). The test server
         // in the Web tests doesn't apply Kestrel's limit, so this goes through the real server.
         await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium, ai: true);
         await phone.GoAsync(Manual);
@@ -417,7 +417,61 @@ public class LabelPhotoTests(E2EFixture app)
 
         (await phone.Page.Locator("[data-label-form] [data-label-read]").IsDisabledAsync()).Should().BeTrue();
         (await phone.Page.Locator("[data-label-form] [data-label-slot-index=\"1\"] [data-label-slot-photo]").IsDisabledAsync()).Should().BeTrue();
+        (await phone.Page.Locator("[data-label-form] [data-label-less]").IsDisabledAsync()).Should().BeTrue("the photos are being read");
         await FilledAsync(phone);
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task A_photo_still_shrinking_when_the_slots_close_doesnt_come_back(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync(Manual);
+        await phone.Page.EvaluateAsync("""
+            () => {
+                const shrink = window.gymImage.shrink;
+                window.gymImage.shrink = async (...args) => {
+                    await new Promise((done) => setTimeout(done, 800));
+                    return shrink.apply(window.gymImage, args);
+                };
+            }
+            """);
+        var more = phone.Page.Locator("[data-label-form] [data-label-more]");
+        await more.TapAsync();
+
+        await PickIntoSlotAsync(phone, 1);
+        await phone.Page.Locator("[data-label-form] [data-label-less]").TapAsync();
+        await phone.Page.WaitForTimeoutAsync(1500);
+        await more.TapAsync();
+
+        (await phone.Page.Locator("[data-label-form] [data-label-thumb] img").CountAsync()).Should().Be(0);
+        (await phone.Page.Locator("[data-label-form] [data-label-read]").IsDisabledAsync()).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task Slot_thumbnails_are_freed_when_a_new_read_replaces_their_form(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=barcode");
+        await phone.Page.Locator("input[data-label-start]").SetInputFilesAsync(Fixture("label.jpg"));
+        await phone.Page.Locator("[data-label-slot] .banner").WaitForAsync();
+        await phone.Page.EvaluateAsync("""
+            () => {
+                window.revoked = [];
+                const revoke = URL.revokeObjectURL;
+                URL.revokeObjectURL = (url) => { window.revoked.push(url); revoke.call(URL, url); };
+            }
+            """);
+        await phone.Page.Locator("[data-label-slot] [data-label-more]").TapAsync();
+        await PickIntoSlotAsync(phone, 0, scope: "[data-label-slot]");
+        await ThumbAsync(phone, 0, "[data-label-slot]");
+        var thumb = await phone.Page.Locator("[data-label-slot] [data-label-thumb] img").GetAttributeAsync("src");
+
+        await phone.Page.Locator("input[data-label-start]").SetInputFilesAsync(Fixture("label.jpg"));
+        await phone.Page.WaitForFunctionAsync("() => !document.querySelector('[data-label-slot] [data-label-thumb] img')");
+
+        (await phone.Page.EvaluateAsync<string[]>("() => window.revoked")).Should().Contain(thumb);
     }
 
     [Theory]

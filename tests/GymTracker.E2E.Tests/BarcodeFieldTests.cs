@@ -153,6 +153,75 @@ public class BarcodeFieldTests(E2EFixture app)
         (await phone.Page.Locator("form [data-share]").First.IsVisibleAsync()).Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_label_read_after_a_typed_barcode_offers_the_known_food_again(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        var code = NewEan();
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await SaveManualAsync(phone, "Typed kefir e2e", code, share: false);
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await phone.Page.FillAsync("#m-barcode", code);
+        await phone.Page.Locator("#m-barcode").BlurAsync();
+        await phone.Page.Locator("[data-known-food]").WaitForAsync();
+        await phone.Page.Locator("[data-label-form] [data-label-photo]").SetInputFilesAsync(Fixture("label.jpg"));
+        await phone.Page.Locator(".banner", new() { HasText = "Read from the photo" }).WaitForAsync();
+
+        var card = phone.Page.Locator("[data-known-food]");
+        await card.WaitForAsync();
+        (await card.InnerTextAsync()).Should().Contain("Typed kefir e2e");
+        (await phone.Page.InputValueAsync("#m-barcode")).Should().Be(code);
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task A_rejected_shared_match_isnt_offered_again_after_a_label_read(string browser)
+    {
+        var code = NewEan();
+        await using (var other = await app.SignedInPhoneAsync(browser))
+        {
+            await other.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+            await SaveManualAsync(other, "Shared tarator e2e", code, share: true);
+        }
+
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await phone.Page.FillAsync("#m-barcode", code);
+        await phone.Page.Locator("#m-barcode").BlurAsync();
+        await phone.Page.Locator("[data-known-reject]").TapAsync();
+        await phone.Page.Locator("[data-label-form] [data-label-photo]").SetInputFilesAsync(Fixture("label.jpg"));
+        await phone.Page.Locator(".banner", new() { HasText = "Read from the photo" }).WaitForAsync();
+        await phone.Page.WaitForTimeoutAsync(1000);
+
+        (await phone.Page.Locator("[data-known-food]").CountAsync()).Should().Be(0);
+        (await phone.Page.Locator("form input.switch[name=share]").IsCheckedAsync()).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Without_the_barcode_reader_the_scan_buttons_say_so(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        // As if the ponyfill failed to load: it never defines the API.
+        await phone.Page.AddInitScriptAsync("Object.defineProperty(window, 'BarcodeDetectionAPI', { get: () => undefined, set: () => {} });");
+        const string message = "Barcode scanning isn't available here. Type the digits instead.";
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await phone.Page.Locator("[data-scan-into]").TapAsync();
+        await phone.Page.Locator("#toast", new() { HasText = message }).WaitForAsync();
+        (await phone.Page.Locator("#scanner").IsVisibleAsync()).Should().BeFalse();
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=barcode");
+        await phone.Page.Locator("[data-start]").TapAsync();
+        await phone.Page.Locator("#toast", new() { HasText = message }).WaitForAsync();
+        (await phone.Page.Locator("#scanner").IsVisibleAsync()).Should().BeFalse();
+    }
+
     private static async Task FillNumbersAsync(Phone phone)
     {
         await phone.Page.FillAsync("#m-kcal", "60");
