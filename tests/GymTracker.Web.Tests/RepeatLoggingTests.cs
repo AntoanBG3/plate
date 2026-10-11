@@ -46,4 +46,22 @@ public class RepeatLoggingTests(PostgresFixture fixture) : IClassFixture<Postgre
         a.Db.UsualFoods.Add(new UsualFood { UserId = a.UserId, Phrase = "банан", FoodItemId = food, LastUsedAt = DateTimeOffset.UtcNow });
         await FluentActions.Awaiting(() => a.Db.SaveChangesAsync()).Should().ThrowAsync<DbUpdateException>();
     }
+
+    private static NewEntry Entry(int food, decimal grams, Meal meal = Meal.Lunch, string name = "Banana") =>
+        new(Today, meal, name, grams, new Per100g(89, 1.1m, 23, 0.3m), food, EntrySource.Search);
+
+    [Fact]
+    public async Task Last_amounts_come_from_this_accounts_entries_only()
+    {
+        await using var a = new UserScope(fixture, await fixture.CreateUserAsync());
+        await using var b = new UserScope(fixture, await fixture.CreateUserAsync());
+        var food = await SharedFoodAsync(a, "banana");
+        await b.FoodLog.AddAsync([Entry(food, 300)], default);
+
+        (await a.Repeat.LastAmountsAsync([food], default)).Should().BeEmpty();
+
+        await a.FoodLog.AddAsync([Entry(food, 120)], default);
+        await a.FoodLog.AddAsync([Entry(food, 150)], default);
+        (await a.Repeat.LastAmountsAsync([food], default)).Should().Equal(new Dictionary<int, decimal> { [food] = 150 });
+    }
 }

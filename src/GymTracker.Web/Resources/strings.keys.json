@@ -1061,6 +1061,9 @@
     "src/GymTracker.Web/Views/Join/Index.cshtml",
     "src/GymTracker.Web/Views/Settings/General.cshtml"
   ],
+  "Last time": [
+    "src/GymTracker.Web/Views/Food/Barcode.cshtml"
+  ],
   "Last time: {0}": [
     "src/GymTracker.Web/Views/Shared/_ExerciseCard.cshtml"
   ],

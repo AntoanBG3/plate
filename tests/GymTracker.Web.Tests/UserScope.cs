@@ -21,6 +21,7 @@ public sealed class UserScope : IAsyncDisposable
         FoodDatabase = new FakeFoodDatabase();
         Foods = new GymTracker.Web.Features.Food.FoodItemService(Db, currentUser, FoodDatabase);
         Matcher = new GymTracker.Web.Features.Food.FoodMatcher(Foods, MatchDecider);
+        Repeat = new GymTracker.Web.Features.Food.RepeatLoggingService(Db, currentUser, TimeProvider.System, Microsoft.Extensions.Logging.Abstractions.NullLogger<GymTracker.Web.Features.Food.RepeatLoggingService>.Instance);
         FoodLog = new GymTracker.Web.Features.Food.FoodLogService(Db, currentUser, TimeProvider.System);
         SavedMeals = new GymTracker.Web.Features.Food.SavedMealService(Db, currentUser, TimeProvider.System);
         Undo = new GymTracker.Web.Features.Undo.UndoService(Db, TimeProvider.System);
@@ -38,6 +39,7 @@ public sealed class UserScope : IAsyncDisposable
     /// <summary>Names nothing unless a test scripts it, so rows keep their database names as without a key.</summary>
     public StubFoodNamer Namer { get; } = new();
     public GymTracker.Web.Features.Food.FoodItemService Foods { get; }
+    public GymTracker.Web.Features.Food.RepeatLoggingService Repeat { get; }
     public GymTracker.Web.Features.Food.FoodMatcher Matcher { get; }
     public GymTracker.Web.Features.Food.FoodLogService FoodLog { get; }
     public GymTracker.Web.Features.Food.SavedMealService SavedMeals { get; }

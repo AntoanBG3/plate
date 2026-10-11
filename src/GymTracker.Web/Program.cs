@@ -77,6 +77,7 @@ builder.Services.AddScoped<ExerciseSettingsService>();
 builder.Services.AddScoped<TrainingAnalytics>();
 builder.Services.AddScoped<FoodItemService>();
 builder.Services.AddScoped<FoodMatcher>();
+builder.Services.AddScoped<RepeatLoggingService>();
 builder.Services.AddScoped<FoodLogService>();
 builder.Services.AddScoped<SavedMealService>();
 builder.Services.AddScoped<GymTracker.Web.Features.Feedback.ParseRunService>();

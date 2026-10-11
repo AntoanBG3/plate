@@ -187,12 +187,14 @@ public record FoodAddViewModel(
     GymTracker.Core.Nutrition.ProductSearch? OpenFoodFacts,
     IReadOnlyList<GymTracker.Web.Features.Food.RecentFood> Recents,
     IReadOnlyList<SavedMeal> SavedMeals,
-    bool LabelAvailable = false);
+    bool LabelAvailable = false,
+    IReadOnlyDictionary<int, decimal>? LastGrams = null);
 
 public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<GymTracker.Web.Features.Food.ConfirmItem> Items, GymTracker.Core.Text.LocalText? Warning, int? ParseRunId = null);
 
 /// <param name="AddedByAnother">The food is a shared manual one another account added (SPEC 7).</param>
-public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result, bool AddedByAnother = false, bool LabelAvailable = false);
+/// <param name="LastGrams">This account's last amount for the product (SPEC 5.10), or null.</param>
+public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result, bool AddedByAnother = false, bool LabelAvailable = false, decimal? LastGrams = null);
 
 /// <summary>The manual food form (SPEC 7), on the Manual tab, after a barcode miss, and filled from a label photo (6.6).</summary>
 /// <param name="Barcode">A scanned code, sent as a hidden field after a barcode miss.</param>

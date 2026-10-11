@@ -17,6 +17,7 @@ public class FoodController(
     FoodLogService log,
     SavedMealService savedMeals,
     FoodItemService foods,
+    RepeatLoggingService repeat,
     LabelScanService labels,
     ManualFoodService manualFoods,
     ParseRunService parseRuns,
@@ -73,7 +74,8 @@ public class FoodController(
         var recents = tab == "recent" ? await log.RecentsAsync(today, ct) : [];
         var saved = tab == "recent" ? await savedMeals.ListAsync(ct) : [];
         var labelAvailable = tab is "manual" or "barcode" && await labels.IsAvailableAsync(ct);
-        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved, labelAvailable));
+        var lastGrams = local.Count > 0 ? await repeat.LastAmountsAsync(local.Select(f => f.Id).ToList(), ct) : null;
+        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved, labelAvailable, lastGrams));
     }
 
     [HttpPost("parse")]
@@ -132,9 +134,16 @@ public class FoodController(
         }
 
         var result = await foods.LookupBarcodeAsync(digits, ct);
+        decimal? last = null;
+        if (result.Item is { } found && (await repeat.LastAmountsAsync([found.Id], ct)).TryGetValue(found.Id, out var grams))
+        {
+            last = grams;
+        }
+
         return View(new BarcodeViewModel(date, meal, digits, result,
             AddedByAnother: result.Item is { } item && FoodItemService.AddedByAnother(item, currentUser.UserId),
-            LabelAvailable: result.Item is null && await labels.IsAvailableAsync(ct)));
+            LabelAvailable: result.Item is null && await labels.IsAvailableAsync(ct),
+            LastGrams: last));
     }
 
     /// <summary>The food the app already has for a barcode typed or scanned into the manual form (SPEC 7). Local only: no Open Food Facts call.</summary>
