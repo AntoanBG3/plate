@@ -186,13 +186,18 @@
     // StaggeredFadeIn, smaller and quicker for a tool used every day). The class is only ever added here, so the page
     // shows in full if this script fails.
     function riseBelowFold(main) {
+        // Blocks that come into view in the same frame rise one after another; the count restarts with the next frame.
+        let risen = 0;
         Array.from(main.children).forEach((block) => {
             if (block.getBoundingClientRect().top < window.innerHeight) {
                 return;
             }
             block.classList.add("is-pending-rise");
-            window.gymWhenSeen(block, (el, index) => {
-                el.style.setProperty("--rise-delay", `${index * 60}ms`);
+            window.gymWhenSeen(block, (el) => {
+                if (risen === 0) {
+                    queueMicrotask(() => { risen = 0; });
+                }
+                el.style.setProperty("--rise-delay", `${risen++ * 60}ms`);
                 el.classList.replace("is-pending-rise", "is-rising");
                 const done = (event) => {
                     if (event.target !== el) {
@@ -267,10 +272,12 @@
     }
     window.gymCollapse = collapse;
 
-    // The delay in an hx-swap such as "outerHTML swap:180ms", or 0 when the swap is immediate.
+    // The delay in an hx-swap such as "outerHTML swap:180ms" or "swap:0.2s" (inherited like htmx does), or 0 when the
+    // swap is immediate.
     function swapDelay(el) {
-        const match = /swap:(\d+)ms/.exec((el && el.getAttribute("hx-swap")) || "");
-        return match ? Number(match[1]) : 0;
+        const holder = el && el.closest("[hx-swap]");
+        const match = /swap:(\d*\.?\d+)(ms|s)\b/.exec((holder && holder.getAttribute("hx-swap")) || "");
+        return match ? Math.round(Number(match[1]) * (match[2] === "s" ? 1000 : 1)) : 0;
     }
 
     document.addEventListener("htmx:afterSwap", (event) => {
