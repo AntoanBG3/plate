@@ -365,6 +365,9 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .stat-value { font-size: var(--text-title-2); font-weight: var(--weight-semibold); }
 .stat-value small { font-size: var(--text-footnote); color: var(--label-2); font-weight: var(--weight-regular); }
 .stat-label { font-size: var(--text-footnote); color: var(--label-2); margin-top: 2px; }
+/* Four columns at 320 px: a long Bulgarian label (въглехидрати) must wrap inside its cell, not widen the page. */
+.stat-grid .stat { min-width: 0; padding-inline: 0; }
+.stat-grid .stat-label { font-size: 0.6875rem; overflow-wrap: anywhere; }
 
 /* ---------- sign in ---------- */
 
