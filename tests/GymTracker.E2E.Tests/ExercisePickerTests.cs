@@ -3,8 +3,7 @@ using FluentAssertions;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>The exercise picker and custom exercises (SPEC 7, Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class ExercisePickerTests(E2EFixture app)
+public class ExercisePickerTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     [Theory]
     [InlineData(E2EFixture.Chromium)]

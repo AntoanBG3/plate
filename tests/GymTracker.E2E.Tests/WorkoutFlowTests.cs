@@ -3,8 +3,7 @@ using FluentAssertions;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Finishing a workout and the next one: summary, Today's Done today, and the Last time line (SPEC 7).</summary>
-[Collection(E2ECollection.Name)]
-public class WorkoutFlowTests(E2EFixture app)
+public class WorkoutFlowTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     [Theory]
     [InlineData(E2EFixture.Chromium)]

@@ -4,8 +4,7 @@ using Microsoft.Playwright;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Label photos in the browser: shrink, read, fill the form, share (SPEC 6.6, Phase 13).</summary>
-[Collection(E2ECollection.Name)]
-public class LabelPhotoTests(E2EFixture app)
+public class LabelPhotoTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private const string Manual = "/food/add?meal=Lunch&tab=manual";
     private const string Filled = "Read from the photo. Check each value against the label.";

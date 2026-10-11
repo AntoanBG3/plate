@@ -7,8 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Joining from an invite link on a phone (SPEC 9, Phase 12).</summary>
-[Collection(E2ECollection.Name)]
-public class InviteTests(E2EFixture app)
+public class InviteTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private async Task<string> InviteAsync()
     {

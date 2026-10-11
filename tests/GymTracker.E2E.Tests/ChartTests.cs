@@ -3,8 +3,7 @@ using FluentAssertions;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Progress charts draw what their legends list (Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class ChartTests(E2EFixture app)
+public class ChartTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     [Theory]
     [InlineData(E2EFixture.Chromium)]

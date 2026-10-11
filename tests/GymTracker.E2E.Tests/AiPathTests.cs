@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>The pages that need an OpenRouter key, against stubbed models (AiStubs.cs); QA couldn't test them (Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class AiPathTests(E2EFixture app)
+public class AiPathTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private async Task<string> UserIdAsync(string email)
     {

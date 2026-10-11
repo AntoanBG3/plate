@@ -3,8 +3,7 @@ using FluentAssertions;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Food search shows results as you type (SPEC 7 Food, Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class FoodSearchTests(E2EFixture app)
+public class FoodSearchTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     [Theory]
     [InlineData(E2EFixture.Chromium)]

@@ -4,8 +4,7 @@ using Microsoft.Playwright;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>The template editor saves each field on change, with errors next to the field (SPEC 7, Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class TemplateEditorTests(E2EFixture app)
+public class TemplateEditorTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private static ILocator Card(IPage page, int n = 0) => page.Locator(".exercise").Nth(n);
 

@@ -3,8 +3,7 @@ using FluentAssertions;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Reorder mode: drag handles, and up and down buttons for anyone who can't drag (SPEC 7, Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class ReorderTests(E2EFixture app)
+public class ReorderTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private static async Task<IEnumerable<string>> NamesAsync(Phone phone) =>
         (await phone.Page.Locator(".exercise .ex-name").AllTextContentsAsync()).Select(n => n.Trim());

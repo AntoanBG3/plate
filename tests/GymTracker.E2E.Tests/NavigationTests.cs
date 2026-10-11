@@ -3,8 +3,7 @@ using FluentAssertions;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Soft navigation: taps during a page transition, and keeping the user's place after a change (Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class NavigationTests(E2EFixture app)
+public class NavigationTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private static async Task<bool> InViewAsync(Phone phone, string selector) =>
         await phone.Page.Locator(selector).First.EvaluateAsync<bool>(

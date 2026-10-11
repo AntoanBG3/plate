@@ -4,8 +4,7 @@ using Microsoft.Playwright;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>The active workout screen (SPEC 7 Train, Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class SessionTests(E2EFixture app)
+public class SessionTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private static ILocator Rows(IPage page, int card = 0) => page.Locator(".exercise").Nth(card).Locator(".rows.working .set-row");
 

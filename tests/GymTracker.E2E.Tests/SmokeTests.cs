@@ -2,8 +2,7 @@ using FluentAssertions;
 
 namespace GymTracker.E2E.Tests;
 
-[Collection(E2ECollection.Name)]
-public class SmokeTests(E2EFixture app)
+public class SmokeTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     [Theory]
     [InlineData(E2EFixture.Chromium)]

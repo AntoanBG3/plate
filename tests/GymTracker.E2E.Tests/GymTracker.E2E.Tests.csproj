@@ -22,6 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\GymTracker.Web.Tests\GymTracker.Web.Tests.csproj" />
     <ProjectReference Include="..\..\src\GymTracker.Web\GymTracker.Web.csproj" />
     <ProjectReference Include="..\..\src\GymTracker.Core\GymTracker.Core.csproj" />
