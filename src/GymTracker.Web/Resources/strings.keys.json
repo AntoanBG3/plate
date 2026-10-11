@@ -1470,7 +1470,7 @@
   "Open Food Facts didn't answer. Try again later, or add the food by hand.": [
     "src/GymTracker.Web/Views/Food/Add.cshtml"
   ],
-  "Open Food Facts has no name for this product. The name you give it is saved for both of you.": [
+  "Open Food Facts has no name for this product. The name you give it is saved for everyone.": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
   "Open Food Facts is limiting requests right now. Try again in a minute.": [
@@ -1479,7 +1479,7 @@
   "Open Food Facts is limiting requests. Wait a minute, or enter it from the label.": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
-  "Open Food Facts knows this product but not its nutrition. Enter it from the label once and it's saved for both of you.": [
+  "Open Food Facts knows this product but not its nutrition. Enter it from the label once and it's saved for everyone.": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
   "Open the rest timer": [
@@ -2407,7 +2407,7 @@
   "This meal has nothing logged yet.": [
     "src/GymTracker.Web/Features/Food/SavedMealService.cs"
   ],
-  "This product isn't in Open Food Facts. Enter it from the label once and it's saved for both of you.": [
+  "This product isn't in Open Food Facts. Enter it from the label once and it's saved for everyone.": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
   ],
   "This sets your starting calorie and protein targets. They adapt as you log food and weight.": [

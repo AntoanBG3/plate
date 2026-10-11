@@ -14,7 +14,7 @@ public class OpenFoodFactsOptions
 
 /// <summary>
 /// Open Food Facts lookups (SPEC 6.2): product by barcode through API v3, and text search. The API allows
-/// 15 product reads and 10 searches per minute per IP, shared by both users, so callers cache every hit and
+/// 15 product reads and 10 searches per minute per IP, shared by all users, so callers cache every hit and
 /// only search when the user asks.
 /// </summary>
 public class OpenFoodFactsClient(HttpClient http, ILogger<OpenFoodFactsClient> log) : IFoodDatabase

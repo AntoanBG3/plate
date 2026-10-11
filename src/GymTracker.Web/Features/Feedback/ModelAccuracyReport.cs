@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Features.Feedback;
 
 /// <summary>
-/// Correction and thumbs-down rates per model over the last 90 days (SPEC 11). Pooled across both accounts, like
+/// Correction and thumbs-down rates per model over the last 90 days (SPEC 11). Pooled across all accounts, like
 /// the model setting itself; only counts leave this class, never anyone's entries.
 /// </summary>
 public class ModelAccuracyReport(AppDbContext db, TimeProvider time)

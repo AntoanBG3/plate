@@ -34,7 +34,7 @@
             <div class="list">
                 <div class="field-row stacked"><label for="b-name" class="sr-only">@L["Name"]</label><input id="b-name" type="text" name="name" value="@item.Name" maxlength="@GymTracker.Web.Features.Food.FoodItemService.MaxGivenName" required autocomplete="off" /></div>
             </div>
-            <p class="section-footer">@L["Open Food Facts has no name for this product. The name you give it is saved for both of you."]</p>
+            <p class="section-footer">@L["Open Food Facts has no name for this product. The name you give it is saved for everyone."]</p>
         }
         <div class="list">
             <div class="field-row"><label for="grams">@L["How much?"]</label><input id="grams" class="num" type="text" name="grams" value="@((item.DefaultServingGrams ?? 100).Kg())" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required autofocus="@(!item.Unnamed)" /><span class="unit">@L["g"]</span></div>
@@ -51,10 +51,10 @@ else
         <h1 class="large-title">@(Model.Result.Status switch { LookupStatus.NoNutrition => L["No nutrition data"], LookupStatus.RateLimited => L["Try again shortly"], LookupStatus.Unavailable => L["Lookup failed"], _ => L["Not found"] })</h1>
         <p class="subhead">@(Model.Result.Status switch
         {
-            LookupStatus.NoNutrition => L["Open Food Facts knows this product but not its nutrition. Enter it from the label once and it's saved for both of you."],
+            LookupStatus.NoNutrition => L["Open Food Facts knows this product but not its nutrition. Enter it from the label once and it's saved for everyone."],
             LookupStatus.RateLimited => L["Open Food Facts is limiting requests. Wait a minute, or enter it from the label."],
             LookupStatus.Unavailable => L["Open Food Facts didn't answer. Enter it from the label, or try again later."],
-            _ => L["This product isn't in Open Food Facts. Enter it from the label once and it's saved for both of you."],
+            _ => L["This product isn't in Open Food Facts. Enter it from the label once and it's saved for everyone."],
         })</p>
     </header>
     <div data-module="label">

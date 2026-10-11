@@ -80,7 +80,7 @@
         </div>
         <div class="row"><button type="submit" class="btn btn-plain" style="padding: 0">Add</button></div>
     </form>
-    <p class="section-footer">@(justFixed ? "Marked Fixed. If both users can see the change, add a line." : "Both users see it once on Today; the reporter sees \"You reported this\".")</p>
+    <p class="section-footer">@(justFixed ? "Marked Fixed. If users can see the change, add a line." : "Every user sees it once on Today; the reporter sees \"You reported this\".")</p>
 </section>
 
 @if (Model.ParseRun is { } run)

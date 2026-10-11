@@ -273,7 +273,7 @@ builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInter
 var dataProtection = builder.Services.AddDataProtection().SetApplicationName("GymTracker");
 if (config["DataProtection:KeysPath"] is { Length: > 0 } keysPath)
 {
-    // Without persisted keys every container rebuild would invalidate both users' cookies.
+    // Without persisted keys every container rebuild would invalidate every user's cookies.
     dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keysPath));
 }
 

@@ -1,6 +1,6 @@
 namespace GymTracker.Web.Integrations;
 
-/// <summary>The jobs AI models do in the app. Each has its own model setting, shared by both accounts.</summary>
+/// <summary>The jobs AI models do in the app. Each has its own model setting, shared by all accounts.</summary>
 public enum AiTask
 {
     /// <summary>Reads typed food into items and grams (OpenRouter chat models).</summary>
@@ -37,10 +37,10 @@ public static class AiTasks
     /// <summary>The setup chat can be turned off, which leaves the form.</summary>
     public static readonly OpenRouterModel OnboardingOff = new(Off, "GymTracker", "Off: setup form only", 0, 0, false, null);
 
-    /// <summary>The weekly summary can be turned off for both accounts.</summary>
+    /// <summary>The weekly summary can be turned off for every account.</summary>
     public static readonly OpenRouterModel WeeklyOff = new(Off, "GymTracker", "Off: no weekly summary", 0, 0, false, null);
 
-    /// <summary>Label photos can be turned off for both accounts.</summary>
+    /// <summary>Label photos can be turned off for every account.</summary>
     public static readonly OpenRouterModel LabelOff = new(Off, "GymTracker", "Off: no label photos", 0, 0, false, null);
 
     /// <summary>The label model until one is picked: a cheap vision model that reads Cyrillic well (SPEC 6.6).</summary>

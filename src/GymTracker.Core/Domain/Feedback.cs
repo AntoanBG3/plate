@@ -183,7 +183,7 @@ public class ErrorEvent
     public string? LastVersion { get; set; }
 }
 
-/// <summary>A What's new line shown to both users once, in their language.</summary>
+/// <summary>A What's new line shown to every user once, in their language.</summary>
 public class ChangelogEntry
 {
     public const int MaxTextLength = 300;

@@ -17,7 +17,7 @@ public enum KeySource
 public record OpenRouterKeyStatus(KeySource Source, string? Last4);
 
 /// <summary>
-/// The OpenRouter API key and model, shared by both accounts. A key set in Settings (encrypted with Data Protection)
+/// The OpenRouter API key and model, shared by all accounts. A key set in Settings (encrypted with Data Protection)
 /// wins over OPENROUTER_API_KEY from the environment; a model picked in Settings wins over OPENROUTER_MODEL. The key
 /// itself is never shown or logged.
 /// </summary>

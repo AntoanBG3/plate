@@ -346,7 +346,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasIndex(x => x.LastSeenAt);
         });
 
-        // Shared by both accounts.
+        // Shared by all accounts.
         builder.Entity<ChangelogEntry>(e =>
         {
             e.Property(x => x.TextEn).HasMaxLength(ChangelogEntry.MaxTextLength);

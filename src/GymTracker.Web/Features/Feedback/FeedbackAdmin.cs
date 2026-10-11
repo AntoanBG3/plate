@@ -43,7 +43,7 @@ public record Digest(DateTimeOffset Since, IReadOnlyList<FeedbackRow> Reports, I
     int RatedUp, int RatedDown);
 
 /// <summary>
-/// Feedback across both accounts, for the CLI and the admin area (SPEC 11, 12). Reads ignore the user filters, so
+/// Feedback across all accounts, for the CLI and the admin area (SPEC 11, 12). Reads ignore the user filters, so
 /// this must only be reachable from the CLI and from controllers under the admin policy (AdminGuardTests checks it).
 /// Only the status, reply and changelog are written, and each write is audited.
 /// </summary>
