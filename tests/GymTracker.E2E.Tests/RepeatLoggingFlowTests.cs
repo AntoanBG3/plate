@@ -51,4 +51,51 @@ public class RepeatLoggingFlowTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await row.Locator("input[name=grams]").InputValueAsync()).Should().Be("250");
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Add_and_scan_another_logs_three_products_into_one_meal(string browser)
+    {
+        var products = new[] { await ProductAsync(), await ProductAsync(), await ProductAsync() };
+        await using var phone = await app.SignedInPhoneAsync(browser);
+
+        for (var i = 0; i < 2; i++)
+        {
+            await phone.GoAsync($"/food/barcode?date={Today}&meal=Lunch&code={products[i].Code}");
+            var another = phone.Page.Locator("button[name=next][value=scan]");
+            var box = await Phone.BoxAsync(another);
+            box.Height.Should().BeGreaterThanOrEqualTo(44);
+            (box.X + box.Width).Should().BeLessThanOrEqualTo(390);
+            await phone.NavigateByAsync(() => another.TapAsync());
+
+            phone.Page.Url.Should().Contain("tab=barcode").And.Contain("meal=Lunch").And.Contain($"date={Today}");
+            (await phone.Page.Locator(".toast, .banner").AllInnerTextsAsync()).Should().Contain(t => t.Contains($"Added: {products[i].Name}"));
+            (await phone.Page.Locator("[data-start]").IsVisibleAsync()).Should().BeTrue("the next scan is one tap away");
+        }
+
+        await phone.GoAsync($"/food/barcode?date={Today}&meal=Lunch&code={products[2].Code}");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/log-item'] button[type=submit]").First.TapAsync());
+
+        var lunch = await phone.Page.Locator("#meal-lunch").InnerTextAsync();
+        lunch.Should().Contain(products[0].Name).And.Contain(products[1].Name).And.Contain(products[2].Name);
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task Add_and_scan_another_names_an_unnamed_product(string browser)
+    {
+        var (code, _) = await ProductAsync(unnamed: true);
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync($"/food/barcode?date={Today}&meal=Lunch&code={code}");
+        await phone.Page.Locator("#b-name").FillAsync("Granola square");
+
+        await phone.NavigateByAsync(() => phone.Page.Locator("button[name=next][value=scan]").TapAsync());
+
+        (await phone.Page.Locator(".toast, .banner").AllInnerTextsAsync()).Should().Contain(t => t.Contains("Added: Granola square"));
+        await phone.GoAsync($"/food?date={Today}");
+        (await phone.Page.Locator("#meal-lunch").InnerTextAsync()).Should().Contain("Granola square");
+        phone.ShouldHaveNoErrors();
+    }
 }

@@ -236,7 +236,7 @@ public class UntestedAreasTests(E2EFixture app) : IClassFixture<E2EFixture>
         box.Height.Should().BeGreaterThanOrEqualTo(44);
 
         await name.FillAsync("Monster Ultra White");
-        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/log-item'] button[type=submit]").TapAsync());
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/log-item'] button[type=submit]").First.TapAsync());
 
         (await phone.Page.Locator("#meal-lunch").InnerTextAsync()).Should().Contain("Monster Ultra White").And.NotContain("(Monster)");
         phone.ShouldHaveNoErrors();

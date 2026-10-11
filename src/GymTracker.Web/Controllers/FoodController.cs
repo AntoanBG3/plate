@@ -163,7 +163,7 @@ public class FoodController(
     }
 
     [HttpPost("log-item")]
-    public async Task<IActionResult> LogItem(DateOnly date, Meal meal, int foodItemId, decimal grams, EntrySource source, string? name, CancellationToken ct)
+    public async Task<IActionResult> LogItem(DateOnly date, Meal meal, int foodItemId, decimal grams, EntrySource source, string? name, string? next, CancellationToken ct)
     {
         var item = await foods.GetAsync(foodItemId, ct);
         if (item.Unnamed && name is not null)
@@ -173,6 +173,13 @@ public class FoodController(
 
         var description = FoodItemService.EntryDescription(item.DisplayName(), item.Brand);
         await log.AddAsync([new NewEntry(date, meal, description, grams, item.Per100(), item.Id, source)], ct);
+        if (next == "scan" && source == EntrySource.Barcode)
+        {
+            // The Scan tab for the same day and meal; the camera starts on the user's tap, as always (SPEC 7).
+            TempData.Notice(new LocalText("Added: {0}", description));
+            return Redirect($"/food/add?date={date:yyyy-MM-dd}&meal={meal}&tab=barcode");
+        }
+
         FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }

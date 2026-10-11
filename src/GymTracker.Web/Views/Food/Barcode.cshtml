@@ -46,6 +46,7 @@
         }
         <p class="section-footer num" data-totals>@L["{0} kcal · {1} g protein", Math.Round(item.KcalPer100g * amount / 100), (item.ProteinPer100g * amount / 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)]</p>
         <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L[AddTo[Model.Meal]]</button>
+        <button type="submit" name="next" value="scan" class="btn btn-secondary btn-block" style="margin-top: var(--s-2)">@Ui.Icon("barcode")@L["Add and scan another"]</button>
     </form>
     <a class="btn btn-plain btn-block" style="margin-top: var(--s-2)" href="/feedback/new?about=Barcode&id=@item.Id">@Ui.Icon("flag")@L["Wrong product or values?"]</a>
 }

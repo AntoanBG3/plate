@@ -139,6 +139,9 @@
   "Add an exercise the library doesn't have. Only you see it.": [
     "src/GymTracker.Web/Views/SettingsExercises/Index.cshtml"
   ],
+  "Add and scan another": [
+    "src/GymTracker.Web/Views/Food/Barcode.cshtml"
+  ],
   "Add exercise": [
     "src/GymTracker.Web/Views/Templates/Edit.cshtml",
     "src/GymTracker.Web/Views/Train/Session.cshtml"
@@ -203,6 +206,9 @@
   ],
   "Added {0} items.": [
     "src/GymTracker.Web/Controllers/SavedMealsController.cs"
+  ],
+  "Added: {0}": [
+    "src/GymTracker.Web/Controllers/FoodController.cs"
   ],
   "Admin": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
