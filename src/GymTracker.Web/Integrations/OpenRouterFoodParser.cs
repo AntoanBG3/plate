@@ -36,6 +36,8 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
         - nameOriginal: the food's name as the user wrote it, in their language, without the amount or unit
           ("пилешко филе", not "200 г пилешко филе").
         - grams: the edible weight. Estimate vague amounts ("a banana", "a plate of rice", "една филия") and explain in assumption.
+        - amountGiven: true when the text gives this food's amount as a weight, volume, count or fraction ("200 g", "2 eggs",
+          "half a pack", "две филии"); false when it gives no amount ("извара", "some rice", "a banana": an article alone is not an amount).
         - state: "raw" or "cooked" for meat, fish, rice, pasta, grains and legumes; otherwise "na".
           Assume raw weight for meat and fish and cooked weight for rice and pasta unless the text says otherwise.
         - preparation: how it was cooked, only if the text says so, in the language of the text
@@ -64,6 +66,7 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                   "nameEn": { "type": "string" },
                   "nameOriginal": { "type": "string" },
                   "grams": { "type": "number" },
+                  "amountGiven": { "type": "boolean" },
                   "state": { "type": "string", "enum": ["raw", "cooked", "na"] },
                   "preparation": { "type": ["string", "null"] },
                   "assumption": { "type": ["string", "null"] },
@@ -74,7 +77,7 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                   "fiberPer100g": { "type": ["number", "null"] },
                   "saturatedFatPer100g": { "type": ["number", "null"] }
                 },
-                "required": ["nameEn", "nameOriginal", "grams", "state", "preparation", "assumption", "kcalPer100g", "proteinPer100g", "carbsPer100g", "fatPer100g", "fiberPer100g", "saturatedFatPer100g"],
+                "required": ["nameEn", "nameOriginal", "grams", "amountGiven", "state", "preparation", "assumption", "kcalPer100g", "proteinPer100g", "carbsPer100g", "fatPer100g", "fiberPer100g", "saturatedFatPer100g"],
                 "additionalProperties": false
               }
             }
@@ -214,7 +217,8 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                 Str(node["state"]) switch { "raw" => FoodState.Raw, "cooked" => FoodState.Cooked, _ => FoodState.NotApplicable },
                 Str(node["preparation"]),
                 Str(node["assumption"]),
-                Estimate(node));
+                Estimate(node),
+                AmountGiven: node["amountGiven"] is JsonValue given && given.TryGetValue<bool>(out var g) ? g : true);
 
             if (item.NameEn.Length == 0 || FoodMath.Validate(item.Grams, item.Estimated) is not null)
             {

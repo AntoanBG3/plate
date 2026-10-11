@@ -26,6 +26,7 @@ public partial class FakeFoodParser : IFoodParser
             var grams = 100m;
             string? assumption = "assumed 100 g";
             var match = Amount().Match(piece);
+            var given = match.Success;
             if (match.Success)
             {
                 grams = decimal.Parse(match.Groups[1].Value.Replace(',', '.'), CultureInfo.InvariantCulture);
@@ -39,6 +40,7 @@ public partial class FakeFoodParser : IFoodParser
             if (!match.Success && count.Success && piece.Length > count.Length)
             {
                 units = CountValue(count.Groups[1].Value);
+                given = !Article().IsMatch(count.Groups[1].Value);
                 piece = piece[count.Length..].Trim();
                 grams = 100m * units.Value;
                 assumption = null;
@@ -49,7 +51,7 @@ public partial class FakeFoodParser : IFoodParser
                 : FoodState.NotApplicable;
 
             // The name is what was written without its amount; the amount is in grams.
-            items.Add(new ParsedFoodItem(piece, piece, grams, state, null, assumption, new Per100g(100, 5, 15, 3), units));
+            items.Add(new ParsedFoodItem(piece, piece, grams, state, null, assumption, new Per100g(100, 5, 15, 3), units, given));
         }
 
         return Task.FromResult(items.Count == 0
@@ -69,6 +71,9 @@ public partial class FakeFoodParser : IFoodParser
 
     [GeneratedRegex(@"^\s*(a|an|one|two|three|four|five|един|една|едно|два|две|три|четири|пет|\d{1,2})\s+", RegexOptions.IgnoreCase)]
     private static partial Regex Count();
+
+    [GeneratedRegex(@"^(a|an|един|една|едно)$", RegexOptions.IgnoreCase)]
+    private static partial Regex Article();
 
     [GeneratedRegex(@",|\band\b|\n|\bи\b", RegexOptions.IgnoreCase)]
     private static partial Regex Separator();

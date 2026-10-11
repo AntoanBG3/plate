@@ -336,6 +336,23 @@ public class OpenRouterSettingsTests(PostgresFixture fixture) : IClassFixture<Po
 public class OpenRouterParserTests
 {
     [Fact]
+    public async Task Reads_whether_the_amount_was_given()
+    {
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(
+            """{"items":[{"nameEn":"cottage cheese","nameOriginal":"извара","grams":200,"amountGiven":false,"state":"na","preparation":null,"assumption":"приех 200 г","kcalPer100g":98,"proteinPer100g":11,"carbsPer100g":3.4,"fatPer100g":4.3,"fiberPer100g":null,"saturatedFatPer100g":null}]}"""));
+
+        var result = await stub.Parser().ParseAsync("извара", "sk-or-v1-key", "google/gemini-3.5-flash-lite", default);
+
+        result.Items.Single().AmountGiven.Should().BeFalse();
+        var item = stub.SentBody!["response_format"]!["json_schema"]!["schema"]!["properties"]!["items"]!["items"]!;
+        item["properties"]!["amountGiven"]!["type"]!.GetValue<string>().Should().Be("boolean");
+        item["required"]!.AsArray().Select(n => n!.GetValue<string>()).Should().Contain("amountGiven");
+
+        var old = await new StubOpenRouter().Parser().ParseAsync("1 banana", "sk-or-v1-key", "google/gemini-3.5-flash-lite", default);
+        old.Items.Single().AmountGiven.Should().BeTrue("an answer without the field never has its amount replaced");
+    }
+
+    [Fact]
     public async Task Sends_a_strict_schema_and_only_the_parameters_the_model_supports()
     {
         var stub = new StubOpenRouter();

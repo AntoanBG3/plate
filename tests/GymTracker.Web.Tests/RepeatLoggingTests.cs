@@ -92,4 +92,14 @@ public class RepeatLoggingTests(PostgresFixture fixture) : IClassFixture<Postgre
 
         (await a.FoodLog.RecentsAsync(Today, Meal.Breakfast, default)).Should().BeEmpty();
     }
+
+    [Theory]
+    [InlineData("200г извара", true)]
+    [InlineData("извара", false)]
+    [InlineData("a banana", false)]
+    [InlineData("една баница", false)]
+    [InlineData("2 eggs", true)]
+    [InlineData("две яйца", true)]
+    public async Task The_fake_parser_marks_typed_amounts_and_counts(string text, bool given) =>
+        (await new GymTracker.Web.Integrations.FakeFoodParser().ParseAsync(text, default)).Items.Single().AmountGiven.Should().Be(given);
 }
