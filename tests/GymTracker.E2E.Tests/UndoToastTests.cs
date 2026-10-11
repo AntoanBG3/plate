@@ -191,4 +191,53 @@ public class UndoToastTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.Page.Locator("#toast:not([hidden]) .toast-action").WaitForAsync();
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_tap_just_after_an_undo_toast_goes_doesnt_reach_what_was_under_it(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.Page.Clock.InstallAsync();
+        var date = await TodayAsync(phone);
+        var id = await QuickEntryAsync(phone, date, $"Late tap test {Guid.NewGuid():N}");
+        await phone.GoAsync($"/food/entries/{id}");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action$='/delete'] button").TapAsync());
+        await phone.Page.Locator("#toast:not([hidden]) .toast-action").WaitForAsync();
+        await phone.AnimationsDoneAsync("#toast");
+
+        // A button under Undo, as Skip was under it before the toast moved above the rest timer (QA H2). The toast
+        // keeping off the timer is checked above; this is the second guard, for whatever else is under a toast.
+        var undo = await Phone.BoxAsync(phone.Page.Locator("#toast .toast-action button"));
+        await phone.Page.EvaluateAsync("""
+            (b) => {
+                const under = document.createElement("button");
+                under.style.cssText = `position: fixed; left: ${b.x}px; top: ${b.y}px; width: ${b.w}px; height: ${b.h}px; z-index: 1`;
+                window.__underTaps = 0;
+                under.addEventListener("click", () => { window.__underTaps++; });
+                document.body.append(under);
+            }
+            """,
+            // As doubles: float values don't reach the page as numbers.
+            new { x = (double)undo.X, y = (double)undo.Y, w = (double)undo.Width, h = (double)undo.Height });
+
+        // The clock stands still from the toast running out to the late tap, so the tap is "just after" on any machine.
+        var now = await phone.Page.EvaluateAsync<long>("Date.now()");
+        await phone.Page.Clock.PauseAtAsync(DateTimeOffset.FromUnixTimeMilliseconds(now + 50).UtcDateTime);
+        await phone.Page.Clock.RunForAsync(6000);
+        await phone.AnimationsDoneAsync("#toast");
+        (await phone.Page.Locator("#toast").IsHiddenAsync()).Should().BeTrue();
+        var x = undo.X + undo.Width / 2;
+        var y = undo.Y + undo.Height / 2;
+        await phone.Page.Touchscreen.TapAsync(x, y);
+        (await phone.Page.EvaluateAsync<int>("window.__underTaps")).Should().Be(0, "a tap meant for Undo, landing just after it went, is dropped");
+
+        // Later taps there go through, so the button really was under the finger.
+        await phone.Page.Clock.RunForAsync(500);
+        await phone.Page.Touchscreen.TapAsync(x, y);
+        (await phone.Page.EvaluateAsync<int>("window.__underTaps")).Should().Be(1);
+        (await IsDeletedAsync(id)).Should().BeTrue("nothing undid the delete");
+        await phone.Page.Clock.ResumeAsync();
+        phone.ShouldHaveNoErrors();
+    }
 }
