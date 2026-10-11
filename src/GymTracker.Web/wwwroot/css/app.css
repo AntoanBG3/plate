@@ -175,8 +175,8 @@ a.section-aside { color: var(--accent-text) !important; }
 .field-row select { -webkit-appearance: none; appearance: none; color: var(--accent-text); text-align-last: right; cursor: pointer; }
 /* Numbers, whole (type=number) or decimal (text with a decimal keypad, so a value shows with a dot as stored). */
 .field-row input:is([type="number"], [inputmode="decimal"]) { flex: 0 1 6ch; }
-/* Room for an "Optional" placeholder, "По желание" in Bulgarian; a typed value stays right-aligned, so nothing moves. */
-.field-row input:is([type="number"], [inputmode="decimal"])[placeholder] { flex-basis: 11ch; }
+/* Room for the "Optional" placeholder, "По желание" in Bulgarian; a typed value stays right-aligned, so nothing moves. */
+.field-row.is-optional input:is([type="number"], [inputmode="decimal"]) { flex-basis: 11ch; }
 .field-row .unit { color: var(--label-2); flex: none; margin-left: -6px; }
 .field-row.stacked { flex-direction: column; align-items: stretch; gap: var(--s-1); padding-top: var(--s-3); padding-bottom: var(--s-3); }
 .field-row.stacked input { text-align: left; color: var(--label); flex: none; }
