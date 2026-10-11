@@ -179,7 +179,7 @@ public class NutritionTests(PostgresFixture fixture) : IClassFixture<PostgresFix
             new NewEntry(Day.AddDays(-40), Meal.Snack, "Old thing", 100, per100, null, EntrySource.Manual),
         ], default);
 
-        var recents = await s.FoodLog.RecentsAsync(Day, default);
+        var recents = await s.FoodLog.RecentsAsync(Day, Meal.Lunch, default);
 
         recents.Select(r => r.Description).Should().Equal("Skyr", "Apple");
         recents[0].LastGrams.Should().Be(170);
@@ -199,7 +199,7 @@ public class NutritionTests(PostgresFixture fixture) : IClassFixture<PostgresFix
         await a.Invoking(x => x.FoodLog.UpdateAsync(entryId, "mine", 1, Meal.Snack, default)).Should().ThrowAsync<NotFoundException>();
         await a.Invoking(x => x.FoodLog.DeleteAsync(entryId, default)).Should().ThrowAsync<NotFoundException>();
         (await a.FoodLog.CopyMealAsync(Day, Day.AddDays(1), Meal.Lunch, default)).Should().Be(0);
-        (await a.FoodLog.RecentsAsync(Day, default)).Should().BeEmpty();
+        (await a.FoodLog.RecentsAsync(Day, Meal.Lunch, default)).Should().BeEmpty();
 
         b.Db.ChangeTracker.Clear();
         (await b.FoodLog.GetAsync(entryId, default)).Description.Should().Be("B's lunch");

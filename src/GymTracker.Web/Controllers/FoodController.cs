@@ -71,7 +71,7 @@ public class FoodController(
 
         var local = tab == "search" && !string.IsNullOrWhiteSpace(q) ? await foods.SearchForPickerAsync(q, 20, ct) : [];
         var offResults = tab == "search" && off && !string.IsNullOrWhiteSpace(q) ? await foods.SearchOpenFoodFactsAsync(q, ct) : null;
-        var recents = tab == "recent" ? await log.RecentsAsync(today, ct) : [];
+        var recents = tab == "recent" ? await log.RecentsAsync(today, m, ct) : [];
         var saved = tab == "recent" ? await savedMeals.ListAsync(ct) : [];
         var labelAvailable = tab is "manual" or "barcode" && await labels.IsAvailableAsync(ct);
         var lastGrams = local.Count > 0 ? await repeat.LastAmountsAsync(local.Select(f => f.Id).ToList(), ct) : null;

@@ -19,7 +19,7 @@ public class QuickAddTests(PostgresFixture fixture) : IClassFixture<PostgresFixt
         var entry = day.Entries.Single();
         (entry.Source, entry.Grams, entry.Kcal, entry.ProteinG, entry.FoodItemId).Should().Be((EntrySource.Quick, 0m, 650m, 40m, (int?)null));
         day.Totals.Kcal.Should().Be(650);
-        (await s.FoodLog.RecentsAsync(Day, default)).Should().BeEmpty();
+        (await s.FoodLog.RecentsAsync(Day, Meal.Lunch, default)).Should().BeEmpty();
     }
 
     [Fact]

@@ -192,29 +192,29 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
         return entry.Date;
     }
 
-    /// <summary>The 20 foods logged most often in the last 30 days, with the amount used last time.</summary>
-    public async Task<List<RecentFood>> RecentsAsync(DateOnly today, CancellationToken ct)
+    /// <summary>
+    /// Up to 20 foods from the last 30 days, what the account eats at <paramref name="meal"/> first (SPEC 5.10), each
+    /// with the amount used last time.
+    /// </summary>
+    public async Task<List<RecentFood>> RecentsAsync(DateOnly today, Meal meal, CancellationToken ct)
     {
-        var since = today.AddDays(-30);
+        var since = today.AddDays(-RecentOrder.Days);
         var rows = await db.FoodLog
             .Where(e => e.Date >= since && e.Grams > 0)
-            .OrderByDescending(e => e.Date).ThenByDescending(e => e.CreatedAt)
-            .Select(e => new { e.Description, e.FoodItemId, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG })
+            .Select(e => new { e.Id, e.Meal, e.Date, e.CreatedAt, e.Description, e.FoodItemId, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG })
             .ToListAsync(ct);
+        var byId = rows.ToDictionary(r => r.Id);
 
-        return rows
-            .GroupBy(r => (r.FoodItemId, Key: r.Description.ToLowerInvariant()))
+        return RecentOrder.For(rows.Select(r => new RecentUse(r.Id, r.FoodItemId, r.Description, r.Meal, r.Date, r.CreatedAt, r.Grams)), meal, today)
             .Select(g =>
             {
-                var last = g.First();
+                var last = byId[g.LastEntryId];
                 var f = 100m / last.Grams;
                 return new RecentFood(last.Description, last.FoodItemId, last.Grams,
                     new Per100g(Math.Round(last.Kcal * f, 1), Math.Round(last.ProteinG * f, 2), Math.Round(last.CarbsG * f, 2), Math.Round(last.FatG * f, 2),
                         Round(last.FiberG * f, 2), Round(last.SaturatedFatG * f, 2)),
-                    g.Count());
+                    g.Times);
             })
-            .OrderByDescending(r => r.Times).ThenBy(r => r.Description)
-            .Take(20)
             .ToList();
     }
 

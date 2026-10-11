@@ -64,4 +64,32 @@ public class RepeatLoggingTests(PostgresFixture fixture) : IClassFixture<Postgre
         await a.FoodLog.AddAsync([Entry(food, 150)], default);
         (await a.Repeat.LastAmountsAsync([food], default)).Should().Equal(new Dictionary<int, decimal> { [food] = 150 });
     }
+
+    [Fact]
+    public async Task Recent_lists_what_this_account_eats_at_the_meal_first()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var banana = await SharedFoodAsync(s, "banana");
+        var apple = (await s.Foods.SearchAsync("apple", 5, 0.3, default)).First(f => f.Id != banana).Id;
+        for (var i = 0; i < 3; i++)
+        {
+            await s.FoodLog.AddAsync([Entry(apple, 150, Meal.Dinner, "Apple")], default);
+        }
+
+        await s.FoodLog.AddAsync([Entry(banana, 120, Meal.Breakfast)], default);
+
+        (await s.FoodLog.RecentsAsync(Today, Meal.Breakfast, default)).Select(r => r.FoodItemId).Should().Equal(banana, apple);
+        (await s.FoodLog.RecentsAsync(Today, Meal.Dinner, default)).Select(r => r.FoodItemId).Should().Equal(apple, banana);
+        (await s.FoodLog.RecentsAsync(Today, Meal.Breakfast, default))[0].LastGrams.Should().Be(120);
+    }
+
+    [Fact]
+    public async Task Recent_ignores_other_accounts()
+    {
+        await using var a = new UserScope(fixture, await fixture.CreateUserAsync());
+        await using var b = new UserScope(fixture, await fixture.CreateUserAsync());
+        await b.FoodLog.AddAsync([Entry(await SharedFoodAsync(b, "banana"), 120, Meal.Breakfast)], default);
+
+        (await a.FoodLog.RecentsAsync(Today, Meal.Breakfast, default)).Should().BeEmpty();
+    }
 }

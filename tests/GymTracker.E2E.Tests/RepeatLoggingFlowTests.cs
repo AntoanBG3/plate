@@ -98,4 +98,27 @@ public class RepeatLoggingFlowTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await phone.Page.Locator("#meal-lunch").InnerTextAsync()).Should().Contain("Granola square");
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    public async Task Recent_at_breakfast_lists_breakfast_foods_first(string browser)
+    {
+        var (_, porridge) = await ProductAsync();
+        var (_, curry) = await ProductAsync();
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await using (var db = app.Db.CreateContext(null))
+        {
+            var ids = db.FoodItems.Where(f => f.Name == porridge || f.Name == curry).ToDictionary(f => f.Name, f => f.Id);
+            for (var i = 0; i < 3; i++)
+            {
+                await phone.PostAsync("/food/log-item", new() { ["date"] = Today, ["meal"] = "Dinner", ["foodItemId"] = ids[curry].ToString(), ["grams"] = "300", ["source"] = "Search" });
+            }
+
+            await phone.PostAsync("/food/log-item", new() { ["date"] = Today, ["meal"] = "Breakfast", ["foodItemId"] = ids[porridge].ToString(), ["grams"] = "60", ["source"] = "Search" });
+        }
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Breakfast&tab=recent");
+        (await phone.Page.Locator("form[action='/food/log-recent'] .row-title").First.TextContentAsync())!.Trim().Should().Be(porridge);
+        phone.ShouldHaveNoErrors();
+    }
 }
