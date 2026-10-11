@@ -111,9 +111,10 @@ public class RepeatLoggingService(AppDbContext db, ICurrentUser currentUser, Tim
 
             await db.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // Two confirms at once can both insert the same words; the food is already logged, so this only loses the memory.
+            // Two confirms at once can both insert the same words, or the database can fail; the food is already logged,
+            // so this only loses the memory. Detaching keeps a later save in the same request from retrying the rows.
             log.LogWarning(ex, "Could not remember usual foods.");
             foreach (var entry in db.ChangeTracker.Entries<UsualFood>().ToList())
             {

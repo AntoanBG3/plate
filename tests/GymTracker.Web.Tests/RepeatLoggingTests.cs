@@ -243,4 +243,19 @@ public class RepeatLoggingTests(PostgresFixture fixture) : IClassFixture<Postgre
 
         (await s.Db.UsualFoods.CountAsync()).Should().Be(0);
     }
+
+    [Fact]
+    public async Task A_run_that_cannot_be_read_does_not_fail_the_confirm()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var food = await SharedFoodAsync(s, "banana");
+        var runId = (await s.ParseRuns.ParseAsync("банан", default)).RunId!.Value;
+        // jsonb rejects invalid JSON, so the run holds valid JSON of the wrong shape: numbers where items belong.
+        await s.Db.Database.ExecuteSqlAsync($"""UPDATE "ParseRuns" SET "Parsed" = '[1]'::jsonb WHERE "Id" = {runId}""");
+        await using var confirm = new UserScope(fixture, s.UserId);
+
+        await confirm.ParseRuns.RememberAsync(runId, [new SavedItem(true, "Banana", 120, new Per100g(89, 1, 23, 0), food)], default);
+
+        (await s.Db.UsualFoods.CountAsync()).Should().Be(0);
+    }
 }

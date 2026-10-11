@@ -132,22 +132,30 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
 
     /// <summary>
     /// Remembers the food saved for each typed name (SPEC 6.1, usual foods), from the run's parsed names. Without a run
-    /// (missing or someone else's) there are no typed names, so nothing is remembered.
+    /// (missing or someone else's) there are no typed names, so nothing is remembered. It runs after the food is saved,
+    /// so any failure is logged and dropped: an error here would show an error page for food already logged.
     /// </summary>
     public async Task RememberAsync(int? runId, IReadOnlyList<SavedItem> saved, CancellationToken ct)
     {
-        if (repeat is null || runId is not { } id || await db.ParseRuns.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id, ct) is not { } run)
+        try
         {
-            return;
-        }
+            if (repeat is null || runId is not { } id || await db.ParseRuns.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id, ct) is not { } run)
+            {
+                return;
+            }
 
-        var parsed = FeedbackJson.Read<List<ParsedFoodItem>>(run.Parsed) ?? [];
-        var pairs = saved.Take(parsed.Count)
-            .Select((s, n) => (Saved: s, Typed: parsed[n].NameOriginal))
-            .Where(x => x.Saved.Included && x.Saved.FoodItemId is not null)
-            .Select(x => (x.Typed, x.Saved.FoodItemId!.Value))
-            .ToList();
-        await repeat.RememberAsync(pairs, ct);
+            var parsed = FeedbackJson.Read<List<ParsedFoodItem>>(run.Parsed) ?? [];
+            var pairs = saved.Take(parsed.Count)
+                .Select((s, n) => (Saved: s, Typed: parsed[n].NameOriginal))
+                .Where(x => x.Saved.Included && x.Saved.FoodItemId is not null)
+                .Select(x => (x.Typed, x.Saved.FoodItemId!.Value))
+                .ToList();
+            await repeat.RememberAsync(pairs, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            log.LogWarning(ex, "Could not remember usual foods.");
+        }
     }
 
     private static string? Trim(string? value, int max = 100) => value is { Length: > 0 } v && v.Length > max ? v[..max] : value;
