@@ -62,11 +62,13 @@ Checked and already matching, so out of scope: the top bar and tab bar material 
 Browser tests (Playwright, Chromium and WebKit, 390 px), written before each change and seen to fail first:
 
 1. `MotionPolishTests.A_closed_menu_cannot_be_focused_or_read`: on a session with an exercise, pressing Tab from the exercise menu trigger skips the closed menu's items, and the menu's computed `visibility` is `hidden`. After the trigger is clicked, `visibility` is `visible` and the first item takes focus from the keyboard.
-2. `MotionPolishTests.Below_the_fold_animations_wait_until_scrolled_into_view`: on the first sight of Today with a weight trend (fresh session, so the first-sight gate allows animation), the trend sparkline has no running animation at load. After it is scrolled into view it has one, and once that ends the trend value shows its final number. Elements above the fold (the kcal gauge) animate at load, as now.
+2. `MotionPolishTests.Below_the_fold_animations_wait_until_scrolled_into_view`: on the first sight of Today with a weight trend (fresh session, so the first-sight gate allows animation), the trend sparkline has no running animation at load. After it is scrolled into view it has one, and once that ends the trend value shows its final number.
 3. `MotionPolishTests.Blocks_below_the_fold_rise_in_once`: on the first sight of Today, a block below the fold has `is-pending-rise` and opacity 0; after scrolling to it, the class is gone after its animation ends and opacity is 1. On a second visit in the same session no block gets the class.
 4. `MotionPolishTests.Reduced_motion_hides_nothing`: with `prefers-reduced-motion: reduce`, no element on Today or Progress has `is-pending-rise`, and every `data-count` shows its final value at load.
 5. `MotionPolishTests.Scroll_fades_follow_the_scroll_position`: in the Change food results with enough results to scroll, `--fade-end` is `transparent` and `--fade-start` is not at the top; after scrolling to the end, the reverse.
 6. `MotionPolishTests.Row_animation_length_follows_height`: `window.gymMotionDuration` gives 44 → 240, 200 → 300, 800 → 480; deleting a logged set collapses the row in no more than its 180 ms swap delay (the row's collapse animation has finished, or was never longer, when the swap happens).
+
+The plan adds guards for reduced motion, a screen taller than the page, a soft navigation with blocks still waiting, a theme change before a chart is seen, and a list with nothing to scroll.
 
 Existing tests that cover the touched code (UndoToastTests, NavigationTests, ChartTests, VisualSystemTests, SessionTests, TemplateEditorTests, ConfirmFoodsTests) must stay green. Then the full Core, Web and browser suites per the test cadence, and a visual check at 390 px in light and dark.
 
