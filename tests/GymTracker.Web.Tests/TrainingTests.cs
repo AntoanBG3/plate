@@ -5,8 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class TrainingTests(PostgresFixture fixture)
+public class TrainingTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private async Task<(UserScope Scope, int TemplateId)> UserWithTemplateAsync()
     {

@@ -131,8 +131,7 @@ public class OpenRouterCatalogTests
     }
 }
 
-[Collection(PostgresCollection.Name)]
-public class OpenRouterSettingsTests(PostgresFixture fixture)
+public class OpenRouterSettingsTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private const string SettingsKey = "sk-or-v1-settings-key-0123456789abcdWXYZ";
     private const string EnvironmentKey = "sk-or-v1-environment-key-0123456789ENVK";
@@ -541,8 +540,7 @@ public class OpenRouterLabelReaderTests
     }
 }
 
-[Collection(PostgresCollection.Name)]
-public class LabelReaderSwitchTests(PostgresFixture fixture)
+public class LabelReaderSwitchTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static async Task<bool> AvailableAsync(AppFactory app)
     {

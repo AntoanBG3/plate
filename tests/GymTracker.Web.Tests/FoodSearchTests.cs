@@ -3,8 +3,7 @@ using FluentAssertions;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The Search tab: plain foods first, each food once (SPEC 7 Food, Phase 11).</summary>
-[Collection(PostgresCollection.Name)]
-public class FoodSearchTests(PostgresFixture fixture)
+public class FoodSearchTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Theory]
     [InlineData("banana", "Bananas, raw")]

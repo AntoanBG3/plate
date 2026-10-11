@@ -6,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The Food totals card reads the same way in every cell (Phase 11).</summary>
-[Collection(PostgresCollection.Name)]
-public class FoodTotalsTests(PostgresFixture fixture)
+public class FoodTotalsTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task Each_cell_has_one_word_and_its_target_in_one_line()

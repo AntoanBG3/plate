@@ -10,8 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class NutritionTests(PostgresFixture fixture)
+public class NutritionTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static readonly DateOnly Day = new(2026, 10, 2);
 

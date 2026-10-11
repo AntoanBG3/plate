@@ -33,8 +33,7 @@ public sealed class ScriptedWriter : IWeeklySummaryWriter
 }
 
 /// <summary>The weekly summary on Today (SPEC 6.5).</summary>
-[Collection(PostgresCollection.Name)]
-public class WeeklySummaryFlowTests(PostgresFixture db) : IDisposable
+public class WeeklySummaryFlowTests(PostgresFixture db) : IDisposable, IClassFixture<PostgresFixture>
 {
     private readonly ScriptedWriter writer = new();
     private AppFactory? app;

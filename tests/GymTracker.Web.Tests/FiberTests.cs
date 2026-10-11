@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Fiber and saturated fat from foods to entries, saved meals and the seeds (SPEC 4, 6.2, 6.3).</summary>
-[Collection(PostgresCollection.Name)]
-public class FiberTests(PostgresFixture fixture)
+public class FiberTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static readonly DateOnly Day = new(2026, 9, 28);
 

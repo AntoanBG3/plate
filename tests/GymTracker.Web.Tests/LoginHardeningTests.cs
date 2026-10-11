@@ -7,8 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class LoginHardeningTests(PostgresFixture db)
+public class LoginHardeningTests(PostgresFixture db) : IClassFixture<PostgresFixture>
 {
     private sealed class CountingHasher : PasswordHasher<AppUser>
     {

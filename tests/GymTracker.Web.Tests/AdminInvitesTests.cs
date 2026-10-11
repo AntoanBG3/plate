@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The admin area's Invites page (SPEC 12, Phase 12).</summary>
-[Collection(PostgresCollection.Name)]
-public partial class AdminInvitesTests(PostgresFixture fixture) : IAsyncLifetime
+public partial class AdminInvitesTests(PostgresFixture fixture) : IAsyncLifetime, IClassFixture<PostgresFixture>
 {
     private readonly AppFactory app = new(fixture, settings: new Dictionary<string, string?> { ["RateLimits:JoinPerWindow"] = "1000" });
 

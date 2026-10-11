@@ -6,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The cut start date, the diet break offer, and starting and ending a break (SPEC 5.9).</summary>
-[Collection(PostgresCollection.Name)]
-public class DietBreakTests(PostgresFixture db) : IDisposable
+public class DietBreakTests(PostgresFixture db) : IDisposable, IClassFixture<PostgresFixture>
 {
     private readonly AppFactory app = new(db);
 

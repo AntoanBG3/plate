@@ -7,8 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class HttpSecurityTests(PostgresFixture db) : IDisposable
+public class HttpSecurityTests(PostgresFixture db) : IDisposable, IClassFixture<PostgresFixture>
 {
     private readonly AppFactory app = new(db);
 
@@ -167,8 +166,7 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable
     }
 }
 
-[Collection(PostgresCollection.Name)]
-public class LoginRateLimitTests(PostgresFixture db)
+public class LoginRateLimitTests(PostgresFixture db) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task Login_posts_are_rate_limited()

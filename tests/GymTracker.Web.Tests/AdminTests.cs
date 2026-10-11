@@ -14,8 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The admin area (SPEC 12): who gets in, the passkey unlock, and the pages that write.</summary>
-[Collection(PostgresCollection.Name)]
-public class AdminTests(PostgresFixture fixture) : IDisposable
+public class AdminTests(PostgresFixture fixture) : IDisposable, IClassFixture<PostgresFixture>
 {
     private readonly AppFactory app = new(fixture);
 

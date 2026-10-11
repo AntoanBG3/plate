@@ -36,8 +36,7 @@ public sealed class ScriptedAssistant : IOnboardingAssistant
     }
 }
 
-[Collection(PostgresCollection.Name)]
-public class OnboardingTests(PostgresFixture db) : IDisposable
+public class OnboardingTests(PostgresFixture db) : IDisposable, IClassFixture<PostgresFixture>
 {
     private readonly ScriptedAssistant assistant = new();
     private AppFactory? app;

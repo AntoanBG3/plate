@@ -6,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Custom exercises (SPEC 7 Settings): one user's own, never seen or changed by the other.</summary>
-[Collection(PostgresCollection.Name)]
-public class CustomExerciseTests(PostgresFixture fixture)
+public class CustomExerciseTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task A_created_exercise_is_listed_for_its_owner_only()

@@ -4,8 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class ExerciseSettingsTests(PostgresFixture fixture)
+public class ExerciseSettingsTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task Notes_are_per_user()

@@ -3,8 +3,7 @@ using FluentAssertions;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class ServerTimingTests(PostgresFixture db) : IDisposable
+public class ServerTimingTests(PostgresFixture db) : IDisposable, IClassFixture<PostgresFixture>
 {
     private readonly AppFactory app = new(db);
 

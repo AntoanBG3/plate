@@ -11,8 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Label scans in the admin area and the feedback CLI, and the label model's accuracy (SPEC 11, 12).</summary>
-[Collection(PostgresCollection.Name)]
-public class AdminLabelsTests(PostgresFixture fixture)
+public class AdminLabelsTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0x42];
 

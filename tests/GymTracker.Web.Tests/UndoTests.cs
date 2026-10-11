@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class UndoTests(PostgresFixture fixture)
+public class UndoTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static readonly DateOnly Day = new(2026, 10, 4);
 

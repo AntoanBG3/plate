@@ -6,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Added set rows are stored on the session exercise, so a reload keeps them (SPEC 7, Phase 11).</summary>
-[Collection(PostgresCollection.Name)]
-public class SetSlotTests(PostgresFixture fixture)
+public class SetSlotTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private async Task<(UserScope Scope, int ExerciseId)> SessionExerciseAsync()
     {

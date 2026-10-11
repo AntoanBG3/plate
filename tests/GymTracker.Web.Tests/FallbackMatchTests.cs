@@ -6,8 +6,7 @@ using Xunit.Abstractions;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The built-in parser with database ranking only (no AI key), on the QA pass's cases (Phase 11).</summary>
-[Collection(PostgresCollection.Name)]
-public class FallbackMatchTests(PostgresFixture fixture, ITestOutputHelper output)
+public class FallbackMatchTests(PostgresFixture fixture, ITestOutputHelper output) : IClassFixture<PostgresFixture>
 {
     private async Task<(string Name, decimal Grams, Confidence Confidence)> MatchAsync(string text)
     {

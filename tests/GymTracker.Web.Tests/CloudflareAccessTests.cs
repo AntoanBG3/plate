@@ -176,8 +176,7 @@ public class CloudflareAccessTests
 }
 
 /// <summary>The Access check wired into the admin policy, end to end.</summary>
-[Collection(PostgresCollection.Name)]
-public class CloudflareAccessAdminTests(PostgresFixture fixture)
+public class CloudflareAccessAdminTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task With_Access_configured_the_admin_area_needs_a_valid_token_for_the_account()

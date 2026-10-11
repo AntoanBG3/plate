@@ -42,8 +42,7 @@ public class CsvTests
         new Csv("x").Row(-1.5m).ToString().Should().Be("x\r\n-1.5\r\n");
 }
 
-[Collection(PostgresCollection.Name)]
-public class ExportTests(PostgresFixture fixture)
+public class ExportTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task Zip_has_a_csv_per_kind_of_data_in_utf8_with_bom()

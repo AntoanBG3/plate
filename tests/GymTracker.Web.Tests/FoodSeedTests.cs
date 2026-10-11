@@ -6,8 +6,7 @@ using Xunit;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class FoodSeedTests(PostgresFixture fixture)
+public class FoodSeedTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static string TempCsv(params string[] lines)
     {

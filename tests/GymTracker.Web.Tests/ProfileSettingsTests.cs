@@ -5,8 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class ProfileSettingsTests(PostgresFixture db) : IDisposable
+public class ProfileSettingsTests(PostgresFixture db) : IDisposable, IClassFixture<PostgresFixture>
 {
     private readonly AppFactory app = new(db);
 

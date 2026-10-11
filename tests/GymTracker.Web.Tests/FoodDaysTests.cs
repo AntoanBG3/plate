@@ -9,8 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Future days can't be logged; past days show the targets in force then (SPEC 7 Food, Phase 11).</summary>
-[Collection(PostgresCollection.Name)]
-public class FoodDaysTests(PostgresFixture fixture)
+public class FoodDaysTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static DateOnly Today => UserClock.Today(DateTimeOffset.UtcNow, UserProfile.DefaultTimeZoneId);
 

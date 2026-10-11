@@ -5,8 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>A set retried from the phone's queue after it was deleted must not come back as a logged row.</summary>
-[Collection(PostgresCollection.Name)]
-public class SetReplayTests(PostgresFixture fixture)
+public class SetReplayTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task Replaying_a_deleted_set_returns_an_empty_row()

@@ -10,8 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>What's new, model accuracy, export and retention for feedback (SPEC 11).</summary>
-[Collection(PostgresCollection.Name)]
-public class FeedbackExtrasTests(PostgresFixture fixture)
+public class FeedbackExtrasTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task Whats_new_shows_once_in_the_users_language_and_marks_their_own_report()

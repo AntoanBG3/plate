@@ -15,8 +15,7 @@ namespace GymTracker.Web.Tests;
 /// (GYM_WRITE_KNOWN=1 rewrites it), so only new regressions fail the test. Only shared seed foods are checked,
 /// found by name, since ids differ between databases and the users' own foods aren't here.
 /// </summary>
-[Collection(PostgresCollection.Name)]
-public class ParseRegressionTests(PostgresFixture fixture, ITestOutputHelper output)
+public class ParseRegressionTests(PostgresFixture fixture, ITestOutputHelper output) : IClassFixture<PostgresFixture>
 {
     private static readonly string Fixtures = Path.Combine(RepoPaths.Root, "tests", "GymTracker.Web.Tests", "Fixtures");
     private static readonly string KnownFile = Path.Combine(Fixtures, "parse-corrections.known-failures.txt");

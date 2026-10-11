@@ -13,8 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Invites (SPEC 9, Phase 12).</summary>
-[Collection(PostgresCollection.Name)]
-public class InviteTests(PostgresFixture fixture) : IAsyncLifetime
+public class InviteTests(PostgresFixture fixture) : IAsyncLifetime, IClassFixture<PostgresFixture>
 {
     private const string Password = "correct horse battery";
     private readonly AppFactory app = new(fixture);
