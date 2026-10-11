@@ -200,6 +200,34 @@ public class MotionPolishTests(E2EFixture app) : IClassFixture<E2EFixture>
     [Theory]
     [InlineData(E2EFixture.Chromium)]
     [InlineData(E2EFixture.WebKit)]
+    public async Task A_chart_draws_in_when_its_block_rises_not_when_its_canvas_does(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await WithCaloriesAsync(phone);
+        await phone.Page.SetViewportSizeAsync(390, ShortScreen);
+        await FirstSightAsync(phone, "/progress");
+        await phone.Page.WaitForFunctionAsync("() => window.Chart && Chart.getChart(document.getElementById('calories-chart'))");
+
+        // The block's top is at 80 % of the screen (risen) while the canvas, lower in the block, is still below 85 %.
+        // The chart must reset and grow while the block fades in, not a scroll later when it shows finished.
+        await phone.Page.EvaluateAsync(@"() => {
+            const block = document.getElementById('calories-chart').closest('#main > *');
+            window.scrollBy(0, block.getBoundingClientRect().top - innerHeight * 0.8);
+        }");
+        var tops = await phone.Page.EvaluateAsync<double[]>(@"() => {
+            const canvas = document.getElementById('calories-chart');
+            return [canvas.closest('#main > *').getBoundingClientRect().top / innerHeight, canvas.getBoundingClientRect().top / innerHeight];
+        }");
+        tops[0].Should().BeLessThan(0.85, "the block has come into view");
+        tops[1].Should().BeGreaterThan(0.85, "the canvas has not");
+
+        await phone.Page.WaitForFunctionAsync(CaloriesChartRunning, null, new() { Timeout = 3000 });
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
     public async Task A_theme_change_before_a_chart_is_seen_redraws_it_quietly(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);

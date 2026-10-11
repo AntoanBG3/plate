@@ -57,11 +57,13 @@ window.gymModule("progress", () => {
 
     // A chart's entrance plays when the chart comes into view (pages.js gymWhenSeen), not at load, so charts lower on
     // the page haven't finished before they are seen. The chart is drawn at once without it, then reset and replayed.
+    // It waits for the chart's block (a child of #main that rises in), so the reset happens while the block is still
+    // faint rather than a scroll later, when the block shows the finished chart.
     function enter(chart, motion) {
         if (!motion) {
             return;
         }
-        window.gymWhenSeen(chart.canvas, () => {
+        window.gymWhenSeen(chart.canvas.closest("#main > *") || chart.canvas, () => {
             if (!charts.includes(chart)) {
                 return; // redrawn for a theme change, or the page was left
             }
