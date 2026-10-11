@@ -139,7 +139,14 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
     {
         try
         {
-            if (repeat is null || runId is not { } id || await db.ParseRuns.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id, ct) is not { } run)
+            if (repeat is null || runId is not { } id)
+            {
+                return;
+            }
+
+            // ConfirmAsync has usually just loaded the run (through the owner filter) in this context; reuse it.
+            var run = db.ParseRuns.Local.FirstOrDefault(r => r.Id == id) ?? await db.ParseRuns.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id, ct);
+            if (run is null)
             {
                 return;
             }
