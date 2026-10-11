@@ -235,25 +235,43 @@
 
     // ---- things that appear or leave: htmx rows, list items ----
 
+    // Longer moves take longer, as apple.com's expanding trays do (there clamp(h × 2/3, 400, 800) ms), at this app's
+    // tempo: a single row about 240 ms, a tall block up to 480 ms.
+    function motionDuration(height) {
+        return Math.round(Math.min(480, Math.max(240, 200 + height / 2)));
+    }
+    window.gymMotionDuration = motionDuration;
+
     function appear(el) {
         if (reduce.matches || !(el instanceof HTMLElement)) {
             return;
         }
         const h = el.offsetHeight;
         el.animate([{ height: "0px", opacity: 0, overflow: "hidden" }, { height: `${h}px`, opacity: 1, overflow: "hidden" }],
-            { duration: 340, easing: snappy() });
+            { duration: motionDuration(h), easing: snappy() });
     }
     window.gymAppear = appear;
 
-    function collapse(el) {
+    // A collapse runs inside htmx's swap delay; longer than that and the row is replaced before it has finished.
+    function collapse(el, maxMs = Infinity) {
         if (reduce.matches || !(el instanceof HTMLElement)) {
             return Promise.resolve();
         }
         const h = el.offsetHeight;
+        const duration = Math.min(maxMs, Math.round(motionDuration(h) * 0.75));
+        if (duration <= 0) {
+            return Promise.resolve();
+        }
         return el.animate([{ height: `${h}px`, opacity: 1, overflow: "hidden" }, { height: "0px", opacity: 0, overflow: "hidden" }],
-            { duration: 260, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" }).finished;
+            { duration, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" }).finished;
     }
     window.gymCollapse = collapse;
+
+    // The delay in an hx-swap such as "outerHTML swap:180ms", or 0 when the swap is immediate.
+    function swapDelay(el) {
+        const match = /swap:(\d+)ms/.exec((el && el.getAttribute("hx-swap")) || "");
+        return match ? Number(match[1]) : 0;
+    }
 
     document.addEventListener("htmx:afterSwap", (event) => {
         const swap = event.detail.requestConfig && event.detail.requestConfig.elt && event.detail.requestConfig.elt.getAttribute("hx-swap");
@@ -263,10 +281,11 @@
         }
     });
 
-    // Rows deleted through htmx collapse during the swap delay (hx-swap="outerHTML swap:260ms").
+    // Rows deleted through htmx collapse during the swap delay (the set rows use hx-swap="outerHTML swap:180ms").
     document.addEventListener("htmx:beforeSwap", (event) => {
         if (event.detail.xhr.status === 200 && event.detail.serverResponse.trim() === "" && event.detail.target.matches(".set-row, .row, li")) {
-            collapse(event.detail.target);
+            // htmx dispatches this on the swap target; the element that made the request (and holds hx-swap) is in the detail.
+            collapse(event.detail.target, swapDelay(event.detail.requestConfig && event.detail.requestConfig.elt));
         }
     });
 

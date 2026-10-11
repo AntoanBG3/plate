@@ -215,4 +215,34 @@ public class MotionPolishTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await phone.Page.EvaluateAsync<bool>(CaloriesChartRunning)).Should().BeFalse("a redraw for the theme has no entrance");
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Row_animation_length_follows_height(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press");
+        // Records the duration of every Web Animation, with the class of the element it runs on.
+        await phone.Context.AddInitScriptAsync("""
+            window.__animations = [];
+            const animate = Element.prototype.animate;
+            Element.prototype.animate = function (keyframes, options) {
+                window.__animations.push({ el: String(this.className), duration: typeof options === "number" ? options : (options && options.duration) || 0 });
+                return animate.call(this, keyframes, options);
+            };
+            """);
+        await phone.StartSessionAsync(template);
+
+        (await phone.Page.EvaluateAsync<double[]>("() => [44, 200, 800].map((h) => window.gymMotionDuration(h))")).Should().Equal(240, 300, 480);
+
+        // Removing an empty row: the server answers with nothing and htmx swaps the row out after 180 ms (_SetRow.cshtml).
+        var rows = phone.Page.Locator(".exercise").First.Locator(".rows.working .set-row");
+        var before = await rows.CountAsync();
+        await rows.Nth(before - 1).Locator(".set-delete").EvaluateAsync("b => b.click()");
+        await phone.Page.WaitForFunctionAsync("n => document.querySelectorAll('.exercise .rows.working .set-row').length === n - 1", before);
+        var collapses = await phone.Page.EvaluateAsync<double[]>("() => window.__animations.filter((a) => a.el.includes('set-row')).map((a) => a.duration)");
+        collapses.Should().NotBeEmpty().And.OnlyContain(d => d <= 180, "the row must finish collapsing before htmx swaps it out at 180 ms");
+        phone.ShouldHaveNoErrors();
+    }
 }
