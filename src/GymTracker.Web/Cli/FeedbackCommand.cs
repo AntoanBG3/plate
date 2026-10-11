@@ -442,7 +442,7 @@ public static class FeedbackCommand
         {
             var row = resolved[n]!;
             var mark = item == n ? "»" : " ";
-            o.WriteLine($" {mark}[{n}] {row["description"]} {row["grams"]} g → {row["matchedName"] ?? "(AI estimate)"} #{row["foodItemId"]} {row["confidence"]}");
+            o.WriteLine($" {mark}[{n}] {row["description"]} {row["grams"]} g → {row["matchedName"] ?? "(AI estimate)"} #{row["foodItemId"]} {row["confidence"]}{(row["usual"]?.GetValue<bool>() == true ? " usual" : "")}");
             if (saved?.ElementAtOrDefault(n) is { } s)
             {
                 o.WriteLine($"       saved: {(s["included"]?.GetValue<bool>() == true ? $"{s["description"]} {s["grams"]} g #{s["foodItemId"]}" : "unticked")} ({s["corrections"]})");

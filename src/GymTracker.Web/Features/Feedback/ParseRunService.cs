@@ -13,7 +13,7 @@ public record ParseOutcome(FoodParseResult Result, IReadOnlyList<ConfirmItem> It
 /// <summary>One suggested row as stored in <see cref="ParseRun.Resolved"/>.</summary>
 /// <param name="Proposed">The namer's answer as it came back, kept even when it was rejected.</param>
 public record ResolvedRow(string Description, decimal Grams, Per100g Per100, int? FoodItemId, string? MatchedName, Confidence Confidence,
-    IReadOnlyList<string> Notes, string? MatchModel, MatchTrace? Match, FoodName? Proposed = null, string? Status = null);
+    IReadOnlyList<string> Notes, string? MatchModel, MatchTrace? Match, FoodName? Proposed = null, string? Status = null, bool Usual = false);
 
 /// <summary>One submitted row as stored in <see cref="ParseRun.Saved"/>.</summary>
 public record SavedRow(bool Included, string Description, decimal Grams, Per100g Per100, int? FoodItemId, ParseCorrection Corrections);
@@ -22,7 +22,8 @@ public record SavedRow(bool Included, string Description, decimal Grams, Per100g
 /// Parses typed food and records the run: what the parser and matcher suggested and, on confirm, what the user
 /// saved and how it differs (SPEC 11). Recording never gets in the way of logging food.
 /// </summary>
-public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodParser parser, FoodMatcher matcher, IFoodNamer namer, TimeProvider time, ILogger<ParseRunService> log)
+public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodParser parser, FoodMatcher matcher, IFoodNamer namer, TimeProvider time, ILogger<ParseRunService> log,
+    RepeatLoggingService? repeat = null)
 {
     public async Task<ParseOutcome> ParseAsync(string text, CancellationToken ct)
     {
@@ -60,7 +61,7 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             ParserError = result.Error is { } error ? Trim(error.ToString(), 500) : null,
             Parsed = FeedbackJson.Write(result.Items),
             Resolved = FeedbackJson.Write(items.Select((item, n) => new ResolvedRow(item.Description, item.Grams, item.Per100, item.FoodItemId,
-                item.MatchedName, item.Confidence, item.Notes.Select(n => n.ToString()).ToList(), item.MatchModel, trace.ElementAtOrDefault(n), proposed[n], item.Status)).ToList()),
+                item.MatchedName, item.Confidence, item.Notes.Select(n => n.ToString()).ToList(), item.MatchModel, trace.ElementAtOrDefault(n), proposed[n], item.Status, item.Usual)).ToList()),
         };
 
         try
@@ -127,6 +128,26 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
         run.Corrections = ParseCorrections.Overall(corrections);
         run.ConfirmedAt = time.GetUtcNow();
         return run.Id;
+    }
+
+    /// <summary>
+    /// Remembers the food saved for each typed name (SPEC 6.1, usual foods), from the run's parsed names. Without a run
+    /// (missing or someone else's) there are no typed names, so nothing is remembered.
+    /// </summary>
+    public async Task RememberAsync(int? runId, IReadOnlyList<SavedItem> saved, CancellationToken ct)
+    {
+        if (repeat is null || runId is not { } id || await db.ParseRuns.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id, ct) is not { } run)
+        {
+            return;
+        }
+
+        var parsed = FeedbackJson.Read<List<ParsedFoodItem>>(run.Parsed) ?? [];
+        var pairs = saved.Take(parsed.Count)
+            .Select((s, n) => (Saved: s, Typed: parsed[n].NameOriginal))
+            .Where(x => x.Saved.Included && x.Saved.FoodItemId is not null)
+            .Select(x => (x.Typed, x.Saved.FoodItemId!.Value))
+            .ToList();
+        await repeat.RememberAsync(pairs, ct);
     }
 
     private static string? Trim(string? value, int max = 100) => value is { Length: > 0 } v && v.Length > max ? v[..max] : value;

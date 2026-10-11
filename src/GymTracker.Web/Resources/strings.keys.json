@@ -2745,6 +2745,12 @@
   "Your summary": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"
   ],
+  "Your usual": [
+    "src/GymTracker.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Your usual amount, {0} g": [
+    "src/GymTracker.Web/Features/Food/FoodMatcher.cs"
+  ],
   "aim {0}": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
   ],

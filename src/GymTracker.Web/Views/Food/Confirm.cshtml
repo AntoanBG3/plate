@@ -36,7 +36,7 @@
         @for (var i = 0; i < Model.Items.Count; i++)
         {
             var item = Model.Items[i];
-            var (chip, label) = item.Confidence switch
+            var (chip, label) = item.Usual ? ("good", L["Your usual"]) : item.Confidence switch
             {
                 Confidence.High => ("good", L["Database"]),
                 Confidence.Medium => ("check", L["Check match"]),

@@ -20,6 +20,7 @@ public enum Confidence
 /// How the food is, shown beside its name ("boiled", "dried"): the namer's for a matched food, the parser's preparation for an
 /// estimate. When null the view shows <paramref name="State"/>.
 /// </param>
+/// <param name="Usual">Matched through the account's usual food for these words (SPEC 6.1 step 1).</param>
 public record ConfirmItem(
     string Description,
     decimal Grams,
@@ -32,7 +33,8 @@ public record ConfirmItem(
     string Typed = "",
     FoodState State = FoodState.NotApplicable,
     string? MatchedNameEn = null,
-    string? Status = null);
+    string? Status = null,
+    bool Usual = false);
 
 /// <summary>How one item was matched, kept with the parse run for feedback (SPEC 11): the ranking's top candidates and the decider's answer.</summary>
 /// <param name="DeciderModel">The decision model that answered for this parse, even where its answer was not used.</param>
@@ -43,9 +45,10 @@ public record TraceCandidate(int Id, string Name, double Score, bool Own);
 /// <summary>
 /// Turns parsed foods into database foods: the model reads the text, the database supplies the numbers (SPEC 6.1).
 /// A decider (Jev) chooses from a trigram shortlist when one is set up; its "none" counts only when it is sure.
-/// Anything it doesn't decide falls back to Rank's top pick.
+/// Anything it doesn't decide falls back to Rank's top pick. Without <paramref name="repeat"/> (the evaluation), no usual
+/// foods or last amounts are used, so the parser and matcher are measured alone.
 /// </summary>
-public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
+public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, RepeatLoggingService? repeat = null)
 {
     private const double MatchThreshold = 0.5;
     private const double HighConfidence = 0.8;
@@ -74,6 +77,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
     public async Task<List<ConfirmItem>> ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct, List<MatchTrace>? trace = null)
     {
         var items = parsed.ToList();
+        var usual = repeat is null ? [] : await repeat.UsualMatchesAsync(items, ct);
         var ranked = new List<(FoodMatch Food, double Score)?>();
         var tops = new List<List<(FoodMatch Food, double Score)>>();
         var shortlists = new List<List<FoodMatch>>();
@@ -91,11 +95,11 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             shortlists.Add(Shortlist(found));
         }
 
-        // A food the user saved, at the top of the ranking, stands: saving it is how they say "this is what I eat".
+        // A usual food, or a food the user saved at the top of the ranking, stands: saving it is how they say "this is what I eat".
         // That item still goes in as context, but not as a question.
         for (var n = 0; n < items.Count; n++)
         {
-            if (ranked[n] is { Food.Own: true })
+            if (usual.ContainsKey(n) || ranked[n] is { Food.Own: true })
             {
                 shortlists[n] = [];
             }
@@ -120,6 +124,12 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             trace?.Add(new MatchTrace(
                 tops[n].Select(t => new TraceCandidate(t.Food.Id, t.Food.DisplayName, Math.Round(t.Score, 3), t.Food.Own)).ToList(),
                 shortlists[n].Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence, decisions?.Model));
+            if (usual.TryGetValue(n, out var mine))
+            {
+                result.Add(Matched(item, mine, Portion(item, mine, notes), Confidence.High, notes, null) with { Usual = true });
+                continue;
+            }
+
             if (decision is { FoodItemId: { } id } && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
             {
                 var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
@@ -144,7 +154,40 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider)
             }
         }
 
+        if (repeat is not null)
+        {
+            await UseLastAmountsAsync(items, result, ct);
+        }
+
         return result;
+    }
+
+    private static readonly string[] AmountNotes = ["{0} × a serving of {1} g", "assumed 100 g each"];
+
+    /// <summary>
+    /// SPEC 6.1 step 4: when the text gave no amount, a matched food takes the account's last amount, and the note
+    /// about the guessed amount gives way to "Your usual amount". An amount the user gave is never replaced.
+    /// </summary>
+    private async Task UseLastAmountsAsync(List<ParsedFoodItem> items, List<ConfirmItem> result, CancellationToken ct)
+    {
+        var open = Enumerable.Range(0, result.Count).Where(n => !items[n].AmountGiven && result[n].FoodItemId is not null).ToList();
+        if (open.Count == 0)
+        {
+            return;
+        }
+
+        var last = await repeat!.LastAmountsAsync(open.Select(n => result[n].FoodItemId!.Value).ToList(), ct);
+        foreach (var n in open)
+        {
+            if (last.TryGetValue(result[n].FoodItemId!.Value, out var grams))
+            {
+                var notes = result[n].Notes
+                    .Where(note => note.Format != items[n].Assumption && !AmountNotes.Contains(note.Format))
+                    .Append(new LocalText("Your usual amount, {0} g", grams.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)))
+                    .ToList();
+                result[n] = result[n] with { Grams = grams, Notes = notes };
+            }
+        }
     }
 
     /// <summary>

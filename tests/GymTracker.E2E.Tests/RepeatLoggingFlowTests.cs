@@ -121,4 +121,28 @@ public class RepeatLoggingFlowTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await phone.Page.Locator("form[action='/food/log-recent'] .row-title").First.TextContentAsync())!.Trim().Should().Be(porridge);
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Typed_words_propose_the_food_confirmed_for_them_last_time(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=text");
+        await phone.Page.Locator("textarea[name=text], input[name=text]").First.FillAsync("200 g cottage cheese");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").First.TapAsync());
+        var matched = await phone.Page.Locator(".result").First.Locator("textarea[name$='Description']").InputValueAsync();
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/confirm'] button[type=submit]").Last.TapAsync());
+
+        await phone.GoAsync($"/food/add?date={Today}&meal=Dinner&tab=text");
+        await phone.Page.Locator("textarea[name=text], input[name=text]").First.FillAsync("cottage cheese");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").First.TapAsync());
+
+        var row = phone.Page.Locator(".result").First;
+        (await row.Locator("[data-chip]").TextContentAsync())!.Trim().Should().Be("Your usual");
+        (await row.Locator("input[name$='Grams']").InputValueAsync()).Should().Be("200");
+        (await row.Locator("[data-note]").AllTextContentsAsync()).Should().Contain("Your usual amount, 200 g");
+        (await row.Locator("textarea[name$='Description']").InputValueAsync()).Should().Be(matched);
+        phone.ShouldHaveNoErrors();
+    }
 }

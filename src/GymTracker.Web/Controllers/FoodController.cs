@@ -106,13 +106,14 @@ public class FoodController(
             throw new ValidationException("Tick at least one food to save.");
         }
 
-        var runId = await parseRuns.ConfirmAsync(parseRunId,
-            items.Select(i => new SavedItem(i.Include, i.Description ?? "", i.Grams, i.Per100, i.FoodItemId)).ToList(), ct);
+        var saved = items.Select(i => new SavedItem(i.Include, i.Description ?? "", i.Grams, i.Per100, i.FoodItemId)).ToList();
+        var runId = await parseRuns.ConfirmAsync(parseRunId, saved, ct);
         var entries = items
             .Where(i => i.Include)
             .Select(i => new NewEntry(date, meal, i.Description ?? "", i.Grams, i.Per100, i.FoodItemId, EntrySource.Ai, aiModel, string.IsNullOrWhiteSpace(i.MatchModel) ? null : i.MatchModel.Trim(), runId, i.Status))
             .ToList();
         await log.AddAsync(entries, ct);
+        await parseRuns.RememberAsync(runId, saved, ct);
         FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
