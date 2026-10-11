@@ -181,13 +181,47 @@
             });
         });
     }
-    reveal(document, firstSight());
+
+    // Blocks that start below the fold rise in as they come into view, on a page's first sight only (apple.com's
+    // StaggeredFadeIn, smaller and quicker for a tool used every day). The class is only ever added here, so the page
+    // shows in full if this script fails.
+    function riseBelowFold(main) {
+        Array.from(main.children).forEach((block) => {
+            if (block.getBoundingClientRect().top < window.innerHeight) {
+                return;
+            }
+            block.classList.add("is-pending-rise");
+            window.gymWhenSeen(block, (el, index) => {
+                el.style.setProperty("--rise-delay", `${index * 60}ms`);
+                el.classList.replace("is-pending-rise", "is-rising");
+                const done = (event) => {
+                    if (event.target !== el) {
+                        return;
+                    }
+                    el.removeEventListener("animationend", done);
+                    el.classList.remove("is-rising");
+                    el.style.removeProperty("--rise-delay");
+                };
+                el.addEventListener("animationend", done);
+            });
+        });
+    }
+
+    const firstLoad = firstSight();
+    reveal(document, firstLoad);
+    if (firstLoad && document.getElementById("main")) {
+        riseBelowFold(document.getElementById("main"));
+    }
 
     // After a soft navigation (nav.js) the new page needs its own title binding and first-sight animations.
     document.addEventListener("gym:page", (event) => {
         bindLargeTitle();
         const main = document.getElementById("main");
-        reveal(main, firstSight());
+        const first = firstSight();
+        reveal(main, first);
+        if (first) {
+            riseBelowFold(main);
+        }
 
         // New content rises in, first eight blocks staggered. Not on Back, which should feel like returning, nor on
         // a sideways slide, which already moves the whole page.

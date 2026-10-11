@@ -103,4 +103,61 @@ public class MotionPolishTests(E2EFixture app) : IClassFixture<E2EFixture>
 
         phone.ShouldHaveNoErrors();
     }
+
+    private const string BodySection = "#main > section:has(.spark)";
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Blocks_below_the_fold_rise_in_once(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await SeedWeightsAsync(phone);
+        await phone.Page.SetViewportSizeAsync(390, ShortScreen);
+        await FirstSightAsync(phone, "/today");
+
+        var body = phone.Page.Locator(BodySection);
+        (await body.EvaluateAsync<bool>("e => e.getBoundingClientRect().top >= innerHeight")).Should().BeTrue("the test needs the Body section below the fold");
+        (await body.GetAttributeAsync("class")).Should().Contain("is-pending-rise");
+        (await body.EvaluateAsync<string>("e => getComputedStyle(e).opacity")).Should().Be("0");
+
+        await body.ScrollIntoViewIfNeededAsync();
+        await phone.Page.WaitForFunctionAsync($$"""
+            () => { const b = document.querySelector("{{BodySection}}");
+                    return !b.classList.contains("is-pending-rise") && !b.classList.contains("is-rising") && getComputedStyle(b).opacity === "1"; }
+            """);
+
+        await phone.GoAsync("/today");
+        (await phone.Page.Locator(".is-pending-rise").CountAsync()).Should().Be(0, "a page rises in on its first sight in a session only");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Leaving_a_page_with_blocks_still_waiting_leaves_nothing_hidden_on_screen(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await SeedWeightsAsync(phone);
+        await phone.Page.SetViewportSizeAsync(390, ShortScreen);
+        await FirstSightAsync(phone, "/today");
+        (await phone.Page.Locator(".is-pending-rise").CountAsync()).Should().BeGreaterThan(0);
+
+        await phone.NavigateByAsync(() => phone.Page.Locator(".tabbar a[href='/food']").TapAsync());
+        (await phone.Page.EvaluateAsync<bool>("() => [...document.querySelectorAll('.is-pending-rise')].every(e => e.getBoundingClientRect().top >= innerHeight)"))
+            .Should().BeTrue("only blocks below the fold may wait, invisible, to rise in");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_screen_taller_than_the_page_hides_nothing(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.Page.SetViewportSizeAsync(390, 3000);
+        await FirstSightAsync(phone, "/today");
+        (await phone.Page.Locator(".is-pending-rise").CountAsync()).Should().Be(0);
+        phone.ShouldHaveNoErrors();
+    }
 }

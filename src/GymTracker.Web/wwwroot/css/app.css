@@ -873,7 +873,13 @@ html[data-nav="back"]::view-transition-new(large-title) { animation: var(--dur-p
 @keyframes tab-pop { 0% { transform: scale(1); } 35% { transform: scale(0.86); } 100% { transform: scale(1); } }
 
 /* The first blocks of a newly shown page rise in, staggered; motion.js sets --i. */
-#main.is-entering > * { animation: appear 320ms var(--ease-snappy) both; animation-delay: calc(var(--i, 0) * 24ms); }
+#main.is-entering > :not(.is-pending-rise, .is-rising) { animation: appear 320ms var(--ease-snappy) both; animation-delay: calc(var(--i, 0) * 24ms); }
+
+/* Below-the-fold blocks on a page's first sight (motion.js): hidden until they come into view, then they rise in,
+   staggered by --rise-delay. will-change only while waiting or moving, as apple.com does. */
+.is-pending-rise { opacity: 0; transform: translateY(16px); will-change: opacity, transform; }
+.is-rising { animation: rise-in 420ms var(--ease-gentle) var(--rise-delay, 0ms) both; will-change: opacity, transform; }
+@keyframes rise-in { from { opacity: 0; transform: translateY(16px); } }
 @keyframes vt-fade-out { to { opacity: 0; } }
 @keyframes vt-fade-in { from { opacity: 0; } }
 @keyframes vt-push-out { to { transform: translateX(-28%); opacity: 0.5; } }
