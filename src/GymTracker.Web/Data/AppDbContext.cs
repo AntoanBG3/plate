@@ -27,6 +27,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<FoodLogEntry> FoodLog => Set<FoodLogEntry>();
     public DbSet<SavedMeal> SavedMeals => Set<SavedMeal>();
     public DbSet<SavedMealItem> SavedMealItems => Set<SavedMealItem>();
+    public DbSet<UsualFood> UsualFoods => Set<UsualFood>();
     public DbSet<MaintenanceEstimate> MaintenanceEstimates => Set<MaintenanceEstimate>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<ParseRun> ParseRuns => Set<ParseRun>();
@@ -191,6 +192,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasOne(x => x.FoodItem).WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne<ParseRun>().WithMany().HasForeignKey(x => x.ParseRunId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => new { x.UserId, x.Date });
+            e.HasIndex(x => new { x.UserId, x.FoodItemId, x.CreatedAt }); // last amounts (SPEC 5.10)
             e.HasQueryFilter(OwnerFilter, x => x.UserId == CurrentUserId);
             e.HasQueryFilter(SoftDeleteFilter, x => x.DeletedAt == null);
         });
@@ -217,6 +219,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.FiberG).HasPrecision(6, 1);
             e.Property(x => x.SaturatedFatG).HasPrecision(6, 1);
             e.HasQueryFilter(x => x.SavedMeal.UserId == CurrentUserId);
+        });
+
+        builder.Entity<UsualFood>(e =>
+        {
+            e.Property(x => x.Phrase).HasMaxLength(GymTracker.Core.Nutrition.UsualFoods.MaxLength);
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<FoodItem>().WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.UserId, x.Phrase }).IsUnique();
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
         });
 
         // Shared by all accounts, so no user filter.

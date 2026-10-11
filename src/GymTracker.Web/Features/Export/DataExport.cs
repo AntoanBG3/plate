@@ -26,6 +26,7 @@ public class DataExport(AppDbContext db)
             ["weekly_summaries.csv"] = await WeeklySummariesAsync(ct),
             ["feedback.csv"] = await FeedbackAsync(ct),
             ["label_scans.csv"] = await LabelScansAsync(ct),
+            ["usual_foods.csv"] = await UsualFoodsAsync(ct),
         };
 
         using var stream = new MemoryStream();
@@ -191,6 +192,22 @@ public class DataExport(AppDbContext db)
         {
             csv.Row(f.CreatedAt, f.Source.ToString(), f.Kind.ToString(), f.Area.ToString(), f.Rating?.ToString(),
                 f.Reasons == GymTracker.Core.Domain.ParseReason.None ? null : f.Reasons.ToString(), f.Message, f.Status.ToString(), f.Reply);
+        }
+
+        return csv;
+    }
+
+    /// <summary>Which food the account means by words it types (SPEC 6.1).</summary>
+    private async Task<Csv> UsualFoodsAsync(CancellationToken ct)
+    {
+        var csv = new Csv("phrase", "food_item_id", "food", "last_used_at_utc");
+        var rows = await (from u in db.UsualFoods.AsNoTracking()
+                          join f in db.FoodItems.AsNoTracking() on u.FoodItemId equals f.Id
+                          orderby u.Phrase
+                          select new { u.Phrase, u.FoodItemId, f.Name, u.LastUsedAt }).ToListAsync(ct);
+        foreach (var r in rows)
+        {
+            csv.Row(r.Phrase, r.FoodItemId, r.Name, r.LastUsedAt);
         }
 
         return csv;

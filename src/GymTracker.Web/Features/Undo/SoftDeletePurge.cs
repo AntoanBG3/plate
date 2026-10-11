@@ -16,6 +16,7 @@ public sealed class SoftDeletePurge(IServiceScopeFactory scopes, TimeProvider ti
     public static readonly TimeSpan KeepAdminAudit = TimeSpan.FromDays(365);
     public static readonly TimeSpan KeepLabelPhotos = TimeSpan.FromDays(30);
     public static readonly TimeSpan KeepLabelScans = TimeSpan.FromDays(180);
+    public static readonly TimeSpan KeepUsualFoods = TimeSpan.FromDays(180);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -71,6 +72,7 @@ public sealed class SoftDeletePurge(IServiceScopeFactory scopes, TimeProvider ti
         count += await db.LabelScanPhotos.IgnoreQueryFilters().Where(p => p.LabelScan.CreatedAt < photoCutoff).ExecuteDeleteAsync(ct);
         var scanCutoff = now - KeepLabelScans;
         count += await db.LabelScans.IgnoreQueryFilters().Where(s => s.CreatedAt < scanCutoff).ExecuteDeleteAsync(ct);
+        count += await db.UsualFoods.IgnoreQueryFilters().Where(u => u.LastUsedAt < now - KeepUsualFoods).ExecuteDeleteAsync(ct);
         return count;
     }
 }

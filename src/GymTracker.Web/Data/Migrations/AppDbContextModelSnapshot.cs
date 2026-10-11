@@ -510,6 +510,8 @@ namespace GymTracker.Web.Data.Migrations
 
                     b.HasIndex("UserId", "Date");
 
+                    b.HasIndex("UserId", "FoodItemId", "CreatedAt");
+
                     b.ToTable("FoodLog");
                 });
 
@@ -1144,6 +1146,39 @@ namespace GymTracker.Web.Data.Migrations
                     b.HasKey("UserId");
 
                     b.ToTable("Profiles");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.UsualFood", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FoodItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Phrase")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FoodItemId");
+
+                    b.HasIndex("UserId", "Phrase")
+                        .IsUnique();
+
+                    b.ToTable("UsualFoods");
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.WeeklySummary", b =>
@@ -1789,6 +1824,21 @@ namespace GymTracker.Web.Data.Migrations
                     b.HasOne("GymTracker.Web.Data.AppUser", null)
                         .WithOne()
                         .HasForeignKey("GymTracker.Core.Domain.UserProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.UsualFood", b =>
+                {
+                    b.HasOne("GymTracker.Core.Domain.FoodItem", null)
+                        .WithMany()
+                        .HasForeignKey("FoodItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GymTracker.Web.Data.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

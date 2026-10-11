@@ -111,6 +111,18 @@ public class FoodLogEntry
     public DateTimeOffset? DeletedAt { get; set; }
 }
 
+/// <summary>Which food this account means by some typed words (SPEC 4, 6.1). Written on confirm, read before the ranking.</summary>
+public class UsualFood
+{
+    public int Id { get; set; }
+    public string UserId { get; set; } = "";
+
+    /// <summary>The 5.10 key of a food's name as the user typed it; unique per user.</summary>
+    public string Phrase { get; set; } = "";
+    public int FoodItemId { get; set; }
+    public DateTimeOffset LastUsedAt { get; set; }
+}
+
 /// <summary>A named group of foods logged together often, copied from a logged meal.</summary>
 public class SavedMeal
 {

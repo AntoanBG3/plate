@@ -60,7 +60,7 @@ public class ExportTests(PostgresFixture fixture) : IClassFixture<PostgresFixtur
 
         files.Keys.Should().BeEquivalentTo(
             "profile.csv", "bodyweight.csv", "workouts.csv", "sets.csv", "templates.csv",
-            "custom_exercises.csv", "food_log.csv", "maintenance_estimates.csv", "weekly_summaries.csv", "feedback.csv", "label_scans.csv");
+            "custom_exercises.csv", "food_log.csv", "maintenance_estimates.csv", "weekly_summaries.csv", "feedback.csv", "label_scans.csv", "usual_foods.csv");
         files["bodyweight.csv"].Should().Be("date,weight_kg\r\n2026-10-01,82.4\r\n");
         files["food_log.csv"].Should().StartWith("date,meal,description,status,grams,kcal,protein_g,carbs_g,fat_g,fiber_g,saturated_fat_g,source,ai_model,match_model,created_at_utc\r\n");
         files["food_log.csv"].Should().Contain("2026-10-01,Breakfast,\"Баница, 2 парчета\",,200,640,20,60,35,,,Ai,test,typesafe/jev-1.13-20260917,");
@@ -83,6 +83,20 @@ public class ExportTests(PostgresFixture fixture) : IClassFixture<PostgresFixtur
         csv.Should().StartWith("created_at_utc,model,latency_ms,error,edited,values,saved\r\n");
         // jsonb comes back reformatted, so the JSON columns are checked by content.
         csv.Should().Contain("2026-10-07T08:00:00Z,test/label,1234,,true,").And.Contain("kcalPer100g").And.NotContain("PHOTOBYTES");
+    }
+
+    [Fact]
+    public async Task Usual_foods_are_exported()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var food = (await s.Foods.SearchAsync("banana", 1, 0.3, default)).Single();
+        s.Db.UsualFoods.Add(new UsualFood { UserId = s.UserId, Phrase = "банан", FoodItemId = food.Id, LastUsedAt = DateTimeOffset.UtcNow });
+        await s.Db.SaveChangesAsync();
+
+        var files = Unzip(await new DataExport(s.Db).ZipAsync(default));
+
+        files["usual_foods.csv"].Should().StartWith("phrase,food_item_id,food,last_used_at_utc\r\n")
+            .And.Contain($"банан,{food.Id},");
     }
 
     /// <summary>File name to text, after checking each file starts with the UTF-8 byte order mark.</summary>
