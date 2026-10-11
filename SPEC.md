@@ -389,7 +389,7 @@ Also provide `FakeFoodParser` for tests and local development without a key (sel
 - Set the `User-Agent` OFF requires: `GymTracker/<version> (<contact email from config>)`.
 - Rate limits are 15 product reads and 10 searches per minute per IP, shared by all users because all calls leave from wizard. Call OFF search only on explicit submit (never as-you-type), and treat HTTP 429 as "try again shortly" without breaking the page.
 - Cache every successful lookup as a shared `FoodItem` so repeat scans are instant and work offline from the API.
-- The name is `product_name`, else `product_name_en`, `generic_name` or `generic_name_en`. With none of them, the brand and `quantity` stand in ("Monster 500ml"; "Product <barcode>" without a brand) and the item is `Unnamed`. Its barcode result then has a name field above the grams, filled with the stand-in, with "Open Food Facts has no name for this product. The name you give it is saved for both of you." The first name saved replaces the stand-in on the shared item for everyone, along with that user's entries still carrying it; later names are ignored. A logged packaged food reads "name (brand)", without the brand when the name already starts with it.
+- The name is `product_name`, else `product_name_en`, `generic_name` or `generic_name_en`. With none of them, the brand and `quantity` stand in ("Monster 500ml"; "Product <barcode>" without a brand) and the item is `Unnamed`. Its barcode result then has a name field above the grams, filled with the stand-in, with "Open Food Facts has no name for this product. The name you give it is saved for everyone." The first name saved replaces the stand-in on the shared item for everyone, along with that user's entries still carrying it; later names are ignored. A logged packaged food reads "name (brand)", without the brand when the name already starts with it.
 - If the product is missing or has no nutrition data, offer to create a manual `FoodItem` with that barcode (shared, see section 4).
 
 ### 6.3 USDA FoodData Central subset
@@ -532,7 +532,7 @@ Settings is a short hub, not one long page (progressive disclosure: NN/g, and th
     - Very active: more than two hours of hard activity a day (running, cycling, sport), or heavy manual work plus training.
     Under it: "Lifting 3 to 4 times a week counts for about half a level; add it to your walking. Used only until about three weeks of logs give an adaptive estimate." (An hour of lifting is about 3.5 to 5 MET, so 200 to 320 kcal above rest for 80 kg; four a week is 115 to 185 kcal a day against about 220 kcal between inactive and low active.)
 - Training page: weight jump; bar and plates (the profile bar weight and which plates the gym has).
-- Custom exercises: create (name, primary muscle, equipment, optional secondary muscles), rename and archive the user's own exercises. They appear in the picker with the shared library and are never visible to the other account.
+- Custom exercises: create (name, primary muscle, equipment, optional secondary muscles), rename and archive the user's own exercises. They appear in the picker with the shared library and are never visible to other accounts.
 - General page: theme and language; the time zone, picked from a list; the weekly AI summary on or off (6.5), with the line "Last week's numbers are sent to an AI model through OpenRouter."
 - Sign-in & security page: passkeys (add, remove), change password, log out everywhere.
 - Settings shows nothing about the AI models or the key. Only the developer manages them, in the admin area (section 12).
@@ -556,6 +556,7 @@ Settings is a short hub, not one long page (progressive disclosure: NN/g, and th
   - Call `navigator.storage.persist()` once in standalone mode to reduce the chance of eviction.
   - The server treats a repeated `ClientId` as success without creating a duplicate, after checking the existing set belongs to the current user, and returns the same response as for a new insert.
 - The active session must be fully restorable after the app is closed or the phone locks: all state lives on the server, except the pending queue, values typed into rows not logged yet, and the rest timer end time (all in `localStorage`).
+- Text never assumes there are only two users: the app is used by Antoan, his father and friends he invites. Shared things are saved "for everyone" or for "other users", never "for both of you" or "the other account"; the same goes for What's new entries.
 - Numbers are written with a dot in both languages. The server also accepts a typed comma, since the Bulgarian iPhone keypad has one.
 
 ---
@@ -719,13 +720,13 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 - Exercise seed, templates CRUD, start and log sessions, history.
 - Bodyweight entry on the Today page.
 - Login hardening from section 9, the Cloudflare hostname, and the backup-script changes from section 10.
-- **Done when:** both accounts can log a full workout from an iPhone at `gym.peychev.uk` over mobile data; the data lives in `~/docker/gymtracker/db` and persists across `docker compose down` and `up`; the host script's dump restores into a fresh database; lockout and login rate limiting are tested; and user isolation tests pass.
+- **Done when:** every account can log a full workout from an iPhone at `gym.peychev.uk` over mobile data; the data lives in `~/docker/gymtracker/db` and persists across `docker compose down` and `up`; the host script's dump restores into a fresh database; lockout and login rate limiting are tested; and user isolation tests pass.
 
 ### Phase 2: Progression and training analytics
 - Progression service with suggestions in the active session view.
 - e1RM, weekly volume, and their Progress charts. Session summary with PRs.
 - Rest timer. Offline pending-set queue.
-- **Done when:** all Core tests for 5.1 to 5.3 pass; logging sets with airplane mode toggled on and off, and with the app closed or the phone locked mid-request, results in no lost or duplicated sets; and the rest timer sound works on both users' iPhones.
+- **Done when:** all Core tests for 5.1 to 5.3 pass; logging sets with airplane mode toggled on and off, and with the app closed or the phone locked mid-request, results in no lost or duplicated sets; and the rest timer sound works on each user's iPhone.
 
 ### Phase 3: Nutrition
 - FoodItem and FoodLogEntry, USDA subset import, text parsing via OpenRouter with database matching and confirmation, barcode scanning with its fallbacks, Open Food Facts lookup and caching, search, recents, copy meal.
@@ -745,7 +746,7 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 
 ### Phase 7: Admin
 - Section 12: the `Dev` role, Cloudflare Access check, passkey unlock, the admin pages, the audit log, AI settings moved out of Settings, and the CLI additions.
-- **Done when:** the other account sees read-only AI models and gets a 404 at `/admin`; the developer reaches `/admin` from the iPhone only through the Access code and Face ID; a status and reply set from the admin area show on the reporter's phone; an eval runs from the admin area; and the unlock shows in `admin audit` and on Telegram.
+- **Done when:** an account without the Dev role sees read-only AI models and gets a 404 at `/admin`; the developer reaches `/admin` from the iPhone only through the Access code and Face ID; a status and reply set from the admin area show on the reporter's phone; an eval runs from the admin area; and the unlock shows in `admin audit` and on Telegram.
 
 ### Phase 8: Activity level and onboarding
 - Activity level and the NASEM 2023 prior (5.5), profile limits in one place (5.7), the setup chat (6.4) with its form fallback, and the onboarding model in the admin area and CLI.
@@ -772,7 +773,7 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 - The Text composer's first line level with the send button (section 7), in the food composer and the setup chat.
 - `FoodItem.AddedByUserId`, the split barcode index, own-first barcode lookup, the share checkbox and the "Added by another user" mark (sections 4 and 7).
 - Label reading (6.6): the label AI task and its picker, `ILabelReader` and `LabelValues` in Core, `OpenRouterLabelReader`, the photo flow on the manual form and the Scan tab, `LabelScan` and its photo with their retention, the Labels admin page, label accuracy, and the CLI additions (sections 11 and 12).
-- **Done when:** the Core tests for every 6.6 normalizing case pass; a browser test shows the composer's text centred on the send button within 1 px in Chromium and WebKit at 390 px, in English and Bulgarian, here and in the setup chat; on an iPhone at 390 px, in English and Bulgarian, a photo of a real Bulgarian label (camera and photo library both) fills the form after a barcode miss, and the saved shared food is found by the other account's scan with "Added by another user" and no name; an unticked one stays private and the other account can save its own for the same barcode; a per-serving label converts and a non-label photo shows the not-found message; the photo is gone after 30 days and `delete-user` leaves no scan; a third account passes the user isolation tests for scans and photos; the twenty-first label read in 10 minutes returns 429; the label model's accuracy shows in the admin area; and `ai test label` reads the bundled photo.
+- **Done when:** the Core tests for every 6.6 normalizing case pass; a browser test shows the composer's text centred on the send button within 1 px in Chromium and WebKit at 390 px, in English and Bulgarian, here and in the setup chat; on an iPhone at 390 px, in English and Bulgarian, a photo of a real Bulgarian label (camera and photo library both) fills the form after a barcode miss, and the saved shared food is found by another account's scan with "Added by another user" and no name; an unticked one stays private and another account can save its own for the same barcode; a per-serving label converts and a non-label photo shows the not-found message; the photo is gone after 30 days and `delete-user` leaves no scan; a third account passes the user isolation tests for scans and photos; the twenty-first label read in 10 minutes returns 429; the label model's accuracy shows in the admin area; and `ai test label` reads the bundled photo.
 
 ### Phase 14: Settings hub
 - Section 7 Settings: the hub of rows with their current values, one page each for Profile, Goal & nutrition, Training, General and Sign-in & security, per-page saves, and no AI models section.

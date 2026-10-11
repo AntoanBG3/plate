@@ -92,7 +92,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 docker builder prune -f                      # the SDK build cache sits on the boot SSD
 ```
 
-For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the admin area under AI, `/admin/ai` (stored encrypted with the Data Protection keys, shared by both accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The same page has one model per AI task:
+For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the admin area under AI, `/admin/ai` (stored encrypted with the Data Protection keys, shared by all accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The same page has one model per AI task:
 
 - Food parser: picked from OpenRouter's catalog (default `openai/gpt-6-luna`, or `OPENROUTER_MODEL`).
 - Food matcher: Off (the database ranking picks the food, the default) or TypeSafe's Jev 1.13, a decision model that chooses which database food each item is, or says none fits. It uses the same key and costs about $0.0002 per entry. Picking it runs a test decision. Entries record which Jev version chose their match (`match_model` in the export); `docker logs gymtracker-app | grep "Jev "` shows each call's latency and cost.
@@ -158,7 +158,7 @@ The app only answers requests addressed to `gym.peychev.uk` or `localhost` (`All
 
 ### Content Security Policy
 
-The app sends its CSP report-only at first and logs what it would block. After a few days of normal use on both phones, check the log:
+The app sends its CSP report-only at first and logs what it would block. After a few days of normal use on a few phones, check the log:
 
 ```sh
 docker logs gymtracker-app 2>&1 | grep "CSP violation"
@@ -240,7 +240,7 @@ Deleted food entries, sets and exercises are kept for 24 hours so Undo can bring
 
 ### Feedback
 
-Both accounts can report problems and ideas in Settings → Send feedback (with a screenshot), rate how typed food was read on the Check foods screen, and use the "Report" links on barcode results, weight suggestions, the maintenance estimate and AI food entries. Errors in the app and the browser are recorded on their own. Everything stays in the database; the CLI reads it and answers it (SPEC section 11):
+Every account can report problems and ideas in Settings → Send feedback (with a screenshot), rate how typed food was read on the Check foods screen, and use the "Report" links on barcode results, weight suggestions, the maintenance estimate and AI food entries. Errors in the app and the browser are recorded on their own. Everything stays in the database; the CLI reads it and answers it (SPEC section 11):
 
 ```sh
 ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll feedback digest       # what came in this week
@@ -248,7 +248,7 @@ ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll feedback show 12
 ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll feedback status 12 fixed --reply "Fixed, thanks." --version abc1234
 ```
 
-`feedback help` lists every command. In the coding agent, `/feedback` runs the same commands and the triage workflow in `docs/feedback-triage.md`. Replies show under Settings → Your feedback with a badge, and `feedback changelog add` puts a What's new note on both users' Today page.
+`feedback help` lists every command. In the coding agent, `/feedback` runs the same commands and the triage workflow in `docs/feedback-triage.md`. Replies show under Settings → Your feedback with a badge, and `feedback changelog add` puts a What's new note on every user's Today page.
 
 For a Telegram message on each new report and each new kind of error, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `docker/.env` (the backup script's bot works) and restart the app. Only a report's number, the reporter's name, kind, area and first 80 characters are sent.
 
@@ -294,7 +294,7 @@ ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll admin audit --si
 
 ### Label photos
 
-On the Manual tab, after a barcode Open Food Facts doesn't know, and from "Photograph a label" on the Scan tab, a photo of a nutrition table fills in the manual food form (SPEC 6.6). A separate vision model reads it, `google/gemini-3.5-flash-lite` unless another is picked under AI → Label reader; Off hides the feature for both accounts. Nothing is saved until the form is. Photos are kept 30 days so misreads can be checked under Admin → Labels or with `feedback labels --edited`, and the scans 180 days.
+On the Manual tab, after a barcode Open Food Facts doesn't know, and from "Photograph a label" on the Scan tab, a photo of a nutrition table fills in the manual food form (SPEC 6.6). A separate vision model reads it, `google/gemini-3.5-flash-lite` unless another is picked under AI → Label reader; Off hides the feature for every account. Nothing is saved until the form is. Photos are kept 30 days so misreads can be checked under Admin → Labels or with `feedback labels --edited`, and the scans 180 days.
 
 ```sh
 ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll ai set-model label google/gemini-3.5-flash-lite
