@@ -162,7 +162,11 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         return result;
     }
 
-    private static readonly string[] AmountNotes = ["{0} × a serving of {1} g", "assumed 100 g each"];
+    // Note formats about a counted amount; they are localisation keys, listed in CatalogueTests.Extra.
+    private const string ServingNote = "{0} × a serving of {1} g";
+    private const string EachNote = "assumed 100 g each";
+
+    private static readonly string[] AmountNotes = [ServingNote, EachNote];
 
     /// <summary>
     /// SPEC 6.1 step 4: when the text gave no amount, a matched food takes the account's last amount, and the note
@@ -238,11 +242,11 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
 
         if (food.DefaultServingGrams is { } serving and > 0)
         {
-            notes.Add(new LocalText("{0} × a serving of {1} g", units, serving.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)));
+            notes.Add(new LocalText(ServingNote, units, serving.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)));
             return serving * units;
         }
 
-        notes.Add(new LocalText("assumed 100 g each"));
+        notes.Add(new LocalText(EachNote));
         return item.Grams;
     }
 

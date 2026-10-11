@@ -2761,7 +2761,7 @@
     "extra"
   ],
   "assumed 100 g each": [
-    "src/GymTracker.Web/Features/Food/FoodMatcher.cs"
+    "extra"
   ],
   "at least the floor {0} of {1} days": [
     "src/GymTracker.Web/Views/Shared/_WeekCard.cshtml"
@@ -3009,7 +3009,7 @@
     "wwwroot/js"
   ],
   "{0} × a serving of {1} g": [
-    "src/GymTracker.Web/Features/Food/FoodMatcher.cs"
+    "extra"
   ],
   "{0}% a week": [
     "src/GymTracker.Web/Views/Settings/Index.cshtml"

@@ -35,7 +35,7 @@ public partial class CatalogueTests(ITestOutputHelper output)
     ];
 
     // Strings that reach the user without a pattern above.
-    private static readonly string[] Extra = ["assumed 100 g", "Freestyle", "Dark", "Light", "Match phone", "Entry deleted.", "Exercise removed."];
+    private static readonly string[] Extra = ["assumed 100 g", "assumed 100 g each", "{0} × a serving of {1} g", "Freestyle", "Dark", "Light", "Match phone", "Entry deleted.", "Exercise removed."];
 
     // Matched by a pattern but never shown: instructions sent to the model.
     private static readonly string[] Ignore = ["Write assumption in English.", "Reply in English.", "Write in English.", "Read this nutrition label."];
