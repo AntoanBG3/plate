@@ -1,5 +1,5 @@
 // Motion and small interactions shared by every page: tap feedback, page transition direction, the large title
-// collapsing into the top bar, numbers and rings that animate on first sight, rows that animate in and out,
+// collapsing into the top bar, numbers, rings and lines that animate the first time they are on screen, rows that animate in and out,
 // bottom sheets, context menus and swipe to delete. Only transform and opacity are animated on lists.
 (function () {
     "use strict";
@@ -132,44 +132,62 @@
     }
     window.gymCountTo = countTo;
 
-    function reveal(scope) {
-        const key = "reveal:" + location.pathname;
-        const animate = !reduce.matches && !seenBefore(key);
+    // First sight of a page this session, with motion allowed.
+    function firstSight() {
+        return !reduce.matches && !seenBefore("reveal:" + location.pathname);
+    }
+
+    // Each animation starts once its element is on screen (pages.js gymWhenSeen). Until then the element shows where
+    // its animation starts (a count at data-from, a ring or line undrawn), so it never jumps back from its final value.
+    function reveal(scope, animate) {
         $$("[data-count]", scope).forEach((el) => {
-            if (animate) {
-                el.dataset.from = el.dataset.from || "0";
-                countTo(el, Number(el.dataset.count), 900);
+            if (!animate) {
+                return;
             }
+            el.dataset.from = el.dataset.from || "0";
+            countTo(el, Number(el.dataset.from), 0);
+            window.gymWhenSeen(el, () => countTo(el, Number(el.dataset.count), 900));
         });
         $$("[data-progress]", scope).forEach((el) => {
             const value = Math.max(0, Math.min(1, Number(el.dataset.progress)));
             const len = el.getTotalLength();
+            const end = len * (1 - value);
             el.style.strokeDasharray = `${len} ${len}`;
-            el.style.strokeDashoffset = `${len * (1 - value)}`;
             if (value === 0) {
                 el.style.opacity = "0";
             }
-            if (animate && value > 0) {
-                el.animate([{ strokeDashoffset: len }, { strokeDashoffset: len * (1 - value) }],
-                    { duration: 1100, delay: 120, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+            if (!animate || value === 0) {
+                el.style.strokeDashoffset = `${end}`;
+                return;
             }
+            el.style.strokeDashoffset = `${len}`;
+            window.gymWhenSeen(el, () => {
+                el.style.strokeDashoffset = `${end}`;
+                el.animate([{ strokeDashoffset: len }, { strokeDashoffset: end }],
+                    { duration: 1100, delay: 120, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+            });
         });
         $$("[data-draw]", scope).forEach((el) => {
             if (!animate) {
                 return;
             }
             const len = el.getTotalLength();
-            el.animate([{ strokeDasharray: `${len} ${len}`, strokeDashoffset: len }, { strokeDasharray: `${len} ${len}`, strokeDashoffset: 0 }],
-                { duration: 900, delay: 250, easing: "cubic-bezier(.3,.7,.2,1)", fill: "backwards" });
+            el.style.strokeDasharray = `${len} ${len}`;
+            el.style.strokeDashoffset = `${len}`;
+            window.gymWhenSeen(el, () => {
+                el.style.strokeDashoffset = "0";
+                el.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
+                    { duration: 900, delay: 250, easing: "cubic-bezier(.3,.7,.2,1)", fill: "backwards" });
+            });
         });
     }
-    reveal(document);
+    reveal(document, firstSight());
 
     // After a soft navigation (nav.js) the new page needs its own title binding and first-sight animations.
     document.addEventListener("gym:page", (event) => {
         bindLargeTitle();
         const main = document.getElementById("main");
-        reveal(main);
+        reveal(main, firstSight());
 
         // New content rises in, first eight blocks staggered. Not on Back, which should feel like returning, nor on
         // a sideways slide, which already moves the whole page.
