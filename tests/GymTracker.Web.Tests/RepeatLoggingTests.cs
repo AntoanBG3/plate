@@ -258,4 +258,28 @@ public class RepeatLoggingTests(PostgresFixture fixture) : IClassFixture<Postgre
 
         (await s.Db.UsualFoods.CountAsync()).Should().Be(0);
     }
+
+    [Theory]
+    [InlineData(FoodState.Cooked, false)]
+    [InlineData(FoodState.Raw, true)]
+    [InlineData(FoodState.NotApplicable, true)]
+    public async Task A_usual_food_is_skipped_when_its_raw_or_cooked_state_contradicts_the_item(FoodState state, bool used)
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var raw = (await s.Foods.SearchAsync("chicken breast boneless skinless raw", 10, 0.3, default))
+            .First(f => FoodStates.FromName(f.Name, f.NameBg) == FoodState.Raw);
+        const string name = "пилешко филе";
+        await s.Repeat.RememberAsync([(name, raw.Id)], default);
+
+        var matches = await s.Repeat.UsualMatchesAsync([new ParsedFoodItem(name, name, 200, state, null, null, new Per100g(100, 5, 15, 3))], default);
+
+        if (used)
+        {
+            matches.Should().ContainSingle().Which.Value.Id.Should().Be(raw.Id);
+        }
+        else
+        {
+            matches.Should().BeEmpty("\"пилешко филе на скара\" must not become the raw fillet confirmed for \"пилешко филе\"");
+        }
+    }
 }

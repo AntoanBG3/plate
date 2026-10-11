@@ -41,7 +41,8 @@ public class RepeatLoggingService(AppDbContext db, ICurrentUser currentUser, Tim
 
     /// <summary>
     /// The food this account means by each item's words (SPEC 6.1 step 1), by item index: its <c>NameOriginal</c> key, else
-    /// its <c>NameEn</c> key. A row whose food the account can no longer see is skipped.
+    /// its <c>NameEn</c> key. A row whose food the account can no longer see, or whose raw or cooked state contradicts the
+    /// item's, is skipped.
     /// </summary>
     public async Task<Dictionary<int, FoodMatch>> UsualMatchesAsync(IReadOnlyList<ParsedFoodItem> items, CancellationToken ct)
     {
@@ -61,7 +62,7 @@ public class RepeatLoggingService(AppDbContext db, ICurrentUser currentUser, Tim
         {
             foreach (var key in keys[n])
             {
-                if (key is not null && byPhrase.TryGetValue(key, out var id) && foods.TryGetValue(id, out var food))
+                if (key is not null && byPhrase.TryGetValue(key, out var id) && foods.TryGetValue(id, out var food) && !Contradicts(items[n].State, food))
                 {
                     result[n] = Match(food);
                     break;
@@ -122,6 +123,13 @@ public class RepeatLoggingService(AppDbContext db, ICurrentUser currentUser, Tim
             }
         }
     }
+
+    /// <summary>
+    /// The item says raw and the food's name says cooked, or the other way round: "пилешко филе на скара" is not the raw
+    /// fillet confirmed for "пилешко филе". A state that isn't stated on either side never blocks.
+    /// </summary>
+    private static bool Contradicts(FoodState item, FoodItem food) =>
+        (item, FoodStates.FromName(food.Name, food.NameBg)) is (FoodState.Raw, FoodState.Cooked) or (FoodState.Cooked, FoodState.Raw);
 
     private FoodMatch Match(FoodItem f) =>
         new(f.Id, f.Name, f.NameBg, f.Brand, f.KcalPer100g, f.ProteinPer100g, f.CarbsPer100g, f.FatPer100g, f.FiberPer100g, f.SaturatedFatPer100g,
