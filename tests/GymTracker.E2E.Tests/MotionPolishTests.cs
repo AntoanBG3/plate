@@ -160,4 +160,59 @@ public class MotionPolishTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await phone.Page.Locator(".is-pending-rise").CountAsync()).Should().Be(0);
         phone.ShouldHaveNoErrors();
     }
+
+    private const string CaloriesChartRunning = "() => Chart.animator.running(Chart.getChart(document.getElementById('calories-chart')))";
+
+    /// <summary>A target and one day of food, so Progress has a Calories chart (lower on the page).</summary>
+    private async Task WithCaloriesAsync(Phone phone)
+    {
+        await phone.WithTargetsAsync(app);
+        await phone.GoAsync("/today"); // stores today's estimate, the first day with a target
+        await phone.GoAsync("/food");
+        var quick = await phone.Page.Locator("[data-sheet-open='quick-sheet']").First.GetAttributeAsync("hx-get");
+        var date = System.Text.RegularExpressions.Regex.Match(quick!, @"date=([0-9-]+)").Groups[1].Value;
+        await phone.PostAsync("/food/quick", new() { ["date"] = date, ["meal"] = "Lunch", ["kcal"] = "600", ["protein"] = "40" });
+    }
+
+    private static Task TwoFramesAsync(Phone phone) =>
+        phone.Page.EvaluateAsync("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))");
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_chart_below_the_fold_draws_in_when_scrolled_to(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await WithCaloriesAsync(phone);
+        await phone.Page.SetViewportSizeAsync(390, ShortScreen);
+        await FirstSightAsync(phone, "/progress");
+        await phone.Page.WaitForFunctionAsync("() => window.Chart && Chart.getChart(document.getElementById('calories-chart'))");
+
+        var canvas = phone.Page.Locator("#calories-chart");
+        (await canvas.EvaluateAsync<bool>("e => e.getBoundingClientRect().top > innerHeight")).Should().BeTrue("the test needs the chart below the fold");
+        (await phone.Page.EvaluateAsync<bool>(CaloriesChartRunning)).Should().BeFalse("the chart draws in when it is seen, not at load");
+
+        await canvas.ScrollIntoViewIfNeededAsync();
+        await phone.Page.WaitForFunctionAsync(CaloriesChartRunning);
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_theme_change_before_a_chart_is_seen_redraws_it_quietly(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await WithCaloriesAsync(phone);
+        await phone.Page.SetViewportSizeAsync(390, ShortScreen);
+        await FirstSightAsync(phone, "/progress");
+        await phone.Page.WaitForFunctionAsync("() => window.Chart && Chart.getChart(document.getElementById('calories-chart'))");
+
+        await phone.Page.EvaluateAsync("() => { document.documentElement.dataset.theme = 'light'; }");
+        await TwoFramesAsync(phone);
+        await phone.Page.Locator("#calories-chart").ScrollIntoViewIfNeededAsync();
+        await TwoFramesAsync(phone);
+        (await phone.Page.EvaluateAsync<bool>(CaloriesChartRunning)).Should().BeFalse("a redraw for the theme has no entrance");
+        phone.ShouldHaveNoErrors();
+    }
 }

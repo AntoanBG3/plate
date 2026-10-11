@@ -1,5 +1,5 @@
 // Draws the Progress charts from the JSON the page embeds. Colours come from the design tokens, so the charts
-// are redrawn when the theme changes. Series draw in the first time the page is seen in a session only.
+// are redrawn when the theme changes. Series draw in the first time the page is seen in a session only, each chart as it comes into view.
 window.gymModule("progress", () => {
     "use strict";
     if (!window.Chart) {
@@ -53,6 +53,22 @@ window.gymModule("progress", () => {
         g.addColorStop(0, fade(color, 0.22));
         g.addColorStop(1, fade(color, 0));
         return g;
+    }
+
+    // A chart's entrance plays when the chart comes into view (pages.js gymWhenSeen), not at load, so charts lower on
+    // the page haven't finished before they are seen. The chart is drawn at once without it, then reset and replayed.
+    function enter(chart, motion) {
+        if (!motion) {
+            return;
+        }
+        window.gymWhenSeen(chart.canvas, () => {
+            if (!charts.includes(chart)) {
+                return; // redrawn for a theme change, or the page was left
+            }
+            chart.config.options.animation = motion;
+            chart.reset();
+            chart.update();
+        });
     }
 
     function draw(animate) {
@@ -113,7 +129,7 @@ window.gymModule("progress", () => {
                     ],
                 },
                 options: {
-                    animation: motion,
+                    animation: false,
                     interaction: { mode: "index", intersect: false },
                     plugins: { tooltip: { callbacks: { label: (c) => c.raw == null ? null : `${c.dataset.label}: ${kg(Number(c.raw).toFixed(1))}` } } },
                     scales: { x: xAxis, y: yAxis({ grace: "10%" }) },
@@ -131,7 +147,7 @@ window.gymModule("progress", () => {
                         pointRadius: 3, pointBackgroundColor: accent, pointBorderWidth: 0, pointHoverRadius: 5 }],
                 },
                 options: {
-                    animation: motion,
+                    animation: false,
                     plugins: { tooltip: { callbacks: { label: (c) => kg(c.raw) } } },
                     scales: { x: xAxis, y: yAxis({ grace: "15%" }) },
                 },
@@ -151,7 +167,7 @@ window.gymModule("progress", () => {
                     ],
                 },
                 options: {
-                    animation: motion,
+                    animation: false,
                     interaction: { mode: "index", intersect: false },
                     plugins: { tooltip: { callbacks: { label: (c) => c.raw == null ? null : `${c.dataset.label}: ${t("{0} kcal", Math.round(c.raw))}` } } },
                     scales: { x: xAxis, y: yAxis({ beginAtZero: true }) },
@@ -172,7 +188,7 @@ window.gymModule("progress", () => {
                     ],
                 },
                 options: {
-                    animation: motion,
+                    animation: false,
                     interaction: { mode: "index", intersect: false },
                     plugins: { tooltip: { callbacks: { label: (c) => c.raw == null ? null : `${c.dataset.label}: ${t("{0} g", Math.round(c.raw))}` } } },
                     scales: { x: xAxis, y: yAxis({ beginAtZero: true }) },
@@ -192,7 +208,7 @@ window.gymModule("progress", () => {
                     ],
                 },
                 options: {
-                    animation: motion,
+                    animation: false,
                     indexAxis: "y",
                     interaction: { mode: "index", intersect: false },
                     plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${t("{0} sets", c.raw)}` } } },
@@ -203,6 +219,8 @@ window.gymModule("progress", () => {
                 },
             }));
         }
+
+        charts.forEach((chart) => enter(chart, motion));
     }
 
     draw(animateOnce());
