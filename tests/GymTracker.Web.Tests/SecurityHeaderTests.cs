@@ -3,8 +3,7 @@ using FluentAssertions;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class SecurityHeaderTests(PostgresFixture db)
+public class SecurityHeaderTests(PostgresFixture db) : IClassFixture<PostgresFixture>
 {
     [Theory]
     [InlineData("/account/login")]

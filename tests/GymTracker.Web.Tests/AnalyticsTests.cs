@@ -6,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class AnalyticsTests(PostgresFixture fixture)
+public class AnalyticsTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private sealed class Clock(DateTimeOffset now) : TimeProvider
     {

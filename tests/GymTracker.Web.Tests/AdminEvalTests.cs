@@ -13,8 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The admin area's background evaluation, and the guard that keeps admin services behind the admin policy (SPEC 12).</summary>
-[Collection(PostgresCollection.Name)]
-public class AdminEvalTests(PostgresFixture fixture)
+public class AdminEvalTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     /// <summary>Holds each run until the test lets it finish, reporting one case of three on the way.</summary>
     private sealed class HeldEvaluator : IParseEvaluator

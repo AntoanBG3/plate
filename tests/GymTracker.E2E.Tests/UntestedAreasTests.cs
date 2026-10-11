@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>The areas the 2026-10-05 QA pass couldn't reach by hand, end to end in the browser (Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class UntestedAreasTests(E2EFixture app)
+public class UntestedAreasTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private static string Today => UserClock.Today(DateTimeOffset.UtcNow, UserProfile.DefaultTimeZoneId).ToString("yyyy-MM-dd");
 

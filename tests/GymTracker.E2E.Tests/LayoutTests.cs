@@ -3,8 +3,7 @@ using FluentAssertions;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Layout at phone widths (390 and 320 px): things that must never overlap or overflow (Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class LayoutTests(E2EFixture app)
+public class LayoutTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private const string LongName = "Upper A — heavy pressing and rowing day with extra arm work";
 

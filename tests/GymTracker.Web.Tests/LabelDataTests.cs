@@ -6,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The barcode indexes, label scan ownership and the AddedBy backfill (SPEC 4, Phase 13).</summary>
-[Collection(PostgresCollection.Name)]
-public class LabelDataTests(PostgresFixture fixture)
+public class LabelDataTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     /// <summary>A barcode no other test uses, so the unique indexes only see this test's rows.</summary>
     private static string NewBarcode() => Random.Shared.NextInt64(1_000_000_000_000, 9_999_999_999_999).ToString();

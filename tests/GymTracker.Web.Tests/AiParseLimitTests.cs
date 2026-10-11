@@ -3,8 +3,7 @@ using FluentAssertions;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class AiParseLimitTests(PostgresFixture db)
+public class AiParseLimitTests(PostgresFixture db) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task Food_text_parsing_is_rate_limited_per_user()

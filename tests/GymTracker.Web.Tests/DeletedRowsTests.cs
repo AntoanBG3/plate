@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Soft-deleted rows stay out of progression history and the export (spec: undo, section 7).</summary>
-[Collection(PostgresCollection.Name)]
-public class DeletedRowsTests(PostgresFixture fixture)
+public class DeletedRowsTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private sealed class Clock(DateTimeOffset now) : TimeProvider
     {

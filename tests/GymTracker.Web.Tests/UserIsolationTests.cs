@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>User A must not be able to read or change anything of user B's by ID (SPEC section 9).</summary>
-[Collection(PostgresCollection.Name)]
-public class UserIsolationTests(PostgresFixture fixture) : IAsyncLifetime
+public class UserIsolationTests(PostgresFixture fixture) : IAsyncLifetime, IClassFixture<PostgresFixture>
 {
     private string userA = "";
     private BData b = null!;

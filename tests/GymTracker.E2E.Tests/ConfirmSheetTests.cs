@@ -3,8 +3,7 @@ using FluentAssertions;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Destructive and final actions ask in the app's own sheet, never the browser's confirm (SPEC 7).</summary>
-[Collection(E2ECollection.Name)]
-public class ConfirmSheetTests(E2EFixture app)
+public class ConfirmSheetTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     [Theory]
     [InlineData(E2EFixture.Chromium)]

@@ -14,8 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The invite, reset-password and delete-user commands (SPEC 12, Phase 12).</summary>
-[Collection(PostgresCollection.Name)]
-public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime
+public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime, IClassFixture<PostgresFixture>
 {
     private readonly AppFactory app = new(fixture);
 

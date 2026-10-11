@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Entry names: no amount in them, and an unnamed quick entry reads "Quick add" in either language (Phase 11).</summary>
-[Collection(PostgresCollection.Name)]
-public class EntryNameTests(PostgresFixture fixture)
+public class EntryNameTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static readonly DateOnly Day = new(2026, 9, 28);
 

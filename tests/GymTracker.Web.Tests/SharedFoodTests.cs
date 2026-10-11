@@ -9,8 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Sharing a barcode food or keeping it private, and the anonymous "Added by another user" mark (SPEC 4, 7).</summary>
-[Collection(PostgresCollection.Name)]
-public class SharedFoodTests(PostgresFixture fixture)
+public class SharedFoodTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private const string Mark = "Added by another user";
     private static readonly DateOnly Day = new(2026, 10, 5);

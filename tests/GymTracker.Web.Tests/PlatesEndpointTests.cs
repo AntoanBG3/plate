@@ -4,8 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class PlatesEndpointTests(PostgresFixture fixture)
+public class PlatesEndpointTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     /// <summary>A signed-in client whose user has an active session with one exercise.</summary>
     private async Task<(HttpClient Client, int SessionExerciseId)> SessionWithAsync(AppFactory app, string exerciseName, decimal? loggedKg = null)

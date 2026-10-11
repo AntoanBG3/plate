@@ -7,8 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class FoodMatchingTests(PostgresFixture fixture)
+public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static ParsedFoodItem Parsed(string name, decimal grams, FoodState state) =>
         new(name, name, grams, state, null, null, new Per100g(999, 0, 0, 0));

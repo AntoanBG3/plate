@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>The pages that need an OpenRouter key, against stubbed models (AiStubs.cs); QA couldn't test them (Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class AiPathTests(E2EFixture app)
+public class AiPathTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private async Task<string> UserIdAsync(string email)
     {
@@ -34,8 +33,14 @@ public class AiPathTests(E2EFixture app)
 
         // The card under the chat holds what the model learned; Save goes through the same checks as Settings.
         (await phone.Page.InputValueAsync("[data-setup-form] [name=heightCm]")).Should().Be("180");
-        await phone.NavigateByAsync(() => phone.Page.Locator("[data-setup-form] button[type=submit]").TapAsync());
-        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/today");
+        // Save ends the card; scrolled only just into view it sits under the pinned text field, so bring it to the
+        // middle of the screen first, as a user scrolling to it would, rather than leaning on Playwright's retries.
+        var save = phone.Page.Locator("[data-setup-form] button[type=submit]");
+        await save.EvaluateAsync("b => b.scrollIntoView({ block: 'center' })");
+        await phone.NavigateByAsync(() => save.TapAsync());
+        var posts = string.Join(", ", phone.Requests.Where(r => r.StartsWith("POST ", StringComparison.Ordinal)));
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/today",
+            $"Save should finish the setup (sent: {posts}; errors shown: {string.Join(" ", await phone.Page.Locator("[role=alert]").AllTextContentsAsync())})");
 
         await using var db = app.Db.CreateContext(null);
         var id = await UserIdAsync(email);

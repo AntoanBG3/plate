@@ -9,8 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class PasskeyTests(PostgresFixture db) : IDisposable
+public class PasskeyTests(PostgresFixture db) : IDisposable, IClassFixture<PostgresFixture>
 {
     private readonly AppFactory app = new(db);
 

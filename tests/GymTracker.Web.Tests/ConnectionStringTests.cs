@@ -6,8 +6,7 @@ using Npgsql;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class ConnectionStringTests(PostgresFixture fixture)
+public class ConnectionStringTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task The_database_connection_never_probes_for_Kerberos()

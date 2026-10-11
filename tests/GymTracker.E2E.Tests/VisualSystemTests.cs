@@ -3,8 +3,7 @@ using FluentAssertions;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Colours, focus and motion that apply across the app (Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class VisualSystemTests(E2EFixture app)
+public class VisualSystemTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     // Relative luminance of an rgb() or rgba() colour composited over an opaque background colour.
     private const string Luminance = """

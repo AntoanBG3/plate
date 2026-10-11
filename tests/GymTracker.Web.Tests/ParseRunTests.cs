@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Every parse is recorded with what was suggested, and confirming records what was saved (SPEC 11).</summary>
-[Collection(PostgresCollection.Name)]
-public partial class ParseRunTests(PostgresFixture fixture)
+public partial class ParseRunTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task A_parse_records_the_parsed_items_and_the_match_with_its_candidates()

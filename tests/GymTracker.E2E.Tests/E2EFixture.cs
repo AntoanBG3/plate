@@ -9,17 +9,20 @@ namespace GymTracker.E2E.Tests;
 /// <summary>
 /// The real app on Kestrel at http://localhost (a secure context, so service workers and passkeys work without a trusted
 /// certificate), on the test Postgres, with Playwright's Chromium and WebKit. WebKit is the closest engine to iOS Safari.
+/// Each test class gets its own fixture, with its own database and apps, so classes run in parallel; the browsers are
+/// shared by the whole run and every phone is a new browser context.
 /// </summary>
 public sealed class E2EFixture : IAsyncLifetime
 {
     public const string Chromium = "chromium";
     public const string WebKit = "webkit";
 
+    private static readonly Lazy<Task<IPlaywright>> Playwright = new(StartPlaywrightAsync);
+    private static readonly Dictionary<string, Task<IBrowser>> Browsers = [];
+
     private readonly PostgresFixture db = new();
     private AppFactory? factory;
     private AppFactory? aiFactory;
-    private IPlaywright? playwright;
-    private readonly Dictionary<string, IBrowser> browsers = [];
 
     public string BaseUrl { get; private set; } = "";
 
@@ -63,7 +66,10 @@ public sealed class E2EFixture : IAsyncLifetime
         aiFactory.UseKestrel(o => o.ListenLocalhost(aiPort));
         aiFactory.StartServer();
         AiBaseUrl = $"http://localhost:{aiPort}";
+    }
 
+    private static async Task<IPlaywright> StartPlaywrightAsync()
+    {
         // Downloads the browsers on the first run only; later runs find them in the Playwright cache.
         var exit = Microsoft.Playwright.Program.Main(["install", Chromium, WebKit]);
         if (exit != 0)
@@ -71,17 +77,28 @@ public sealed class E2EFixture : IAsyncLifetime
             throw new InvalidOperationException($"Playwright browser install failed with exit code {exit}.");
         }
 
-        playwright = await Playwright.CreateAsync();
+        var playwright = await Microsoft.Playwright.Playwright.CreateAsync();
+        // The browsers outlive every fixture; close them with the test run so no browser process is left behind.
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            Task<IBrowser>[] launched;
+            lock (Browsers)
+            {
+                launched = [.. Browsers.Values];
+            }
+
+            foreach (var browser in launched.Where(b => b.IsCompletedSuccessfully))
+            {
+                browser.Result.CloseAsync().Wait(TimeSpan.FromSeconds(5));
+            }
+
+            playwright.Dispose();
+        };
+        return playwright;
     }
 
     public async Task DisposeAsync()
     {
-        foreach (var browser in browsers.Values)
-        {
-            await browser.CloseAsync();
-        }
-
-        playwright?.Dispose();
         if (factory is not null)
         {
             await factory.DisposeAsync();
@@ -95,16 +112,25 @@ public sealed class E2EFixture : IAsyncLifetime
         await db.DisposeAsync();
     }
 
-    private async Task<IBrowser> BrowserAsync(string name)
+    private static Task<IBrowser> BrowserAsync(string name)
     {
-        if (!browsers.TryGetValue(name, out var browser))
+        lock (Browsers)
         {
-            var type = name == WebKit ? playwright!.Webkit : playwright!.Chromium;
-            browser = await type.LaunchAsync(new() { Headless = true });
-            browsers[name] = browser;
-        }
+            if (!Browsers.TryGetValue(name, out var browser))
+            {
+                browser = LaunchAsync(name);
+                Browsers[name] = browser;
+            }
 
-        return browser;
+            return browser;
+        }
+    }
+
+    private static async Task<IBrowser> LaunchAsync(string name)
+    {
+        var playwright = await Playwright.Value;
+        var type = name == WebKit ? playwright.Webkit : playwright.Chromium;
+        return await type.LaunchAsync(new() { Headless = true });
     }
 
     /// <summary>A phone-sized page (390 px unless given), in English unless <paramref name="locale"/> says otherwise.</summary>
@@ -144,8 +170,3 @@ public sealed class E2EFixture : IAsyncLifetime
     }
 }
 
-[CollectionDefinition(Name)]
-public class E2ECollection : ICollectionFixture<E2EFixture>
-{
-    public const string Name = "E2E";
-}

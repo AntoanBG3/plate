@@ -14,8 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Reports, parse ratings, screenshots, write-back, errors and the CLI (SPEC 11).</summary>
-[Collection(PostgresCollection.Name)]
-public partial class FeedbackTests(PostgresFixture fixture)
+public partial class FeedbackTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     // A 1x1 PNG.
     internal static readonly byte[] Png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");

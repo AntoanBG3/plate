@@ -4,8 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>A typed comma is read as a decimal point: the Bulgarian iPhone keypad has no dot (SPEC 8).</summary>
-[Collection(PostgresCollection.Name)]
-public class DecimalCommaTests(PostgresFixture fixture)
+public class DecimalCommaTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task A_weight_typed_with_a_comma_is_saved()

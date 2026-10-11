@@ -4,8 +4,7 @@ using FluentAssertions;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class UndoEndpointTests(PostgresFixture fixture)
+public class UndoEndpointTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static FormUrlEncodedContent Form(string token, params (string Name, string Value)[] fields) =>
         new(fields.Select(f => new KeyValuePair<string, string>(f.Name, f.Value)).Append(new("__RequestVerificationToken", token)));

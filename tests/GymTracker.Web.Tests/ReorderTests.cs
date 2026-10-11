@@ -5,8 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Reorder mode saves a whole new order at once (SPEC 7, Phase 11).</summary>
-[Collection(PostgresCollection.Name)]
-public class ReorderTests(PostgresFixture fixture)
+public class ReorderTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static async Task<int> AddAsync(UserScope s, int templateId, string name) =>
         await s.Templates.AddExerciseAsync(templateId, (await s.Db.Exercises.FirstAsync(e => e.Name == name)).Id, default);

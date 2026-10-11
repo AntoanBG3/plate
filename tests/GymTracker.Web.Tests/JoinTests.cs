@@ -10,8 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>The join page (SPEC 9, Phase 12).</summary>
-[Collection(PostgresCollection.Name)]
-public class JoinTests(PostgresFixture fixture) : IAsyncLifetime
+public class JoinTests(PostgresFixture fixture) : IAsyncLifetime, IClassFixture<PostgresFixture>
 {
     private const string Password = "correct horse battery";
 

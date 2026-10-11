@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Data changes inside migrations, run against a separate database in the shared container.</summary>
-[Collection(PostgresCollection.Name)]
-public class MigrationTests(PostgresFixture fixture)
+public class MigrationTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task Auto_protein_turns_the_old_default_into_auto_and_keeps_chosen_values()

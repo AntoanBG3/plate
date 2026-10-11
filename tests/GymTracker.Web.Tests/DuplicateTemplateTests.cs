@@ -5,8 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class DuplicateTemplateTests(PostgresFixture fixture)
+public class DuplicateTemplateTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static string Copy(string name) => $"{name} (copy)";
 

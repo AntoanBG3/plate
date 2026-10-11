@@ -4,8 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>The confirmation list after typing what was eaten (SPEC 7 Food, Phase 11).</summary>
-[Collection(E2ECollection.Name)]
-public class ConfirmFoodsTests(E2EFixture app)
+public class ConfirmFoodsTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     [Theory]
     [InlineData(E2EFixture.Chromium)]

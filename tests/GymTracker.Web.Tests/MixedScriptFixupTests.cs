@@ -6,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Stored food names with a look-alike letter from the other alphabet are fixed once (Phase 11).</summary>
-[Collection(PostgresCollection.Name)]
-public class MixedScriptFixupTests(PostgresFixture fixture)
+public class MixedScriptFixupTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task Mixed_names_are_fixed_and_the_seed_does_not_add_them_again()

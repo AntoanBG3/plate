@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Tests;
 
-[Collection(PostgresCollection.Name)]
-public class AdaptiveTargetsTests(PostgresFixture fixture)
+public class AdaptiveTargetsTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     // Noon UTC is mid-afternoon in Sofia, so the user's day is the same date.
     private static readonly DateOnly Today = new(2026, 9, 1);

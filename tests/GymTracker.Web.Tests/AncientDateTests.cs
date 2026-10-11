@@ -4,8 +4,7 @@ using FluentAssertions;
 namespace GymTracker.Web.Tests;
 
 /// <summary>A day far outside anything the app logs, from a hand-typed URL or a link without a date.</summary>
-[Collection(PostgresCollection.Name)]
-public class AncientDateTests(PostgresFixture fixture)
+public class AncientDateTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Theory]
     [InlineData("/food?date=0001-01-01")]

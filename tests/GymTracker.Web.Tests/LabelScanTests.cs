@@ -10,8 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Reading a label photo into the manual food form, and recording what was saved (SPEC 6.6).</summary>
-[Collection(PostgresCollection.Name)]
-public class LabelScanTests(PostgresFixture fixture)
+public class LabelScanTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private const string AddPage = "/food/add?date=2026-10-05&meal=Lunch&tab=manual";
 

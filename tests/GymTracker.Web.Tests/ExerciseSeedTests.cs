@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Exercises added to the seed reach a database that already has the library, run on a separate database.</summary>
-[Collection(PostgresCollection.Name)]
-public class ExerciseSeedTests(PostgresFixture fixture)
+public class ExerciseSeedTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     [Fact]
     public async Task Seeding_an_existing_library_adds_only_the_missing_exercises()

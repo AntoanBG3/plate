@@ -6,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GymTracker.Web.Tests;
 
 /// <summary>Today's protein ring, the weight lines on Today and Progress, and error noise (Phase 11).</summary>
-[Collection(PostgresCollection.Name)]
-public class TodayProgressTests(PostgresFixture fixture)
+public class TodayProgressTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private async Task<(HttpClient Client, UserScope Scope)> WithTargetsAsync(AppFactory app)
     {

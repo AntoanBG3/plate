@@ -4,8 +4,7 @@ using Microsoft.Playwright;
 namespace GymTracker.E2E.Tests;
 
 /// <summary>The scan button beside the manual form's barcode field (SPEC 7, Phase 15).</summary>
-[Collection(E2ECollection.Name)]
-public class BarcodeFieldTests(E2EFixture app)
+public class BarcodeFieldTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private static string Today => GymTracker.Core.Time.UserClock.Today(DateTimeOffset.UtcNow, GymTracker.Core.Domain.UserProfile.DefaultTimeZoneId).ToString("yyyy-MM-dd");
 
