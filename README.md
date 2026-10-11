@@ -212,13 +212,27 @@ Both containers start with `mem_limit: 256m`. The app uses workstation garbage c
 
 ### Updating
 
-Run the same rsync from the Mac, then build on wizard from the Mac so the image carries the commit it was built from (feedback reports and errors record it):
+From the Mac, on a clean `main`:
 
 ```sh
-ssh wizard "cd ~/docker/gymtracker && APP_VERSION=$(git -C ~/Projects/homeserver-gym rev-parse --short HEAD) docker compose -f docker/docker-compose.yml up -d --build && docker builder prune -f"
+tools/deploy.sh --dry-run   # what the copy would change on wizard
+tools/deploy.sh
 ```
 
-`$(...)` is expanded on the Mac before the command is sent. Building on wizard directly works too; the version then shows as `unknown`.
+It dumps the live database to `~/gymtracker-pre-<commit>-<time>.dump` on wizard, runs the rsync above, builds on wizard with `APP_VERSION` set to the commit (feedback reports and errors record it), and waits until `gym.peychev.uk` serves that commit. Building on wizard directly works too; the version then shows as `unknown`.
+
+### Deploying from anywhere
+
+Away from home, `ssh wizard` (and so the deploy script, rsync and the feedback commands) goes through the Cloudflare Tunnel. The Mac's `~/.ssh/config` has, above `Host wizard`:
+
+```
+Match host wizard exec "! /usr/bin/nc -z -G 2 <wizard's LAN address> 22 >/dev/null 2>&1"
+    HostName <ssh hostname on the tunnel>
+    HostKeyAlias <wizard's LAN address>
+    ProxyCommand /opt/homebrew/bin/cloudflared access ssh --hostname %h
+```
+
+It needs `brew install cloudflared`, and in the Zero Trust dashboard a public hostname on the "wizard" tunnel, `<ssh hostname on the tunnel>` → `ssh://172.30.0.1:22` (sshd on the `tunnel` network's gateway; ufw allows it), with a self-hosted Access application on that hostname allowing only Antoan's email. The first connection, and the first after the Access session ends, opens a browser to sign in. Login is still by SSH key.
 
 Migrations run automatically when the app starts.
 
