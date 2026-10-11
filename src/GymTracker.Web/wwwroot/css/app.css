@@ -700,7 +700,7 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
     transform: none; opacity: 1; pointer-events: auto; visibility: visible;
     transition: transform 300ms var(--ease-snappy), opacity 160ms var(--ease-out), visibility 0s;
 }
-/* Items follow the panel in, a little apart; closing has no stagger. No menu has more than six items. */
+/* Items follow the panel in, a little apart; closing has no stagger. Items past the sixth share the last step (the exercise card menu has seven). */
 .menu > * { opacity: 0; transform: translateY(-4px); transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out); }
 .menu.is-open > * {
     opacity: 1; transform: none;
@@ -711,6 +711,7 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
 .menu > :nth-child(4) { --i: 3; }
 .menu > :nth-child(5) { --i: 4; }
 .menu > :nth-child(6) { --i: 5; }
+.menu > :nth-child(n+7) { --i: 6; }
 .menu form + form, .menu > * + * { border-top: 0.5px solid var(--separator); }
 .menu button, .menu a { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: var(--s-4); min-height: var(--tap); padding: 0 var(--s-4); color: var(--label); text-align: left; }
 .menu .danger { color: var(--destructive); }
