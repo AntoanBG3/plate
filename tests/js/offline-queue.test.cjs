@@ -328,6 +328,24 @@ test("a legacy set another account logged goes back for that account and is not 
     assert.equal(store.has("gym.pendingSets.v1"), false);
 });
 
+test("a legacy set another account logged is kept when storage is too full to hand it back", async () => {
+    const store = new Map([["gym.pendingSets.v1", JSON.stringify([legacySet("theirs"), legacySet("mine")])]]);
+    const b = browser("B", store);
+    b.context.fetch = async (url, options) => {
+        b.requests.push({ url, ...options });
+        return options.body.get("clientId") === "theirs"
+            ? { ok: false, status: 404, text: async () => "" }
+            : { ok: true, status: 200, text: async () => "" };
+    };
+    b.run("session.js");
+    const setItem = b.context.localStorage.setItem;
+    b.context.localStorage.setItem = (key, value) => { if (key.endsWith(".v1")) throw new Error("QuotaExceededError"); setItem(key, value); };
+    await settle();
+    assert.deepEqual(b.requests.map((r) => r.body.get("clientId")), ["theirs", "mine"]);
+    const left = [...JSON.parse(store.get("gym.pendingSets.v1") ?? "[]"), ...JSON.parse(store.get("gym.pendingSets.v2.B") ?? "[]")];
+    assert.deepEqual(left.map((x) => x.clientId), ["theirs"]);
+});
+
 test("legacy sets older than 30 days are dropped instead of adopted", async () => {
     const store = new Map([["gym.pendingSets.v1", JSON.stringify([legacySet("stale", 31)])]]);
     const b = browser("A", store);

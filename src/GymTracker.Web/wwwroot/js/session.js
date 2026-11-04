@@ -202,8 +202,11 @@
             return "stop";
         }
 
-        if (response.status === 404 && item.legacy && queue.returnLegacy(item, setId)) {
-            return "next"; // logged by another account before queues had owners: it sends when that account signs in
+        if (response.status === 404 && item.legacy) {
+            // Logged by another account before queues had owners: it sends when that account signs in. If storage is
+            // too full to hand it back, it stays in this queue rather than being deleted, and the rest carry on.
+            queue.returnLegacy(item, setId);
+            return "next";
         }
 
         if (response.status === 400 || response.status === 404) {
