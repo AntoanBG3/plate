@@ -1,4 +1,10 @@
 {
+  "This report is waiting to send. Its contents are locked. Keep this page open and press Send to retry.": "Сигналът чака изпращане. Съдържанието е заключено. Остави страницата отворена и натисни „Изпрати“, за да опиташ отново.",
+  "This session expired. Sign in again in another tab, then return here to send pending changes.": "Сесията изтече. Влез отново в друг раздел, после се върни тук, за да изпратиш чакащите промени.",
+  "Your sign-in changed. Sign back into this account in another tab, then return here to send pending changes.": "Входът в профила се промени. Влез отново в този профил в друг раздел, после се върни тук, за да изпратиш чакащите промени.",
+  "Older pending changes have no account attached. They are kept on this phone but cannot be sent automatically.": "По-старите чакащи промени не са свързани с профил. Запазени са на този телефон, но не могат да се изпратят автоматично.",
+  "This browser can't save pending changes. Keep this page open until they are sent.": "Този браузър не може да запази чакащите промени. Остави страницата отворена, докато се изпратят.",
+  "Your sign-in changed. Reload this page before sending pending changes.": "Входът в профила се промени. Презареди страницата, преди да изпратиш чакащите промени.",
   "${0} in, ${1} out per million tokens": "${0} вход, ${1} изход за милион токена",
   "% of weight": "% от теглото",
   "1 exercise": "1 упражнение",

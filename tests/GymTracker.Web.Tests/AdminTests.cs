@@ -258,6 +258,7 @@ public class AdminTests(PostgresFixture fixture) : IDisposable, IClassFixture<Po
         var request = new HttpRequestMessage(HttpMethod.Post, "/feedback") { Content = form };
         request.Headers.Add("RequestVerificationToken", token);
         request.Headers.Add("X-Gym-Queue", "1");
+        request.Headers.Add("X-Gym-User", await AppFactory.QueueOwnerAsync(reporter));
         var id = await FeedbackTests.IdOf(await reporter.SendAsync(request));
 
         var admin = await UnlockedDevAsync(app);

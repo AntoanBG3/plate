@@ -29,6 +29,8 @@ dotnet run --project src/GymTracker.Web -- create-user --email me@example.test -
 
 Tests: `dotnet build && dotnet test`. The integration tests start their own `postgres:18` container through Testcontainers. If Docker Hub pulls fail with "authentication required", pull the helper image once with `docker pull testcontainers/ryuk:0.14.0`.
 
+Pending sets and feedback belong to the account that created them. When browser storage is unavailable they stay in memory and continue sending, with a warning to keep the page open. A feedback report kept in memory is locked while waiting; Send retries the same report. An account change pauses sending until reload. Ownerless queues from the older version stay on the phone without being sent; they cannot safely be assigned to the next person who signs in. Old tabs receive a retryable response so they retain those reports too. Keep the site data until those entries have been reviewed.
+
 ### Food data
 
 Three sources are imported on start, each only adding what is missing:

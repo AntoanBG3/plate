@@ -7,8 +7,9 @@
 (function () {
     "use strict";
 
-    const QUEUE_KEY = "gym.pendingSets.v1";
-    const REST_KEY = "gym.restTimer.v1";
+    const queue = window.gymQueue("gym.pendingSets");
+    const owner = document.documentElement.dataset.userId || "";
+    const REST_KEY = "gym.restTimer.v2." + encodeURIComponent(owner);
     const RETRY_MS = 15000;
 
     // Set while a session page is shown (the "session" page module below); the queue itself runs on every page.
@@ -38,8 +39,8 @@
         }
     }
 
-    const loadQueue = () => read(QUEUE_KEY, []);
-    const saveQueue = (queue) => write(QUEUE_KEY, queue.length ? queue : null);
+    const loadQueue = queue.load;
+    const saveQueue = queue.save;
 
     // ---- queue ----
 
@@ -69,8 +70,12 @@
         }
 
         const count = loadQueue().length;
-        status.hidden = count === 0;
-        status.textContent = count === 1
+        status.hidden = count === 0 && !queue.hasLegacy();
+        status.textContent = queue.hasLegacy()
+            ? t("Older pending changes have no account attached. They are kept on this phone but cannot be sent automatically.")
+            : !queue.durable && count > 0
+            ? t("This browser can't save pending changes. Keep this page open until they are sent.")
+            : count === 1
             ? t("1 set is saved on this phone and will send when the connection is back.")
             : t("{0} sets are saved on this phone and will send when the connection is back.", count);
     }
@@ -84,12 +89,15 @@
     let sending = false;
 
     async function flush() {
-        if (sending) {
+        if (sending || !queue.active()) {
             return;
         }
         sending = true;
         try {
             for (const item of loadQueue()) {
+                if (!queue.active()) {
+                    break;
+                }
                 const result = await send(item);
                 if (result === "stop") {
                     break;
@@ -125,6 +133,7 @@
                     "Content-Type": "application/x-www-form-urlencoded",
                     "RequestVerificationToken": window.gymToken(),
                     "HX-Request": "true",
+                    ...queue.headers(),
                 },
                 body,
             });
@@ -151,8 +160,23 @@
         }
 
         if (response.status === 401) {
+            if (!queue.durable) {
+                // Navigating to login would destroy the only copy of a queue held in memory.
+                toast(t("This session expired. Sign in again in another tab, then return here to send pending changes."));
+                return "stop";
+            }
             // Signed out. Keep the queue; it sends after logging back in.
             window.location.href = "/account/login?returnUrl=" + encodeURIComponent(window.location.pathname);
+            return "stop";
+        }
+
+        if (response.status === 409) {
+            if (queue.durable) {
+                queue.pause();
+                toast(t("Your sign-in changed. Reload this page before sending pending changes."));
+            } else {
+                toast(t("Your sign-in changed. Sign back into this account in another tab, then return here to send pending changes."));
+            }
             return "stop";
         }
 
@@ -208,10 +232,10 @@
             completedAt: new Date().toISOString(),
         };
 
-        const queue = loadQueue();
-        if (!queue.some((q) => q.clientId === item.clientId)) {
-            queue.push(item);
-            saveQueue(queue);
+        const pending = loadQueue();
+        if (!pending.some((q) => q.clientId === item.clientId)) {
+            pending.push(item);
+            saveQueue(pending);
         }
 
         markPending(form, item);
@@ -288,7 +312,7 @@
     // What is typed into a row before it is logged is kept on the phone by the row's place in its card, so a reload or
     // a page swap (Move up, Swap) puts it back.
 
-    const DRAFTS_KEY = "gym.setDrafts.v1";
+    const DRAFTS_KEY = "gym.setDrafts.v2." + encodeURIComponent(owner);
     const DRAFT_DAYS = 2;
 
     function renumber(rows) {

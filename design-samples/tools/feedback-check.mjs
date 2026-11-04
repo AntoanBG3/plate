@@ -17,7 +17,7 @@ const errors = [];
 const expected = (text) => /feedback-check|ERR_INTERNET_DISCONNECTED/.test(text);
 collectErrors(page, errors, expected);
 const shot = (name) => page.screenshot({ path: `${out}/${name}.png` });
-const queue = () => page.evaluate(() => JSON.parse(localStorage.getItem("gym.pendingFeedback.v1") || "[]").length);
+const queue = () => page.evaluate(() => JSON.parse(localStorage.getItem("gym.pendingFeedback.v2." + encodeURIComponent(document.documentElement.dataset.userId)) || "[]").length);
 const check = (ok, what) => console.log(`${ok ? "ok  " : "FAIL"} ${what}`);
 
 await page.goto(`${base}/account/login`);

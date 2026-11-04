@@ -186,7 +186,7 @@
         const shell = document.querySelector(".app-scale");
         // data-shell is the language and signed-in state: the script strings and the session live outside the swap.
         // data-version changes on deploy: the stylesheets and scripts in <head> are the old ones until a full load.
-        if (!nextShell || !shell || next.dataset.shell !== root.dataset.shell || next.dataset.version !== root.dataset.version) {
+        if (!nextShell || !shell || next.dataset.shell !== root.dataset.shell || next.dataset.userId !== root.dataset.userId || next.dataset.version !== root.dataset.version) {
             throw new FullLoad(finalUrl);
         }
 

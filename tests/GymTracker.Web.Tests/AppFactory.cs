@@ -89,6 +89,12 @@ public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDicti
         return match.Success ? match.Groups[1].Value : throw new InvalidOperationException($"No antiforgery token on {path}.");
     }
 
+    public static async Task<string> QueueOwnerAsync(HttpClient client)
+    {
+        var html = await client.GetStringAsync("/settings");
+        return Regex.Match(html, "data-user-id=\"([^\"]+)\"").Groups[1].Value;
+    }
+
     public static async Task<HttpResponseMessage> LoginAsync(HttpClient client, string email, string password, string? returnUrl = null)
     {
         var token = await TokenAsync(client, "/account/login");

@@ -19,13 +19,14 @@ public partial class FeedbackTests(PostgresFixture fixture) : IClassFixture<Post
     // A 1x1 PNG.
     internal static readonly byte[] Png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
 
-    internal static Task<HttpResponseMessage> QueuePost(HttpClient client, string path, string token, IEnumerable<KeyValuePair<string, string>> fields)
+    internal static async Task<HttpResponseMessage> QueuePost(HttpClient client, string path, string token, IEnumerable<KeyValuePair<string, string>> fields)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new FormUrlEncodedContent(fields) };
         request.Headers.Add("RequestVerificationToken", token);
         request.Headers.Add("HX-Request", "true");
         request.Headers.Add("X-Gym-Queue", "1");
-        return client.SendAsync(request);
+        request.Headers.Add("X-Gym-User", await AppFactory.QueueOwnerAsync(client));
+        return await client.SendAsync(request);
     }
 
     internal static async Task<int> IdOf(HttpResponseMessage response)
@@ -189,6 +190,7 @@ public partial class FeedbackTests(PostgresFixture fixture) : IClassFixture<Post
             request.Headers.Add("RequestVerificationToken", token);
             request.Headers.Add("HX-Request", "true");
             request.Headers.Add("X-Gym-Queue", "1");
+            request.Headers.Add("X-Gym-User", await AppFactory.QueueOwnerAsync(client));
             return await client.SendAsync(request);
         }
 

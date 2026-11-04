@@ -435,6 +435,7 @@ app.UseStatusCodePagesWithReExecute("/error/{0}");
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<QueueOwnerMiddleware>();
 // After authentication, so per-user limits see the signed-in user.
 app.UseRateLimiter();
 app.UseMiddleware<UserPreferencesMiddleware>();

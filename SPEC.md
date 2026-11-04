@@ -575,6 +575,7 @@ Settings is a short hub, not one long page (progressive disclosure: NN/g, and th
   - Call `navigator.storage.persist()` once in standalone mode to reduce the chance of eviction.
   - The server treats a repeated `ClientId` as success without creating a duplicate, after checking the existing set belongs to the current user, and returns the same response as for a new insert.
 - The active session must be fully restorable after the app is closed or the phone locks: all state lives on the server, except the pending queue, values typed into rows not logged yet, and the rest timer end time (all in `localStorage`).
+- Pending sets, feedback, drafts and rest timers are scoped by account. Queue requests carry the originating account id, checked against the signed-in user before antiforgery validation; a mismatch pauses replay without removing pending work. If local storage fails, queues keep an in-memory copy, continue sending, and warn the user to keep the page open. Ownerless queues from before this change are retained but never automatically assigned to the current account.
 - Text never assumes there are only two users: the app is used by Antoan, his father and friends he invites. Shared things are saved "for everyone" or for "other users", never "for both of you" or "the other account"; the same goes for What's new entries.
 - Numbers are written with a dot in both languages. The server also accepts a typed comma, since the Bulgarian iPhone keypad has one.
 
@@ -662,6 +663,7 @@ Users report problems and ideas from their phones, food parsing collects ratings
 - Contextual links open the same form with a snapshot of what was shown: a barcode result (the code and the food's per-100 g values), a progression suggestion (the inputs the Core service received and its output) and the maintenance estimate (the stored estimate and the window's daily intake and weigh-ins). A referenced row is loaded through the user's query filters, so a foreign id is not found.
 - Screenshots are downscaled on the phone to at most 1,600 px and JPEG quality 0.8; the server accepts JPEG, PNG or WebP by their first bytes, up to 900 KB.
 - Reports and ratings are written to a `localStorage` queue first and sent with the same retry rules as sets (section 8); a repeated `ClientId` is success. Screenshots need a connection.
+- A report's inputs are locked while it is in flight. If storage fails, the queued report remains visible and locked in memory, and Send retries its original id and fields. A durably queued report leaves a fresh editable draft. Pre-upgrade clients that omit the queue owner are refused with 503 and `Retry-After`, so their existing retry logic retains the report instead of discarding it.
 - Rate limits: 30 reports and ratings per user per 10 minutes; 20 browser error reports per user per 10 minutes, each at most 8 KB.
 
 ### Errors

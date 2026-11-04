@@ -1464,6 +1464,9 @@
   "Offline and sending": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
+  "Older pending changes have no account attached. They are kept on this phone but cannot be sent automatically.": [
+    "wwwroot/js"
+  ],
   "One serving": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
@@ -2410,6 +2413,9 @@
   "This browser can't open the camera. Type the digits or take a photo instead.": [
     "wwwroot/js"
   ],
+  "This browser can't save pending changes. Keep this page open until they are sent.": [
+    "wwwroot/js"
+  ],
   "This invite is no longer valid. Ask Antoan for a new one.": [
     "src/GymTracker.Web/Views/Join/Index.cshtml"
   ],
@@ -2418,6 +2424,12 @@
   ],
   "This product isn't in Open Food Facts. Enter it from the label once and it's saved for everyone.": [
     "src/GymTracker.Web/Views/Food/Barcode.cshtml"
+  ],
+  "This report is waiting to send. Its contents are locked. Keep this page open and press Send to retry.": [
+    "wwwroot/js"
+  ],
+  "This session expired. Sign in again in another tab, then return here to send pending changes.": [
+    "wwwroot/js"
   ],
   "This sets your starting calorie and protein targets. They adapt as you log food and weight.": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
@@ -2738,6 +2750,12 @@
   ],
   "Your profile": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Your sign-in changed. Reload this page before sending pending changes.": [
+    "wwwroot/js"
+  ],
+  "Your sign-in changed. Sign back into this account in another tab, then return here to send pending changes.": [
+    "wwwroot/js"
   ],
   "Your starting maintenance is about {0} kcal, with {1} g of protein. It adapts as you log food and weight.": [
     "src/GymTracker.Web/Views/Onboarding/_SetupForm.cshtml"

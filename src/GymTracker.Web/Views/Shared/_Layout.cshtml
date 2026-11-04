@@ -20,7 +20,7 @@
     var focus = Notices.ReadFocus(TempData);
 }
 <!DOCTYPE html>
-<html lang="@prefs.LangAttribute" data-version="@GymTracker.Web.Features.Diagnostics.AppVersion.Current" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth" data-shell="@prefs.LangAttribute-@(Context.User.Identity?.IsAuthenticated == true ? "in" : "out")">
+<html lang="@prefs.LangAttribute" data-user-id="@Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" data-version="@GymTracker.Web.Features.Diagnostics.AppVersion.Current" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth" data-shell="@prefs.LangAttribute-@(Context.User.Identity?.IsAuthenticated == true ? "in" : "out")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -54,6 +54,7 @@
     <script type="application/json" id="i18n">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(ScriptText.For(L)))</script>
     <script src="~/js/i18n.js" asp-append-version="true"></script>
     <script src="~/js/pages.js" asp-append-version="true"></script>
+    <script src="~/js/queue.js" asp-append-version="true"></script>
     <script src="~/js/image.js" asp-append-version="true"></script>
     <script src="~/js/feedback.js" asp-append-version="true"></script>
     <script src="~/lib/htmx/htmx.min.js" asp-append-version="true" defer></script>

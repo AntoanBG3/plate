@@ -6,8 +6,8 @@
 (function () {
     "use strict";
 
-    const QUEUE_KEY = "gym.pendingFeedback.v1";
-    const ERRORS_KEY = "gym.recentErrors.v1";
+    const queue = window.gymQueue("gym.pendingFeedback");
+    const ERRORS_KEY = "gym.recentErrors.v2." + encodeURIComponent(document.documentElement.dataset.userId || "");
     const RETRY_MS = 15000;
     const MAX_SIDE = 1600;
     const JPEG_QUALITY = 0.8;
@@ -36,14 +36,14 @@
         }
     }
 
-    const loadQueue = () => read(localStorage, QUEUE_KEY, []);
-    const saveQueue = (queue) => write(localStorage, QUEUE_KEY, queue.length ? queue : null);
+    const loadQueue = queue.load;
+    const saveQueue = queue.save;
 
     const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
         : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)));
 
     function signedIn() {
-        return (document.documentElement.dataset.shell || "").endsWith("-in");
+        return queue.active();
     }
 
     function device() {
@@ -56,10 +56,12 @@
     // ---- queue ----
 
     function enqueue(item) {
-        const queue = loadQueue();
-        if (!queue.some((q) => q.key === item.key)) {
-            queue.push(item);
-            saveQueue(queue);
+        const pending = loadQueue();
+        if (!pending.some((q) => q.key === item.key)) {
+            pending.push(item);
+            if (!saveQueue(pending) && window.gymToast) {
+                window.gymToast(t("This browser can't save pending changes. Keep this page open until they are sent."));
+            }
         }
         renderPending();
     }
@@ -81,6 +83,7 @@
                     "RequestVerificationToken": window.gymToken ? window.gymToken() : "",
                     "HX-Request": "true",
                     "X-Gym-Queue": "1",
+                    ...queue.headers(),
                 },
                 body: new URLSearchParams(item.fields),
             });
@@ -91,6 +94,15 @@
         if (response.ok) {
             remove(item.key);
             return "next";
+        }
+        if (response.status === 409) {
+            if (queue.durable) {
+                queue.pause();
+                window.gymToast && window.gymToast(t("Your sign-in changed. Reload this page before sending pending changes."));
+            } else {
+                window.gymToast && window.gymToast(t("Your sign-in changed. Sign back into this account in another tab, then return here to send pending changes."));
+            }
+            return "stop";
         }
         if (response.status === 401 || response.status === 429 || response.status >= 500) {
             return "stop"; // signed out (sends after logging in), too many, or the server is restarting
@@ -116,6 +128,9 @@
             await null;
             try {
                 for (;;) {
+                    if (!signedIn()) {
+                        return;
+                    }
                     const next = loadQueue()[0];
                     if (!next || (await send(next)) === "stop") {
                         return;
@@ -164,6 +179,9 @@
     }
 
     window.gymModule("feedback-pending", () => {
+        if (queue.hasLegacy()) {
+            window.gymToast(t("Older pending changes have no account attached. They are kept on this phone but cannot be sent automatically."));
+        }
         renderPending();
         drain().then(renderPending);
     });
@@ -268,6 +286,26 @@
         const queued = form.querySelector("[data-queued]");
         let shot = null;
         let previewUrl = null;
+        let pendingClientId = null;
+        const disabledBeforeSend = new Map();
+        const queuedText = queued.querySelector("[data-queued-text]");
+        const savedNotice = queuedText.textContent;
+
+        function lockReport(clientId) {
+            pendingClientId = clientId;
+            form.querySelectorAll('input:not([type="hidden"]), select, textarea, button[type="button"]').forEach((control) => {
+                disabledBeforeSend.set(control, control.disabled);
+                control.disabled = true;
+            });
+        }
+
+        function unlockReport() {
+            disabledBeforeSend.forEach((disabled, control) => { control.disabled = disabled; });
+            disabledBeforeSend.clear();
+            pendingClientId = null;
+            queuedText.textContent = savedNotice;
+            updateOnline();
+        }
 
         function setShot(next) {
             shot = next;
@@ -287,7 +325,7 @@
 
         function updateOnline() {
             const online = navigator.onLine;
-            input.disabled = !online;
+            input.disabled = !!pendingClientId || !online;
             pick.hidden = !!shot;
             pick.style.opacity = online ? "" : "0.4";
             offlineNote.hidden = online;
@@ -334,7 +372,7 @@
                 const response = await fetch(form.action, {
                     method: "POST",
                     credentials: "same-origin",
-                    headers: { "RequestVerificationToken": window.gymToken(), "HX-Request": "true", "X-Gym-Queue": "1" },
+                    headers: { "RequestVerificationToken": window.gymToken(), "HX-Request": "true", ...queue.headers() },
                     body: data,
                 });
                 if (response.ok) {
@@ -356,18 +394,24 @@
 
         const onSubmit = async (event) => {
             event.preventDefault();
-            if (!form.reportValidity()) {
-                return;
-            }
             const button = event.submitter || form.querySelector("button[type=submit]");
-            if (shot) {
-                await sendWithShot(button);
-                return;
-            }
             const clientField = form.querySelector('input[name="clientId"]');
-            const clientId = clientField.value;
-            const message = (form.querySelector("textarea[name=message]").value || "").trim();
-            enqueue({ key: clientId, kind: "report", url: form.action, fields: fields(), preview: message.slice(0, 80) });
+            if (!pendingClientId) {
+                if (!form.reportValidity()) {
+                    return;
+                }
+                if (shot) {
+                    await sendWithShot(button);
+                    return;
+                }
+                const clientId = clientField.value;
+                const message = (form.querySelector("textarea[name=message]").value || "").trim();
+                enqueue({ key: clientId, kind: "report", url: form.action, fields: fields(), preview: message.slice(0, 80) });
+                // A request may have reached the server even if its response is lost. Keep its id and
+                // contents immutable until it is acknowledged, including while the first request is in flight.
+                lockReport(clientId);
+            }
+            const clientId = pendingClientId;
             button.disabled = true;
             await drain();
             button.disabled = false;
@@ -375,7 +419,14 @@
                 done();
                 return;
             }
+            if (!queue.durable) {
+                queuedText.textContent = t("This report is waiting to send. Its contents are locked. Keep this page open and press Send to retry.");
+                queued.hidden = false;
+                window.gymToast(t("This browser can't save pending changes. Keep this page open until they are sent."));
+                return;
+            }
             // Still waiting for signal: keep it on the phone and start a fresh report.
+            unlockReport();
             clientField.value = uuid();
             form.querySelector("textarea[name=message]").value = "";
             form.querySelectorAll('input[name="reasons"]').forEach((c) => { c.checked = false; });

@@ -117,7 +117,7 @@ public class FeedbackExtrasTests(PostgresFixture fixture) : IClassFixture<Postgr
             .And.Contain("Settings,Idea,Templates,,,Folders for templates,Planned,Next week");
     }
 
-    private static Task<HttpResponseMessage> QueuePost(HttpClient client, string token)
+    private static async Task<HttpResponseMessage> QueuePost(HttpClient client, string token)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/feedback")
         {
@@ -129,7 +129,8 @@ public class FeedbackExtrasTests(PostgresFixture fixture) : IClassFixture<Postgr
         request.Headers.Add("RequestVerificationToken", token);
         request.Headers.Add("HX-Request", "true");
         request.Headers.Add("X-Gym-Queue", "1");
-        return client.SendAsync(request);
+        request.Headers.Add("X-Gym-User", await AppFactory.QueueOwnerAsync(client));
+        return await client.SendAsync(request);
     }
 
     [Fact]
