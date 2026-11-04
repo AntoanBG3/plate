@@ -26,7 +26,7 @@ esac
 if [ "$name $1" = 'dotnet test' ] && [ "$CHANGE_CHECKOUT" = '1' ]; then touch "$TRACE.changed"; fi
 if [ "$name $1" = "$FAIL_STAGE" ]; then exit 1; fi
 `;
-    for (const name of ["git", "node", "dotnet", "ssh", "rsync", "curl"]) {
+    for (const name of ["git", "docker", "node", "dotnet", "ssh", "rsync", "curl"]) {
         fs.writeFileSync(path.join(bin, name), script, { mode: 0o755 });
     }
     try {
@@ -41,7 +41,7 @@ if [ "$name $1" = "$FAIL_STAGE" ]; then exit 1; fi
     }
 }
 
-for (const stage of ["node --test", "dotnet restore", "dotnet build", "dotnet test"]) {
+for (const stage of ["docker info", "node --test", "dotnet restore", "dotnet build", "dotnet test"]) {
     test(`a failed ${stage} blocks all remote deployment operations`, () => {
         const result = deploy(stage);
         assert.equal(result.status, 1);
@@ -66,6 +66,6 @@ test("changes made while checks run block deployment of an untested checkout", (
 test("a dry run only previews the copy and skips builds and remote mutations", () => {
     const result = deploy("", true);
     assert.equal(result.status, 0);
-    assert.equal(result.calls.some((c) => /^(dotnet|node|ssh) /.test(c)), false);
+    assert.equal(result.calls.some((c) => /^(docker|dotnet|node|ssh) /.test(c)), false);
     assert.ok(result.calls.some((c) => c.startsWith("rsync ") && c.includes("--dry-run")));
 });
