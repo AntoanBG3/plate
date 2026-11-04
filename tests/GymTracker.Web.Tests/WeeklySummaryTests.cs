@@ -19,6 +19,7 @@ public sealed class ScriptedWriter : IWeeklySummaryWriter
     public bool Fail { get; set; }
     public int Calls { get; private set; }
     public bool? LastBulgarian { get; private set; }
+    public WeekFacts? LastFacts { get; private set; }
 
     public Task<bool> IsAvailableAsync(CancellationToken ct) => Task.FromResult(Available);
 
@@ -26,6 +27,7 @@ public sealed class ScriptedWriter : IWeeklySummaryWriter
     {
         Calls++;
         LastBulgarian = bulgarian;
+        LastFacts = facts;
         return Task.FromResult(Fail
             ? WeeklySummaryResult.Failed(new LocalText("The weekly summary isn't available right now."))
             : new WeeklySummaryResult(new WeeklySummaryText($"You weighed in {facts.WeighIns} times.", ["Weigh in every morning."], "Nice steady week."), "test/model", null));
@@ -82,6 +84,28 @@ public class WeeklySummaryFlowTests(PostgresFixture db) : IDisposable, IClassFix
         again.Should().Contain("You weighed in 3 times.").And.NotContain("hx-get=\"/today/weekly-summary\"");
         await client.GetStringAsync("/today/weekly-summary");
         writer.Calls.Should().Be(1, "a stored summary is never written again");
+    }
+
+    [Fact]
+    public async Task Last_week_is_judged_against_the_targets_captured_then_not_todays()
+    {
+        var (client, id) = await UserWithWeighInsAsync(3);
+        var then = new GymTracker.Core.Nutrition.MacroTarget(80m, 100, 111, 50, 70, 150, 200, 30, 20, 30, false);
+        await using (var ctx = db.CreateContext(null))
+        {
+            ctx.MaintenanceEstimates.Add(new MaintenanceEstimate { UserId = id, CalculatedOn = LastMonday, EstimatedTdeeKcal = 2400, TargetKcal = 2000, TargetProteinG = 111 });
+            ctx.NutritionTargetDays.Add(new NutritionTargetDay
+            {
+                UserId = id, Date = LastMonday,
+                Values = new GymTracker.Web.Features.Food.TargetDayValues(2400, new GymTracker.Core.Nutrition.GoalTarget(2000, 111, false, then), 80m, 1800).ToJson(),
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        await client.GetStringAsync("/today");
+        await client.GetStringAsync("/today/weekly-summary");
+
+        writer.LastFacts!.Targets.Should().Be(then);
     }
 
     [Fact]

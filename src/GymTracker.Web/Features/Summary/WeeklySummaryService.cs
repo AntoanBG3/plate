@@ -98,7 +98,11 @@ public class WeeklySummaryService(
     {
         var profile = await profiles.GetAsync(ct);
         var until = monday.AddDays(7);
-        var macros = (await targets.ForTodayAsync(ct)).Macros;
+        // The week is judged against the targets in force on its last day, not today's (SPEC 4, NutritionTargetDay).
+        var lastDay = monday.AddDays(6);
+        var macros = lastDay < await profiles.TodayAsync(ct)
+            ? (await targets.ForDateAsync(lastDay, ct)).Targets?.Macros
+            : (await targets.ForTodayAsync(ct)).Macros;
         var foodWeek = macros is null ? null : WeeklyNutrition.Between(await food.DaysBetweenAsync(monday, until, ct), macros, monday, until);
 
         var weighIns = await bodyweights.WeighInsAsync(ct);
