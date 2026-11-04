@@ -210,8 +210,8 @@ public class AdaptiveTargetsTests(PostgresFixture fixture) : IClassFixture<Postg
         var past = (await x.Targets.ForDateAsync(Today.AddDays(-1), default)).Targets!;
         past.Kcal.Should().Be(2060);
         past.ProteinG.Should().Be(175);
-        past.Macros.Should().NotBeNull();
-        past.Macros!.FatMaxG.Should().BeGreaterThan(0);
+        // The profile now aims for 145 g (Maintain, 1.8 g/kg); the day keeps the 175 g it recorded, and carbs fit it.
+        past.Macros.Should().BeEquivalentTo(new { ProteinAimG = 175, FatMinG = 45, FatMaxG = 80, CarbsMinG = 160, CarbsMaxG = 240 });
         (await x.Scope.Db.NutritionTargetDays.CountAsync()).Should().Be(7);
 
         await x.Profiles.UpdateAsync(p => p.ProteinGramsPerKg = 2.4m, default);

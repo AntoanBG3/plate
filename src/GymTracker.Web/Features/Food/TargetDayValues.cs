@@ -11,13 +11,16 @@ public sealed record TargetDayValues(int MaintenanceKcal, GoalTarget Target, dec
     private static readonly JsonSerializerOptions Options = new() { DefaultIgnoreCondition = JsonIgnoreCondition.Never };
 
     /// <summary>
-    /// A day before snapshots existed: calories and protein as its estimate stored them, and the macro ranges for that
-    /// calorie target from <paramref name="profile"/>, which is how those days were shown until snapshots were added.
+    /// A day before snapshots existed: calories and protein as its estimate stored them, and the fat, carb and fibre
+    /// ranges for those two numbers from <paramref name="profile"/>. The protein aim is the recorded one, so the Food
+    /// page, the charts and the weekly summary all show the same protein for that day.
     /// </summary>
     public static TargetDayValues Legacy(MaintenanceEstimate estimate, UserProfile profile, decimal? trendKg, DateOnly day)
     {
         var floor = GoalTargets.MinKcal(profile.Sex);
-        var macros = estimate.TargetKcal is { } kcal ? MacroTargets.Calculate(kcal, profile, trendKg, day) : null;
+        var macros = estimate.TargetKcal is { } kcal
+            ? MacroTargets.Calculate(kcal, profile, trendKg, day, estimate.TargetProteinG)
+            : null;
         return new(estimate.EstimatedTdeeKcal, new GoalTarget(estimate.TargetKcal, estimate.TargetProteinG, estimate.TargetKcal == floor, macros), trendKg, floor);
     }
 

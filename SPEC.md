@@ -209,7 +209,7 @@ Seed about 90 common exercises, each with a Bulgarian name in the gym vocabulary
 
 **NutritionTargetDay**
 - Composite key `UserId`, `Date` (the user's local day), with an owner query filter and account-delete cascade.
-- `Values` (jsonb): the computed calorie and protein targets, macro ranges, floor, trend weight and maintenance actually shown that day. Today's snapshot may change, and is written only when it does; past snapshots are not rewritten. Days without a snapshot carry the previous snapshot forward. The first time a user's targets are captured (before any profile change), every day from their first estimate to yesterday is captured as it was shown before snapshots existed: the stored estimate's calorie and protein targets, with the macro ranges for that calorie target from the current profile. The JSON property names are a fixed format, not the Core record names.
+- `Values` (jsonb): the computed calorie and protein targets, macro ranges, floor, trend weight and maintenance actually shown that day. Today's snapshot may change, and is written only when it does; past snapshots are not rewritten. Days without a snapshot carry the previous snapshot forward. The first time a user's targets are captured (before any profile change), every day from their first estimate to yesterday is captured as it was shown before snapshots existed: the stored estimate's calorie and protein targets, with the other macro ranges fitted to those two numbers (the protein aim stays the recorded one; the minimum never exceeds it). The JSON property names are a fixed format, not the Core record names.
 
 ---
 

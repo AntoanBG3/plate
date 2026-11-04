@@ -62,7 +62,12 @@ public static class MacroTargets
     }
 
     /// <summary>Null without a trend weight, since every target scales with it.</summary>
-    public static MacroTarget? Calculate(int kcal, UserProfile profile, decimal? trendKg, DateOnly today)
+    /// <param name="recordedProteinAimG">
+    /// A protein aim already set for that day (a past day's stored target). Fat, carbs and the rest are fitted around
+    /// it instead of a new aim from the profile, and the minimum never exceeds it. Whether it had been lowered to fit
+    /// the calories was not recorded, so <see cref="MacroTarget.ProteinLowered"/> is false.
+    /// </param>
+    public static MacroTarget? Calculate(int kcal, UserProfile profile, decimal? trendKg, DateOnly today, int? recordedProteinAimG = null)
     {
         if (trendKg is not { } trend)
         {
@@ -74,13 +79,18 @@ public static class MacroTargets
 
         var proteinMin = Round5(MinProteinPerKg(profile, today) * refKg);
         var proteinAim = Math.Max(proteinMin, Round5(AimPerKg(profile) * refKg));
+        if (recordedProteinAimG is { } recorded)
+        {
+            proteinAim = recorded;
+            proteinMin = Math.Min(proteinMin, recorded);
+        }
 
         var fatMin = Round5(Math.Max(0.20m * kcal / 9m, 0.5m * refKg));
         var fatMax = Math.Max(fatMin, Round5(0.35m * kcal / 9m));
 
         // Protein and the fat floor must fit in the calories; lower the aim in 5 g steps, never below the minimum.
         var lowered = false;
-        if (4 * proteinAim + 9 * fatMin > kcal)
+        if (recordedProteinAimG is null && 4 * proteinAim + 9 * fatMin > kcal)
         {
             var room = (kcal - 9m * fatMin) / 4m;
             proteinAim = Math.Max(proteinMin, (int)Math.Floor(room / 5m) * 5);

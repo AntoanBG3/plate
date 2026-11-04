@@ -145,4 +145,36 @@ public class MacroTargetsTests
         m.ProteinLowered.Should().BeTrue();
         m.CarbsMaxG.Should().Be(0);
     }
+
+    [Fact]
+    public void A_recorded_protein_aim_is_kept_and_carbs_are_fitted_around_it()
+    {
+        // The profile now aims for 145 g (Maintain); the day recorded 175 g while cutting.
+        var m = MacroTargets.Calculate(2060, Profile(), 80m, Today, recordedProteinAimG: 175)!;
+
+        m.ProteinAimG.Should().Be(175);
+        m.ProteinMinG.Should().Be(130);
+        m.CarbsMinG.Should().Be(160);        // (2060 - 700 - 720) / 4
+        m.CarbsMaxG.Should().Be(240);
+        m.ProteinLowered.Should().BeFalse();
+    }
+
+    [Fact]
+    public void A_recorded_aim_below_todays_minimum_lowers_the_minimum_to_match()
+    {
+        var m = MacroTargets.Calculate(2500, Profile(), 80m, Today, recordedProteinAimG: 120)!;
+
+        m.ProteinAimG.Should().Be(120);
+        m.ProteinMinG.Should().Be(120);
+    }
+
+    [Fact]
+    public void A_recorded_aim_is_not_lowered_again_to_fit_the_calories()
+    {
+        var m = MacroTargets.Calculate(1200, Profile(), 80m, Today, recordedProteinAimG: 250)!;
+
+        m.ProteinAimG.Should().Be(250);
+        m.ProteinLowered.Should().BeFalse();
+        m.CarbsMaxG.Should().Be(0);
+    }
 }
