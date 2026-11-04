@@ -39,6 +39,15 @@
     const loadQueue = queue.load;
     const saveQueue = queue.save;
 
+    // Shown once while sends keep failing the same way, not on every retry.
+    let told = null;
+    function tellOnce(message) {
+        if (told !== message && window.gymToast) {
+            told = message;
+            window.gymToast(message);
+        }
+    }
+
     const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
         : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)));
 
@@ -92,6 +101,7 @@
         }
 
         if (response.ok) {
+            told = null;
             remove(item.key);
             return "next";
         }
@@ -100,7 +110,7 @@
                 queue.pause();
                 window.gymToast && window.gymToast(t("Your sign-in changed. Reload this page before sending pending changes."));
             } else {
-                window.gymToast && window.gymToast(t("Your sign-in changed. Sign back into this account in another tab, then return here to send pending changes."));
+                tellOnce(t("Your sign-in changed. Sign back into this account in another tab, then return here to send pending changes."));
             }
             return "stop";
         }
@@ -179,11 +189,52 @@
     }
 
     window.gymModule("feedback-pending", () => {
-        if (queue.hasLegacy()) {
-            window.gymToast(t("Older pending changes have no account attached. They are kept on this phone but cannot be sent automatically."));
-        }
         renderPending();
         drain().then(renderPending);
+    });
+
+    // ---- reports and ratings saved before queues had owners (Your feedback page) ----
+    // Nothing on the server can tell whose a report is, so the person signed in decides: send it from this account,
+    // or discard it. Discard asks first (data-confirm on its form, site.js).
+
+    window.gymModule("feedback-legacy", (section) => {
+        const list = section.querySelector("[data-legacy-list]");
+        const sendForm = section.querySelector("[data-legacy-send]");
+        const discardForm = section.querySelector("[data-legacy-discard]");
+
+        function render() {
+            const items = queue.legacyItems();
+            list.replaceChildren(...items.map((r) => {
+                const row = document.createElement("div");
+                row.className = "row";
+                const text = document.createElement("span");
+                text.className = "row-main row-ellipsis";
+                text.textContent = r.preview || (r.kind === "report" ? t("Report") : t("Food rating"));
+                row.appendChild(text);
+                return row;
+            }));
+            section.hidden = items.length === 0;
+        }
+
+        const onSend = (event) => {
+            event.preventDefault();
+            queue.adoptLegacy((item) => item.key);
+            render();
+            renderPending();
+            drain().then(renderPending);
+        };
+        const onDiscard = (event) => {
+            event.preventDefault();
+            queue.discardLegacy();
+            render();
+        };
+        sendForm.addEventListener("submit", onSend);
+        discardForm.addEventListener("submit", onDiscard);
+        render();
+        return () => {
+            sendForm.removeEventListener("submit", onSend);
+            discardForm.removeEventListener("submit", onDiscard);
+        };
     });
 
     // ---- ratings on the Check foods screen ----

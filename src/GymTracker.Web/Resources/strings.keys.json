@@ -660,6 +660,12 @@
   "Dip": [
     "exercise"
   ],
+  "Discard": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Discard these reports? They can't be recovered.": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
+  ],
   "Dismiss for a week": [
     "src/GymTracker.Web/Views/Today/Index.cshtml"
   ],
@@ -865,6 +871,9 @@
   ],
   "Food name, e.g. Кисело мляко 2%": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Food rating": [
+    "wwwroot/js"
   ],
   "Food search": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -1464,9 +1473,6 @@
   "Offline and sending": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
   ],
-  "Older pending changes have no account attached. They are kept on this phone but cannot be sent automatically.": [
-    "wwwroot/js"
-  ],
   "One serving": [
     "src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
@@ -1912,6 +1918,9 @@
   "Saved as a meal.": [
     "src/GymTracker.Web/Controllers/SavedMealsController.cs"
   ],
+  "Saved before an update": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
+  ],
   "Saved for your account, so every phone you sign in on looks the same.": [
     "src/GymTracker.Web/Views/Settings/General.cshtml"
   ],
@@ -1991,6 +2000,9 @@
     "src/GymTracker.Web/Views/Feedback/Index.cshtml",
     "src/GymTracker.Web/Views/Feedback/New.cshtml",
     "src/GymTracker.Web/Views/Settings/Index.cshtml"
+  ],
+  "Send from this account": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
   ],
   "Sent": [
     "src/GymTracker.Web/Features/Feedback/FeedbackText.cs"
@@ -2092,6 +2104,9 @@
   ],
   "Some foods have no fiber or saturated fat value, so these are at least what is shown.": [
     "src/GymTracker.Web/Views/Food/Index.cshtml"
+  ],
+  "Some older sets on this phone couldn't be sent from this account. They send when the account that logged them signs in.": [
+    "wwwroot/js"
   ],
   "Some values were outside what a food can have and were left empty.": [
     "src/GymTracker.Core/Nutrition/LabelReading.cs"
@@ -2406,6 +2421,9 @@
   ],
   "There is no empty warm-up row to remove.": [
     "src/GymTracker.Web/Controllers/TrainController.cs"
+  ],
+  "These were saved on this phone before reports were linked to an account. Send them only if you wrote them.": [
+    "src/GymTracker.Web/Views/Feedback/Index.cshtml"
   ],
   "Thinking…": [
     "src/GymTracker.Web/Views/Onboarding/Index.cshtml"

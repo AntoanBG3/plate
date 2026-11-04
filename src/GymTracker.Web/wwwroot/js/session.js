@@ -11,6 +11,8 @@
     const owner = document.documentElement.dataset.userId || "";
     const REST_KEY = "gym.restTimer.v2." + encodeURIComponent(owner);
     const RETRY_MS = 15000;
+    // Ownerless sets older than this are dropped rather than kept for an account that may never sign in.
+    const LEGACY_DAYS = 30;
 
     // Set while a session page is shown (the "session" page module below); the queue itself runs on every page.
     let sessionId = null;
@@ -42,6 +44,25 @@
     const loadQueue = queue.load;
     const saveQueue = queue.save;
 
+    // The previous version kept one ownerless queue, rest timer and drafts per phone. Sets can be adopted: the server
+    // only finds a session exercise through the signed-in user's filter, so a set from another account gets a 404 and
+    // is handed back for its owner (send). A rest timer or typed draft is not worth guessing an owner for.
+    const setId = (item) => item.clientId;
+    queue.adoptLegacy(setId, (item) => Date.parse(item.completedAt) > Date.now() - LEGACY_DAYS * 864e5);
+    if (owner) {
+        write("gym.restTimer.v1", null);
+        write("gym.setDrafts.v1", null);
+    }
+
+    // Shown once while a send keeps failing the same way, not on every retry.
+    let told = null;
+    function tellOnce(message) {
+        if (told !== message) {
+            told = message;
+            toast(message);
+        }
+    }
+
     // ---- queue ----
 
     function rowFor(clientId) {
@@ -71,8 +92,8 @@
 
         const count = loadQueue().length;
         status.hidden = count === 0 && !queue.hasLegacy();
-        status.textContent = queue.hasLegacy()
-            ? t("Older pending changes have no account attached. They are kept on this phone but cannot be sent automatically.")
+        status.textContent = queue.hasLegacy() && count === 0
+            ? t("Some older sets on this phone couldn't be sent from this account. They send when the account that logged them signs in.")
             : !queue.durable && count > 0
             ? t("This browser can't save pending changes. Keep this page open until they are sent.")
             : count === 1
@@ -142,6 +163,7 @@
         }
 
         if (response.ok) {
+            told = null;
             const html = await response.text();
             removeFromQueue(item.clientId);
             const row = rowFor(item.clientId);
@@ -162,7 +184,7 @@
         if (response.status === 401) {
             if (!queue.durable) {
                 // Navigating to login would destroy the only copy of a queue held in memory.
-                toast(t("This session expired. Sign in again in another tab, then return here to send pending changes."));
+                tellOnce(t("This session expired. Sign in again in another tab, then return here to send pending changes."));
                 return "stop";
             }
             // Signed out. Keep the queue; it sends after logging back in.
@@ -175,9 +197,13 @@
                 queue.pause();
                 toast(t("Your sign-in changed. Reload this page before sending pending changes."));
             } else {
-                toast(t("Your sign-in changed. Sign back into this account in another tab, then return here to send pending changes."));
+                tellOnce(t("Your sign-in changed. Sign back into this account in another tab, then return here to send pending changes."));
             }
             return "stop";
+        }
+
+        if (response.status === 404 && item.legacy && queue.returnLegacy(item, setId)) {
+            return "next"; // logged by another account before queues had owners: it sends when that account signs in
         }
 
         if (response.status === 400 || response.status === 404) {

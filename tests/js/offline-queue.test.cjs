@@ -283,3 +283,157 @@ test("durable offline feedback unlocks a fresh draft without changing the queued
     const pending = JSON.parse(b.store.get("gym.pendingFeedback.v2.A"));
     assert.equal(new URLSearchParams(pending[0].fields).get("message"), "Original report");
 });
+
+// ---- the ownerless v1 queues left by the previous version ----
+
+const legacySet = (clientId, daysAgo = 0, extra = {}) => ({
+    clientId, sessionExerciseId: 1, weightKg: "60", reps: "10", isWarmup: false,
+    completedAt: new Date(Date.now() - daysAgo * 864e5).toISOString(), ...extra,
+});
+
+test("legacy sets are adopted by the signed-in account and sent with its identity", async () => {
+    const store = new Map([["gym.pendingSets.v1", JSON.stringify([legacySet("old-1")])]]);
+    const b = browser("A", store);
+    b.run("session.js");
+    await settle();
+    assert.equal(b.requests.length, 1);
+    assert.equal(b.requests[0].headers["X-Gym-User"], "A");
+    assert.equal(b.requests[0].body.get("clientId"), "old-1");
+    assert.equal(store.has("gym.pendingSets.v1"), false);
+    assert.equal(store.has("gym.pendingSets.v2.A"), false);
+});
+
+test("a legacy set another account logged goes back for that account and is not retried here", async () => {
+    const store = new Map([["gym.pendingSets.v1", JSON.stringify([legacySet("theirs")])]]);
+    const b = browser("B", store);
+    let toasts = 0;
+    b.context.window.gymToast = () => { toasts++; };
+    b.context.fetch = async (url, options) => { b.requests.push({ url, ...options }); return { ok: false, status: 404, text: async () => "" }; };
+    b.run("session.js");
+    await settle();
+    assert.equal(toasts, 0);
+    assert.deepEqual(JSON.parse(store.get("gym.pendingSets.v1")).map((x) => [x.clientId, x.triedBy, x.legacy]), [["theirs", ["B"], undefined]]);
+    assert.equal(store.has("gym.pendingSets.v2.B"), false);
+    assert.match(b.status.textContent, /account that logged them/);
+
+    const again = browser("B", store);
+    again.run("session.js");
+    await settle();
+    assert.equal(again.requests.length, 0);
+
+    const owner = browser("A", store);
+    owner.run("session.js");
+    await settle();
+    assert.equal(owner.requests[0].body.get("clientId"), "theirs");
+    assert.equal(store.has("gym.pendingSets.v1"), false);
+});
+
+test("legacy sets older than 30 days are dropped instead of adopted", async () => {
+    const store = new Map([["gym.pendingSets.v1", JSON.stringify([legacySet("stale", 31)])]]);
+    const b = browser("A", store);
+    b.run("session.js");
+    await settle();
+    assert.equal(b.requests.length, 0);
+    assert.equal(store.has("gym.pendingSets.v1"), false);
+});
+
+test("legacy sets stay in the v1 queue when the account's queue can't be saved", async () => {
+    const store = new Map([["gym.pendingSets.v1", JSON.stringify([legacySet("kept")])]]);
+    const b = browser("A", store);
+    b.context.localStorage.setItem = (key, value) => { if (key.includes(".v2.")) throw new Error("QuotaExceededError"); store.set(key, value); };
+    b.context.fetch = async () => { throw new Error("offline"); };
+    b.run("session.js");
+    await settle();
+    assert.equal(JSON.parse(store.get("gym.pendingSets.v1"))[0].clientId, "kept");
+});
+
+test("the previous version's rest timer and drafts are cleared once someone is signed in", () => {
+    const store = new Map([["gym.restTimer.v1", "{}"], ["gym.setDrafts.v1", "{}"]]);
+    browser("", store).run("session.js");
+    assert.equal(store.size, 2);
+    browser("A", store).run("session.js");
+    assert.equal(store.size, 0);
+});
+
+function legacySection() {
+    const forms = {};
+    const form = (name) => ({ listeners: {}, addEventListener(e, fn) { this.listeners[e] = fn; }, removeEventListener() {}, submit() { this.listeners.submit({ preventDefault() {} }); }, name });
+    forms.send = form("send");
+    forms.discard = form("discard");
+    const list = { rows: [], replaceChildren(...rows) { this.rows = rows; } };
+    return {
+        forms, list, hidden: true,
+        querySelector(s) { return s === "[data-legacy-list]" ? list : s === "[data-legacy-send]" ? forms.send : forms.discard; },
+    };
+}
+
+function withDom(b) {
+    b.context.document.createElement = () => ({ appendChild() {}, set textContent(v) { this.text = v; } });
+    return b;
+}
+
+test("legacy feedback waits for the person signed in to send it or discard it", async () => {
+    const report = { key: "r1", kind: "report", url: "/feedback", fields: [["message", "old"]], preview: "old" };
+    const store = new Map([["gym.pendingFeedback.v1", JSON.stringify([report])]]);
+    const b = withDom(browser("A", store));
+    b.run("feedback.js");
+    await b.events.DOMContentLoaded[0]();
+    assert.equal(b.requests.length, 0);
+
+    const section = legacySection();
+    b.modules["feedback-legacy"](section);
+    assert.equal(section.hidden, false);
+    assert.equal(section.list.rows.length, 1);
+    section.forms.send.submit();
+    await settle();
+    assert.equal(b.requests.length, 1);
+    assert.equal(b.requests[0].headers["X-Gym-User"], "A");
+    assert.equal(store.has("gym.pendingFeedback.v1"), false);
+    assert.equal(section.hidden, true);
+
+    const other = new Map([["gym.pendingFeedback.v1", JSON.stringify([report])]]);
+    const c = withDom(browser("B", other));
+    c.run("feedback.js");
+    const discard = legacySection();
+    c.modules["feedback-legacy"](discard);
+    discard.forms.discard.submit();
+    assert.equal(other.size, 0);
+    assert.equal(discard.hidden, true);
+    assert.equal(c.requests.length, 0);
+});
+
+function denyStorage(b) {
+    b.context.localStorage.setItem = () => { throw new Error("QuotaExceededError"); };
+    b.context.localStorage.removeItem = () => { throw new Error("SecurityError"); };
+}
+
+test("an in-memory set queue says once, not on every retry, that the account changed", async () => {
+    const b = browser("A");
+    denyStorage(b);
+    let toasts = 0;
+    b.context.window.gymToast = () => { toasts++; };
+    b.context.fetch = async () => ({ ok: false, status: 409 });
+    b.run("session.js");
+    b.events.submit[0]({ target: { closest: () => setForm() }, preventDefault() {} });
+    await settle();
+    for (let i = 0; i < 3; i++) {
+        b.intervals[0]();
+        await settle();
+    }
+    assert.equal(toasts, 1);
+});
+
+test("an in-memory feedback queue says once, not on every retry, that the account changed", async () => {
+    const b = browser("A");
+    denyStorage(b);
+    b.context.fetch = async () => ({ ok: false, status: 409 });
+    const form = feedbackForm(b);
+    const toasts = [];
+    b.context.window.gymToast = (m) => toasts.push(m);
+    await form.submit();
+    for (let i = 0; i < 3; i++) {
+        b.intervals[0]();
+        await settle();
+    }
+    assert.equal(toasts.filter((m) => /Sign back into this account/.test(m)).length, 1);
+});

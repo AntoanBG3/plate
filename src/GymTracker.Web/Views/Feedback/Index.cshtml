@@ -24,6 +24,17 @@
     <div class="list" data-pending-list></div>
 </section>
 
+@* Saved on this phone before queues had owners; feedback.js lets the person signed in send or discard them. *@
+<section class="section" data-module="feedback-legacy" hidden>
+    <h2 class="section-title">@L["Saved before an update"]</h2>
+    <div class="list" data-legacy-list></div>
+    <p class="section-footer">@L["These were saved on this phone before reports were linked to an account. Send them only if you wrote them."]</p>
+    <div class="btn-stack">
+        <form data-legacy-send><button type="submit" class="btn btn-tinted btn-block">@L["Send from this account"]</button></form>
+        <form data-legacy-discard data-confirm="@L["Discard these reports? They can't be recovered."]" data-confirm-action="@L["Discard"]"><button type="submit" class="btn btn-plain btn-block">@L["Discard"]</button></form>
+    </div>
+</section>
+
 @if (Model.Count == 0)
 {
     <div class="empty">

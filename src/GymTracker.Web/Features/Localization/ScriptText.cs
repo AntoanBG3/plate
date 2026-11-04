@@ -22,7 +22,7 @@ public static class ScriptText
         "Your sign-in changed. Reload this page before sending pending changes.",
         "This session expired. Sign in again in another tab, then return here to send pending changes.",
         "Your sign-in changed. Sign back into this account in another tab, then return here to send pending changes.",
-        "Older pending changes have no account attached. They are kept on this phone but cannot be sent automatically.",
+        "Some older sets on this phone couldn't be sent from this account. They send when the account that logged them signs in.",
         "1 set is saved on this phone and will send when the connection is back.",
         "{0} sets are saved on this phone and will send when the connection is back.",
         "That set was not valid.",
@@ -63,6 +63,7 @@ public static class ScriptText
         // feedback.js
         "This report is waiting to send. Its contents are locked. Keep this page open and press Send to retry.",
         "Report",
+        "Food rating",
         "Thanks!",
         "Thanks. What was wrong?",
         "Thanks. This helps it read food better.",
