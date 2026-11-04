@@ -49,6 +49,7 @@ public class SettingsController(
             p.HeightCm = form.HeightCm;
             p.BirthYear = form.BirthYear;
         }, ct);
+        await targets.ForTodayAsync(ct);
         return Saved(autosave, "/settings/profile");
     }
 
@@ -80,10 +81,11 @@ public class SettingsController(
             p.TargetRatePercentPerWeek = form.TargetRatePercentPerWeek ?? 0;
             p.ProteinGramsPerKg = form.ProteinGramsPerKg;
         }, ct);
+        var daily = await targets.ForTodayAsync(ct);
         if (autosave && Request.Headers.ContainsKey("HX-Request"))
         {
             // Nothing to swap but today's protein numbers, sent out of band.
-            return PartialView("_ProteinNote", new ProteinNoteViewModel(await profiles.GetAsync(ct), await targets.ForTodayAsync(ct), OutOfBand: true));
+            return PartialView("_ProteinNote", new ProteinNoteViewModel(await profiles.GetAsync(ct), daily, OutOfBand: true));
         }
 
         return Saved(autosave, "/settings/goal");

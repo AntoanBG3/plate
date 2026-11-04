@@ -45,20 +45,29 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
 
         var target = GoalTargets.Calculate(estimate.EstimatedTdeeKcal, profile, trend, today);
 
-        // Keep the stored targets in line with profile changes made since the estimate, so the calories chart matches.
-        if (estimate.TargetKcal != target.Kcal || estimate.TargetProteinG != target.ProteinG)
+        // A weekly estimate is historical once its day ends. Today's target changes get their own snapshot.
+        if (estimate.CalculatedOn == today && (estimate.TargetKcal != target.Kcal || estimate.TargetProteinG != target.ProteinG))
         {
             estimate.TargetKcal = target.Kcal;
             estimate.TargetProteinG = target.ProteinG;
             await db.SaveChangesAsync(ct);
         }
 
+        var userId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.");
+        var savedValues = new TargetDayValues(estimate.EstimatedTdeeKcal, target, trend, GoalTargets.MinKcal(profile.Sex));
+        var values = savedValues.ToJson();
+        // Concurrent page loads share one row. Only today's row can be updated, never a previous day.
+        await db.Database.ExecuteSqlAsync($"""
+            INSERT INTO "NutritionTargetDays" ("UserId", "Date", "Values") VALUES ({userId}, {today}, {values}::jsonb)
+            ON CONFLICT ("UserId", "Date") DO UPDATE SET "Values" = EXCLUDED."Values"
+            """, ct);
+
         return new DailyTargets(
             target.Kcal,
             target.ProteinG,
             target.Kcal is null ? "Log your weight to get a target for your goal."
                 : target.ProteinG is null ? "Log your weight to get a protein target." : null,
-            estimate,
+            WithTargetValues(estimate, savedValues),
             trend,
             target.FloorApplied,
             GoalTargets.MinKcal(profile.Sex),
@@ -66,8 +75,8 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
     }
 
     /// <summary>
-    /// The targets in force on a past day: the maintenance estimate of that day with the profile's goal rules (SPEC 5.5,
-    /// 5.6). Null before the first estimate; <paramref name="firstEstimate"/> then says when targets start.
+    /// The last targets captured on or before a past day. Older installations retain the stored calorie/protein
+    /// targets, without inventing macro ranges from today's profile. Null before the first estimate.
     /// </summary>
     public async Task<(DailyTargets? Targets, DateOnly? FirstEstimate)> ForDateAsync(DateOnly date, CancellationToken ct)
     {
@@ -78,11 +87,27 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
             return (null, first);
         }
 
-        var profile = await profiles.GetAsync(ct);
-        var trend = TrendWeight.On(await bodyweights.WeighInsAsync(ct), date);
-        var target = GoalTargets.Calculate(estimate.EstimatedTdeeKcal, profile, trend, date);
-        return (new DailyTargets(target.Kcal, target.ProteinG, null, estimate, trend, target.FloorApplied, GoalTargets.MinKcal(profile.Sex), target.Macros), estimate.CalculatedOn);
+        var snapshot = await db.NutritionTargetDays.AsNoTracking().Where(x => x.Date <= date)
+            .OrderByDescending(x => x.Date).FirstOrDefaultAsync(ct);
+        if (snapshot is not null)
+        {
+            var saved = TargetDayValues.Read(snapshot.Values);
+            // An initial weekly estimate can still follow profile edits; return the maintenance actually shown then.
+            estimate = WithTargetValues(estimate, saved);
+            return (new DailyTargets(saved.Target.Kcal, saved.Target.ProteinG, null, estimate, saved.TrendWeightKg,
+                saved.Target.FloorApplied, saved.FloorKcal, saved.Target.Macros), estimate.CalculatedOn);
+        }
+
+        return (new DailyTargets(estimate.TargetKcal, estimate.TargetProteinG, null, estimate, estimate.TrendWeightKg), estimate.CalculatedOn);
     }
+
+    private static MaintenanceEstimate WithTargetValues(MaintenanceEstimate estimate, TargetDayValues values) => new()
+    {
+        Id = estimate.Id, UserId = estimate.UserId, CalculatedOn = estimate.CalculatedOn,
+        EstimatedTdeeKcal = values.MaintenanceKcal, TargetKcal = values.Target.Kcal, TargetProteinG = values.Target.ProteinG,
+        TrendWeightKg = values.TrendWeightKg, DaysOfData = estimate.DaysOfData, LoggingCompleteness = estimate.LoggingCompleteness,
+        Method = estimate.Method, LowConfidence = estimate.LowConfidence,
+    };
 
     /// <summary>The latest estimate if it is less than a week old, otherwise a new one, stored. Null when no estimate is possible.</summary>
     private async Task<MaintenanceEstimate?> CurrentEstimateAsync(
@@ -101,8 +126,17 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
             // Until the first adaptive estimate, the stored value is only the prior: follow profile edits right away.
             if (lastAdaptive is null && prior is { } p && latest.EstimatedTdeeKcal != p)
             {
-                latest.EstimatedTdeeKcal = p;
-                await db.SaveChangesAsync(ct);
+                if (latest.CalculatedOn == today)
+                {
+                    latest.EstimatedTdeeKcal = p;
+                    await db.SaveChangesAsync(ct);
+                }
+                else
+                {
+                    // Use the new prior today without changing the estimate older days relied on or its cadence.
+                    return WithTargetValues(latest, new TargetDayValues(p,
+                        GoalTargets.Calculate(p, profile, trend, today), trend, GoalTargets.MinKcal(profile.Sex)));
+                }
             }
 
             return latest;

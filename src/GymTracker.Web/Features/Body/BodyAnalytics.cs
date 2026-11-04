@@ -1,5 +1,6 @@
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Data;
+using GymTracker.Web.Features.Food;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.Web.Features.Body;
@@ -49,17 +50,21 @@ public class BodyAnalytics(AppDbContext db, BodyweightService bodyweights)
             .ToListAsync(ct);
 
         var days = new List<CalorieDay>(CalorieDays);
+        var snapshots = (await db.NutritionTargetDays.AsNoTracking().Where(x => x.Date <= today)
+            .OrderBy(x => x.Date).ToListAsync(ct))
+            .Select(x => new { x.Date, Values = TargetDayValues.Read(x.Values) }).ToList();
         for (var day = from; day <= today; day = day.AddDays(1))
         {
             var estimate = estimates.LastOrDefault(e => e.CalculatedOn <= day);
+            var snapshot = snapshots.LastOrDefault(x => x.Date <= day)?.Values;
             var eaten = intake.GetValueOrDefault(day);
             days.Add(new CalorieDay(
                 day,
                 eaten is null ? null : decimal.Round(eaten.Kcal),
-                estimate?.TargetKcal,
-                estimate?.EstimatedTdeeKcal,
+                snapshot is null ? estimate?.TargetKcal : snapshot.Target.Kcal,
+                snapshot?.MaintenanceKcal ?? estimate?.EstimatedTdeeKcal,
                 eaten is null ? null : decimal.Round(eaten.ProteinG),
-                estimate?.TargetProteinG));
+                snapshot is null ? estimate?.TargetProteinG : snapshot.Target.ProteinG));
         }
 
         return days;

@@ -207,6 +207,10 @@ Seed about 90 common exercises, each with a Bulgarian name in the gym vocabulary
 - `Summary` (up to 400 characters), `Tips` (up to three, each up to 160), `Motivation` (up to 160)
 - `Language` (the account's language when written), `Model`, `CreatedAt`
 
+**NutritionTargetDay**
+- Composite key `UserId`, `Date` (the user's local day), with an owner query filter and account-delete cascade.
+- `Values` (jsonb): the computed calorie and protein targets, macro ranges, floor, trend weight and maintenance actually shown that day. Today's snapshot may change; past snapshots are not rewritten. Days without a snapshot carry the previous snapshot forward. History predating snapshots uses the stored maintenance estimate's calorie/protein targets and leaves unrecorded macro ranges unknown.
+
 ---
 
 ## 5. Core calculations (GymTracker.Core)
@@ -514,7 +518,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - **Exercise picker** (adding to a template or a session): pick several at once, added in the order tapped; exercises already there are marked. When nothing matches the search, it offers to create a custom exercise with that name.
 
 ### Food
-- Date selector (defaults to today), entries grouped by meal, daily totals at the top. Future days, and days before 2000 (which only come from hand-typed or broken links), can't be opened or logged; opening one goes to today. A past day shows the targets in force that day (the maintenance estimate of that day, 5.5, with the profile's goal rules, 5.6); days before the first estimate say when targets start.
+- Date selector (defaults to today), entries grouped by meal, daily totals at the top. Future days, and days before 2000 (which only come from hand-typed or broken links), can't be opened or logged; opening one goes to today. A past day shows the captured targets in force then (`NutritionTargetDay`, section 4), without applying today's profile. Before snapshots existed, the stored estimate supplies calories and protein only; days before the first estimate say when targets start.
 - The totals card shows each macro against its target (5.6): protein against the aim with the minimum, fat and carbs against their ranges, fiber against its minimum and saturated fat against its maximum, with the coverage note when a day is under 80% (5.8). Each of Breakfast, Lunch and Dinner shows its protein, with a check once it reaches the per-meal aim.
 - A This week card with the 5.8 averages.
 - Add entry with four methods:

@@ -184,6 +184,7 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime, IClassFi
     {
         await using var db = fixture.CreateContext(userId, connection);
         var user = new FixedCurrentUser(userId);
+        db.NutritionTargetDays.Add(new NutritionTargetDay { UserId = userId, Date = new DateOnly(2026, 10, 1) });
         var templates = new TemplateService(db, user, TimeProvider.System);
         var sessions = new SessionService(db, user, new ProfileLookup(db), TimeProvider.System);
 

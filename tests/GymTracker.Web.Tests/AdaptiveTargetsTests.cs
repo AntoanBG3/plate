@@ -144,6 +144,74 @@ public class AdaptiveTargetsTests(PostgresFixture fixture) : IClassFixture<Postg
     }
 
     [Fact]
+    public async Task Goal_and_profile_edits_do_not_rewrite_past_targets_or_the_chart()
+    {
+        await using var x = await SetupAsync();
+        await x.Scope.Bodyweights.SetAsync(Today, 80, default);
+        var before = await x.Targets.ForTodayAsync(default);
+
+        x.Clock.Day = Today.AddDays(1);
+        await x.Profiles.UpdateAsync(p =>
+        {
+            p.Goal = Goal.Cut;
+            p.TargetRatePercentPerWeek = 0.5m;
+            p.Sex = Sex.Female;
+            p.ProteinGramsPerKg = 2.4m;
+        }, default);
+        var current = await x.Targets.ForTodayAsync(default);
+        await x.Targets.ForTodayAsync(default); // The same day updates its snapshot, rather than adding duplicates.
+        var past = (await x.Targets.ForDateAsync(Today, default)).Targets!;
+
+        current.Kcal.Should().Be(2060);
+        current.Estimate!.TargetKcal.Should().Be(current.Kcal);
+        past.Kcal.Should().Be(before.Kcal);
+        past.Macros.Should().Be(before.Macros);
+        past.FloorKcal.Should().Be(1800);
+        (await x.Scope.Db.MaintenanceEstimates.SingleAsync()).TargetKcal.Should().Be(2500);
+        (await x.Scope.Db.NutritionTargetDays.CountAsync()).Should().Be(2);
+
+        var chart = await new BodyAnalytics(x.Scope.Db, x.Scope.Bodyweights).CaloriesAsync(x.Clock.Day, default);
+        chart[^2].TargetKcal.Should().Be(2500);
+        chart[^1].TargetKcal.Should().Be(2060);
+        chart[^2].TargetProteinG.Should().Be(before.ProteinG);
+    }
+
+    [Fact]
+    public async Task A_new_prior_does_not_change_yesterdays_maintenance_or_the_weekly_cadence()
+    {
+        await using var x = await SetupAsync();
+        var initial = await x.Targets.ForTodayAsync(default);
+        x.Clock.Day = Today.AddDays(1);
+        await x.Profiles.UpdateAsync(p => p.InitialMaintenanceKcal = 2700, default);
+
+        var current = await x.Targets.ForTodayAsync(default);
+        current.Kcal.Should().Be(2700);
+        current.Estimate!.TargetKcal.Should().Be(current.Kcal);
+        current.Estimate!.Id.Should().Be(initial.Estimate!.Id);
+        (await x.Scope.Db.MaintenanceEstimates.SingleAsync()).EstimatedTdeeKcal.Should().Be(2500);
+        var past = (await x.Targets.ForDateAsync(Today, default)).Targets!;
+        past.Kcal.Should().Be(2500);
+        past.Estimate!.EstimatedTdeeKcal.Should().Be(2500);
+    }
+
+    [Fact]
+    public async Task Legacy_history_keeps_its_recorded_targets_without_inventing_macros()
+    {
+        await using var x = await SetupAsync();
+        x.Scope.Db.MaintenanceEstimates.Add(new MaintenanceEstimate
+        {
+            UserId = x.Scope.UserId, CalculatedOn = Today.AddDays(-7), EstimatedTdeeKcal = 2500,
+            TargetKcal = 2060, TargetProteinG = 175,
+        });
+        await x.Scope.Db.SaveChangesAsync();
+
+        var past = (await x.Targets.ForDateAsync(Today.AddDays(-1), default)).Targets!;
+        past.Kcal.Should().Be(2060);
+        past.ProteinG.Should().Be(175);
+        past.Macros.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Estimates_are_private_to_each_user()
     {
         await using var a = await SetupAsync();
@@ -151,6 +219,7 @@ public class AdaptiveTargetsTests(PostgresFixture fixture) : IClassFixture<Postg
 
         await using var b = new UserScope(fixture, await fixture.CreateUserAsync());
         (await b.Db.MaintenanceEstimates.CountAsync()).Should().Be(0);
+        (await b.Db.NutritionTargetDays.CountAsync()).Should().Be(0);
     }
 
     [Fact]

@@ -29,6 +29,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<SavedMealItem> SavedMealItems => Set<SavedMealItem>();
     public DbSet<UsualFood> UsualFoods => Set<UsualFood>();
     public DbSet<MaintenanceEstimate> MaintenanceEstimates => Set<MaintenanceEstimate>();
+    public DbSet<NutritionTargetDay> NutritionTargetDays => Set<NutritionTargetDay>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<ParseRun> ParseRuns => Set<ParseRun>();
     public DbSet<Feedback> Feedback => Set<Feedback>();
@@ -237,6 +238,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.Name).HasMaxLength(64);
             e.Property(x => x.Value).HasMaxLength(2000);
             e.Property(x => x.UpdatedByUserId).HasMaxLength(450);
+        });
+
+        builder.Entity<NutritionTargetDay>(e =>
+        {
+            e.HasKey(x => new { x.UserId, x.Date });
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.Values).HasColumnType("jsonb");
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
         });
 
         builder.Entity<MaintenanceEstimate>(e =>
