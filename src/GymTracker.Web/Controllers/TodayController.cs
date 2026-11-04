@@ -73,6 +73,7 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
     public async Task<IActionResult> StartBreak(CancellationToken ct)
     {
         var today = await profiles.TodayAsync(ct);
+        await targets.CaptureHistoryAsync(ct);
         await profiles.UpdateAsync(p =>
         {
             if (p.Goal != Goal.Cut)
@@ -89,6 +90,7 @@ public class TodayController(ProfileService profiles, BodyweightService bodyweig
     public async Task<IActionResult> EndBreak(CancellationToken ct)
     {
         var today = await profiles.TodayAsync(ct);
+        await targets.CaptureHistoryAsync(ct);
         await profiles.UpdateAsync(p => CutCheck.EndBreak(p, today), ct);
         return Redirect("/today");
     }

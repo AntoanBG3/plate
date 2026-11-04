@@ -195,21 +195,75 @@ public class AdaptiveTargetsTests(PostgresFixture fixture) : IClassFixture<Postg
     }
 
     [Fact]
-    public async Task Legacy_history_keeps_its_recorded_targets_without_inventing_macros()
+    public async Task Days_before_snapshots_keep_their_macros_and_stop_following_profile_edits()
+    {
+        await using var x = await SetupAsync();
+        await x.Scope.Bodyweights.SetAsync(Today.AddDays(-7), 80, default);
+        x.Scope.Db.MaintenanceEstimates.Add(new MaintenanceEstimate
+        {
+            UserId = x.Scope.UserId, CalculatedOn = Today.AddDays(-7), EstimatedTdeeKcal = 2500,
+            TargetKcal = 2060, TargetProteinG = 175, Method = MaintenanceMethod.Initial,
+        });
+        await x.Scope.Db.SaveChangesAsync();
+
+        // Opening a past day first, as from a link, captures the earlier days with the profile as it is now.
+        var past = (await x.Targets.ForDateAsync(Today.AddDays(-1), default)).Targets!;
+        past.Kcal.Should().Be(2060);
+        past.ProteinG.Should().Be(175);
+        past.Macros.Should().NotBeNull();
+        past.Macros!.FatMaxG.Should().BeGreaterThan(0);
+        (await x.Scope.Db.NutritionTargetDays.CountAsync()).Should().Be(7);
+
+        await x.Profiles.UpdateAsync(p => p.ProteinGramsPerKg = 2.4m, default);
+        var after = (await x.Targets.ForDateAsync(Today.AddDays(-1), default)).Targets!;
+        after.Macros.Should().Be(past.Macros);
+
+        var chart = await new BodyAnalytics(x.Scope.Db, x.Scope.Bodyweights).CaloriesAsync(Today.AddDays(-1), default);
+        chart[^1].TargetKcal.Should().Be(2060);
+        chart[^1].TargetProteinG.Should().Be(175);
+    }
+
+    [Fact]
+    public async Task A_settings_save_captures_earlier_days_before_changing_the_profile()
     {
         await using var x = await SetupAsync();
         x.Scope.Db.MaintenanceEstimates.Add(new MaintenanceEstimate
         {
-            UserId = x.Scope.UserId, CalculatedOn = Today.AddDays(-7), EstimatedTdeeKcal = 2500,
-            TargetKcal = 2060, TargetProteinG = 175,
+            UserId = x.Scope.UserId, CalculatedOn = Today.AddDays(-3), EstimatedTdeeKcal = 2500,
+            TargetKcal = 2500, TargetProteinG = 160, Method = MaintenanceMethod.Initial,
         });
         await x.Scope.Db.SaveChangesAsync();
 
-        var past = (await x.Targets.ForDateAsync(Today.AddDays(-1), default)).Targets!;
-        past.Kcal.Should().Be(2060);
-        past.ProteinG.Should().Be(175);
-        past.Macros.Should().BeNull();
+        await x.Targets.CaptureHistoryAsync(default);
+        await x.Profiles.UpdateAsync(p => p.Goal = Goal.Cut, default);
+
+        var past = (await x.Targets.ForDateAsync(Today.AddDays(-2), default)).Targets!;
+        past.Kcal.Should().Be(2500);
+        (await x.Scope.Db.NutritionTargetDays.CountAsync()).Should().Be(3);
+        await x.Targets.CaptureHistoryAsync(default); // Only once per user.
+        (await x.Scope.Db.NutritionTargetDays.CountAsync()).Should().Be(3);
     }
+
+    [Fact]
+    public async Task An_unchanged_day_is_not_written_again()
+    {
+        await using var x = await SetupAsync();
+        await x.Scope.Bodyweights.SetAsync(Today, 80, default);
+        await x.Targets.ForTodayAsync(default);
+        var xmin = await XminAsync(x);
+
+        await x.Targets.ForTodayAsync(default);
+        (await XminAsync(x)).Should().Be(xmin);
+
+        await x.Profiles.UpdateAsync(p => p.ProteinGramsPerKg = 2.4m, default);
+        await x.Targets.ForTodayAsync(default);
+        (await XminAsync(x)).Should().NotBe(xmin);
+    }
+
+    // The row's transaction id changes whenever the row is written, even with the same values.
+    private static Task<long> XminAsync(Setup x) => x.Scope.Db.Database
+        .SqlQuery<long>($"""SELECT xmin::text::bigint AS "Value" FROM "NutritionTargetDays" WHERE "UserId" = {x.Scope.UserId}""")
+        .SingleAsync();
 
     [Fact]
     public async Task Estimates_are_private_to_each_user()

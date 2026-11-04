@@ -209,7 +209,7 @@ Seed about 90 common exercises, each with a Bulgarian name in the gym vocabulary
 
 **NutritionTargetDay**
 - Composite key `UserId`, `Date` (the user's local day), with an owner query filter and account-delete cascade.
-- `Values` (jsonb): the computed calorie and protein targets, macro ranges, floor, trend weight and maintenance actually shown that day. Today's snapshot may change; past snapshots are not rewritten. Days without a snapshot carry the previous snapshot forward. History predating snapshots uses the stored maintenance estimate's calorie/protein targets and leaves unrecorded macro ranges unknown.
+- `Values` (jsonb): the computed calorie and protein targets, macro ranges, floor, trend weight and maintenance actually shown that day. Today's snapshot may change, and is written only when it does; past snapshots are not rewritten. Days without a snapshot carry the previous snapshot forward. The first time a user's targets are captured (before any profile change), every day from their first estimate to yesterday is captured as it was shown before snapshots existed: the stored estimate's calorie and protein targets, with the macro ranges for that calorie target from the current profile. The JSON property names are a fixed format, not the Core record names.
 
 ---
 
@@ -518,7 +518,7 @@ Mobile-first, designed for one-handed use on an iPhone. Bottom tab bar: **Today,
 - **Exercise picker** (adding to a template or a session): pick several at once, added in the order tapped; exercises already there are marked. When nothing matches the search, it offers to create a custom exercise with that name.
 
 ### Food
-- Date selector (defaults to today), entries grouped by meal, daily totals at the top. Future days, and days before 2000 (which only come from hand-typed or broken links), can't be opened or logged; opening one goes to today. A past day shows the captured targets in force then (`NutritionTargetDay`, section 4), without applying today's profile. Before snapshots existed, the stored estimate supplies calories and protein only; days before the first estimate say when targets start.
+- Date selector (defaults to today), entries grouped by meal, daily totals at the top. Future days, and days before 2000 (which only come from hand-typed or broken links), can't be opened or logged; opening one goes to today. A past day shows the captured targets in force then (`NutritionTargetDay`, section 4), without applying today's profile. Days from before snapshots existed are captured on first use (section 4); days before the first estimate say when targets start.
 - The totals card shows each macro against its target (5.6): protein against the aim with the minimum, fat and carbs against their ranges, fiber against its minimum and saturated fat against its maximum, with the coverage note when a day is under 80% (5.8). Each of Breakfast, Lunch and Dinner shows its protein, with a check once it reaches the per-meal aim.
 - A This week card with the 5.8 averages.
 - Add entry with four methods:

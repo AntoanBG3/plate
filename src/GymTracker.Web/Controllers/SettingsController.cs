@@ -42,6 +42,7 @@ public class SettingsController(
     [HttpPost("profile")]
     public async Task<IActionResult> Profile(ProfileForm form, bool autosave, CancellationToken ct)
     {
+        await targets.CaptureHistoryAsync(ct);
         await profiles.UpdateAsync(p =>
         {
             p.DisplayName = form.DisplayName?.Trim() ?? "";
@@ -71,6 +72,7 @@ public class SettingsController(
         }
 
         var today = await profiles.TodayAsync(ct);
+        await targets.CaptureHistoryAsync(ct);
         await profiles.UpdateAsync(p =>
         {
             p.ActivityLevel = form.ActivityLevel;

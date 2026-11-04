@@ -55,12 +55,22 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
 
         var userId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.");
         var savedValues = new TargetDayValues(estimate.EstimatedTdeeKcal, target, trend, GoalTargets.MinKcal(profile.Sex));
-        var values = savedValues.ToJson();
-        // Concurrent page loads share one row. Only today's row can be updated, never a previous day.
-        await db.Database.ExecuteSqlAsync($"""
-            INSERT INTO "NutritionTargetDays" ("UserId", "Date", "Values") VALUES ({userId}, {today}, {values}::jsonb)
-            ON CONFLICT ("UserId", "Date") DO UPDATE SET "Values" = EXCLUDED."Values"
-            """, ct);
+        var stored = await db.NutritionTargetDays.AsNoTracking().Where(x => x.Date == today).Select(x => x.Values).FirstOrDefaultAsync(ct);
+        if (stored is null)
+        {
+            await CaptureEarlierDaysAsync(profile, weighIns, today, ct);
+        }
+
+        // Most page loads change nothing; only a change is written. Concurrent page loads share one row, and only
+        // today's row is ever updated, never a previous day.
+        if (stored is null || TargetDayValues.Read(stored) != savedValues)
+        {
+            var values = savedValues.ToJson();
+            await db.Database.ExecuteSqlAsync($"""
+                INSERT INTO "NutritionTargetDays" ("UserId", "Date", "Values") VALUES ({userId}, {today}, {values}::jsonb)
+                ON CONFLICT ("UserId", "Date") DO UPDATE SET "Values" = EXCLUDED."Values"
+                """, ct);
+        }
 
         return new DailyTargets(
             target.Kcal,
@@ -75,8 +85,9 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
     }
 
     /// <summary>
-    /// The last targets captured on or before a past day. Older installations retain the stored calorie/protein
-    /// targets, without inventing macro ranges from today's profile. Null before the first estimate.
+    /// The last targets captured on or before a past day (SPEC 4, NutritionTargetDay). Days from before snapshots
+    /// existed are captured the first time this user's targets are (<see cref="TargetDayValues.Legacy"/>).
+    /// Null before the first estimate.
     /// </summary>
     public async Task<(DailyTargets? Targets, DateOnly? FirstEstimate)> ForDateAsync(DateOnly date, CancellationToken ct)
     {
@@ -87,18 +98,70 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
             return (null, first);
         }
 
-        var snapshot = await db.NutritionTargetDays.AsNoTracking().Where(x => x.Date <= date)
-            .OrderByDescending(x => x.Date).FirstOrDefaultAsync(ct);
-        if (snapshot is not null)
+        var snapshot = await SnapshotOnAsync(date, ct);
+        if (snapshot is null)
         {
-            var saved = TargetDayValues.Read(snapshot.Values);
-            // An initial weekly estimate can still follow profile edits; return the maintenance actually shown then.
-            estimate = WithTargetValues(estimate, saved);
-            return (new DailyTargets(saved.Target.Kcal, saved.Target.ProteinG, null, estimate, saved.TrendWeightKg,
-                saved.Target.FloorApplied, saved.FloorKcal, saved.Target.Macros), estimate.CalculatedOn);
+            // Opened straight from a link before anything captured this user's targets.
+            var profile = await profiles.GetAsync(ct);
+            var weighIns = await bodyweights.WeighInsAsync(ct);
+            await CaptureEarlierDaysAsync(profile, weighIns, UserClock.Today(time.GetUtcNow(), profile.TimeZoneId), ct);
+            snapshot = await SnapshotOnAsync(date, ct);
         }
 
-        return (new DailyTargets(estimate.TargetKcal, estimate.TargetProteinG, null, estimate, estimate.TrendWeightKg), estimate.CalculatedOn);
+        // An initial weekly estimate can still follow profile edits; return the maintenance actually shown then.
+        var saved = snapshot is null ? TargetDayValues.Legacy(estimate, await profiles.GetAsync(ct), estimate.TrendWeightKg, date) : TargetDayValues.Read(snapshot.Values);
+        estimate = WithTargetValues(estimate, saved);
+        return (new DailyTargets(saved.Target.Kcal, saved.Target.ProteinG, null, estimate, saved.TrendWeightKg,
+            saved.Target.FloorApplied, saved.FloorKcal, saved.Target.Macros), estimate.CalculatedOn);
+    }
+
+    /// <summary>Makes sure the days before snapshots existed are captured, before a profile edit could change them.</summary>
+    public async Task CaptureHistoryAsync(CancellationToken ct)
+    {
+        var profile = await profiles.GetAsync(ct);
+        var weighIns = await bodyweights.WeighInsAsync(ct);
+        await CaptureEarlierDaysAsync(profile, weighIns, UserClock.Today(time.GetUtcNow(), profile.TimeZoneId), ct);
+    }
+
+    private Task<NutritionTargetDay?> SnapshotOnAsync(DateOnly date, CancellationToken ct) =>
+        db.NutritionTargetDays.AsNoTracking().Where(x => x.Date <= date).OrderByDescending(x => x.Date).FirstOrDefaultAsync(ct);
+
+    /// <summary>
+    /// Once per user, when nothing has been captured yet: freezes every day from the first estimate to yesterday as it
+    /// was shown before snapshots existed, so a later profile edit no longer changes them.
+    /// </summary>
+    private async Task CaptureEarlierDaysAsync(UserProfile profile, IReadOnlyList<WeighIn> weighIns, DateOnly today, CancellationToken ct)
+    {
+        if (await db.NutritionTargetDays.AnyAsync(ct))
+        {
+            return;
+        }
+
+        var estimates = await db.MaintenanceEstimates.AsNoTracking().Where(e => e.CalculatedOn < today).OrderBy(e => e.CalculatedOn).ToListAsync(ct);
+        if (estimates.Count == 0)
+        {
+            return;
+        }
+
+        var userId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.");
+        var rows = new List<NutritionTargetDay>();
+        for (var day = estimates[0].CalculatedOn; day < today; day = day.AddDays(1))
+        {
+            var estimate = estimates.Last(e => e.CalculatedOn <= day);
+            var values = TargetDayValues.Legacy(estimate, profile, TrendWeight.On(weighIns, day), day);
+            rows.Add(new NutritionTargetDay { UserId = userId, Date = day, Values = values.ToJson() });
+        }
+
+        db.NutritionTargetDays.AddRange(rows);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            // A concurrent page load captured them first; its rows are the same.
+            rows.ForEach(r => db.Entry(r).State = EntityState.Detached);
+        }
     }
 
     private static MaintenanceEstimate WithTargetValues(MaintenanceEstimate estimate, TargetDayValues values) => new()
