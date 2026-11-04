@@ -22,6 +22,12 @@ if [ "${1:-}" = --dry-run ]; then
     exit 0
 fi
 
+# No remote side effects until the exact checkout has passed the complete test suite.
+bash tools/check.sh
+[ "$(git branch --show-current)" = main ] && [ -z "$(git status --porcelain)" ] \
+    && [ "$(git rev-parse --short HEAD)" = "$VERSION" ] \
+    || { echo "The checkout changed during checks; run the deployment again." >&2; exit 1; }
+
 DUMP="gymtracker-pre-$VERSION-$(date +%Y%m%d-%H%M).dump"
 echo "Dumping the database to ~/$DUMP on wizard"
 ssh wizard "docker exec gymtracker-db sh -c 'pg_dump -Fc -U \"\$POSTGRES_USER\" \"\$POSTGRES_DB\"' > ~/$DUMP \

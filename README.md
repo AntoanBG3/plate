@@ -13,7 +13,7 @@ All five build phases are in place:
 
 ## Local development (Mac)
 
-Prerequisites: .NET 10 SDK and Docker Desktop.
+Prerequisites: .NET 10 SDK, Node.js 24 or newer, and Docker Desktop.
 
 ```sh
 dotnet tool restore                                         # dotnet-ef, pinned in dotnet-tools.json
@@ -27,13 +27,11 @@ Create a local user (the password is read from stdin when piped, otherwise promp
 dotnet run --project src/GymTracker.Web -- create-user --email me@example.test --name Me
 ```
 
-Tests: `dotnet build && dotnet test`. The integration tests start their own `postgres:18` container through Testcontainers. If Docker Hub pulls fail with "authentication required", pull the helper image once with `docker pull testcontainers/ryuk:0.14.0`.
+Checks: `bash tools/check.sh` runs the JavaScript regressions, restores dependencies, builds, and runs all .NET tests. The same checks run on pushes and pull requests, and must pass before `tools/deploy.sh` touches the server. The integration tests start their own `postgres:18` container through Testcontainers. If Docker Hub pulls fail with "authentication required", pull the helper image once with `docker pull testcontainers/ryuk:0.14.0`.
 
 Pending sets and feedback belong to the account that created them. When browser storage is unavailable they stay in memory and continue sending, with a warning to keep the page open. A feedback report kept in memory is locked while waiting; Send retries the same report. An account change pauses sending until reload. Ownerless queues from the older version stay on the phone without being sent; they cannot safely be assigned to the next person who signs in. Old tabs receive a retryable response so they retain those reports too. Keep the site data until those entries have been reviewed.
 
 Nutrition targets are captured by user and day. Changes apply to today's snapshot, while previous days and charts keep the captured targets. Dates without a visit carry the last captured targets forward. Older history keeps its recorded calories and protein; macro ranges that were never stored remain unknown. The new table is included in exports and deleted with the account. Its migration runs on startup as usual.
-
-Pending sets and feedback belong to the account that created them. When browser storage is unavailable they stay in memory and continue sending, with a warning to keep the page open. A feedback report kept in memory is locked while waiting; Send retries the same report. An account change pauses sending until reload. Ownerless queues from the older version stay on the phone without being sent; they cannot safely be assigned to the next person who signs in. Old tabs receive a retryable response so they retain those reports too. Keep the site data until those entries have been reviewed.
 
 ### Food data
 
