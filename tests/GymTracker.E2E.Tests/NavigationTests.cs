@@ -1,10 +1,47 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 
 namespace GymTracker.E2E.Tests;
 
 /// <summary>Soft navigation: taps during a page transition, and keeping the user's place after a change (Phase 11).</summary>
 public class NavigationTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
+    [Theory]
+    [InlineData(E2EFixture.Chromium, false)]
+    [InlineData(E2EFixture.WebKit, false)]
+    [InlineData(E2EFixture.Chromium, true)]
+    [InlineData(E2EFixture.WebKit, true)]
+    public async Task A_lost_post_response_warns_that_the_change_may_have_saved(string browser, bool bulgarian)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.WithTargetsAsync(app, bulgarian);
+        await phone.GoAsync("/food");
+        await phone.Page.EvaluateAsync("""
+            () => {
+                const original = window.fetch;
+                window.fetch = async (url, options) => {
+                    const response = await original(url, options);
+                    if (new URL(url, location.href).pathname === "/food/quick" && options?.method === "POST") {
+                        throw new TypeError("Synthetic lost acknowledgement after save");
+                    }
+                    return response;
+                };
+            }
+            """);
+        await phone.Page.Locator("#meal-dinner [data-sheet-open='quick-sheet']").TapAsync();
+        await phone.Page.Locator("#quick-body input[name=description]").FillAsync("Lost acknowledgement");
+        await phone.Page.Locator("#quick-body input[name=kcal]").FillAsync("650");
+        await phone.Page.Locator("#quick-body button[type=submit]").TapAsync();
+        var toast = phone.Page.Locator("#toast");
+        await toast.WaitForAsync();
+        (await toast.InnerTextAsync()).Should().Contain(bulgarian
+            ? "Промяната може да е запазена. Провери, преди да опиташ отново."
+            : "That change may have been saved. Check before trying again.");
+        await using var db = app.Db.CreateContext(null);
+        var userId = await db.Users.Where(x => x.Email == phone.Email).Select(x => x.Id).SingleAsync();
+        (await db.FoodLog.IgnoreQueryFilters().CountAsync(x => x.UserId == userId && x.Description == "Lost acknowledgement")).Should().Be(1);
+    }
+
     private static async Task<bool> InViewAsync(Phone phone, string selector) =>
         await phone.Page.Locator(selector).First.EvaluateAsync<bool>(
             "e => { const r = e.getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight - 80; }");

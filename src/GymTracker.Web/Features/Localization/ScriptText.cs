@@ -10,7 +10,7 @@ public static class ScriptText
     [
         // site.js
         "Something went wrong ({0}). Try again.",
-        "No connection. That change was not saved; try again when you have signal.",
+        "Couldn't load the page. That change may have been saved. Check before trying again.",
         "{0} kcal · {1} g protein",
         "OK",
         "Add",

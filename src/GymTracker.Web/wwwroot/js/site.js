@@ -32,7 +32,7 @@
         if (quiet(event)) {
             return;
         }
-        window.gymToast(t("No connection. That change was not saved; try again when you have signal."));
+        window.gymToast(t("Couldn't load the page. That change may have been saved. Check before trying again."));
     });
 
     // A poll that fails (the admin area's eval progress, when the Cloudflare Access session has run out) reloads the
