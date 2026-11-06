@@ -572,6 +572,7 @@ Settings is a short hub, not one long page (progressive disclosure: NN/g, and th
   - When the check button is tapped, generate the `ClientId` Guid, write the set (including `CompletedAt`) to the pending queue in `localStorage`, render it as "pending", and only then send it. A set is never only in flight; this way it survives the app being closed or suspended mid-request.
   - Sending uses plain `fetch` in a small module, not htmx. Read the anti-forgery token at send time rather than storing it with the set.
   - On success (including a duplicate `ClientId`), remove the set from the queue and replace the pending row with the server's rendering.
+  - Each send attempt has a 15-second deadline covering the fetch and required response-body reading. A timeout keeps the set and its original `ClientId` pending for the existing retry triggers; the server may already have saved it. The deadline uses foreground timers, which iOS may pause while the app is suspended.
   - Retry while the queue is non-empty: on the `online` event, on `visibilitychange` to visible, on `pageshow`, at app start, after every successful request, and every 15 seconds. Only one send in flight at a time.
   - On a validation error (4xx other than 401), stop retrying that set and show the error on its row.
   - On 401, keep the queue and send the user to the login page; the queue resumes after login.

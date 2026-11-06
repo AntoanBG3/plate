@@ -14,9 +14,10 @@ function browser(owner = "A", store = new Map()) {
     const modules = {};
     const requests = [];
     const intervals = [];
+    const timeouts = [];
     const status = { hidden: true, textContent: "" };
     const context = {
-        URLSearchParams, Date, console,
+        URLSearchParams, Date, console, AbortController,
         document: {
             documentElement: { dataset: { userId: owner } },
             addEventListener: (name, fn) => (events[name] ??= []).push(fn),
@@ -30,7 +31,13 @@ function browser(owner = "A", store = new Map()) {
             setItem: (key, value) => store.set(key, value),
             removeItem: (key) => store.delete(key),
         },
-        setInterval(fn) { intervals.push(fn); }, setTimeout() {},
+        setInterval(fn) { intervals.push(fn); },
+        setTimeout(fn, ms) {
+            const timer = { fn, ms, cleared: false };
+            timeouts.push(timer);
+            return timer;
+        },
+        clearTimeout(timer) { timer.cleared = true; },
         t: (s) => s,
         window: {
             addEventListener: (name, fn) => (windowEvents[name] ??= []).push(fn),
@@ -45,8 +52,68 @@ function browser(owner = "A", store = new Map()) {
     vm.createContext(context);
     const run = (file) => vm.runInContext(source(file), context, { filename: file });
     run("queue.js");
-    return { context, events, windowEvents, modules, requests, intervals, status, store, run };
+    return { context, events, windowEvents, modules, requests, intervals, timeouts, status, store, run };
 }
+
+for (const phase of ["headers", "success body", "validation body"]) {
+    test(`a set stalled at ${phase} times out, stays queued and replays the same ClientId`, async () => {
+        const item = { clientId: "00000000-0000-4000-8000-000000000001", sessionExerciseId: 1,
+            weightKg: 60, reps: 10, isWarmup: false, completedAt: new Date().toISOString() };
+        const b = browser("A", new Map([["gym.pendingSets.v2.A", JSON.stringify([item])]]));
+        const stored = new Set();
+        b.context.fetch = async (url, options) => {
+            b.requests.push({ url, ...options });
+            const id = options.body.get("clientId");
+            if (phase !== "validation body" || b.requests.length > 1) stored.add(id);
+            if (b.requests.length > 1) return { ok: true, status: 200, text: async () => "" };
+            const stalled = () => new Promise((_, reject) => {
+                options.signal?.addEventListener("abort", () => reject(new Error("aborted")), { once: true });
+            });
+            return phase === "headers" ? stalled()
+                : { ok: phase === "success body", status: phase === "success body" ? 200 : 400, text: stalled };
+        };
+        b.run("session.js");
+        await settle();
+        b.intervals[0]();
+        b.windowEvents.online[0]();
+        await settle();
+        assert.equal(b.requests.length, 1, "only one send can be in flight");
+        assert.equal(JSON.parse(b.store.get("gym.pendingSets.v2.A") || "[]")[0].clientId, item.clientId);
+        const deadline = b.timeouts.find((timer) => timer.ms === 15000 && !timer.cleared);
+        assert.ok(deadline, "the entire attempt must have a 15-second deadline");
+        deadline.fn();
+        await settle();
+        assert.equal(b.requests[0].signal.aborted, true);
+        assert.equal(deadline.cleared, true);
+        assert.equal(JSON.parse(b.store.get("gym.pendingSets.v2.A") || "[]")[0].clientId, item.clientId);
+
+        b.windowEvents.online[0]();
+        await settle();
+        assert.deepEqual(b.requests.map((r) => r.body.get("clientId")), [item.clientId, item.clientId]);
+        assert.equal(stored.size, 1, "a lost acknowledgement must replay the original server identity");
+        assert.equal(JSON.parse(b.store.get("gym.pendingSets.v2.A") || "[]").length, 0);
+        assert.equal(b.timeouts.every((timer) => timer.cleared), true);
+    });
+}
+
+test("a set that completes before its deadline clears the timer without aborting", async () => {
+    const item = { clientId: "slow-set", sessionExerciseId: 1, weightKg: 60, reps: 10,
+        isWarmup: false, completedAt: new Date().toISOString() };
+    const b = browser("A", new Map([["gym.pendingSets.v2.A", JSON.stringify([item])]]));
+    let complete;
+    b.context.fetch = async (url, options) => {
+        b.requests.push({ url, ...options });
+        return { ok: true, status: 200, text: () => new Promise((resolve) => { complete = resolve; }) };
+    };
+    b.run("session.js");
+    await settle();
+    assert.equal(JSON.parse(b.store.get("gym.pendingSets.v2.A") || "[]").length, 1);
+    complete("");
+    await settle();
+    assert.equal(JSON.parse(b.store.get("gym.pendingSets.v2.A") || "[]").length, 0);
+    assert.equal(b.requests[0].signal?.aborted, false);
+    assert.equal(b.timeouts.every((timer) => timer.cleared), true);
+});
 
 function feedbackForm(b) {
     const listeners = {};

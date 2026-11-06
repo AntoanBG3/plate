@@ -11,6 +11,7 @@
     const owner = document.documentElement.dataset.userId || "";
     const REST_KEY = "gym.restTimer.v2." + encodeURIComponent(owner);
     const RETRY_MS = 15000;
+    const SEND_TIMEOUT_MS = 15000;
     // Ownerless sets older than this are dropped rather than kept for an account that may never sign in.
     const LEGACY_DAYS = 30;
 
@@ -145,7 +146,10 @@
             completedAt: item.completedAt,
         });
 
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
         let response;
+        let html;
         try {
             response = await fetch("/train/sets", {
                 method: "POST",
@@ -157,14 +161,21 @@
                     ...queue.headers(),
                 },
                 body,
+                signal: controller.signal,
             });
+            // Keep the deadline through body reading, before changing the durable queue. The server may already
+            // have saved a set when its response stalls; retrying the same ClientId is safe.
+            if (response.ok || response.status === 400) {
+                html = await response.text();
+            }
         } catch {
             return "stop"; // offline or the request was cut off
+        } finally {
+            clearTimeout(timeout);
         }
 
         if (response.ok) {
             told = null;
-            const html = await response.text();
             removeFromQueue(item.clientId);
             const row = rowFor(item.clientId);
             if (row) {
@@ -218,7 +229,7 @@
                 row.querySelectorAll("input, button").forEach((el) => { el.disabled = false; });
             }
             row && row.classList.remove("is-waiting");
-            toast(response.status === 400 ? (await response.text()) || t("That set was not valid.") : t("That set's exercise no longer exists."));
+            toast(response.status === 400 ? html || t("That set was not valid.") : t("That set's exercise no longer exists."));
             return "next";
         }
 
