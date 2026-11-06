@@ -44,7 +44,7 @@ Verified: parser awaits `BodyAsync` before creating attempt timeout (`OpenRouter
 
 This is a **verified control-flow risk, unmeasured production incidence**. It affects cold startup/hourly refresh during catalog slowness, including requests when a last-good catalog already exists. Do not present the source-derived 10 s upper timeout as observed latency.
 
-Candidate isolated change: cache last-good and refresh without blocking ordinary configured-model calls, suppress concurrent refreshes and add short failed-refresh backoff; enforce cancellation throughout catalog lookup/body building. Keep cold-model parameter capability behavior safe. Effort M; medium blast radius all AI tasks; rollback code only; fake HTTP tests for slow catalog, expired/fresh cache, concurrent calls, failure then recovery, cancellation, and task deadline. SPEC update only if refresh behavior is newly specified.
+Candidate isolated change: cache last-good and refresh without blocking ordinary configured-model calls, suppress concurrent refreshes and add short failed-refresh backoff; enforce cancellation throughout catalog lookup/body building. Keep cold-model parameter capability behavior safe. Effort M; medium blast radius catalog-backed AI tasks; rollback code only; fake HTTP tests for slow catalog, expired/fresh cache, concurrent calls, failure then recovery, cancellation, and task deadline. SPEC update only if refresh behavior is newly specified.
 
 ### History reads grow, but need two-year measurements before optimization
 

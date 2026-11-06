@@ -13,7 +13,7 @@ Change dataset size without touching production/development databases:
     python3 tools/perf/generate.py --days 30 > /private/tmp/repa-perf-seed.sql
     docker exec -i repa-perf-db psql -U gym -d gym_perf -v ON_ERROR_STOP=1 < /private/tmp/repa-perf-seed.sql
 
-Generator refuses a database name other than gym_perf. Synthetic journey rows are replaced transactionally;shared seeded foods remain. Use --days730 for two years. CLI account creation is only for a fresh scratch database;reuse an initialized stack instead of running setup on its old bind mount.
+Generator refuses a database name other than gym_perf. Synthetic journey rows are replaced transactionally;shared seeded foods remain. Use --days730 for two years. CLI account creation is only for a fresh scratch database;setup creates a fresh uniquely named bind directory to avoid stale synthetic accounts on a rerun.
 
 Run timing commands separately,waiting for each to finish:
 

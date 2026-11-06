@@ -13,9 +13,10 @@ done
 image=mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra@sha256:00e0ad6a7ef8c0c1391b87f05c7ac757a15740455688f2bfcd146a3f4b987efd
 dotnet publish src/GymTracker.Web -c Release -r linux-arm64 --self-contained false -p:UseAppHost=false -o /private/tmp/repa-perf-publish
 docker pull "$image"
+perf_db_path="$(mktemp -d /private/tmp/repa-perf-db.XXXXXX)"
 docker run -d --name repa-perf-db --memory 256m -p 127.0.0.1:55432:5432 \
     -e POSTGRES_USER=gym -e POSTGRES_DB=gym_perf -e POSTGRES_PASSWORD=perf-local-only \
-    -v /private/tmp/repa-perf-db:/var/lib/postgresql postgres:18 \
+    -v "$perf_db_path:/var/lib/postgresql" postgres:18 \
     -c shared_buffers=32MB -c max_connections=15 -c jit=off -c shared_preload_libraries=pg_stat_statements
 for ((attempt=0;attempt<60;attempt++)); do
     docker exec repa-perf-db pg_isready -U gym -d gym_perf >/dev/null 2>&1 && break
