@@ -54,7 +54,7 @@ async function lateCameraPermission() {
     cleanup();
     resolvePermission({ getTracks: () => [{ stop: () => { stoppedTracks++; } }] });
     await settle(); await settle();
-    return { scenario: "getUserMedia resolves after sheet close and module cleanup", stoppedTracks, videoPlayed, startedIntervals, interpretation: "Late stream is started after teardown and no remaining cleanup owns it; camera can remain active until another page lifecycle event." };
+    return { scenario: "getUserMedia resolves after sheet close and module cleanup", stoppedTracks, videoPlayed, startedIntervals, interpretation: "Late stream is started after teardown and no remaining cleanup owns it; capture lifetime after this point depends on browser/document lifecycle." };
 }
 async function outOfOrderNavigation() {
     const pending = {};
@@ -106,6 +106,6 @@ function precacheInventory() {
     const paths = ["/offline.html", ...Array.from(block.matchAll(/"([^"\n]+)"/g), (m) => m[1])];
     const assets = paths.map((p) => ({ path: p, bytes: fs.statSync(path.join(root, p)).size }));
     const totalBytes = assets.reduce((sum, a) => sum + a.bytes, 0);
-    return { assets: assets.length, totalBytes, wasmBytes: assets.find((a) => a.path.endsWith(".wasm")).bytes, largest: assets.sort((a, b) => b.bytes - a.bytes).slice(0, 6), interpretation: "Decoded filesystem bytes, not compressed network transfer; current worker fetches the entire list on each changed cache version." };
+    return { assets: assets.length, totalBytes, wasmBytes: assets.find((a) => a.path.endsWith(".wasm")).bytes, largest: assets.sort((a, b) => b.bytes - a.bytes).slice(0, 6), interpretation: "Decoded filesystem bytes, not compressed network transfer; current worker requests the entire list on each changed cache version; HTTP 304 validation can reuse existing body bytes." };
 }
 (async () => console.log(JSON.stringify({ generatedUtc: new Date().toISOString(), stalledQueue: await stalledSetQueue(), cameraRace: await lateCameraPermission(), navigationRace: await outOfOrderNavigation(), precache: precacheInventory() }, null, 2)))().catch((err) => { console.error(err); process.exitCode = 1; });

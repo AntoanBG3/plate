@@ -1,0 +1,111 @@
+{
+  "command": "bash tools/check.sh",
+  "environment": "Mac16,13 arm64 .NET10.0.107 Node26.11.1 DockerDesktop10CPUs7.75GiB; warm package/image/browser caches",
+  "samples": [
+    {
+      "run": 1,
+      "exit": 0,
+      "seconds": 112.38,
+      "timer": "/usr/bin/time -p",
+      "jsPassed": 29,
+      "dotnet": [
+        {
+          "project": "GymTracker.Core.Tests",
+          "passed": 470
+        },
+        {
+          "project": "GymTracker.Web.Tests",
+          "passed": 540
+        },
+        {
+          "project": "GymTracker.E2E.Tests",
+          "passed": 241
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "utc": "2026-11-05T09:12:49.218786+00:00",
+      "exit": 0,
+      "seconds": 115.6203285419997,
+      "jsPassed": 29,
+      "dotnet": [
+        {
+          "project": "GymTracker.Core.Tests",
+          "passed": 470
+        },
+        {
+          "project": "GymTracker.Web.Tests",
+          "passed": 540
+        },
+        {
+          "project": "GymTracker.E2E.Tests",
+          "passed": 241
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "utc": "2026-11-05T09:14:46.900176+00:00",
+      "exit": 0,
+      "seconds": 117.68062820799969,
+      "jsPassed": 29,
+      "dotnet": [
+        {
+          "project": "GymTracker.Core.Tests",
+          "passed": 470
+        },
+        {
+          "project": "GymTracker.Web.Tests",
+          "passed": 540
+        },
+        {
+          "project": "GymTracker.E2E.Tests",
+          "passed": 241
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "utc": "2026-11-05T09:17:10.275063+00:00",
+      "exit": 0,
+      "seconds": 143.3701092500014,
+      "jsPassed": 29,
+      "dotnet": [
+        {
+          "project": "GymTracker.Core.Tests",
+          "passed": 470
+        },
+        {
+          "project": "GymTracker.Web.Tests",
+          "passed": 540
+        },
+        {
+          "project": "GymTracker.E2E.Tests",
+          "passed": 241
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "utc": "2026-11-05T09:19:13.175990+00:00",
+      "exit": 0,
+      "seconds": 122.89201191699976,
+      "jsPassed": 29,
+      "dotnet": [
+        {
+          "project": "GymTracker.Core.Tests",
+          "passed": 470
+        },
+        {
+          "project": "GymTracker.Web.Tests",
+          "passed": 540
+        },
+        {
+          "project": "GymTracker.E2E.Tests",
+          "passed": 241
+        }
+      ]
+    }
+  ]
+}

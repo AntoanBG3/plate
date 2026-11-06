@@ -1,0 +1,45 @@
+{
+  "environment": "local synthetic only; same unchanged baseline app; five independent parse runs submitted twice",
+  "trials": [
+    {
+      "run": 1,
+      "firstStatus": 302,
+      "secondStatus": 302,
+      "before": 0,
+      "afterFirst": 1,
+      "afterSecond": 2
+    },
+    {
+      "run": 2,
+      "firstStatus": 302,
+      "secondStatus": 302,
+      "before": 0,
+      "afterFirst": 1,
+      "afterSecond": 2
+    },
+    {
+      "run": 3,
+      "firstStatus": 302,
+      "secondStatus": 302,
+      "before": 0,
+      "afterFirst": 1,
+      "afterSecond": 2
+    },
+    {
+      "run": 4,
+      "firstStatus": 302,
+      "secondStatus": 302,
+      "before": 0,
+      "afterFirst": 1,
+      "afterSecond": 2
+    },
+    {
+      "run": 5,
+      "firstStatus": 302,
+      "secondStatus": 302,
+      "before": 0,
+      "afterFirst": 1,
+      "afterSecond": 2
+    }
+  ]
+}

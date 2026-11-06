@@ -18,6 +18,7 @@ print(r'''INSERT INTO "AspNetUsers" SELECT (jsonb_populate_record(NULL::"AspNetU
 INSERT INTO "Profiles" SELECT (jsonb_populate_record(NULL::"Profiles",prof || jsonb_build_object('UserId','perf-user-'||u,'DisplayName','Synthetic '||u))).* ON CONFLICT DO NOTHING;
 END LOOP; END $$;
 UPDATE "Profiles" SET "OnboardedAt"='2026-10-01Z',"HeightCm"=180,"Sex"='Male',"BirthYear"=1996,"Goal"='Maintain',"ActivityLevel"='LowActive',"WeeklySummaryEnabled"=false;
+UPDATE "FoodItems" SET "Barcode"='4006381333931' WHERE "Id"=(SELECT min("Id") FROM "FoodItems");
 CREATE TEMP TABLE perf_users AS SELECT "Id" uid FROM "AspNetUsers" WHERE "Email"='demo@example.test' OR "Id" LIKE 'perf-user-%';
 DO $$ DECLARE u record; tid int; sid int; d int; eid int; seid int; k int; ex int[]; BEGIN
 SELECT array_agg("Id" ORDER BY "Id") INTO ex FROM (SELECT "Id" FROM "Exercises" WHERE "OwnerUserId" IS NULL ORDER BY "Id" LIMIT 6) e;

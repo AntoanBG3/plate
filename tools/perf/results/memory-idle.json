@@ -1,0 +1,146 @@
+{
+  "phase": "process-idle",
+  "env": "native linux-arm64 app256MiB1CPU; db256MiB noCPUcap; synthetic5users730d",
+  "samples": [
+    {
+      "run": 1,
+      "utc": "2026-11-05T08:54:17.104298+00:00",
+      "containers": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "5.95%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "52.19%",
+          "MemUsage": "133.6MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "1.07MB / 963kB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.06%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "56.58%",
+          "MemUsage": "144.8MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "77.7MB / 189MB",
+          "PIDs": "10"
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "utc": "2026-11-05T08:54:19.126575+00:00",
+      "containers": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.62%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "52.19%",
+          "MemUsage": "133.6MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "1.07MB / 963kB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "9.66%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "56.59%",
+          "MemUsage": "144.9MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "77.7MB / 189MB",
+          "PIDs": "10"
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "utc": "2026-11-05T08:54:21.149131+00:00",
+      "containers": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.71%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "52.19%",
+          "MemUsage": "133.6MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "1.07MB / 963kB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.04%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "56.56%",
+          "MemUsage": "144.8MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "77.7MB / 189MB",
+          "PIDs": "10"
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "utc": "2026-11-05T08:54:23.168430+00:00",
+      "containers": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "4.35%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "52.19%",
+          "MemUsage": "133.6MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "1.07MB / 963kB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.06%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "56.47%",
+          "MemUsage": "144.6MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "77.7MB / 189MB",
+          "PIDs": "10"
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "utc": "2026-11-05T08:54:25.177447+00:00",
+      "containers": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.53%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "52.19%",
+          "MemUsage": "133.6MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "1.07MB / 963kB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "4.09%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "57.43%",
+          "MemUsage": "147MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "77.7MB / 189MB",
+          "PIDs": "11"
+        }
+      ]
+    }
+  ]
+}

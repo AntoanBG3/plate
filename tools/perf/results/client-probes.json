@@ -1,5 +1,5 @@
 {
-  "generatedUtc": "2026-11-05T08:42:14.939Z",
+  "generatedUtc": "2026-11-05T08:53:27.981Z",
   "stalledQueue": {
     "scenario": "fetch never resolves; four retry callbacks plus online event",
     "simulatedRetryWindowMs": 60000,
@@ -17,7 +17,7 @@
     "stoppedTracks": 0,
     "videoPlayed": 1,
     "startedIntervals": 1,
-    "interpretation": "Late stream is started after teardown and no remaining cleanup owns it; camera can remain active until another page lifecycle event."
+    "interpretation": "Late stream is started after teardown and no remaining cleanup owns it; capture lifetime after this point depends on browser/document lifecycle."
   },
   "navigationRace": {
     "requestedOrder": [
@@ -63,6 +63,6 @@
         "bytes": 43933
       }
     ],
-    "interpretation": "Decoded filesystem bytes, not compressed network transfer; current worker fetches the entire list on each changed cache version."
+    "interpretation": "Decoded filesystem bytes, not compressed network transfer; current worker requests the entire list on each changed cache version; HTTP 304 validation can reuse existing body bytes."
   }
 }

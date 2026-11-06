@@ -1,0 +1,146 @@
+{
+  "phase": "after-load",
+  "env": "native linux-arm64 app256MiB1CPU; db256MiB noCPUcap; synthetic5users730d",
+  "samples": [
+    {
+      "run": 1,
+      "utc": "2026-11-05T08:52:20.540401+00:00",
+      "containers": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.68%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "90.08%",
+          "MemUsage": "230.6MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "183MB / 218MB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.01%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "63.43%",
+          "MemUsage": "162.4MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "34.1MB / 179MB",
+          "PIDs": "17"
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "utc": "2026-11-05T08:52:22.557049+00:00",
+      "containers": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.59%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "90.08%",
+          "MemUsage": "230.6MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "183MB / 218MB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.60%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "63.43%",
+          "MemUsage": "162.4MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "34.1MB / 179MB",
+          "PIDs": "17"
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "utc": "2026-11-05T08:52:24.573892+00:00",
+      "containers": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.50%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "90.08%",
+          "MemUsage": "230.6MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "183MB / 218MB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.00%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "63.43%",
+          "MemUsage": "162.4MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "34.1MB / 179MB",
+          "PIDs": "17"
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "utc": "2026-11-05T08:52:26.590721+00:00",
+      "containers": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.57%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "90.08%",
+          "MemUsage": "230.6MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "183MB / 218MB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.00%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "63.43%",
+          "MemUsage": "162.4MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "34.1MB / 179MB",
+          "PIDs": "17"
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "utc": "2026-11-05T08:52:28.606369+00:00",
+      "containers": [
+        {
+          "BlockIO": "0B / 0B",
+          "CPUPerc": "0.50%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "90.08%",
+          "MemUsage": "230.6MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "183MB / 218MB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.00%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "63.43%",
+          "MemUsage": "162.4MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "34.1MB / 179MB",
+          "PIDs": "17"
+        }
+      ]
+    }
+  ]
+}
