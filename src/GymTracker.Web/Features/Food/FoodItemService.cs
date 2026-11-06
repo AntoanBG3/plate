@@ -1,3 +1,4 @@
+using System.Globalization;
 using GymTracker.Core.Domain;
 using GymTracker.Core.Nutrition;
 using GymTracker.Web.Data;
@@ -33,17 +34,18 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
 
         // Raw SQL bypasses the global query filter, so ownership is checked explicitly here.
         var userId = currentUser.UserId ?? "";
-        return await db.Database.SqlQuery<FoodMatch>($"""
+        return await WithWordSimilarityAsync(minScore, indexed => db.Database.SqlQuery<FoodMatch>($"""
             SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                    f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
                    (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
                    GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')))::float8 AS "Score"
             FROM "FoodItems" f
             WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {userId})
+              AND (NOT {indexed} OR f."Name" %> {q} OR f."NameBg" %> {q})
               AND GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) >= {minScore}
             ORDER BY "Own" DESC, "Score" DESC, length(f."Name")
             LIMIT {take}
-            """).ToListAsync(ct);
+            """).ToListAsync(ct), ct);
     }
 
     /// <summary>The food's name as shown (Bulgarian when the reader uses it), or null when it isn't visible to this user.</summary>
@@ -76,7 +78,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
 
         var userId = currentUser.UserId ?? "";
         var lower = q.ToLowerInvariant();
-        var found = await db.Database.SqlQuery<FoodMatch>($"""
+        var found = await WithWordSimilarityAsync(0.3, indexed => db.Database.SqlQuery<FoodMatch>($"""
             WITH m AS (
                 SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                        f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
@@ -85,6 +87,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
                        starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre
                 FROM "FoodItems" f
                 WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {userId})
+                  AND (NOT {indexed} OR f."Name" %> {q} OR f."NameBg" %> {q})
                   AND GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) >= 0.3
             )
             SELECT "Id", "Name", "NameBg", "Brand", "KcalPer100g", "ProteinPer100g", "CarbsPer100g", "FatPer100g",
@@ -94,7 +97,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             -- "Bananas, dehydrated, or banana powder"); the rest by similarity.
             ORDER BY "Own" DESC, pre DESC, CASE WHEN pre THEN length("Name") END, sim DESC, length("Name")
             LIMIT {take * 2}
-            """).ToListAsync(ct);
+            """).ToListAsync(ct), ct);
 
         // The reference tables repeat some USDA foods under the same name with slightly different numbers ("Bananas,
         // raw" three times); one is shown, the earliest stored, which is USDA's (seeded first). Own foods are kept.
@@ -103,6 +106,35 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             .Select(g => g.MinBy(f => f.Id)!.Id)
             .ToHashSet();
         return found.Where(f => keep.Contains(f.Id)).Take(take).ToList();
+    }
+
+    private async Task<List<FoodMatch>> WithWordSimilarityAsync(double minScore, Func<bool, Task<List<FoodMatch>>> read, CancellationToken ct)
+    {
+        // A zero/non-finite threshold needs the original unfiltered candidate set (including score zero).
+        if (minScore <= 0 || minScore > 1 || !double.IsFinite(minScore)) return await read(false);
+
+        var existing = db.Database.CurrentTransaction;
+        await using var owned = existing is null ? await db.Database.BeginTransactionAsync(ct) : null;
+        if (existing is not null) await existing.CreateSavepointAsync("FoodSearchThreshold", ct);
+        try
+        {
+            // pg_trgm's operator threshold is float4. Use a slightly looser indexed predicate, then keep the
+            // original float8 >= comparison above, including exact boundary matches. SET LOCAL cannot leak
+            // into a pooled connection or alter another search's threshold.
+            var threshold = MathF.Max(0, MathF.BitDecrement((float)minScore)).ToString("R", CultureInfo.InvariantCulture);
+            await db.Database.ExecuteSqlAsync($"SELECT set_config('pg_trgm.word_similarity_threshold', {threshold}, true)", ct);
+            return await read(true);
+        }
+        finally
+        {
+            if (existing is not null)
+            {
+                // This scope only reads. Rolling back its savepoint also restores the caller's setting,
+                // even when a cancelled/failed query left the transaction in an error state.
+                await existing.RollbackToSavepointAsync("FoodSearchThreshold", CancellationToken.None);
+                await existing.ReleaseSavepointAsync("FoodSearchThreshold", CancellationToken.None);
+            }
+        }
     }
 
     public async Task<FoodItem> GetAsync(int id, CancellationToken ct) =>

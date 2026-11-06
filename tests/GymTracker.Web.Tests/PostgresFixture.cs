@@ -3,6 +3,7 @@ using GymTracker.Web.Data;
 using GymTracker.Web.Data.Seed;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Testcontainers.PostgreSql;
@@ -77,10 +78,10 @@ public sealed class PostgresFixture : IAsyncLifetime
         .Configure<IdentityOptions>(o => o.Stores.SchemaVersion = IdentitySchemaVersions.Version3)
         .BuildServiceProvider();
 
-    public AppDbContext CreateContext(string? userId, string? connectionString = null) => Context(connectionString ?? ConnectionString, userId);
+    public AppDbContext CreateContext(string? userId, string? connectionString = null, params IInterceptor[] interceptors) => Context(connectionString ?? ConnectionString, userId, interceptors);
 
-    private static AppDbContext Context(string connectionString, string? userId) =>
-        new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connectionString).UseApplicationServiceProvider(IdentityServices).Options,
+    private static AppDbContext Context(string connectionString, string? userId, params IInterceptor[] interceptors) =>
+        new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connectionString).UseApplicationServiceProvider(IdentityServices).AddInterceptors(interceptors).Options,
             new FixedCurrentUser(userId));
 
     /// <summary>A new empty database in the shared container, for tests that need their own (migrations, seeding).</summary>
