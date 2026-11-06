@@ -4,6 +4,24 @@ Review plan only. Baseline `462ef118827b00839941eab87cceb2a106c93065`, branch `p
 
 The priority is reliable set logging and avoiding duplicate food or a misleading recovery result, followed by the measured food-search bottleneck. Keep the stack. Two-year history does not justify an analytics rewrite: local warm Today is 6.8 ms HTTP median, Progress 17.3 ms, and cached barcode 2.1 ms. Search is the exception: 89.6 ms median alone, 912.7 ms at five callers; a three-food parse with the fake parser takes 550.1 ms alone and 6,105.3 ms at five callers. Those are native arm64 local measurements, not wizard or iPhone timings.
 
+## Approved review corrections — 2026-11-06
+
+P1 is implemented as eb16cc7 on changes/p1-set-send-deadline and remains unmerged.
+
+Execute the remaining approved work in this order:
+
+1. P2: restore validation as planned.
+2. P14: its own commit, adding only -v to docker rm -f in restore-drill.sh's EXIT trap. No cleanup redesign or additional scope.
+3. P6, first commit: correct the plain-POST failure toast in English and Bulgarian. The save may have succeeded; tell the user to check before retrying.
+4. P6, following commit: assign a per-render request ID to every plain-POST food form that adds entries. Resending returns the first result without adding rows. Also make loadScript forget failed loads, and correct ConfirmAsync's misleading already-confirmed comment.
+5. P7: accept using c1 timings, EXPLAIN plans, query counts and matched-result equivalence only.
+6. P4, then P3.
+7. Small P11: start attempt deadlines before body construction; treat the last good catalog as fresh for a few minutes after a failed refresh. Do not broaden into coalescing or background-refresh architecture.
+
+Deferred: P5, P8, P9, P10, P12, P13, P15 and P17. P16 remains an Antoan-led inspection/recovery follow-up; no wizard writes, sudo or deployment are authorized by this correction.
+
+No c5 or ramp value is a budget or acceptance target until the c5 search/parse slowdown has been explained. Historical measurements remain evidence, not acceptance criteria. The order above supersedes the original audit ranking below.
+
 ## Ranking and shipping rules
 
 Within each group, rank by user impact × confidence / effort × risk. The ordinal scores below make the judgement visible: impact 1–5; confidence 1–3 in the reproduced mechanism and proposed remedy; effort S=1, M=2, L=4; risk 1–3. They are prioritization aids, not predicted incident rates. VM fault probes establish races and missing bounds; their production frequency is unknown. Five local duplicate-confirm trials establish duplicate insertion; production currently contains only 38 food rows and no sets, so current use cannot estimate future workout failure rates.
@@ -30,7 +48,7 @@ Every item must show a failing regression against baseline before its implementa
 | P16 | Prove recovery and move state off failing storage | F11 | 5 / 3 | L / 3 | 1.25 | Antoan's device/backup evidence and maintenance window |
 | P17 | Measure replacement downtime before changing deployment | F11 | 1 / 2 | M / 2 | 0.5 | Future authorized deploy observation; no blue/green commitment |
 
-P9/P10 and P13/P14 are independent changes and must ship separately. P16's structural storage work is urgent operational follow-up despite its migration risk; it must not wait for the lower-risk code items to finish. F12 is reproduced under artificial parallel submissions;production incidence is unknown. P15 addresses numbering without changing ClientId replay semantics.
+The execution order in the review corrections controls this workstream. Deferred items remain documented for context, not authorized implementation in this pass. P16 is an Antoan-led inspection; F12's production frequency is unknown and P15 is deferred.
 
 ## Quick wins
 
@@ -74,7 +92,7 @@ P9/P10 and P13/P14 are independent changes and must ship separately. P16's struc
 
 **Tests / extra care / dependencies:** real browser tests for reversed Train/Food responses, Back while loading, slow POST then GET, offline fallback, build-version change and pending set replay during navigation. GET semantics and client-state preservation need care. Document latest-choice behavior in SPEC 2/8 if it is made an explicit contract. No dependency or production permission required.
 
-### P5 — Skip unusable matcher shortlist work
+### P5 — Deferred: Skip unusable matcher shortlist work
 
 **Fixes:** F5. Up to four catalog searches per bilingual parsed item are made before deciding whether the matcher is off or the usual/own match already wins (`FoodMatcher.cs:84-105`; `OpenRouterSettings.cs:174-177`). Local no-key three-food parsing still takes 550.1 ms median, overwhelmingly DB time.
 
@@ -86,27 +104,27 @@ P9/P10 and P13/P14 are independent changes and must ship separately. P16's struc
 
 ## Medium changes
 
-### P6 — Make one food confirmation save once
+### P6 — Make every plain-POST food-add intent save once
 
-**Fixes:** F2. In five independent local trials, first confirm inserted one row and repeating the same parse confirmation inserted a second; both returned 302 (`duplicate-confirm.json`). `ParseRunService.cs:116-119` recognizes confirmation but `FoodController.cs:109-116` inserts regardless.
+**Fixes:** F2 and the misleading navigation fallback. A network or page-script failure after a plain POST does not establish that its write failed. Correct the EN/BG toast first, in its own commit, to say the change may have been saved and to check before trying again.
 
-**Change and proof:** give a confirmation intent a durable identity and atomically claim/save it with its food rows. Repeating that same intent returns its prior success; deliberately logging the same food again creates a new intent. Keep handling for absent/foreign parse-run IDs and owner isolation. Prove sequential and simultaneous duplicates leave one row per included item, including when the first response is lost.
+**Change and proof:** give every rendered plain-POST food form that adds entries a durable per-render request ID. Atomically claim the ID and save food rows; sequential/concurrent resends return the first result. A fresh render permits an intentional repeat. Cover parsed confirmation, cached/search/manual item logging, recent/repeat, quick add, meal copy and saved-meal logging. Verify actual forms/routes before implementation. Preserve ownership, historical values and validation correction. Make loadScript remove failed entries so its next call retries. Correct ConfirmAsync's comment: an already-confirmed run currently returns its ID.
 
-**Scope / risk / rollback:** M, medium risk on food writes. Prefer additive state and dual-compatible request handling: old pages still need a safe result. A unique request identity or new table needs migration review. Rollback application code separately while keeping additive identifiers/constraints compatible; do not drop data to roll back.
+**Scope / risk / rollback:** M, medium risk on food writes. Additive persistence with an explicit old-form policy, reviewed migration/snapshot and backward-compatible rollback. No client queue-key changes. Keep additive state on code rollback.
 
-**Tests / extra care / dependencies:** sequential duplicate, racing duplicate, dropped-response retry, old form, multi-item all-or-nothing, validation failure then correction, separate repeat intent, account isolation and existing historical food unchanged. Stored payload, migrations, account export/deletion and historical rows need review if new user-owned data is added. SPEC 6.1/8 should state food-confirm retry semantics. No prerequisite; review the concrete request-ID design before implementation. Antoan is not needed for local development.
+**Tests / extra care / dependencies:** dropped acknowledgement, page-script failure after save, same-ID races, separate renders, multi-item atomicity, validation failure then correction, absent/foreign IDs, account export/deletion and unchanged past days. Script failure must allow a later successful retry. First toast commit regenerates the localization catalogue and adds Bulgarian in place. Update SPEC/README for request-ID retry semantics. No new package, production model call or wizard action.
 
 ### P7 — Make food-search candidate filtering indexable
 
-**Fixes:** F5. Five local source-shaped EXPLAINs show a FoodItems sequential scan: median 76.976 ms, range 76.292–85.115 ms, scanning 11,795 catalog rows. Warm HTTP search is 89.6 ms p50 / 97.1 ms p95 at c1, 912.7 / 1,016.0 ms at c5. The isolated ramp degrades to 8,790.0 ms p95 at c40 with no errors; this is saturation/queuing, not an OOM threshold.
+**Fixes:** F5. The c1 search baseline is 89.6 ms HTTP median / 97.1 ms p95. Five representative EXPLAINs show a catalog sequential scan with median 76.976 ms over 11,795 rows.
 
-**Change and proof:** use an indexable trigram candidate predicate with the existing word-similarity semantics, then retain the exact own-first/prefix/ranking and cutoff behavior. Do not replace word similarity with ordinary similarity to make an index appear used. Compare candidate IDs and ordering on a held-out EN/BG fixture, EXPLAIN buffers, c1/c5 query time and the same ramp. A proposed acceptance target is search c1 HTTP p95 below 50 ms and c5 below 250 ms on this audit fixture; it is a target to validate, not an established gain. If this query cannot meet it in place, reconsider the target before changing databases.
+**Change and proof:** use indexable trigram candidates while preserving word-similarity thresholds, own-first/prefix ordering and final ranking. Accept only on c1 timings, EXPLAIN plans, query counts and exact matched-result equivalence on held-out English/Bulgarian fixtures. A proposed c1 p95 target is below 50 ms on this same environment, subject to equivalence. C5 and ramp results cannot accept or reject this change while their slowdown remains unexplained.
 
-**Scope / risk / rollback:** M, medium risk to matching correctness across all food flows. Prefer query changes using existing GIN indexes. If additional indexes are needed, add them independently and leave harmless indexes during rollback; verify lock/startup impact before any migration.
+**Scope / risk / rollback:** M, medium matching-correctness risk. Prefer existing GIN indexes and code-only rollback. Any index migration needs separate lock/startup and snapshot review.
 
-**Tests / extra care / dependencies:** query-result equivalence at threshold boundaries, partial multiword matches, names with punctuation/Cyrillic, own/shared/private data, food-change sheet and parser matching. Review migration/snapshot if changed. No behavioral SPEC update intended. No dependency on P5, no new package, no production load. P5 can land first to reduce redundant work independently.
+**Tests / extra care / dependencies:** threshold boundaries, partial multiword matches, punctuation/Cyrillic, private ownership, own/shared ranking, change-food sheets and parser matching. No intended SPEC behavior change or dependency on deferred P5. No new package or production load.
 
-### P8 — Reuse and batch workout history
+### P8 — Deferred: Reuse and batch workout history
 
 **Fixes:** F6. A six-exercise session makes 29 commands, of which 24 come from the two repeated two-query loops (`TrainingAnalytics.cs:21-35,120-127,193-207`). Its warm HTTP median is 15.9 ms c1 / 27.2 ms c5. Two-year latest-session SQL itself is cheap: median 0.021 ms; reduce round trips rather than changing storage.
 
@@ -116,13 +134,13 @@ P9/P10 and P13/P14 are independent changes and must ship separately. P16's struc
 
 **Tests / extra care / dependencies:** no history, one prior session, warmups only, duplicate exercise slots, mixed weights, historical session opened out of order, user isolation, and query-count fixtures at six/twelve slots. History care applies: compare the same past workout before/after; no persisted historical changes. No SPEC update or dependencies. Keep P1 independent.
 
-### P9 — Retain total food latency
+### P9 — Deferred: Retain total food latency
 
 **Fixes:** F10. Production has parser/match percentiles but neither includes naming; current container recreation removed prior success-call logs.
 
 **Change and proof:** persist nullable total/namer durations for new ParseRuns, or bounded daily duration buckets if a schema review favors aggregate-only retention. Record success, timeout and failure separately. Reuse the existing parse retention policy. Expected gain is an answerable total-latency question after deployment, not a faster meal. Prove a fake 300 ms parser + 200 ms match + 100 ms name yields a total covering all stages and remains queryable after container replacement; historical rows read as unknown, never zero. M, medium schema risk; additive migration with old-reader compatibility; rollback code while retaining nullable columns. Pin any stored JSON sample if JSON is changed. No client-storage changes; update SPEC 11 for the additional diagnostics. No dependency on changing naming behavior.
 
-### P10 — Count error occurrences by day
+### P10 — Deferred: Count error occurrences by day
 
 **Fixes:** F10. Recent-window error totals cannot be reconstructed from lifetime counters filtered by last-seen time. Current production has zero active fingerprints, so this is an observability gap, not an incident-rate claim.
 
@@ -130,17 +148,17 @@ P9/P10 and P13/P14 are independent changes and must ship separately. P16's struc
 
 Do not use sums of independently measured p95s as a total p95. Do not gate optimization on these changes when existing query measurements already identify a bottleneck.
 
-### P11 — Bound model-catalog lookup and refresh
+### P11 — Put body construction inside task deadlines and back off failed catalog refreshes
 
-**Fixes:** F7. The catalog's 10-second HTTP request is outside parser/label attempt timers, and failed refreshes lack a fresh/backoff cache entry. Namer body building receives the original token despite its advertised five-second timeout. These are verified control-flow risks; production outage frequency is unmeasured.
+**Fixes:** F7. Catalog preparation currently precedes attempt deadlines in several clients; naming passes the caller token into body building.
 
-**Change and proof:** propagate task deadlines through capability lookup/body building; use last-good metadata promptly during slow refresh, coalesce refreshes and apply a short failed-refresh backoff. Ensure configured model capability fallback stays safe when no catalog has ever loaded. Prove ten concurrent calls share at most one refresh, a failed refresh does not delay every later call and each task's deadline actually covers all awaited preparation/response-body work. No paid calls required.
+**Change and proof:** create each existing attempt deadline before building its body, and pass that deadline token through catalog lookup, request sending and required body reading. After a failed catalog refresh, cache the last good catalog as fresh for a few minutes so later calls do not immediately repeat the outage delay. Keep existing per-task timeout/retry values and safe fallback when no last-good catalog exists.
 
-**Scope / risk / rollback:** M, medium risk across catalog-backed AI tasks. Cache-only and cancellation changes can ship without migration; one code revert rolls back. Preserve parser manual fallback, optional matcher/namer fallback and label form contents.
+**Scope / risk / rollback:** small, focused cache/cancellation change across affected catalog-backed clients. Code-only rollback, no new background refresher, coalescing layer, persistence or package.
 
-**Tests / extra care / dependencies:** fake cold/expired catalog, last-good metadata, slow response, repeated failure and recovery, caller cancellation, partial bodies, retries and HTTP 429/5xx. Label records aborted reads as SPEC requires; do not cancel away the recording contract. No persisted format/key change. SPEC 6 deadline interpretation needs review with Antoan before altering retry behavior: weekly writer uses 20 s while SPEC 6.5 refers to setup/parser's 15 s; label retries transport exceptions though SPEC says “5xx only.” Record the chosen contract and update implementation/tests or SPEC together. This is an implementation/spec discrepancy, not a reason to rewrite the entire integration layer.
+**Tests / extra care / dependencies:** controlled slow body/catalog preparation, deadline cancellation, last-good failure backoff and recovery after expiry, no-last-good fallback, task failures and cancellation. Preserve label-scan recording after abort. Do not change the weekly timeout or label retry semantics in this item; any SPEC mismatch remains a separate decision. No wizard action.
 
-### P12 — Reuse unchanged precache assets across deploys, only after browser evidence
+### P12 — Deferred: Reuse unchanged precache assets across deploys, only after browser evidence
 
 **Fixes:** F9. Source inventory is 35 assets / 2,005,839 decoded bytes; WASM is 1,093,289 bytes. Controlled local Chromium at 390 px, 4× CPU, 1.5 MB/s identity-body proxy and 100/400 ms response delay measured cold worker-ready medians 2.954/7.903 s and synthetic cache-version update 2.422/6.133 s, five contexts/profile. Bare precache URLs and exact hashed runtime URLs differ. These are not production compressed bytes or proof that every real deploy downloads 2 MB; HTTP 304/body reuse and browser policy matter. Browser fixture was reseeded after write load:clean eight-entry days and a blank workout. All40warm tab changes had zero static requests/long tasks;first Progress paid two sequential scripts(220,512identity bytes),adding496/1,065ms to content at100/400ms profiles. See the audit/browser JSON for complete profile/byte caveats.
 
@@ -150,7 +168,7 @@ Do not use sums of independently measured p95s as a total p95. Do not gate optim
 
 **Tests / extra care / dependencies:** initial install, unchanged asset update, changed asset, failed one-asset install, old open clients, hash mismatch, offline first launch, pending set during update and one stale HTML response. Add CI coverage for `sw-check.mjs` or equivalent and byte/count checks. Persistent cache migration and account queues need care; update SPEC 8/2 if URL/cache behavior changes. Browser measurement and review required; Antoan verifies a future real iPhone update. No Cloudflare change is assumed necessary.
 
-### P13 — Bound predeploy backup retention
+### P13 — Deferred: Bound predeploy backup retention
 
 **Fixes:** F11. Predeploy dumps are created without retention (`deploy.sh:31-34`). Current root free space is 176 GiB; this is prevention, not an existing capacity incident.
 
@@ -160,17 +178,17 @@ Do not use sums of independently measured p95s as a total p95. Do not gate optim
 
 **Tests / extra care / dependencies:** shell tests for dry-run, old/new filenames, nonmatching files, spaces/escaped paths, failed validation and newest-copy protection. No app history/key/schema change; keys must stay covered by the backup process. README documents the chosen policy. No code dependency, but Antoan chooses retention after inspecting existing recovery copies and authorizes actual wizard deletions.
 
-### P14 — Remove drill-owned temporary volumes
+### P14 — Remove the drill container’s anonymous volume
 
-**Fixes:** F11. Throwaway restore containers use an anonymous Postgres volume and cleanup omits its removal (`restore-drill.sh:8,19-23`). Current unused volumes total only 52.64 MB and their origin was not inspected, so do not assume every unused volume belongs to this tool.
+**Fixes:** F11.
 
-**Change and proof:** keep drill state in a task-specific bind directory or remove only the volume associated with the exact drill container at cleanup. Prove five successful and failed synthetic drill runs leave no newly created container/volume/archive artifacts. Never run broad `docker volume prune`.
+**Change:** in its own commit, add -v to docker rm -f in restore-drill.sh's EXIT trap. Nothing more: no bind-directory redesign, volume inventory, pruning, new cleanup mechanism or unrelated changes.
 
-**Scope / risk / rollback:** S, medium operational risk if cleanup selects the wrong volume; bind paths/container IDs must be exact and drill-specific. Code revert restores old cleanup behavior; disposable drill artifacts need no data recovery. Existing unknown volumes are outside this change unless separately inventoried and approved.
+**Scope / risk / rollback:** S; the flag removes anonymous volumes owned by this exact temporary container. Revert this one line to roll back. Existing unknown volumes and production containers are outside scope.
 
-**Tests / extra care / dependencies:** fake Docker/shell tests for success, signal, early failure, unrelated named/anonymous volume preservation and nonzero restore failures. No app persistent-data changes; README documents cleanup. Independent of P13. Antoan authorizes actual wizard artifact cleanup; P2 must land before treating a nightly drill's success as evidence of valid contents.
+**Validation / dependencies:** shell syntax and the existing local restore-drill regressions/full check. Independent of P2 and no actual wizard drill or cleanup is run.
 
-### P15 — Serialize numbering for distinct simultaneous sets
+### P15 — Deferred: Serialize numbering for distinct simultaneous sets
 
 **Fixes:** F12. The local c5 workload created56 distinct ClientId rows but only36 distinct set numbers,in five duplicate-number groups;all requests succeeded. This is artificial simultaneous-device traffic,not a claim that the serial phone queue loses sets.
 
@@ -192,7 +210,7 @@ Do not use sums of independently measured p95s as a total p95. Do not gate optim
 
 **Tests / extra care / dependencies:** isolated restored login, cross-account isolation, representative historical food/workout/target equality, keys decryptability, valid backups after cutover, HDD and PC copies; exact table counts alone do not prove values. All persistent state, history and recovery care applies. SPEC/README update only when actual paths/process change. P2 validator should be available, but waiting for code does not excuse delaying device/backup inspection. Needs sudo/device access and explicit write/cutover authorization.
 
-### P17 — Measure replacement downtime before changing deployment
+### P17 — Deferred: Measure replacement downtime before changing deployment
 
 **Fixes:** F11. One app is replaced; migrations, seeding and fixups happen before listening. Actual production downtime was not induced or measured. Native local startup results describe relative startup work; they do not establish tunnel availability during replacement.
 
@@ -235,18 +253,18 @@ These are review proposals, not new passing tests added on the audit branch. Exi
 | Area | Audit evidence | Proposed initial gate | Enforcement / limitation |
 |---|---|---|---|
 | Ordinary warm pages, c1 | HTTP p95 Today 8.3, Train 3.1, Food 6.7, Progress 20.1, Settings 3.0 ms | app p95 ≤30 ms for those fixtures | Five warm batches in isolated perf job; flag >25% reference change and rerun once before blocking |
-| Session, c1 / c5 | HTTP p95 17.2 / 39.9 ms | app p95 ≤25 / 75 ms initially | Same six-slot fixture; query target after P8 is stronger than a small noisy speed claim |
-| New set POST c1 / c5 | HTTP p95 4.1 / 43.2 ms | app p95 ≤10 / 75 ms; 0 unexpected statuses | Check idempotency/row counts separately from latency |
-| Food search c1 / c5 | HTTP p95 97.1 / 1,016.0 ms | app p95 ≤120 / 1,300 ms initially; P7 target HTTP ≤50 / 250 ms | Mark current budget as containment, not acceptable long-term search UX; verify rankings |
-| No-key three-food parse c1 / c5 | HTTP p95 574.6 / 6,298.1 ms | app p95 ≤750 / 7,500 ms initially | Separate fake/local DB cost from paid AI; tighten after P5/P7 with new measured baseline |
+| Session, c1 | HTTP p95 17.2 ms | Proposed app p95 ≤25 ms at c1 | Six-slot fixture; P8 is deferred |
+| New set POST, c1 | HTTP p95 4.1 ms | Proposed app p95 ≤10 ms at c1; no unexpected statuses | Verify idempotency independently |
+| Food search c1 | HTTP p95 97.1 ms | Proposed c1 HTTP p95 <50 ms after P7 | EXPLAIN, query count and matched-result equivalence; no c5/ramp acceptance |
+| No-key three-food parse, c1 | HTTP p95 574.6 ms | Proposed app p95 ≤750 ms at c1 | Preserve matched results; P5 is deferred |
 | Two-year growth | Today 6.2→6.8 ms median; Progress 8.0→17.3; search unchanged 89.6 | Compare all fixtures at 30/730 days; alert unbounded query counts or >2× beyond reference growth | Do not truncate EMA/targets to meet a ratio; history equality is mandatory |
 | Static precache | 35 entries / 2,005,839 decoded bytes | ≤36 entries and ≤2.10 MB decoded initially | Small filesystem/manifest check in CI; deliberate library update needs reviewed baseline change; also validate every path exists |
 | Warm PWA tabs | Source/existing worker check; browser table in audit | No unexpected static network requests after exact assets warm | Browser test with active worker; measure request count, not only reported resourceSize |
 | PWA cold/update | Cold worker-ready median 2.954/7.903 s; synthetic-update 2.422/6.133 s at 100/400 ms proxy profiles, n=5 each | Proposed median ceilings 3.5/9.2 s cold and 2.9/7.2 s synthetic update, with unchanged profile/HTTP behavior | Informational until repeatable runner established; compare actual body bytes separately; never substitute decoded inventory for production transfer |
-| App after representative load | 230.6 MiB / 256 MiB, five samples | ≤235 MiB median; no OOM/restart/unexpected statuses at c5 | Dedicated cgroup job, before diagnostics; include a fixed idle period; sustained trend matters more than one sample |
+| App after representative load | Existing app limit 256 MiB | Establish a clean c1 memory baseline before adding a headroom gate | Stress/ramp memory is observation only, with no acceptance target |
 | App after forced full GC | 197.2–197.3 MiB with diagnostic/tmpfs artifact | Record, no hard general-purpose CI gate yet | Gcdump adds overhead and is not managed-heap size; use consistent diagnostic method if comparing |
 | Production memory | App 145.2 MiB, DB ~69 MiB; current containers no restarts/OOM | Preserve 256 MiB until representative time series proves change safe | Do not lower or raise limits from one sample, or treat current restart count as lifetime health |
-| Search overload | c40 p95 ~8.79 s, no unexpected status; throughput falls | Rerun ramp after P7; record knee/queue/error mode | No scale-throughput goal; do not raise pool/CPU to hide repeated catalog scans |
+| Search overload | Unexplained concurrency slowdown recorded in audit | No budget or acceptance test | Diagnose the c5 search/parse slowdown before using concurrency figures |
 
 A fixed CI runner is required for hard server-time/memory gates. Start these as a recorded informational job, establish repeatability on three runs, then enforce the proposed ceilings. Query correctness, static inventory, deterministic races and restore failure exit codes can be enforced immediately. Cold startup/image size budgets should use the final audit measurements as a baseline plus explicit margin; do not invent a service-availability SLO from process start alone. Browser long-task/bytes/time budgets similarly need the final cold/warm mobile-profile table, then a controlled-runner baseline; actual iPhone numbers remain manual.
 
