@@ -3,7 +3,7 @@
     var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 }
 <div class="sheet-head"><span></span><span class="sheet-title" id="food-sheet-title">@Model.Meal.Name</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
-<form method="post" asp-antiforgery="true" action="/food/saved-meals/@Model.Meal.Id/log">
+<form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/saved-meals/@Model.Meal.Id/log">
     <input type="hidden" name="date" value="@date" />
     <input type="hidden" name="meal" value="@Model.LogTo" />
     <div class="list">

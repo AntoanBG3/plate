@@ -115,7 +115,7 @@
                     <div class="list">
                         @foreach (var f in group)
                         {
-                            <form method="post" asp-antiforgery="true" action="/food/log-item" class="portion" data-per100="@f.KcalPer100g.Kg(),@f.ProteinPer100g.Kg()">
+                            <form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/log-item" class="portion" data-per100="@f.KcalPer100g.Kg(),@f.ProteinPer100g.Kg()">
                                 <input type="hidden" name="date" value="@date" />
                                 <input type="hidden" name="meal" value="@Model.Meal" />
                                 <input type="hidden" name="foodItemId" value="@f.Id" />
@@ -214,7 +214,7 @@
             <div class="list">
                 @foreach (var r in Model.Recents)
                 {
-                    <form method="post" asp-antiforgery="true" action="/food/log-recent" class="portion" data-per100="@r.Per100.Kcal.Kg(),@r.Per100.Protein.Kg()">
+                    <form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/log-recent" class="portion" data-per100="@r.Per100.Kcal.Kg(),@r.Per100.Protein.Kg()">
                         <input type="hidden" name="date" value="@date" />
                         <input type="hidden" name="meal" value="@Model.Meal" />
                         <input type="hidden" name="description" value="@r.Description" />

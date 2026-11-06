@@ -167,6 +167,7 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime, IClassFi
             (await db.FoodItems.IgnoreQueryFilters().SingleAsync(f => f.Id == owned.SharedFoodId)).AddedByUserId.Should().Be(id,
                 "shared foods stay, still credited to an account that no longer exists, so others keep seeing it as another user's");
             (await db.LabelScanPhotos.IgnoreQueryFilters().AnyAsync(p => p.LabelScanId == owned.LabelScanId)).Should().BeFalse("label photos go with the account");
+            (await db.FoodLogRequests.IgnoreQueryFilters().AnyAsync(r => r.UserId == id)).Should().BeFalse("request receipts go with the account");
             (await db.AdminAudit.AnyAsync(a => a.Action == AuditActions.UserDelete && a.Target == id && a.Detail == doomed)).Should().BeTrue();
         }
 
@@ -185,6 +186,7 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime, IClassFi
         await using var db = fixture.CreateContext(userId, connection);
         var user = new FixedCurrentUser(userId);
         db.NutritionTargetDays.Add(new NutritionTargetDay { UserId = userId, Date = new DateOnly(2026, 10, 1) });
+        db.FoodLogRequests.Add(new FoodLogRequest { UserId = userId, RequestId = Guid.NewGuid(), CreatedAt = DateTimeOffset.UtcNow, Location = "/food" });
         var templates = new TemplateService(db, user, TimeProvider.System);
         var sessions = new SessionService(db, user, new ProfileLookup(db), TimeProvider.System);
 

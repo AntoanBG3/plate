@@ -919,5 +919,6 @@
   "Add the front or another side of the pack if the table doesn't show the name or serving.": "Добави предната или друга страна на опаковката, ако таблицата не показва името или порцията.",
   "Last time": "Последно",
   "Your usual": "Обичайно",
-  "Your usual amount, {0} g": "Обичайното ти количество, {0} г"
+  "Your usual amount, {0} g": "Обичайното ти количество, {0} г",
+  "This food form is out of date. Check whether it was saved, then reload before trying again.": "Тази форма за храна е остаряла. Провери дали храната е добавена, после презареди страницата и опитай отново."
 }

@@ -139,7 +139,11 @@
             const s = document.createElement("script");
             s.src = src;
             s.onload = resolve;
-            s.onerror = reject;
+            s.onerror = (error) => {
+                loaded.delete(path);
+                s.remove();
+                reject(error);
+            };
             document.head.appendChild(s);
         });
     }

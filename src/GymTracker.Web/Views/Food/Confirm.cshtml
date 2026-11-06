@@ -18,7 +18,7 @@
     <div class="banner is-error" role="alert" style="margin-top: var(--s-4)">@Ui.Icon("alert")<span>@L[Model.Warning]</span></div>
 }
 
-<form method="post" asp-antiforgery="true" action="/food/confirm" style="margin-top: var(--s-5)" data-module="@(Model.ParseRunId is null ? null : "parse-rating")" data-run="@Model.ParseRunId">
+<form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/confirm" style="margin-top: var(--s-5)" data-module="@(Model.ParseRunId is null ? null : "parse-rating")" data-run="@Model.ParseRunId">
     @if (Model.ParseRunId is not null)
     {
         @* Shown by feedback.js: a rating is sent on its own, without saving the form. *@

@@ -2434,6 +2434,9 @@
   "This browser can't save pending changes. Keep this page open until they are sent.": [
     "wwwroot/js"
   ],
+  "This food form is out of date. Check whether it was saved, then reload before trying again.": [
+    "src/GymTracker.Web/Features/Food/IdempotentFoodPostAttribute.cs"
+  ],
   "This invite is no longer valid. Ask Antoan for a new one.": [
     "src/GymTracker.Web/Views/Join/Index.cshtml"
   ],

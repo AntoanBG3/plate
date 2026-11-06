@@ -123,7 +123,7 @@ public class SavedMealTests(PostgresFixture fixture) : IClassFixture<PostgresFix
         [
             new("date", "2026-09-30"), new("meal", "Snack"),
             new("grams", "100"), new("grams", ""), new("grams", "300"),
-            new("__RequestVerificationToken", token),
+            new("__RequestVerificationToken", token), new("requestId", Guid.NewGuid().ToString()),
         ]));
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.Redirect);
@@ -146,7 +146,7 @@ public class SavedMealTests(PostgresFixture fixture) : IClassFixture<PostgresFix
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"/food/saved-meals/{saved.Id}/log")
         {
-            Content = new FormUrlEncodedContent([new("date", "2026-10-01"), new("meal", "Snack"), new("grams", "0"), new("__RequestVerificationToken", token)]),
+            Content = new FormUrlEncodedContent([new("date", "2026-10-01"), new("meal", "Snack"), new("grams", "0"), new("__RequestVerificationToken", token), new("requestId", Guid.NewGuid().ToString())]),
         };
         request.Headers.Referrer = new Uri("https://localhost/food");
         var response = await client.SendAsync(request);

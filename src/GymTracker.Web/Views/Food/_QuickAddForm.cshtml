@@ -10,7 +10,7 @@
     };
 }
 <div class="sheet-head"><span></span><span class="sheet-title" id="quick-title">@title</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
-<form method="post" asp-antiforgery="true" action="/food/quick">
+<form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/quick">
     <input type="hidden" name="date" value="@Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" />
     <input type="hidden" name="meal" value="@Model.Meal" />
     <div class="list">

@@ -90,6 +90,8 @@ public class RepeatLoggingService(AppDbContext db, ICurrentUser currentUser, Tim
             return;
         }
 
+        var transaction = db.Database.CurrentTransaction;
+        if (transaction is not null) await transaction.CreateSavepointAsync("RememberUsualFoods", ct);
         try
         {
             var ids = keyed.Select(k => k.FoodItemId).Distinct().ToList();
@@ -114,6 +116,7 @@ public class RepeatLoggingService(AppDbContext db, ICurrentUser currentUser, Tim
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            if (transaction is not null) await transaction.RollbackToSavepointAsync("RememberUsualFoods", CancellationToken.None);
             // Two confirms at once can both insert the same words, or the database can fail; the food is already logged,
             // so this only loses the memory. Detaching keeps a later save in the same request from retrying the rows.
             log.LogWarning(ex, "Could not remember usual foods.");

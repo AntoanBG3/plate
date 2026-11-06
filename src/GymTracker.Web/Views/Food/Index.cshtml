@@ -189,7 +189,7 @@
             </button>
             @if (entries.Count == 0 && Model.PreviousDayMeals?.Contains(meal) == true)
             {
-                <form method="post" asp-antiforgery="true" action="/food/copy" class="row" style="padding-top: 0; padding-bottom: 0">
+                <form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/copy" class="row" style="padding-top: 0; padding-bottom: 0">
                     <input type="hidden" name="date" value="@Iso(day.Date)" />
                     <input type="hidden" name="meal" value="@meal" />
                     <button type="submit" class="btn btn-plain" style="padding: 0; color: var(--label-2); text-align: left">@Ui.Icon("copy", "icon-sm")@L[CopyFrom[meal]]</button>

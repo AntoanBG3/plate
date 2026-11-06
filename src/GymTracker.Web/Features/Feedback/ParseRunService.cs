@@ -104,7 +104,7 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
 
     /// <summary>
     /// Stores what was saved for a run and its corrections. Returns the run id to link the new entries to, or null
-    /// when the run is missing, someone else's, or already confirmed (the form was submitted twice).
+    /// when the run is missing or someone else's. An already-confirmed run returns its original id.
     /// </summary>
     public async Task<int?> ConfirmAsync(int? runId, IReadOnlyList<SavedItem> saved, CancellationToken ct)
     {

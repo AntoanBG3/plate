@@ -11,6 +11,65 @@ public class NavigationTests(E2EFixture app) : IClassFixture<E2EFixture>
     [InlineData(E2EFixture.WebKit, false)]
     [InlineData(E2EFixture.Chromium, true)]
     [InlineData(E2EFixture.WebKit, true)]
+    public async Task Resending_a_food_form_after_a_lost_response_or_script_failure_saves_once(string browser, bool scriptFailure)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync("/food");
+        await phone.Page.EvaluateAsync("""
+            scriptFailure => {
+                // Dispatch the browser's script error directly: the service worker owns real static requests.
+                const append = document.head.appendChild;
+                window.receiptScriptAttempts = 0;
+                document.head.appendChild = function (node) {
+                    if (node.src?.endsWith("/js/receipt-retry-probe.js")) {
+                        if (++window.receiptScriptAttempts === 1) {
+                            setTimeout(() => node.dispatchEvent(new Event("error")), 0);
+                            return node;
+                        }
+                        node.src = "/js/i18n.js";
+                        node.addEventListener("load", () => { window.receiptProbeLoaded = true; });
+                    }
+                    return append.call(this, node);
+                };
+                const original = window.fetch;
+                let attempts = 0;
+                window.fetch = async (url, options) => {
+                    const response = await original(url, options);
+                    if (new URL(url, location.href).pathname !== "/food/quick" || options?.method !== "POST") return response;
+                    if (!scriptFailure) {
+                        if (++attempts === 1) throw new TypeError("Synthetic lost acknowledgement after save");
+                        return response;
+                    }
+                    return {
+                        url: response.url, status: response.status, headers: response.headers,
+                        text: async () => (await response.text()).replace("</main>", '<script src="/js/receipt-retry-probe.js"></script></main>')
+                    };
+                };
+            }
+            """, scriptFailure);
+        await phone.Page.Locator("#meal-dinner [data-sheet-open='quick-sheet']").TapAsync();
+        await phone.Page.Locator("#quick-body input[name=description]").FillAsync("Retry intent");
+        await phone.Page.Locator("#quick-body input[name=kcal]").FillAsync("650");
+        var submit = phone.Page.Locator("#quick-body button[type=submit]");
+        await submit.TapAsync();
+        await phone.Page.Locator("#toast").WaitForAsync();
+        await phone.NavigateByAsync(() => submit.TapAsync());
+        await using var db = app.Db.CreateContext(null);
+        var userId = await db.Users.Where(x => x.Email == phone.Email).Select(x => x.Id).SingleAsync();
+        (await db.FoodLog.IgnoreQueryFilters().CountAsync(x => x.UserId == userId)).Should().Be(1);
+        (await db.FoodLogRequests.IgnoreQueryFilters().CountAsync(x => x.UserId == userId)).Should().Be(1);
+        if (scriptFailure)
+        {
+            (await phone.Page.EvaluateAsync<int>("() => window.receiptScriptAttempts")).Should().Be(2);
+            (await phone.Page.EvaluateAsync<bool>("() => window.receiptProbeLoaded === true")).Should().BeTrue();
+        }
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium, false)]
+    [InlineData(E2EFixture.WebKit, false)]
+    [InlineData(E2EFixture.Chromium, true)]
+    [InlineData(E2EFixture.WebKit, true)]
     public async Task A_lost_post_response_warns_that_the_change_may_have_saved(string browser, bool bulgarian)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
@@ -39,7 +98,7 @@ public class NavigationTests(E2EFixture app) : IClassFixture<E2EFixture>
             : "That change may have been saved. Check before trying again.");
         await using var db = app.Db.CreateContext(null);
         var userId = await db.Users.Where(x => x.Email == phone.Email).Select(x => x.Id).SingleAsync();
-        (await db.FoodLog.IgnoreQueryFilters().CountAsync(x => x.UserId == userId && x.Description == "Lost acknowledgement")).Should().Be(1);
+        (await db.FoodLog.IgnoreQueryFilters().CountAsync(x => x.UserId == userId)).Should().Be(1);
     }
 
     private static async Task<bool> InViewAsync(Phone phone, string selector) =>

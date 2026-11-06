@@ -7,7 +7,7 @@ namespace GymTracker.Web.Tests;
 public class UndoEndpointTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
 {
     private static FormUrlEncodedContent Form(string token, params (string Name, string Value)[] fields) =>
-        new(fields.Select(f => new KeyValuePair<string, string>(f.Name, f.Value)).Append(new("__RequestVerificationToken", token)));
+        new(fields.Select(f => new KeyValuePair<string, string>(f.Name, f.Value)).Append(new("__RequestVerificationToken", token)).Append(new("requestId", Guid.NewGuid().ToString())));
 
     /// <summary>Signs in, quick-adds "Wrap" to 4 October and returns the entry id.</summary>
     private static async Task<(HttpClient Client, string Token, string Id)> WithEntryAsync(AppFactory app)

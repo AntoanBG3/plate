@@ -515,6 +515,27 @@ namespace GymTracker.Web.Data.Migrations
                     b.ToTable("FoodLog");
                 });
 
+            modelBuilder.Entity("GymTracker.Core.Domain.FoodLogRequest", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.HasKey("UserId", "RequestId");
+
+                    b.ToTable("FoodLogRequests");
+                });
+
             modelBuilder.Entity("GymTracker.Core.Domain.Invite", b =>
                 {
                     b.Property<int>("Id")
@@ -1685,6 +1706,15 @@ namespace GymTracker.Web.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("FoodItem");
+                });
+
+            modelBuilder.Entity("GymTracker.Core.Domain.FoodLogRequest", b =>
+                {
+                    b.HasOne("GymTracker.Web.Data.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("GymTracker.Core.Domain.Invite", b =>

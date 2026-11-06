@@ -13,11 +13,12 @@ public class ManualFoodService(AppDbContext db, FoodItemService foods, FoodLogSe
     public async Task<FoodItem> SaveAndLogAsync(DateOnly date, Meal meal, string name, string? barcode, Per100g per100, decimal? servingGrams,
         decimal grams, bool share, int? labelScanId, CancellationToken ct)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        await using var transaction = db.Database.CurrentTransaction is null
+            ? await db.Database.BeginTransactionAsync(ct) : null;
         var item = await foods.CreateManualAsync(name, barcode, per100, servingGrams, share, ct);
         await labels.RecordSaveAsync(labelScanId, item, ct);
         await log.AddAsync([new NewEntry(date, meal, item.Name, grams, item.Per100(), item.Id, item.Barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
-        await transaction.CommitAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
         return item;
     }
 }

@@ -96,7 +96,7 @@ public class FoodDaysTests(PostgresFixture fixture) : IClassFixture<PostgresFixt
         var token = await AppFactory.TokenAsync(client, "/food");
         var request = new HttpRequestMessage(HttpMethod.Post, "/food/copy")
         {
-            Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["date"] = Today.ToString("yyyy-MM-dd"), ["meal"] = "Dinner", ["__RequestVerificationToken"] = token }),
+            Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["date"] = Today.ToString("yyyy-MM-dd"), ["meal"] = "Dinner", ["__RequestVerificationToken"] = token, ["requestId"] = Guid.NewGuid().ToString() }),
         };
         var response = await client.SendAsync(request);
         var page = await client.GetStringAsync(response.Headers.Location!.OriginalString);

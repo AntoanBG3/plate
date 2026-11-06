@@ -25,7 +25,7 @@
         <div class="stat"><div class="stat-value num">@item.FatPer100g.Kg(1)</div><div class="stat-label">@L["fat"]</div></div>
     </div>
     <p class="section-footer">@L["Per 100 g"]</p>
-    <form method="post" asp-antiforgery="true" action="/food/log-item" class="section portion-form" data-per100="@item.KcalPer100g.Kg(),@item.ProteinPer100g.Kg()">
+    <form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/log-item" class="section portion-form" data-per100="@item.KcalPer100g.Kg(),@item.ProteinPer100g.Kg()">
         <input type="hidden" name="date" value="@date" />
         <input type="hidden" name="meal" value="@Model.Meal" />
         <input type="hidden" name="foodItemId" value="@item.Id" />

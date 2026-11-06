@@ -69,6 +69,7 @@ public class SharedFoodTests(PostgresFixture fixture) : IClassFixture<PostgresFi
             fields.Add(new("share", "false"));
         }
 
+        fields.Add(new("requestId", Guid.NewGuid().ToString()));
         return await a.Client.PostAsync("/food/items", new FormUrlEncodedContent(fields));
     }
 
@@ -185,6 +186,7 @@ public class SharedFoodTests(PostgresFixture fixture) : IClassFixture<PostgresFi
             fields.Add(new("name", name));
         }
 
+        fields.Add(new("requestId", Guid.NewGuid().ToString()));
         return await a.Client.PostAsync("/food/log-item", new FormUrlEncodedContent(fields));
     }
 

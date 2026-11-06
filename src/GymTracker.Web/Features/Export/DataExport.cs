@@ -22,6 +22,7 @@ public class DataExport(AppDbContext db)
             ["templates.csv"] = await TemplatesAsync(ct),
             ["custom_exercises.csv"] = await CustomExercisesAsync(ct),
             ["food_log.csv"] = await FoodLogAsync(ct),
+            ["food_requests.csv"] = await FoodRequestsAsync(ct),
             ["maintenance_estimates.csv"] = await EstimatesAsync(ct),
             ["nutrition_targets.csv"] = await NutritionTargetsAsync(ct),
             ["weekly_summaries.csv"] = await WeeklySummariesAsync(ct),
@@ -156,6 +157,17 @@ public class DataExport(AppDbContext db)
         foreach (var e in entries)
         {
             csv.Row(e.Date, e.Meal.ToString(), e.Description, e.Status, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG, e.Source.ToString(), e.AiModel, e.MatchModel, e.CreatedAt);
+        }
+
+        return csv;
+    }
+
+    private async Task<Csv> FoodRequestsAsync(CancellationToken ct)
+    {
+        var csv = new Csv("request_id", "created_at_utc", "redirect");
+        foreach (var request in await db.FoodLogRequests.AsNoTracking().OrderBy(x => x.CreatedAt).ThenBy(x => x.RequestId).ToListAsync(ct))
+        {
+            csv.Row(request.RequestId, request.CreatedAt, request.Location);
         }
 
         return csv;
