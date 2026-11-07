@@ -5,7 +5,7 @@
 #   tools/restore-drill.sh nightly   use the latest nightly dump from /mnt/storage/backups/latest
 set -euo pipefail
 DUMP=$(mktemp /tmp/gymtracker-drill.XXXXXX.dump)
-trap 'docker rm -f gymtracker-restore-drill >/dev/null 2>&1; rm -f "$DUMP"' EXIT
+trap 'docker rm -f -v gymtracker-restore-drill >/dev/null 2>&1; rm -f "$DUMP"' EXIT
 
 if [ "${1:-}" = nightly ]; then
     # /mnt/storage is root-only; read it through a container like ~/bin/export-latest-backup does.
