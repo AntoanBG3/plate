@@ -141,6 +141,7 @@ window.gymModule("scanner", (root) => {
     const status = root.querySelector("[data-status]");
     let stream = null;
     let timer = null;
+    let generation = 0;
     // The field a found code goes into; null means look it up (the Scan tab's main button).
     let target = null;
 
@@ -148,13 +149,19 @@ window.gymModule("scanner", (root) => {
         status.textContent = text;
     }
 
+    function stopTracks(media) {
+        media.getTracks().forEach((track) => track.stop());
+    }
+
     function stop() {
+        generation++;
         clearInterval(timer);
         timer = null;
         if (stream) {
-            stream.getTracks().forEach((t) => t.stop());
+            stopTracks(stream);
             stream = null;
         }
+        video.srcObject = null;
         video.hidden = true;
     }
 
@@ -176,6 +183,8 @@ window.gymModule("scanner", (root) => {
     }
 
     async function open(field) {
+        stop();
+        const attempt = generation;
         target = field;
         window.gymSheet.show(root);
         say(t("Point the camera at the barcode."));
@@ -183,26 +192,45 @@ window.gymModule("scanner", (root) => {
             say(t("This browser can't open the camera. Type the digits or take a photo instead."));
             return;
         }
+        let acquired;
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+            acquired = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
         } catch {
-            say(t("Camera access was refused. Type the digits or take a photo instead."));
+            if (attempt === generation) {
+                say(t("Camera access was refused. Type the digits or take a photo instead."));
+            }
+            return;
+        }
+        if (attempt !== generation) {
+            stopTracks(acquired);
             return;
         }
 
+        stream = acquired;
         video.srcObject = stream;
         video.hidden = false;
-        await video.play().catch(() => {});
+        try {
+            await video.play();
+        } catch {
+            if (attempt === generation) {
+                stop();
+                say(t("This browser can't open the camera. Type the digits or take a photo instead."));
+            }
+            return;
+        }
+        if (attempt !== generation) {
+            return;
+        }
 
         let busy = false;
         timer = setInterval(async () => {
-            if (busy || video.readyState < 2) {
+            if (attempt !== generation || busy || video.readyState < 2) {
                 return;
             }
             busy = true;
             try {
                 const codes = await detector.detect(video);
-                if (codes.length) {
+                if (attempt === generation && codes.length) {
                     found(codes[0].rawValue);
                 }
             } catch {
