@@ -202,7 +202,7 @@ docker compose -f docker/docker-compose.yml start app
 
 ### Restore drill
 
-`tools/restore-drill.sh` restores a dump into a throwaway `postgres:18` container with no network and compares row counts per table with the live database. It touches nothing live. Run it on wizard after changing the backup or the database setup, and now and then to make sure the nightly dumps still restore:
+`tools/restore-drill.sh` restores a dump into a throwaway `postgres:18` container with no network and compares row counts per table with the live database. It touches nothing live. Both modes reject missing/extra tables or different column definitions. An immediate dump must also match live row counts; nightly counts may differ because the live data has changed. This checks compatibility with the current schema, so a nightly dump from before a schema migration can be rejected even when its archive is valid. It does not verify backup-time row counts, indexes, constraints or every stored value. Run it on wizard after changing the backup or database setup, and now and then to check the nightly archive:
 
 ```sh
 cd ~/docker/gymtracker
