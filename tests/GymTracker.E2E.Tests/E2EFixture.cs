@@ -1,6 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using System.Net;
-using System.Net.Sockets;
 using GymTracker.Web.Tests;
 using Microsoft.Playwright;
 
@@ -37,7 +35,6 @@ public sealed class E2EFixture : IAsyncLifetime
     {
         await db.InitializeAsync();
 
-        var port = FreePort();
         // Every test signs in from the same address, so the login, passkey and join limits are raised for the run.
         var settings = new Dictionary<string, string?>
         {
@@ -47,11 +44,8 @@ public sealed class E2EFixture : IAsyncLifetime
             ["RateLimits:JoinPerWindow"] = "10000",
         };
         factory = new AppFactory(db, settings: settings);
-        factory.UseKestrel(o => o.ListenLocalhost(port));
-        factory.StartServer();
-        BaseUrl = $"http://localhost:{port}";
+        BaseUrl = StartOnLoopback(factory);
 
-        var aiPort = FreePort();
         aiFactory = new AppFactory(db, settings: settings, services: s =>
         {
             s.AddScoped<GymTracker.Core.Nutrition.IFoodParser, StubFoodParser>();
@@ -63,9 +57,7 @@ public sealed class E2EFixture : IAsyncLifetime
             // Barcode misses for label photos; never the real Open Food Facts from a test.
             s.AddSingleton<GymTracker.Core.Nutrition.IFoodDatabase, GymTracker.Web.Tests.FakeFoodDatabase>();
         });
-        aiFactory.UseKestrel(o => o.ListenLocalhost(aiPort));
-        aiFactory.StartServer();
-        AiBaseUrl = $"http://localhost:{aiPort}";
+        AiBaseUrl = StartOnLoopback(aiFactory);
     }
 
     private static async Task<IPlaywright> StartPlaywrightAsync()
@@ -162,11 +154,12 @@ public sealed class E2EFixture : IAsyncLifetime
         return phone;
     }
 
-    private static int FreePort()
+    private static string StartOnLoopback(AppFactory app)
     {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
+        app.UseKestrel(0);
+        app.StartServer();
+        // Keep localhost as the browser origin for the passkey tests.
+        return new UriBuilder(app.ClientOptions.BaseAddress) { Host = "localhost" }.Uri.AbsoluteUri;
     }
 }
 
