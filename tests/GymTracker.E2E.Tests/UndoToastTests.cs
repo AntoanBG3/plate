@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Playwright;
 
 namespace GymTracker.E2E.Tests;
 
@@ -29,22 +30,22 @@ public class UndoToastTests(E2EFixture app) : IClassFixture<E2EFixture>
         return await db.FoodLog.IgnoreQueryFilters().Where(e => e.Id == id).Select(e => e.DeletedAt != null).SingleAsync();
     }
 
+    private static async Task PauseClockAsync(Phone phone)
+    {
+        await phone.Page.EmulateMediaAsync(new() { ReducedMotion = ReducedMotion.Reduce });
+        var pauseAt = DateTime.UtcNow;
+        await phone.Page.Clock.InstallAsync(new() { TimeDate = pauseAt.AddMinutes(-1) });
+        await phone.Page.Clock.PauseAtAsync(pauseAt);
+    }
+
     [Theory]
     [InlineData(E2EFixture.Chromium)]
     [InlineData(E2EFixture.WebKit)]
     public async Task Undo_restores_a_deleted_entry_whenever_it_is_tapped_while_shown(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
-        // Notes when the toast appears, on the page's (fake) clock, so each tap lands exactly that long after it.
-        await phone.Context.AddInitScriptAsync("""
-            new MutationObserver((changes) => {
-                if (changes.some((c) => c.target.id === "toast" && !c.target.hidden)) {
-                    window.__toastShownAt = Date.now();
-                }
-            }).observe(document, { subtree: true, attributes: true, attributeFilter: ["hidden"] });
-            """);
-        await phone.Page.Clock.InstallAsync();
         var date = await TodayAsync(phone);
+        await PauseClockAsync(phone);
 
         foreach (var delayMs in new[] { 500, 2000, 4000, 5500 })
         {
@@ -52,25 +53,14 @@ public class UndoToastTests(E2EFixture app) : IClassFixture<E2EFixture>
             await phone.GoAsync($"/food/entries/{id}");
             await phone.NavigateByAsync(() => phone.Page.Locator("form[action$='/delete'] button").TapAsync());
             (await IsDeletedAsync(id)).Should().BeTrue();
-            await phone.Page.Locator("#toast:not([hidden]) .toast-action").WaitForAsync();
-            await phone.AnimationsDoneAsync("#toast");
+            var button = phone.Page.Locator("#toast:not([hidden]) .toast-action button");
+            await button.WaitForAsync();
 
-            // Stop the clock delayMs after the toast appeared, tap where Undo is, and let time run again. Time spent
-            // by the test itself (a slow machine, a busy browser) can't use up the toast's last half second.
-            var shownAt = await phone.Page.EvaluateAsync<long>("window.__toastShownAt");
-            var now = await phone.Page.EvaluateAsync<long>("Date.now()");
-            var pauseAt = Math.Max(shownAt + delayMs, now + 50);
-            (pauseAt - shownAt).Should().BeLessThan(6000, "the tap must still fall while the toast is shown");
-            await phone.Page.Clock.PauseAtAsync(DateTimeOffset.FromUnixTimeMilliseconds(pauseAt).UtcDateTime);
-            // A toast that timed out in the jump fades in real time; only a toast still shown after that counts.
-            await phone.AnimationsDoneAsync("#toast");
-            (await phone.Page.Locator("#toast").IsHiddenAsync()).Should().BeFalse($"the toast should still show {delayMs} ms in");
-            var undo = await Phone.BoxAsync(phone.Page.Locator("#toast:not([hidden]) .toast-action button"));
-            await phone.NavigateByAsync(async () =>
-            {
-                await phone.Page.Touchscreen.TapAsync(undo.X + undo.Width / 2, undo.Y + undo.Height / 2);
-                await phone.Page.Clock.ResumeAsync();
-            });
+            // Time spent on browser and database calls doesn't count towards the six seconds.
+            await phone.Page.Clock.RunForAsync(delayMs);
+            (await button.IsVisibleAsync()).Should().BeTrue($"the toast should still show {delayMs} ms in");
+            var undo = await Phone.BoxAsync(button);
+            await phone.NavigateByAsync(() => phone.Page.Touchscreen.TapAsync(undo.X + undo.Width / 2, undo.Y + undo.Height / 2));
             (await IsDeletedAsync(id)).Should().BeFalse($"Undo tapped {delayMs} ms after the delete should restore it");
         }
 
@@ -198,13 +188,12 @@ public class UndoToastTests(E2EFixture app) : IClassFixture<E2EFixture>
     public async Task A_tap_just_after_an_undo_toast_goes_doesnt_reach_what_was_under_it(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
-        await phone.Page.Clock.InstallAsync();
         var date = await TodayAsync(phone);
         var id = await QuickEntryAsync(phone, date, $"Late tap test {Guid.NewGuid():N}");
         await phone.GoAsync($"/food/entries/{id}");
+        await PauseClockAsync(phone);
         await phone.NavigateByAsync(() => phone.Page.Locator("form[action$='/delete'] button").TapAsync());
         await phone.Page.Locator("#toast:not([hidden]) .toast-action").WaitForAsync();
-        await phone.AnimationsDoneAsync("#toast");
 
         // A button under Undo, as Skip was under it before the toast moved above the rest timer (QA H2). The toast
         // keeping off the timer is checked above; this is the second guard, for whatever else is under a toast.
@@ -222,10 +211,7 @@ public class UndoToastTests(E2EFixture app) : IClassFixture<E2EFixture>
             new { x = (double)undo.X, y = (double)undo.Y, w = (double)undo.Width, h = (double)undo.Height });
 
         // The clock stands still from the toast running out to the late tap, so the tap is "just after" on any machine.
-        var now = await phone.Page.EvaluateAsync<long>("Date.now()");
-        await phone.Page.Clock.PauseAtAsync(DateTimeOffset.FromUnixTimeMilliseconds(now + 50).UtcDateTime);
         await phone.Page.Clock.RunForAsync(6000);
-        await phone.AnimationsDoneAsync("#toast");
         (await phone.Page.Locator("#toast").IsHiddenAsync()).Should().BeTrue();
         var x = undo.X + undo.Width / 2;
         var y = undo.Y + undo.Height / 2;
@@ -237,7 +223,6 @@ public class UndoToastTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.Page.Touchscreen.TapAsync(x, y);
         (await phone.Page.EvaluateAsync<int>("window.__underTaps")).Should().Be(1);
         (await IsDeletedAsync(id)).Should().BeTrue("nothing undid the delete");
-        await phone.Page.Clock.ResumeAsync();
         phone.ShouldHaveNoErrors();
     }
 }
