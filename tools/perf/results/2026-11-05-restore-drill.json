@@ -1,0 +1,9 @@
+{
+  "probe": "nightly restore missing a whole table",
+  "environment": "fake docker; existing shell script unchanged",
+  "live_manifest": "FoodLog=38 Profiles=5",
+  "restored_manifest": "Profiles=5",
+  "drill_exit_code": 0,
+  "false_success_reproduced": true,
+  "stdout": "nightly dump from synthetic-nightly\ndump size: 4.0K\nlive:     FoodLog=38 Profiles=5\nrestored: Profiles=5\nRestore OK. Counts differ from live, which is expected for anything logged since the nightly dump.\n"
+}

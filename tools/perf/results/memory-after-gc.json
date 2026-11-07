@@ -1,0 +1,146 @@
+{
+  "phase": "after-full-gc",
+  "env": "native linux-arm64 app256MiB1CPU; db256MiB noCPUcap; synthetic5users730d",
+  "samples": [
+    {
+      "run": 1,
+      "utc": "2026-11-05T08:52:33.784892+00:00",
+      "containers": [
+        {
+          "BlockIO": "29.4MB / 73.6MB",
+          "CPUPerc": "11.52%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "77.08%",
+          "MemUsage": "197.3MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "183MB / 218MB",
+          "PIDs": "19"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.02%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "63.56%",
+          "MemUsage": "162.7MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "34.2MB / 179MB",
+          "PIDs": "17"
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "utc": "2026-11-05T08:52:35.804371+00:00",
+      "containers": [
+        {
+          "BlockIO": "29.4MB / 73.6MB",
+          "CPUPerc": "0.56%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "77.08%",
+          "MemUsage": "197.3MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "183MB / 218MB",
+          "PIDs": "19"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.02%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "63.56%",
+          "MemUsage": "162.7MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "34.2MB / 179MB",
+          "PIDs": "17"
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "utc": "2026-11-05T08:52:37.820305+00:00",
+      "containers": [
+        {
+          "BlockIO": "29.5MB / 73.6MB",
+          "CPUPerc": "0.58%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "77.04%",
+          "MemUsage": "197.2MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "183MB / 218MB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.02%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "63.56%",
+          "MemUsage": "162.7MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "34.2MB / 179MB",
+          "PIDs": "17"
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "utc": "2026-11-05T08:52:39.835817+00:00",
+      "containers": [
+        {
+          "BlockIO": "29.5MB / 73.6MB",
+          "CPUPerc": "0.59%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "77.04%",
+          "MemUsage": "197.2MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "183MB / 218MB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.06%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "63.56%",
+          "MemUsage": "162.7MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "34.2MB / 179MB",
+          "PIDs": "17"
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "utc": "2026-11-05T08:52:41.851249+00:00",
+      "containers": [
+        {
+          "BlockIO": "29.5MB / 73.6MB",
+          "CPUPerc": "0.49%",
+          "Container": "repa-perf-app",
+          "ID": "9cc30440368c",
+          "MemPerc": "77.04%",
+          "MemUsage": "197.2MiB / 256MiB",
+          "Name": "repa-perf-app",
+          "NetIO": "183MB / 218MB",
+          "PIDs": "18"
+        },
+        {
+          "BlockIO": "89.9MB / 8.19kB",
+          "CPUPerc": "0.00%",
+          "Container": "repa-perf-db",
+          "ID": "0c98e5c1f792",
+          "MemPerc": "63.55%",
+          "MemUsage": "162.7MiB / 256MiB",
+          "Name": "repa-perf-db",
+          "NetIO": "34.2MB / 179MB",
+          "PIDs": "17"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4528 @@
+{
+  "fixture": "five-users730days8foodsday-clean",
+  "generatedUtc": "2026-11-05T09:06:46.310Z",
+  "upstream": "https://localhost:5443/",
+  "browser": "154.0.8037.99",
+  "viewport": "390x844",
+  "cpuSlowdown": 4,
+  "downloadBytesPerSecond": 1500000,
+  "networkNote": "Loopback proxy applies 100/400ms response delay and shared 1.5MB/s download schedule to page AND service-worker fetches. Complete bodies are delivered at scheduled completion (not streamed). Identity encoding; ordinary asset conditional validation preserved, only the synthetic worker source bypasses it. Proxy counts HTTP body bytes (304 has 0); cache sizes are decoded bytes, not production compressed transfer. Upload bandwidth is not throttled.",
+  "runs": 5,
+  "samples": [
+    {
+      "latencyMs": 100,
+      "run": 1,
+      "coldAppLoadMs": 602.4674580000001,
+      "installReadyMs": 3038.7190410000003,
+      "installNetwork": {
+        "requests": 52,
+        "bytes": 2303601,
+        "staticRequests": 42,
+        "statuses": {
+          "200": 52
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/today",
+          "/lib/fonts/fonts.css",
+          "/css/tokens.css",
+          "/js/pages.js",
+          "/js/i18n.js",
+          "/css/app.css",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/lib/htmx/htmx.min.js",
+          "/js/motion.js",
+          "/js/nav.js",
+          "/js/site.js",
+          "/js/passkey.js",
+          "/js/session.js",
+          "/sw.js",
+          "/icons/icon-32.png",
+          "/manifest.bg.webmanifest",
+          "/offline.html",
+          "/manifest.en.webmanifest",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-512.png",
+          "/icons/icon-192.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/css/app.css",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "installLongTasks": [],
+      "installCache": [
+        {
+          "name": "gym-static-v28-audit-100-1-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "applicationVersion": "462ef11",
+      "firstModuleNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 80.33916700000009,
+          "contentMs": 241.1018750000003,
+          "settledMs": 608.7517090000001,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 58.98408300000028,
+          "contentMs": 265.0406659999999,
+          "settledMs": 649.0616250000003,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/food",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 73.8309589999999,
+          "contentMs": 811.4583750000002,
+          "settledMs": 1179.3400419999998,
+          "network": {
+            "requests": 4,
+            "bytes": 250862,
+            "staticRequests": 2,
+            "statuses": {
+              "200": 4
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [
+              {
+                "path": "/lib/chartjs/chart.umd.min.js",
+                "status": 200,
+                "conditionalRequest": false,
+                "requestCacheControl": null,
+                "requestPragma": null,
+                "responseCacheControl": "no-cache",
+                "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+                "responseEncoding": "identity"
+              }
+            ],
+            "failures": [],
+            "paths": [
+              "/progress",
+              "/lib/chartjs/chart.umd.min.js",
+              "/js/progress.js",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": [
+            {
+              "startTime": 4958.199999999255,
+              "duration": 163
+            }
+          ]
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 57.784999999999854,
+          "contentMs": 229.77587500000027,
+          "settledMs": 596.1537079999998,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/today",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "warmNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 58.42183399999976,
+          "contentMs": 197.24449999999888,
+          "settledMs": 565.071249999999,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 56.65562499999942,
+          "contentMs": 230.53304099999878,
+          "settledMs": 598.4722499999989,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/food",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 56.610875000000306,
+          "contentMs": 278.27287499999875,
+          "settledMs": 647.0141249999997,
+          "network": {
+            "requests": 2,
+            "bytes": 30350,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/progress",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 57.50329199999942,
+          "contentMs": 229.19254200000069,
+          "settledMs": 597.7860839999994,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/today",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "afterNavigationCache": [
+        {
+          "name": "gym-static-v28-audit-100-1-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        }
+      ],
+      "syntheticDeployWorkerUpdateMs": 2436.0144999999993,
+      "updateNetwork": {
+        "requests": 36,
+        "bytes": 2009340,
+        "staticRequests": 28,
+        "statuses": {
+          "200": 36
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/sw.js",
+          "/offline.html",
+          "/manifest.en.webmanifest",
+          "/manifest.bg.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/css/app.css",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/feedback.js",
+          "/js/image.js",
+          "/js/motion.js",
+          "/js/session.js",
+          "/js/site.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "updateLongTasks": [],
+      "afterUpdateCache": [
+        {
+          "name": "gym-static-v28-audit-100-1-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        },
+        {
+          "name": "gym-static-v28-audit-100-1-new",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "navigationRace": {
+        "firstRequested": "train",
+        "lastRequested": "food",
+        "injectedFirstResponseDelayMs": 1000,
+        "afterLatestResponse": "food",
+        "finalTab": "train",
+        "finalPath": "/train"
+      }
+    },
+    {
+      "latencyMs": 100,
+      "run": 2,
+      "coldAppLoadMs": 582.8965420000004,
+      "installReadyMs": 2951.1631670000024,
+      "installNetwork": {
+        "requests": 52,
+        "bytes": 2303601,
+        "staticRequests": 42,
+        "statuses": {
+          "200": 52
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/today",
+          "/lib/fonts/fonts.css",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/css/app.css",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/lib/htmx/htmx.min.js",
+          "/js/motion.js",
+          "/js/passkey.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/nav.js",
+          "/sw.js",
+          "/icons/icon-32.png",
+          "/offline.html",
+          "/manifest.en.webmanifest",
+          "/manifest.bg.webmanifest",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/css/app.css",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "installLongTasks": [],
+      "installCache": [
+        {
+          "name": "gym-static-v28-audit-100-2-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "applicationVersion": "462ef11",
+      "firstModuleNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 94.54079199999978,
+          "contentMs": 257.13287500000297,
+          "settledMs": 624.4524579999998,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 56.93491699999868,
+          "contentMs": 247.1928340000013,
+          "settledMs": 618.6695,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/food",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 64.50291599999764,
+          "contentMs": 774.6077909999985,
+          "settledMs": 1145.374915999997,
+          "network": {
+            "requests": 4,
+            "bytes": 250862,
+            "staticRequests": 2,
+            "statuses": {
+              "200": 4
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [
+              {
+                "path": "/lib/chartjs/chart.umd.min.js",
+                "status": 200,
+                "conditionalRequest": false,
+                "requestCacheControl": null,
+                "requestPragma": null,
+                "responseCacheControl": "no-cache",
+                "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+                "responseEncoding": "identity"
+              }
+            ],
+            "failures": [],
+            "paths": [
+              "/progress",
+              "/lib/chartjs/chart.umd.min.js",
+              "/js/progress.js",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": [
+            {
+              "startTime": 4822,
+              "duration": 159
+            }
+          ]
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 82.54945799999768,
+          "contentMs": 260.68691599999875,
+          "settledMs": 627.2794580000009,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/today",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "warmNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 56.05750000000262,
+          "contentMs": 195.91504200000054,
+          "settledMs": 563.6671249999999,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 59.59899999999834,
+          "contentMs": 230.364666999998,
+          "settledMs": 597.6552919999995,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/food",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 56.95787500000006,
+          "contentMs": 261.6732499999998,
+          "settledMs": 629.3649160000023,
+          "network": {
+            "requests": 2,
+            "bytes": 30350,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/progress",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 57.8249590000014,
+          "contentMs": 230.69266699999935,
+          "settledMs": 597.8730839999989,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/today",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "afterNavigationCache": [
+        {
+          "name": "gym-static-v28-audit-100-2-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        }
+      ],
+      "syntheticDeployWorkerUpdateMs": 2422.138332999999,
+      "updateNetwork": {
+        "requests": 36,
+        "bytes": 2009340,
+        "staticRequests": 28,
+        "statuses": {
+          "200": 36
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/sw.js",
+          "/offline.html",
+          "/manifest.bg.webmanifest",
+          "/manifest.en.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/site.js",
+          "/js/motion.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "updateLongTasks": [],
+      "afterUpdateCache": [
+        {
+          "name": "gym-static-v28-audit-100-2-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        },
+        {
+          "name": "gym-static-v28-audit-100-2-new",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "navigationRace": {
+        "firstRequested": "train",
+        "lastRequested": "food",
+        "injectedFirstResponseDelayMs": 1000,
+        "afterLatestResponse": "food",
+        "finalTab": "train",
+        "finalPath": "/train"
+      }
+    },
+    {
+      "latencyMs": 100,
+      "run": 3,
+      "coldAppLoadMs": 583.6957919999986,
+      "installReadyMs": 2953.5999999999985,
+      "installNetwork": {
+        "requests": 52,
+        "bytes": 2303601,
+        "staticRequests": 42,
+        "statuses": {
+          "200": 52
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/today",
+          "/lib/fonts/fonts.css",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/css/app.css",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/lib/htmx/htmx.min.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/sw.js",
+          "/icons/icon-32.png",
+          "/offline.html",
+          "/manifest.bg.webmanifest",
+          "/manifest.en.webmanifest",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/css/app.css",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "installLongTasks": [],
+      "installCache": [
+        {
+          "name": "gym-static-v28-audit-100-3-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "applicationVersion": "462ef11",
+      "firstModuleNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 71.85441700000229,
+          "contentMs": 222.6906250000029,
+          "settledMs": 590.5464170000014,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 57.38329199999862,
+          "contentMs": 232.6807919999992,
+          "settledMs": 616.5401669999992,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/food",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 72.91570799999681,
+          "contentMs": 778.3187079999989,
+          "settledMs": 1163.6665829999984,
+          "network": {
+            "requests": 4,
+            "bytes": 250862,
+            "staticRequests": 2,
+            "statuses": {
+              "200": 4
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [
+              {
+                "path": "/lib/chartjs/chart.umd.min.js",
+                "status": 200,
+                "conditionalRequest": false,
+                "requestCacheControl": null,
+                "requestPragma": null,
+                "responseCacheControl": "no-cache",
+                "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+                "responseEncoding": "identity"
+              }
+            ],
+            "failures": [],
+            "paths": [
+              "/progress",
+              "/lib/chartjs/chart.umd.min.js",
+              "/js/progress.js",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": [
+            {
+              "startTime": 4790.4000000003725,
+              "duration": 152
+            }
+          ]
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 74.69241599999805,
+          "contentMs": 244.8078749999986,
+          "settledMs": 612.5507080000025,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/today",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "warmNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 56.32029099999636,
+          "contentMs": 196.5067909999998,
+          "settledMs": 563.9884579999998,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 57.12016700000095,
+          "contentMs": 230.56566700000258,
+          "settledMs": 598.9562500000029,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/food",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 55.080792000000656,
+          "contentMs": 261.35304200000246,
+          "settledMs": 629.2944590000043,
+          "network": {
+            "requests": 2,
+            "bytes": 30350,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/progress",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 62.12095899999986,
+          "contentMs": 245.47770899999887,
+          "settledMs": 612.2507499999992,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/today",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "afterNavigationCache": [
+        {
+          "name": "gym-static-v28-audit-100-3-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        }
+      ],
+      "syntheticDeployWorkerUpdateMs": 2422.811332999998,
+      "updateNetwork": {
+        "requests": 36,
+        "bytes": 2009340,
+        "staticRequests": 28,
+        "statuses": {
+          "200": 36
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/sw.js",
+          "/offline.html",
+          "/manifest.bg.webmanifest",
+          "/manifest.en.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/queue.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "updateLongTasks": [],
+      "afterUpdateCache": [
+        {
+          "name": "gym-static-v28-audit-100-3-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        },
+        {
+          "name": "gym-static-v28-audit-100-3-new",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "navigationRace": {
+        "firstRequested": "train",
+        "lastRequested": "food",
+        "injectedFirstResponseDelayMs": 1000,
+        "afterLatestResponse": "food",
+        "finalTab": "train",
+        "finalPath": "/train"
+      }
+    },
+    {
+      "latencyMs": 100,
+      "run": 4,
+      "coldAppLoadMs": 595.9854590000032,
+      "installReadyMs": 2984.579792000004,
+      "installNetwork": {
+        "requests": 52,
+        "bytes": 2303601,
+        "staticRequests": 42,
+        "statuses": {
+          "200": 52
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/today",
+          "/lib/fonts/fonts.css",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/css/app.css",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/lib/htmx/htmx.min.js",
+          "/js/motion.js",
+          "/js/session.js",
+          "/js/site.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/sw.js",
+          "/icons/icon-32.png",
+          "/offline.html",
+          "/manifest.bg.webmanifest",
+          "/manifest.en.webmanifest",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/css/app.css",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "installLongTasks": [],
+      "installCache": [
+        {
+          "name": "gym-static-v28-audit-100-4-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "applicationVersion": "462ef11",
+      "firstModuleNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 71.62950000000274,
+          "contentMs": 223.10433300000295,
+          "settledMs": 591.9276670000036,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 58.260833000000275,
+          "contentMs": 247.62129199999617,
+          "settledMs": 615.4014169999937,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/food",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 58.91416699999536,
+          "contentMs": 745.5535830000008,
+          "settledMs": 1113.3378749999974,
+          "network": {
+            "requests": 4,
+            "bytes": 250862,
+            "staticRequests": 2,
+            "statuses": {
+              "200": 4
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [
+              {
+                "path": "/lib/chartjs/chart.umd.min.js",
+                "status": 200,
+                "conditionalRequest": false,
+                "requestCacheControl": null,
+                "requestPragma": null,
+                "responseCacheControl": "no-cache",
+                "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+                "responseEncoding": "identity"
+              }
+            ],
+            "failures": [],
+            "paths": [
+              "/progress",
+              "/lib/chartjs/chart.umd.min.js",
+              "/js/progress.js",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": [
+            {
+              "startTime": 4803.699999999255,
+              "duration": 139
+            }
+          ]
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 57.3489999999947,
+          "contentMs": 228.67783399999462,
+          "settledMs": 596.0202919999938,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/today",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "warmNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 57.490124999996624,
+          "contentMs": 197.03145799999766,
+          "settledMs": 564.4905829999989,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 57.764374999998836,
+          "contentMs": 231.0035829999979,
+          "settledMs": 598.6770419999957,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/food",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 58.97629099999904,
+          "contentMs": 279.6591249999983,
+          "settledMs": 647.099457999997,
+          "network": {
+            "requests": 2,
+            "bytes": 30350,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/progress",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 55.279584000003524,
+          "contentMs": 230.30079200000182,
+          "settledMs": 597.3732500000042,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/today",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "afterNavigationCache": [
+        {
+          "name": "gym-static-v28-audit-100-4-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        }
+      ],
+      "syntheticDeployWorkerUpdateMs": 2391.8312090000036,
+      "updateNetwork": {
+        "requests": 36,
+        "bytes": 2009340,
+        "staticRequests": 28,
+        "statuses": {
+          "200": 36
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/sw.js",
+          "/offline.html",
+          "/manifest.en.webmanifest",
+          "/manifest.bg.webmanifest",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/css/app.css",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "updateLongTasks": [],
+      "afterUpdateCache": [
+        {
+          "name": "gym-static-v28-audit-100-4-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        },
+        {
+          "name": "gym-static-v28-audit-100-4-new",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "navigationRace": {
+        "firstRequested": "train",
+        "lastRequested": "food",
+        "injectedFirstResponseDelayMs": 1000,
+        "afterLatestResponse": "food",
+        "finalTab": "train",
+        "finalPath": "/train"
+      }
+    },
+    {
+      "latencyMs": 100,
+      "run": 5,
+      "coldAppLoadMs": 587.8081670000029,
+      "installReadyMs": 2938.7051250000004,
+      "installNetwork": {
+        "requests": 52,
+        "bytes": 2303601,
+        "staticRequests": 42,
+        "statuses": {
+          "200": 52
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/today",
+          "/lib/fonts/fonts.css",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/queue.js",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/lib/htmx/htmx.min.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/session.js",
+          "/sw.js",
+          "/icons/icon-32.png",
+          "/offline.html",
+          "/manifest.en.webmanifest",
+          "/manifest.bg.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/css/app.css",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "installLongTasks": [],
+      "installCache": [
+        {
+          "name": "gym-static-v28-audit-100-5-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "applicationVersion": "462ef11",
+      "firstModuleNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 77.99183300000004,
+          "contentMs": 223.6703750000015,
+          "settledMs": 591.7373329999973,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 55.80158300000039,
+          "contentMs": 246.69479200000205,
+          "settledMs": 615.5706250000003,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/food",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 58.02745799999684,
+          "contentMs": 761.6562079999931,
+          "settledMs": 1130.3161669999972,
+          "network": {
+            "requests": 4,
+            "bytes": 250862,
+            "staticRequests": 2,
+            "statuses": {
+              "200": 4
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [
+              {
+                "path": "/lib/chartjs/chart.umd.min.js",
+                "status": 200,
+                "conditionalRequest": false,
+                "requestCacheControl": null,
+                "requestPragma": null,
+                "responseCacheControl": "no-cache",
+                "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+                "responseEncoding": "identity"
+              }
+            ],
+            "failures": [],
+            "paths": [
+              "/progress",
+              "/lib/chartjs/chart.umd.min.js",
+              "/js/progress.js",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": [
+            {
+              "startTime": 4776.4000000003725,
+              "duration": 140
+            }
+          ]
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 56.408707999995386,
+          "contentMs": 227.7960829999938,
+          "settledMs": 595.8506669999988,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/today",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "warmNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 57.13920800000051,
+          "contentMs": 197.06016700000328,
+          "settledMs": 563.5849579999995,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 57.51945799999521,
+          "contentMs": 231.86824999999953,
+          "settledMs": 599.2152499999938,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/food",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 56.869332999995095,
+          "contentMs": 278.86799999999494,
+          "settledMs": 646.8447079999969,
+          "network": {
+            "requests": 2,
+            "bytes": 30350,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/progress",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 56.66341700000339,
+          "contentMs": 229.68800000000192,
+          "settledMs": 597.495167000001,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/today",
+              "/icons/icon-32.png"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "afterNavigationCache": [
+        {
+          "name": "gym-static-v28-audit-100-5-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        }
+      ],
+      "syntheticDeployWorkerUpdateMs": 2384.392166999998,
+      "updateNetwork": {
+        "requests": 36,
+        "bytes": 2009340,
+        "staticRequests": 28,
+        "statuses": {
+          "200": 36
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/sw.js",
+          "/offline.html",
+          "/manifest.bg.webmanifest",
+          "/manifest.en.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/css/app.css",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "updateLongTasks": [],
+      "afterUpdateCache": [
+        {
+          "name": "gym-static-v28-audit-100-5-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        },
+        {
+          "name": "gym-static-v28-audit-100-5-new",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "navigationRace": {
+        "firstRequested": "train",
+        "lastRequested": "food",
+        "injectedFirstResponseDelayMs": 1000,
+        "afterLatestResponse": "food",
+        "finalTab": "train",
+        "finalPath": "/train"
+      }
+    },
+    {
+      "latencyMs": 400,
+      "run": 1,
+      "coldAppLoadMs": 1786.4949579999957,
+      "installReadyMs": 8004.426416000002,
+      "installNetwork": {
+        "requests": 52,
+        "bytes": 2303601,
+        "staticRequests": 42,
+        "statuses": {
+          "200": 52
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/today",
+          "/lib/fonts/fonts.css",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/queue.js",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/lib/htmx/htmx.min.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/sw.js",
+          "/icons/icon-32.png",
+          "/manifest.bg.webmanifest",
+          "/manifest.en.webmanifest",
+          "/offline.html",
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "installLongTasks": [],
+      "installCache": [
+        {
+          "name": "gym-static-v28-audit-400-1-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "applicationVersion": "462ef11",
+      "firstModuleNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 73.79329200000211,
+          "contentMs": 525.6532089999964,
+          "settledMs": 893.8235419999983,
+          "network": {
+            "requests": 1,
+            "bytes": 16035,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 1
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 56.63641700000153,
+          "contentMs": 547.1051670000015,
+          "settledMs": 916.5755419999914,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/food"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 58.31091599998763,
+          "contentMs": 1643.695624999993,
+          "settledMs": 2012.9324579999957,
+          "network": {
+            "requests": 4,
+            "bytes": 250862,
+            "staticRequests": 2,
+            "statuses": {
+              "200": 4
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [
+              {
+                "path": "/lib/chartjs/chart.umd.min.js",
+                "status": 200,
+                "conditionalRequest": false,
+                "requestCacheControl": null,
+                "requestPragma": null,
+                "responseCacheControl": "no-cache",
+                "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+                "responseEncoding": "identity"
+              }
+            ],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/progress",
+              "/lib/chartjs/chart.umd.min.js",
+              "/js/progress.js"
+            ]
+          },
+          "longTasks": [
+            {
+              "startTime": 11325.400000000373,
+              "duration": 143
+            }
+          ]
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 58.5916670000006,
+          "contentMs": 528.5031250000029,
+          "settledMs": 896.1084580000024,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/today"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "warmNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 57.35820899999817,
+          "contentMs": 513.7814999999973,
+          "settledMs": 881.6378750000003,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/train"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 54.87570800000685,
+          "contentMs": 528.7605410000106,
+          "settledMs": 896.60366600001,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/food"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 58.32375000001048,
+          "contentMs": 582.1758330000011,
+          "settledMs": 945.0417910000106,
+          "network": {
+            "requests": 2,
+            "bytes": 30350,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/progress"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 57.07216700000572,
+          "contentMs": 529.2246670000022,
+          "settledMs": 897.760500000004,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/today"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "afterNavigationCache": [
+        {
+          "name": "gym-static-v28-audit-400-1-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        }
+      ],
+      "syntheticDeployWorkerUpdateMs": 6132.7512080000015,
+      "updateNetwork": {
+        "requests": 36,
+        "bytes": 2009340,
+        "staticRequests": 28,
+        "statuses": {
+          "200": 36
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/sw.js",
+          "/offline.html",
+          "/manifest.bg.webmanifest",
+          "/manifest.en.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "updateLongTasks": [],
+      "afterUpdateCache": [
+        {
+          "name": "gym-static-v28-audit-400-1-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        },
+        {
+          "name": "gym-static-v28-audit-400-1-new",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "navigationRace": {
+        "firstRequested": "train",
+        "lastRequested": "food",
+        "injectedFirstResponseDelayMs": 1000,
+        "afterLatestResponse": "food",
+        "finalTab": "train",
+        "finalPath": "/train"
+      }
+    },
+    {
+      "latencyMs": 400,
+      "run": 2,
+      "coldAppLoadMs": 1789.1976250000007,
+      "installReadyMs": 8005.242832999997,
+      "installNetwork": {
+        "requests": 52,
+        "bytes": 2303601,
+        "staticRequests": 42,
+        "statuses": {
+          "200": 52
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/today",
+          "/lib/fonts/fonts.css",
+          "/js/queue.js",
+          "/css/app.css",
+          "/js/pages.js",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/lib/htmx/htmx.min.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/sw.js",
+          "/icons/icon-32.png",
+          "/manifest.bg.webmanifest",
+          "/offline.html",
+          "/manifest.en.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "installLongTasks": [],
+      "installCache": [
+        {
+          "name": "gym-static-v28-audit-400-2-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "applicationVersion": "462ef11",
+      "firstModuleNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 70.69887500000186,
+          "contentMs": 522.4009170000063,
+          "settledMs": 890.6966669999965,
+          "network": {
+            "requests": 1,
+            "bytes": 16035,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 1
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 57.45974999999453,
+          "contentMs": 530.9557499999937,
+          "settledMs": 917.0299169999926,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/food"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 73.8403330000001,
+          "contentMs": 1675.8276659999974,
+          "settledMs": 2044.7666250000038,
+          "network": {
+            "requests": 4,
+            "bytes": 250862,
+            "staticRequests": 2,
+            "statuses": {
+              "200": 4
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [
+              {
+                "path": "/lib/chartjs/chart.umd.min.js",
+                "status": 200,
+                "conditionalRequest": false,
+                "requestCacheControl": null,
+                "requestPragma": null,
+                "responseCacheControl": "no-cache",
+                "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+                "responseEncoding": "identity"
+              }
+            ],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/progress",
+              "/lib/chartjs/chart.umd.min.js",
+              "/js/progress.js"
+            ]
+          },
+          "longTasks": [
+            {
+              "startTime": 11341.5,
+              "duration": 160
+            }
+          ]
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 59.198125000009895,
+          "contentMs": 528.8522500000108,
+          "settledMs": 896.809500000003,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/today"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "warmNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 56.885249999992084,
+          "contentMs": 495.8325000000041,
+          "settledMs": 863.3560419999994,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/train"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 56.65458300001046,
+          "contentMs": 530.7151670000021,
+          "settledMs": 898.1737080000021,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/food"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 56.592499999998836,
+          "contentMs": 579.8086250000051,
+          "settledMs": 947.2839999999997,
+          "network": {
+            "requests": 2,
+            "bytes": 30350,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/progress"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 56.887541999996756,
+          "contentMs": 530.6543340000062,
+          "settledMs": 897.7355419999949,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/today"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "afterNavigationCache": [
+        {
+          "name": "gym-static-v28-audit-400-2-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        }
+      ],
+      "syntheticDeployWorkerUpdateMs": 6127.8321670000005,
+      "updateNetwork": {
+        "requests": 36,
+        "bytes": 2009340,
+        "staticRequests": 28,
+        "statuses": {
+          "200": 36
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/sw.js",
+          "/offline.html",
+          "/manifest.en.webmanifest",
+          "/manifest.bg.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "updateLongTasks": [],
+      "afterUpdateCache": [
+        {
+          "name": "gym-static-v28-audit-400-2-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        },
+        {
+          "name": "gym-static-v28-audit-400-2-new",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "navigationRace": {
+        "firstRequested": "train",
+        "lastRequested": "food",
+        "injectedFirstResponseDelayMs": 1000,
+        "afterLatestResponse": "food",
+        "finalTab": "train",
+        "finalPath": "/train"
+      }
+    },
+    {
+      "latencyMs": 400,
+      "run": 3,
+      "coldAppLoadMs": 1788.2267500000016,
+      "installReadyMs": 7902.539416999993,
+      "installNetwork": {
+        "requests": 52,
+        "bytes": 2303601,
+        "staticRequests": 42,
+        "statuses": {
+          "200": 52
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/today",
+          "/lib/fonts/fonts.css",
+          "/js/queue.js",
+          "/js/i18n.js",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/pages.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/lib/htmx/htmx.min.js",
+          "/js/motion.js",
+          "/js/nav.js",
+          "/js/passkey.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/sw.js",
+          "/icons/icon-32.png",
+          "/offline.html",
+          "/manifest.en.webmanifest",
+          "/manifest.bg.webmanifest",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "installLongTasks": [],
+      "installCache": [
+        {
+          "name": "gym-static-v28-audit-400-3-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "applicationVersion": "462ef11",
+      "firstModuleNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 73.19912499999919,
+          "contentMs": 524.6915830000071,
+          "settledMs": 891.3953330000077,
+          "network": {
+            "requests": 1,
+            "bytes": 16035,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 1
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 57.335707999998704,
+          "contentMs": 547.2642080000078,
+          "settledMs": 916.3313750000088,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/food"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 58.006124999999884,
+          "contentMs": 1643.7921659999993,
+          "settledMs": 2014.0903749999998,
+          "network": {
+            "requests": 4,
+            "bytes": 250862,
+            "staticRequests": 2,
+            "statuses": {
+              "200": 4
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [
+              {
+                "path": "/lib/chartjs/chart.umd.min.js",
+                "status": 200,
+                "conditionalRequest": false,
+                "requestCacheControl": null,
+                "requestPragma": null,
+                "responseCacheControl": "no-cache",
+                "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+                "responseEncoding": "identity"
+              }
+            ],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/progress",
+              "/lib/chartjs/chart.umd.min.js",
+              "/js/progress.js"
+            ]
+          },
+          "longTasks": [
+            {
+              "startTime": 11222.900000000373,
+              "duration": 141
+            }
+          ]
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 57.138749999998254,
+          "contentMs": 526.1471660000097,
+          "settledMs": 895.6231249999983,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/today"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "warmNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 56.13141699999687,
+          "contentMs": 494.10349999999744,
+          "settledMs": 861.9150840000075,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/train"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 57.69233400000667,
+          "contentMs": 529.9772090000042,
+          "settledMs": 898.351834000001,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/food"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 55.70933399999922,
+          "contentMs": 579.1884999999893,
+          "settledMs": 947.0413339999941,
+          "network": {
+            "requests": 2,
+            "bytes": 30350,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/progress"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 59.05616700000246,
+          "contentMs": 529.724000000002,
+          "settledMs": 897.1961670000019,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/today"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "afterNavigationCache": [
+        {
+          "name": "gym-static-v28-audit-400-3-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        }
+      ],
+      "syntheticDeployWorkerUpdateMs": 6136.250207999998,
+      "updateNetwork": {
+        "requests": 36,
+        "bytes": 2009340,
+        "staticRequests": 28,
+        "statuses": {
+          "200": 36
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/sw.js",
+          "/offline.html",
+          "/manifest.bg.webmanifest",
+          "/manifest.en.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "updateLongTasks": [],
+      "afterUpdateCache": [
+        {
+          "name": "gym-static-v28-audit-400-3-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        },
+        {
+          "name": "gym-static-v28-audit-400-3-new",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "navigationRace": {
+        "firstRequested": "train",
+        "lastRequested": "food",
+        "injectedFirstResponseDelayMs": 1000,
+        "afterLatestResponse": "food",
+        "finalTab": "train",
+        "finalPath": "/train"
+      }
+    },
+    {
+      "latencyMs": 400,
+      "run": 4,
+      "coldAppLoadMs": 1784.6019579999847,
+      "installReadyMs": 7889.759707999998,
+      "installNetwork": {
+        "requests": 52,
+        "bytes": 2303601,
+        "staticRequests": 42,
+        "statuses": {
+          "200": 52
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/today",
+          "/lib/fonts/fonts.css",
+          "/js/queue.js",
+          "/js/i18n.js",
+          "/css/tokens.css",
+          "/js/pages.js",
+          "/css/app.css",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/lib/htmx/htmx.min.js",
+          "/js/motion.js",
+          "/js/passkey.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/nav.js",
+          "/sw.js",
+          "/icons/icon-32.png",
+          "/manifest.bg.webmanifest",
+          "/offline.html",
+          "/manifest.en.webmanifest",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "installLongTasks": [],
+      "installCache": [
+        {
+          "name": "gym-static-v28-audit-400-4-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "applicationVersion": "462ef11",
+      "firstModuleNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 79.10445800001617,
+          "contentMs": 525.3432500000054,
+          "settledMs": 893.4680830000143,
+          "network": {
+            "requests": 1,
+            "bytes": 16035,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 1
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 56.32158400001936,
+          "contentMs": 545.1791249999951,
+          "settledMs": 915.1427499999991,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/food"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 59.7579160000023,
+          "contentMs": 1644.6000000000058,
+          "settledMs": 2013.5237079999933,
+          "network": {
+            "requests": 4,
+            "bytes": 250862,
+            "staticRequests": 2,
+            "statuses": {
+              "200": 4
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [
+              {
+                "path": "/lib/chartjs/chart.umd.min.js",
+                "status": 200,
+                "conditionalRequest": false,
+                "requestCacheControl": null,
+                "requestPragma": null,
+                "responseCacheControl": "no-cache",
+                "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+                "responseEncoding": "identity"
+              }
+            ],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/progress",
+              "/lib/chartjs/chart.umd.min.js",
+              "/js/progress.js"
+            ]
+          },
+          "longTasks": [
+            {
+              "startTime": 11208.5,
+              "duration": 143
+            }
+          ]
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 57.36691700000665,
+          "contentMs": 528.9889580000017,
+          "settledMs": 896.1455000000133,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/today"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "warmNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 57.9855830000015,
+          "contentMs": 497.4590830000234,
+          "settledMs": 864.3810410000151,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/train"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 59.80441699997755,
+          "contentMs": 546.8716249999998,
+          "settledMs": 914.4121669999731,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/food"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 57.55845800001407,
+          "contentMs": 580.5518750000047,
+          "settledMs": 946.5883749999921,
+          "network": {
+            "requests": 2,
+            "bytes": 30350,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/progress"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 57.16145799998776,
+          "contentMs": 530.8485829999845,
+          "settledMs": 900.2083749999874,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/today"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "afterNavigationCache": [
+        {
+          "name": "gym-static-v28-audit-400-4-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        }
+      ],
+      "syntheticDeployWorkerUpdateMs": 6135.595625000016,
+      "updateNetwork": {
+        "requests": 36,
+        "bytes": 2009340,
+        "staticRequests": 28,
+        "statuses": {
+          "200": 36
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/sw.js",
+          "/offline.html",
+          "/manifest.bg.webmanifest",
+          "/manifest.en.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "updateLongTasks": [],
+      "afterUpdateCache": [
+        {
+          "name": "gym-static-v28-audit-400-4-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        },
+        {
+          "name": "gym-static-v28-audit-400-4-new",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "navigationRace": {
+        "firstRequested": "train",
+        "lastRequested": "food",
+        "injectedFirstResponseDelayMs": 1000,
+        "afterLatestResponse": "food",
+        "finalTab": "train",
+        "finalPath": "/train"
+      }
+    },
+    {
+      "latencyMs": 400,
+      "run": 5,
+      "coldAppLoadMs": 1788.0457499999902,
+      "installReadyMs": 7902.705875000014,
+      "installNetwork": {
+        "requests": 52,
+        "bytes": 2303601,
+        "staticRequests": 42,
+        "statuses": {
+          "200": 52
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/today",
+          "/lib/fonts/fonts.css",
+          "/js/queue.js",
+          "/css/tokens.css",
+          "/js/i18n.js",
+          "/css/app.css",
+          "/js/pages.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/lib/htmx/htmx.min.js",
+          "/js/motion.js",
+          "/js/session.js",
+          "/js/site.js",
+          "/js/nav.js",
+          "/js/passkey.js",
+          "/sw.js",
+          "/icons/icon-32.png",
+          "/manifest.en.webmanifest",
+          "/manifest.bg.webmanifest",
+          "/offline.html",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-192.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "installLongTasks": [],
+      "installCache": [
+        {
+          "name": "gym-static-v28-audit-400-5-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "applicationVersion": "462ef11",
+      "firstModuleNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 73.72666700000991,
+          "contentMs": 525.4604589999944,
+          "settledMs": 892.4703340000124,
+          "network": {
+            "requests": 1,
+            "bytes": 16035,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 1
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/train"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 58.26624999998603,
+          "contentMs": 548.4941249999974,
+          "settledMs": 916.9640419999778,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/food"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 58.031417000020156,
+          "contentMs": 1645.0882500000007,
+          "settledMs": 2013.25,
+          "network": {
+            "requests": 4,
+            "bytes": 250862,
+            "staticRequests": 2,
+            "statuses": {
+              "200": 4
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [
+              {
+                "path": "/lib/chartjs/chart.umd.min.js",
+                "status": 200,
+                "conditionalRequest": false,
+                "requestCacheControl": null,
+                "requestPragma": null,
+                "responseCacheControl": "no-cache",
+                "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+                "responseEncoding": "identity"
+              }
+            ],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/progress",
+              "/lib/chartjs/chart.umd.min.js",
+              "/js/progress.js"
+            ]
+          },
+          "longTasks": [
+            {
+              "startTime": 11223,
+              "duration": 139
+            }
+          ]
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 57.74458299999242,
+          "contentMs": 529.0272499999846,
+          "settledMs": 896.8171670000011,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/today"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "warmNavigation": [
+        {
+          "journey": "today-train",
+          "feedbackMs": 57.75358300001244,
+          "contentMs": 496.0466249999881,
+          "settledMs": 863.780666000006,
+          "network": {
+            "requests": 2,
+            "bytes": 17858,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/train"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "train-food",
+          "feedbackMs": 56.357334000000264,
+          "contentMs": 529.8106249999837,
+          "settledMs": 897.310541999992,
+          "network": {
+            "requests": 2,
+            "bytes": 36767,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/food"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "food-progress",
+          "feedbackMs": 58.80195900000399,
+          "contentMs": 578.9348339999851,
+          "settledMs": 947.6689170000027,
+          "network": {
+            "requests": 2,
+            "bytes": 30350,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/progress"
+            ]
+          },
+          "longTasks": []
+        },
+        {
+          "journey": "progress-today",
+          "feedbackMs": 59.33400000000256,
+          "contentMs": 530.2299999999814,
+          "settledMs": 898.6372909999918,
+          "network": {
+            "requests": 2,
+            "bytes": 23270,
+            "staticRequests": 0,
+            "statuses": {
+              "200": 2
+            },
+            "conditionalRequests": 0,
+            "cacheHeaderSamples": [],
+            "failures": [],
+            "paths": [
+              "/icons/icon-32.png",
+              "/today"
+            ]
+          },
+          "longTasks": []
+        }
+      ],
+      "afterNavigationCache": [
+        {
+          "name": "gym-static-v28-audit-400-5-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        }
+      ],
+      "syntheticDeployWorkerUpdateMs": 6123.553833000013,
+      "updateNetwork": {
+        "requests": 36,
+        "bytes": 2009340,
+        "staticRequests": 28,
+        "statuses": {
+          "200": 36
+        },
+        "conditionalRequests": 0,
+        "cacheHeaderSamples": [
+          {
+            "path": "/sw.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": "max-age=0",
+            "requestPragma": null,
+            "responseCacheControl": "no-store",
+            "responseEtag": null,
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/css/app.css",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"0fmmoa8rbEhurxTxFrpaYdFc4NNV7DEePlqjFcPNBfI=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/barcode-detector/zxing_reader.wasm",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"Lr2gipPuo+/Ng5nNprJ25qCx3k/sYLTYmIoEfeTG0bo=\"",
+            "responseEncoding": "identity"
+          },
+          {
+            "path": "/lib/chartjs/chart.umd.min.js",
+            "status": 200,
+            "conditionalRequest": false,
+            "requestCacheControl": null,
+            "requestPragma": null,
+            "responseCacheControl": "no-cache",
+            "responseEtag": "\"SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=\"",
+            "responseEncoding": "identity"
+          }
+        ],
+        "failures": [],
+        "paths": [
+          "/sw.js",
+          "/offline.html",
+          "/manifest.bg.webmanifest",
+          "/manifest.en.webmanifest",
+          "/icons/icon-192.png",
+          "/icons/apple-touch-icon.png",
+          "/icons/icon-512.png",
+          "/icons/icon-32.png",
+          "/css/tokens.css",
+          "/css/app.css",
+          "/js/i18n.js",
+          "/js/pages.js",
+          "/js/queue.js",
+          "/js/image.js",
+          "/js/feedback.js",
+          "/js/motion.js",
+          "/js/site.js",
+          "/js/session.js",
+          "/js/passkey.js",
+          "/js/nav.js",
+          "/js/offline.js",
+          "/js/progress.js",
+          "/js/scanner.js",
+          "/js/label.js",
+          "/js/onboarding.js",
+          "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+          "/lib/barcode-detector/zxing_reader.wasm",
+          "/lib/htmx/htmx.min.js",
+          "/lib/chartjs/chart.umd.min.js",
+          "/lib/fonts/fonts.css",
+          "/lib/fonts/fira-sans-400-latin.woff2",
+          "/lib/fonts/fira-sans-400-cyrillic.woff2",
+          "/lib/fonts/fira-sans-500-latin.woff2",
+          "/lib/fonts/fira-sans-500-cyrillic.woff2",
+          "/lib/fonts/fira-sans-600-latin.woff2",
+          "/lib/fonts/fira-sans-600-cyrillic.woff2"
+        ]
+      },
+      "updateLongTasks": [],
+      "afterUpdateCache": [
+        {
+          "name": "gym-static-v28-audit-400-5-old",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 2
+        },
+        {
+          "name": "gym-static-v28-audit-400-5-new",
+          "entries": 35,
+          "decodedBytes": 2005839,
+          "versionedEntries": 0
+        }
+      ],
+      "navigationRace": {
+        "firstRequested": "train",
+        "lastRequested": "food",
+        "injectedFirstResponseDelayMs": 1000,
+        "afterLatestResponse": "food",
+        "finalTab": "train",
+        "finalPath": "/train"
+      }
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "commit": "462ef11",
+  "env": "native linux-arm64 Release app256MiB1CPU DB256MiB noCPUcap; from docker run through first successful GET; 50ms polling; fresh schema includes all28migrations+11795food seed; warm OS/runtime layers",
+  "samples": [
+    {
+      "phase": "fresh-migrations-seed",
+      "run": 1,
+      "readySeconds": 2.366565457999968,
+      "state": {
+        "oom": false,
+        "restarts": 0
+      }
+    },
+    {
+      "phase": "fresh-migrations-seed",
+      "run": 2,
+      "readySeconds": 2.3900415830012207,
+      "state": {
+        "oom": false,
+        "restarts": 0
+      }
+    },
+    {
+      "phase": "fresh-migrations-seed",
+      "run": 3,
+      "readySeconds": 2.36070112500056,
+      "state": {
+        "oom": false,
+        "restarts": 0
+      }
+    },
+    {
+      "phase": "fresh-migrations-seed",
+      "run": 4,
+      "readySeconds": 2.3696774159998313,
+      "state": {
+        "oom": false,
+        "restarts": 0
+      }
+    },
+    {
+      "phase": "fresh-migrations-seed",
+      "run": 5,
+      "readySeconds": 2.395537750000585,
+      "state": {
+        "oom": false,
+        "restarts": 0
+      }
+    },
+    {
+      "phase": "existing-schema-seed-check",
+      "run": 1,
+      "readySeconds": 0.767473207999501,
+      "state": {
+        "oom": false,
+        "restarts": 0
+      }
+    },
+    {
+      "phase": "existing-schema-seed-check",
+      "run": 2,
+      "readySeconds": 0.8145144160007476,
+      "state": {
+        "oom": false,
+        "restarts": 0
+      }
+    },
+    {
+      "phase": "existing-schema-seed-check",
+      "run": 3,
+      "readySeconds": 0.7923261249998177,
+      "state": {
+        "oom": false,
+        "restarts": 0
+      }
+    },
+    {
+      "phase": "existing-schema-seed-check",
+      "run": 4,
+      "readySeconds": 0.7909087910011294,
+      "state": {
+        "oom": false,
+        "restarts": 0
+      }
+    },
+    {
+      "phase": "existing-schema-seed-check",
+      "run": 5,
+      "readySeconds": 0.7348407080007746,
+      "state": {
+        "oom": false,
+        "restarts": 0
+      }
+    }
+  ]
+}

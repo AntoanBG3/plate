@@ -1,0 +1,68 @@
+{
+  "generatedUtc": "2026-11-05T08:53:27.981Z",
+  "stalledQueue": {
+    "scenario": "fetch never resolves; four retry callbacks plus online event",
+    "simulatedRetryWindowMs": 60000,
+    "requests": [
+      {
+        "url": "/train/sets",
+        "hasAbortSignal": false
+      }
+    ],
+    "retainedPendingSets": 1,
+    "interpretation": "No app deadline: later flushes cannot retry or send subsequent sets until browser fetch settles. Data remains durable."
+  },
+  "cameraRace": {
+    "scenario": "getUserMedia resolves after sheet close and module cleanup",
+    "stoppedTracks": 0,
+    "videoPlayed": 1,
+    "startedIntervals": 1,
+    "interpretation": "Late stream is started after teardown and no remaining cleanup owns it; capture lifetime after this point depends on browser/document lifecycle."
+  },
+  "navigationRace": {
+    "requestedOrder": [
+      "train",
+      "food"
+    ],
+    "responseOrder": [
+      "food",
+      "train"
+    ],
+    "afterLatestResponse": "food",
+    "finalTab": "train",
+    "finalPath": "/train",
+    "interpretation": "Earlier slow GET overwrites later chosen page; there is no request generation guard in go(). DOM is stubbed; browser corroboration remains useful."
+  },
+  "precache": {
+    "assets": 35,
+    "totalBytes": 2005839,
+    "wasmBytes": 1093289,
+    "largest": [
+      {
+        "path": "/lib/barcode-detector/zxing_reader.wasm",
+        "bytes": 1093289
+      },
+      {
+        "path": "/lib/chartjs/chart.umd.min.js",
+        "bytes": 208522
+      },
+      {
+        "path": "/icons/icon-512.png",
+        "bytes": 207111
+      },
+      {
+        "path": "/css/app.css",
+        "bytes": 77609
+      },
+      {
+        "path": "/lib/htmx/htmx.min.js",
+        "bytes": 52182
+      },
+      {
+        "path": "/lib/barcode-detector/barcode-detector-3.2.2.ponyfill.js",
+        "bytes": 43933
+      }
+    ],
+    "interpretation": "Decoded filesystem bytes, not compressed network transfer; current worker requests the entire list on each changed cache version; HTTP 304 validation can reuse existing body bytes."
+  }
+}

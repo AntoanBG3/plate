@@ -1,0 +1,796 @@
+{
+  "environment": "native postgres18;256MiB,noCPUcap;synthetic5users730days; app idle, no concurrent timing workload; source-shaped SQL, not exact EF",
+  "firstRun": "first measured pass, OS/PG buffers previously warm from HTTP; not a disk-cold claim",
+  "samples": [
+    {
+      "run": 1,
+      "section": "food-search-original",
+      "planningMs": 0.15,
+      "executionMs": 85.115,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 11040,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 1,
+      "section": "session-recent-ids",
+      "planningMs": 0.612,
+      "executionMs": 0.028,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 21,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Nested Loop",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 21,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "Sessions",
+          "Index Name": "IX_Sessions_UserId_StartedAt",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 3,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "SessionExercises",
+          "Index Name": "IX_SessionExercises_SessionId",
+          "Actual Rows": 1.0,
+          "Rows Removed by Filter": 4,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 1,
+      "section": "weight-all-history",
+      "planningMs": 0.04,
+      "executionMs": 0.068,
+      "nodes": [
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "Bodyweights",
+          "Index Name": "IX_Bodyweights_UserId_Date",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 15,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 1,
+      "section": "progress-target-snapshots-all-history",
+      "planningMs": 0.036,
+      "executionMs": 0.402,
+      "nodes": [
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 259,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "NutritionTargetDays",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 256,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "PK_NutritionTargetDays",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 12,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 1,
+      "section": "food-last-amount",
+      "planningMs": 0.677,
+      "executionMs": 1.532,
+      "nodes": [
+        {
+          "Node Type": "Hash Join",
+          "Actual Rows": 580.0,
+          "Shared Hit Blocks": 580,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodLog",
+          "Actual Rows": 940.0,
+          "Rows Removed by Filter": 5122,
+          "Shared Hit Blocks": 575,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodLog_UserId_Date",
+          "Actual Rows": 6062.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Hash",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Only Scan",
+          "Relation Name": "FoodItems",
+          "Index Name": "PK_FoodItems",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "section": "food-search-original",
+      "planningMs": 0.109,
+      "executionMs": 76.613,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 11040,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "section": "session-recent-ids",
+      "planningMs": 0.451,
+      "executionMs": 0.021,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 21,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Nested Loop",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 21,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "Sessions",
+          "Index Name": "IX_Sessions_UserId_StartedAt",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 3,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "SessionExercises",
+          "Index Name": "IX_SessionExercises_SessionId",
+          "Actual Rows": 1.0,
+          "Rows Removed by Filter": 4,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "section": "weight-all-history",
+      "planningMs": 0.027,
+      "executionMs": 0.075,
+      "nodes": [
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "Bodyweights",
+          "Index Name": "IX_Bodyweights_UserId_Date",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 15,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "section": "progress-target-snapshots-all-history",
+      "planningMs": 0.03,
+      "executionMs": 0.361,
+      "nodes": [
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 259,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "NutritionTargetDays",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 256,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "PK_NutritionTargetDays",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 12,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "section": "food-last-amount",
+      "planningMs": 0.478,
+      "executionMs": 1.39,
+      "nodes": [
+        {
+          "Node Type": "Hash Join",
+          "Actual Rows": 580.0,
+          "Shared Hit Blocks": 580,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodLog",
+          "Actual Rows": 940.0,
+          "Rows Removed by Filter": 5122,
+          "Shared Hit Blocks": 575,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodLog_UserId_Date",
+          "Actual Rows": 6062.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Hash",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Only Scan",
+          "Relation Name": "FoodItems",
+          "Index Name": "PK_FoodItems",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "section": "food-search-original",
+      "planningMs": 0.111,
+      "executionMs": 78.058,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 11040,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "section": "session-recent-ids",
+      "planningMs": 0.402,
+      "executionMs": 0.021,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 21,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Nested Loop",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 21,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "Sessions",
+          "Index Name": "IX_Sessions_UserId_StartedAt",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 3,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "SessionExercises",
+          "Index Name": "IX_SessionExercises_SessionId",
+          "Actual Rows": 1.0,
+          "Rows Removed by Filter": 4,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "section": "weight-all-history",
+      "planningMs": 0.026,
+      "executionMs": 0.075,
+      "nodes": [
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "Bodyweights",
+          "Index Name": "IX_Bodyweights_UserId_Date",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 15,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "section": "progress-target-snapshots-all-history",
+      "planningMs": 0.025,
+      "executionMs": 0.369,
+      "nodes": [
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 259,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "NutritionTargetDays",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 256,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "PK_NutritionTargetDays",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 12,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "section": "food-last-amount",
+      "planningMs": 0.48,
+      "executionMs": 1.391,
+      "nodes": [
+        {
+          "Node Type": "Hash Join",
+          "Actual Rows": 580.0,
+          "Shared Hit Blocks": 580,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodLog",
+          "Actual Rows": 940.0,
+          "Rows Removed by Filter": 5122,
+          "Shared Hit Blocks": 575,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodLog_UserId_Date",
+          "Actual Rows": 6062.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Hash",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Only Scan",
+          "Relation Name": "FoodItems",
+          "Index Name": "PK_FoodItems",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "section": "food-search-original",
+      "planningMs": 0.123,
+      "executionMs": 76.292,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 11040,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "section": "session-recent-ids",
+      "planningMs": 0.405,
+      "executionMs": 0.022,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 21,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Nested Loop",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 21,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "Sessions",
+          "Index Name": "IX_Sessions_UserId_StartedAt",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 3,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "SessionExercises",
+          "Index Name": "IX_SessionExercises_SessionId",
+          "Actual Rows": 1.0,
+          "Rows Removed by Filter": 4,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "section": "weight-all-history",
+      "planningMs": 0.027,
+      "executionMs": 0.073,
+      "nodes": [
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "Bodyweights",
+          "Index Name": "IX_Bodyweights_UserId_Date",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 15,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "section": "progress-target-snapshots-all-history",
+      "planningMs": 0.028,
+      "executionMs": 0.494,
+      "nodes": [
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 259,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "NutritionTargetDays",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 256,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "PK_NutritionTargetDays",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 12,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "section": "food-last-amount",
+      "planningMs": 0.531,
+      "executionMs": 1.811,
+      "nodes": [
+        {
+          "Node Type": "Hash Join",
+          "Actual Rows": 580.0,
+          "Shared Hit Blocks": 580,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodLog",
+          "Actual Rows": 940.0,
+          "Rows Removed by Filter": 5122,
+          "Shared Hit Blocks": 575,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodLog_UserId_Date",
+          "Actual Rows": 6062.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Hash",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Only Scan",
+          "Relation Name": "FoodItems",
+          "Index Name": "PK_FoodItems",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "section": "food-search-original",
+      "planningMs": 0.111,
+      "executionMs": 76.976,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 11040,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "section": "session-recent-ids",
+      "planningMs": 0.487,
+      "executionMs": 0.021,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 21,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Nested Loop",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 21,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "Sessions",
+          "Index Name": "IX_Sessions_UserId_StartedAt",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 3,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "SessionExercises",
+          "Index Name": "IX_SessionExercises_SessionId",
+          "Actual Rows": 1.0,
+          "Rows Removed by Filter": 4,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "section": "weight-all-history",
+      "planningMs": 0.03,
+      "executionMs": 0.07,
+      "nodes": [
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "Bodyweights",
+          "Index Name": "IX_Bodyweights_UserId_Date",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 15,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "section": "progress-target-snapshots-all-history",
+      "planningMs": 0.025,
+      "executionMs": 0.419,
+      "nodes": [
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 259,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "NutritionTargetDays",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 256,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "PK_NutritionTargetDays",
+          "Actual Rows": 730.0,
+          "Shared Hit Blocks": 12,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "section": "food-last-amount",
+      "planningMs": 0.479,
+      "executionMs": 1.469,
+      "nodes": [
+        {
+          "Node Type": "Hash Join",
+          "Actual Rows": 580.0,
+          "Shared Hit Blocks": 580,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodLog",
+          "Actual Rows": 940.0,
+          "Rows Removed by Filter": 5122,
+          "Shared Hit Blocks": 575,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodLog_UserId_Date",
+          "Actual Rows": 6062.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Hash",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Index Only Scan",
+          "Relation Name": "FoodItems",
+          "Index Name": "PK_FoodItems",
+          "Actual Rows": 20.0,
+          "Shared Hit Blocks": 5,
+          "Shared Read Blocks": 0
+        }
+      ]
+    }
+  ]
+}

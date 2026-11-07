@@ -1,0 +1,468 @@
+{
+  "captured_at_utc": "2026-11-05T08:42:44.157262+00:00",
+  "host": {
+    "cores": "4",
+    "memory": "total        used        free      shared  buff/cache   available\nMem:            7276        2642        1606         230        3561        4634\nSwap:           4095           0        4095",
+    "disk": "Filesystem                         Size  Used Avail Use% Mounted on\ntmpfs                              728M  2.9M  725M   1% /run\nefivarfs                           128K   34K   90K  27% /sys/firmware/efi/efivars\n/dev/mapper/ubuntu--vg-ubuntu--lv  217G   31G  176G  15% /\ntmpfs                              3.6G     0  3.6G   0% /dev/shm\ntmpfs                              3.6G     0  3.6G   0% /tmp\n/dev/sda2                          2.0G  250M  1.6G  14% /boot\n/dev/sda1                          1.1G  6.4M  1.1G   1% /boot/efi\n/dev/sdb                           458G   67G  368G  16% /mnt/storage\nnone                               1.0M     0  1.0M   0% /run/credentials/getty@tty1.service\nnone                               1.0M     0  1.0M   0% /run/credentials/systemd-journald.service\nnone                               1.0M     0  1.0M   0% /run/credentials/systemd-resolved.service\nnone                               1.0M     0  1.0M   0% /run/credentials/systemd-networkd.service\ntmpfs                              728M   12K  728M   1% /run/user/1000",
+    "docker_disk": "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          55        14        12.14GB   5.414GB (44%)\nContainers      14        14        85.96MB   0B (0%)\nLocal Volumes   5         0         52.64MB   52.64MB (100%)\nBuild Cache     43        0         870.3MB   0B"
+  },
+  "containers": "\"/gymtracker-app\" status=running oom=false started=2026-11-04T21:45:48.446833021Z memory=268435456 nanocpus=1000000000 mounts=[{\"Destination\":\"/keys\",\"Mode\":\"rw\",\"Propagation\":\"rprivate\",\"RW\":true,\"Source\":\"~/docker/gymtracker/keys\",\"Type\":\"bind\"}] restarts=0 logging={\"Config\":{},\"Type\":\"json-file\"}\n\"/gymtracker-db\" status=running oom=false started=2026-11-04T17:43:30.137984474Z memory=268435456 nanocpus=0 mounts=[{\"Destination\":\"/var/lib/postgresql\",\"Mode\":\"rw\",\"Propagation\":\"rprivate\",\"RW\":true,\"Source\":\"~/docker/gymtracker/db\",\"Type\":\"bind\"}] restarts=0 logging={\"Config\":{},\"Type\":\"json-file\"}",
+  "stats": [
+    [
+      {
+        "BlockIO": "19.8MB / 0B",
+        "CPUPerc": "1.23%",
+        "Container": "gymtracker-app",
+        "ID": "c509eac49541",
+        "MemPerc": "56.70%",
+        "MemUsage": "145.2MiB / 256MiB",
+        "Name": "gymtracker-app",
+        "NetIO": "1.3MB / 3.27MB",
+        "PIDs": "16"
+      },
+      {
+        "BlockIO": "119MB / 4.08MB",
+        "CPUPerc": "0.00%",
+        "Container": "gymtracker-db",
+        "ID": "b33e9ea17063",
+        "MemPerc": "26.95%",
+        "MemUsage": "68.98MiB / 256MiB",
+        "Name": "gymtracker-db",
+        "NetIO": "792kB / 1.21MB",
+        "PIDs": "9"
+      }
+    ],
+    [
+      {
+        "BlockIO": "19.8MB / 0B",
+        "CPUPerc": "1.31%",
+        "Container": "gymtracker-app",
+        "ID": "c509eac49541",
+        "MemPerc": "56.70%",
+        "MemUsage": "145.2MiB / 256MiB",
+        "Name": "gymtracker-app",
+        "NetIO": "1.3MB / 3.27MB",
+        "PIDs": "16"
+      },
+      {
+        "BlockIO": "119MB / 4.08MB",
+        "CPUPerc": "0.00%",
+        "Container": "gymtracker-db",
+        "ID": "b33e9ea17063",
+        "MemPerc": "26.95%",
+        "MemUsage": "68.98MiB / 256MiB",
+        "Name": "gymtracker-db",
+        "NetIO": "792kB / 1.21MB",
+        "PIDs": "9"
+      }
+    ],
+    [
+      {
+        "BlockIO": "19.8MB / 0B",
+        "CPUPerc": "1.42%",
+        "Container": "gymtracker-app",
+        "ID": "c509eac49541",
+        "MemPerc": "56.70%",
+        "MemUsage": "145.2MiB / 256MiB",
+        "Name": "gymtracker-app",
+        "NetIO": "1.3MB / 3.27MB",
+        "PIDs": "16"
+      },
+      {
+        "BlockIO": "119MB / 4.08MB",
+        "CPUPerc": "0.00%",
+        "Container": "gymtracker-db",
+        "ID": "b33e9ea17063",
+        "MemPerc": "26.94%",
+        "MemUsage": "68.98MiB / 256MiB",
+        "Name": "gymtracker-db",
+        "NetIO": "792kB / 1.21MB",
+        "PIDs": "9"
+      }
+    ],
+    [
+      {
+        "BlockIO": "19.8MB / 0B",
+        "CPUPerc": "1.30%",
+        "Container": "gymtracker-app",
+        "ID": "c509eac49541",
+        "MemPerc": "56.70%",
+        "MemUsage": "145.2MiB / 256MiB",
+        "Name": "gymtracker-app",
+        "NetIO": "1.3MB / 3.27MB",
+        "PIDs": "16"
+      },
+      {
+        "BlockIO": "119MB / 4.08MB",
+        "CPUPerc": "0.00%",
+        "Container": "gymtracker-db",
+        "ID": "b33e9ea17063",
+        "MemPerc": "27.15%",
+        "MemUsage": "69.51MiB / 256MiB",
+        "Name": "gymtracker-db",
+        "NetIO": "792kB / 1.21MB",
+        "PIDs": "9"
+      }
+    ],
+    [
+      {
+        "BlockIO": "19.8MB / 0B",
+        "CPUPerc": "1.33%",
+        "Container": "gymtracker-app",
+        "ID": "c509eac49541",
+        "MemPerc": "56.70%",
+        "MemUsage": "145.2MiB / 256MiB",
+        "Name": "gymtracker-app",
+        "NetIO": "1.3MB / 3.27MB",
+        "PIDs": "16"
+      },
+      {
+        "BlockIO": "119MB / 4.08MB",
+        "CPUPerc": "0.00%",
+        "Container": "gymtracker-db",
+        "ID": "b33e9ea17063",
+        "MemPerc": "27.11%",
+        "MemUsage": "69.39MiB / 256MiB",
+        "Name": "gymtracker-db",
+        "NetIO": "792kB / 1.21MB",
+        "PIDs": "9"
+      }
+    ]
+  ],
+  "database": [
+    {
+      "section": "environment",
+      "captured_at_utc": "2026-11-05T08:42:54.397819+00:00",
+      "postgres": "PostgreSQL 18.6 (Debian 18.6-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "database_bytes": 36296383,
+      "shared_buffers": "32MB",
+      "max_connections": "15",
+      "jit": "off",
+      "connections": 9
+    },
+    {
+      "section": "tables",
+      "tables": [
+        {
+          "table_name": "AdminAudit",
+          "rows": 83,
+          "table_bytes": 49152,
+          "index_bytes": 32768
+        },
+        {
+          "table_name": "AppSettings",
+          "rows": 5,
+          "table_bytes": 16384,
+          "index_bytes": 16384
+        },
+        {
+          "table_name": "AspNetRoleClaims",
+          "rows": 0,
+          "table_bytes": 8192,
+          "index_bytes": 16384
+        },
+        {
+          "table_name": "AspNetRoles",
+          "rows": 1,
+          "table_bytes": 16384,
+          "index_bytes": 32768
+        },
+        {
+          "table_name": "AspNetUserClaims",
+          "rows": 0,
+          "table_bytes": 8192,
+          "index_bytes": 16384
+        },
+        {
+          "table_name": "AspNetUserLogins",
+          "rows": 0,
+          "table_bytes": 8192,
+          "index_bytes": 16384
+        },
+        {
+          "table_name": "AspNetUserPasskeys",
+          "rows": 2,
+          "table_bytes": 16384,
+          "index_bytes": 32768
+        },
+        {
+          "table_name": "AspNetUserRoles",
+          "rows": 1,
+          "table_bytes": 16384,
+          "index_bytes": 32768
+        },
+        {
+          "table_name": "AspNetUserTokens",
+          "rows": 0,
+          "table_bytes": 8192,
+          "index_bytes": 8192
+        },
+        {
+          "table_name": "AspNetUsers",
+          "rows": 5,
+          "table_bytes": 16384,
+          "index_bytes": 49152
+        },
+        {
+          "table_name": "Bodyweights",
+          "rows": 5,
+          "table_bytes": 16384,
+          "index_bytes": 32768
+        },
+        {
+          "table_name": "Changelog",
+          "rows": 28,
+          "table_bytes": 49152,
+          "index_bytes": 49152
+        },
+        {
+          "table_name": "ErrorEvents",
+          "rows": 2,
+          "table_bytes": 16384,
+          "index_bytes": 49152
+        },
+        {
+          "table_name": "ExerciseSettings",
+          "rows": 0,
+          "table_bytes": 8192,
+          "index_bytes": 16384
+        },
+        {
+          "table_name": "Exercises",
+          "rows": 91,
+          "table_bytes": 16384,
+          "index_bytes": 32768
+        },
+        {
+          "table_name": "Feedback",
+          "rows": 6,
+          "table_bytes": 16384,
+          "index_bytes": 98304
+        },
+        {
+          "table_name": "FeedbackAttachments",
+          "rows": 0,
+          "table_bytes": 8192,
+          "index_bytes": 16384
+        },
+        {
+          "table_name": "FoodItems",
+          "rows": 11804,
+          "table_bytes": 4603904,
+          "index_bytes": 13049856
+        },
+        {
+          "table_name": "FoodLog",
+          "rows": 38,
+          "table_bytes": 16384,
+          "index_bytes": 81920
+        },
+        {
+          "table_name": "Invites",
+          "rows": 4,
+          "table_bytes": 16384,
+          "index_bytes": 65536
+        },
+        {
+          "table_name": "LabelScanPhotos",
+          "rows": 8,
+          "table_bytes": 7659520,
+          "index_bytes": 32768
+        },
+        {
+          "table_name": "LabelScans",
+          "rows": 6,
+          "table_bytes": 16384,
+          "index_bytes": 65536
+        },
+        {
+          "table_name": "MaintenanceEstimates",
+          "rows": 8,
+          "table_bytes": 16384,
+          "index_bytes": 32768
+        },
+        {
+          "table_name": "NutritionTargetDays",
+          "rows": 34,
+          "table_bytes": 57344,
+          "index_bytes": 16384
+        },
+        {
+          "table_name": "OnboardingChats",
+          "rows": 0,
+          "table_bytes": 65536,
+          "index_bytes": 16384
+        },
+        {
+          "table_name": "ParseRuns",
+          "rows": 16,
+          "table_bytes": 90112,
+          "index_bytes": 49152
+        },
+        {
+          "table_name": "Profiles",
+          "rows": 5,
+          "table_bytes": 16384,
+          "index_bytes": 16384
+        },
+        {
+          "table_name": "SavedMealItems",
+          "rows": 0,
+          "table_bytes": 0,
+          "index_bytes": 24576
+        },
+        {
+          "table_name": "SavedMeals",
+          "rows": 0,
+          "table_bytes": 8192,
+          "index_bytes": 16384
+        },
+        {
+          "table_name": "SessionExercises",
+          "rows": 0,
+          "table_bytes": 8192,
+          "index_bytes": 49152
+        },
+        {
+          "table_name": "Sessions",
+          "rows": 1,
+          "table_bytes": 16384,
+          "index_bytes": 65536
+        },
+        {
+          "table_name": "Sets",
+          "rows": 0,
+          "table_bytes": 8192,
+          "index_bytes": 49152
+        },
+        {
+          "table_name": "TemplateExercises",
+          "rows": 1,
+          "table_bytes": 8192,
+          "index_bytes": 49152
+        },
+        {
+          "table_name": "Templates",
+          "rows": 3,
+          "table_bytes": 16384,
+          "index_bytes": 32768
+        },
+        {
+          "table_name": "UsualFoods",
+          "rows": 10,
+          "table_bytes": 16384,
+          "index_bytes": 49152
+        },
+        {
+          "table_name": "WeeklySummaries",
+          "rows": 2,
+          "table_bytes": 16384,
+          "index_bytes": 32768
+        },
+        {
+          "table_name": "__EFMigrationsHistory",
+          "rows": 28,
+          "table_bytes": 8192,
+          "index_bytes": 16384
+        }
+      ]
+    },
+    {
+      "section": "account_counts",
+      "accounts": [
+        {
+          "account": "account_1",
+          "food_entries": 7,
+          "weights": 1,
+          "sessions": 0,
+          "sets": 0,
+          "parses": 0,
+          "label_scans": 0
+        },
+        {
+          "account": "account_2",
+          "food_entries": 10,
+          "weights": 1,
+          "sessions": 0,
+          "sets": 0,
+          "parses": 2,
+          "label_scans": 1
+        },
+        {
+          "account": "account_3",
+          "food_entries": 21,
+          "weights": 1,
+          "sessions": 1,
+          "sets": 0,
+          "parses": 14,
+          "label_scans": 5
+        },
+        {
+          "account": "account_4",
+          "food_entries": 0,
+          "weights": 1,
+          "sessions": 0,
+          "sets": 0,
+          "parses": 0,
+          "label_scans": 0
+        },
+        {
+          "account": "account_5",
+          "food_entries": 0,
+          "weights": 1,
+          "sessions": 0,
+          "sets": 0,
+          "parses": 0,
+          "label_scans": 0
+        }
+      ]
+    },
+    {
+      "section": "ai_last_30d",
+      "parse_runs": 12,
+      "parser_errors": 0,
+      "parser_ms_p50": 3267,
+      "parser_ms_p95": 5236.65,
+      "match_ms_p50": 1427.5,
+      "match_ms_p95": 3244.6499999999987
+    },
+    {
+      "section": "labels_last_30d",
+      "scans": 6,
+      "errors": 1,
+      "latency_ms_p50": 4262,
+      "latency_ms_p95": 5217
+    },
+    {
+      "section": "errors_active_last_30d",
+      "types": null
+    }
+  ],
+  "ai_logs": {
+    "window": "30d requested; actual coverage limited to current container log retention",
+    "successes": {
+      "food_namer": {
+        "logged_successes": 0,
+        "latency_ms_p50": null,
+        "latency_ms_p95": null,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": 0
+      },
+      "jev": {
+        "logged_successes": 0,
+        "latency_ms_p50": null,
+        "latency_ms_p95": null,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": 0
+      }
+    },
+    "failures": {
+      "namer_timeout": 0,
+      "jev_timeout": 0,
+      "namer_failure": 0,
+      "jev_failure": 0
+    }
+  }
+}
