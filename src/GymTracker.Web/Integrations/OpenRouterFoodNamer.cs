@@ -71,7 +71,8 @@ public class OpenRouterFoodNamer(HttpClient http, OpenRouterModels catalog, ILog
         timeout.CancelAfter(Timeout);
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(await BodyAsync(items, model, ct)) };
+            var body = await BodyAsync(items, model, timeout.Token);
+            using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(body) };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             using var response = await http.SendAsync(request, timeout.Token);
             if (!response.IsSuccessStatusCode)

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Internal;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -44,6 +45,10 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
         """;
 
     public bool ModelsDown { get; set; }
+    public string CatalogJson { get; set; } = Models;
+    public TimeSpan CatalogDelay { get; set; }
+    public int CatalogCalls { get; private set; }
+    public bool CatalogCancelled { get; private set; }
     public string? SentKey { get; private set; }
     public JsonNode? SentBody { get; private set; }
 
@@ -59,7 +64,17 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
     {
         if (request.RequestUri!.AbsolutePath.EndsWith("/models"))
         {
-            return ModelsDown ? throw new HttpRequestException("down") : Json(HttpStatusCode.OK, Models);
+            CatalogCalls++;
+            try
+            {
+                await Task.Delay(CatalogDelay, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                CatalogCancelled = true;
+                throw;
+            }
+            return ModelsDown ? throw new HttpRequestException("down") : Json(HttpStatusCode.OK, CatalogJson);
         }
 
         Calls++;
@@ -76,8 +91,8 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
     private static HttpResponseMessage Json(HttpStatusCode status, string body) =>
         new(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
 
-    public OpenRouterModels Catalog() =>
-        new(Client(), new MemoryCache(new MemoryCacheOptions()), NullLogger<OpenRouterModels>.Instance);
+    public OpenRouterModels Catalog(MemoryCacheOptions? options = null) =>
+        new(Client(), new MemoryCache(options ?? new()), NullLogger<OpenRouterModels>.Instance);
 
     public OpenRouterFoodParser Parser() => new(Client(), Catalog(), NullLogger<OpenRouterFoodParser>.Instance);
 
@@ -96,6 +111,11 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
 
 public class OpenRouterCatalogTests
 {
+    private sealed class CatalogClock : ISystemClock
+    {
+        public DateTimeOffset UtcNow { get; set; } = DateTimeOffset.UnixEpoch;
+    }
+
     [Fact]
     public async Task Only_text_models_with_structured_output_and_a_fixed_price_are_listed()
     {
@@ -128,6 +148,35 @@ public class OpenRouterCatalogTests
         stub.ModelsDown = true;
         (await catalog.ListAsync(default)).Should().HaveCount(2);
         (await new StubOpenRouter { ModelsDown = true }.Catalog().ListAsync(default)).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_failed_refresh_reuses_the_last_catalog_until_backoff_expires(bool emptyResponse)
+    {
+        var stub = new StubOpenRouter();
+        var clock = new CatalogClock();
+        var catalog = stub.Catalog(new MemoryCacheOptions { Clock = clock });
+        var lastGood = await catalog.ListAsync(default);
+        lastGood.Should().HaveCount(2);
+
+        clock.UtcNow += TimeSpan.FromHours(1) + TimeSpan.FromSeconds(1);
+        stub.ModelsDown = !emptyResponse;
+        stub.CatalogJson = """{"data":[]}""";
+        (await catalog.ListAsync(default)).Should().BeSameAs(lastGood);
+        stub.CatalogCalls.Should().Be(2);
+
+        stub.ModelsDown = false;
+        stub.CatalogJson = StubOpenRouter.Models.Replace("GPT X", "GPT X refreshed");
+        clock.UtcNow += TimeSpan.FromMinutes(2);
+        (await catalog.ListAsync(default)).Should().BeSameAs(lastGood);
+        stub.CatalogCalls.Should().Be(2);
+
+        clock.UtcNow += TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(1);
+        var refreshed = await catalog.ListAsync(default);
+        refreshed.Should().Contain(m => m.Name == "GPT X refreshed");
+        stub.CatalogCalls.Should().Be(3);
     }
 }
 
@@ -441,6 +490,19 @@ public class OpenRouterNamerTests
 
         (await stub.Namer().NameAsync(Two, "k", "openai/gpt-x", default)).Should().BeNull();
     }
+
+    [Fact]
+    public async Task A_catalog_lookup_uses_the_naming_deadline()
+    {
+        var stub = new StubOpenRouter { CatalogDelay = OpenRouterFoodNamer.Timeout + TimeSpan.FromSeconds(1) };
+
+        var names = await stub.Namer().NameAsync(Two, "k", "openai/gpt-x", default);
+
+        stub.CatalogCancelled.Should().BeTrue();
+        stub.CatalogCalls.Should().Be(1);
+        stub.Calls.Should().Be(0);
+        names.Should().BeNull();
+    }
 }
 
 public class OpenRouterLabelReaderTests
@@ -541,6 +603,22 @@ public class OpenRouterLabelReaderTests
 
         result.Error.Should().Be(new GymTracker.Core.Text.LocalText("Couldn't read the label. Enter the values by hand."));
         stub.Calls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task A_catalog_lookup_uses_the_label_deadline()
+    {
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(Ayran)) { CatalogDelay = TimeSpan.FromSeconds(1) };
+        var reader = stub.Label();
+        reader.AttemptTimeout = TimeSpan.FromMilliseconds(100);
+
+        var result = await reader.ReadAsync([new LabelImage(Jpeg, "image/jpeg")], "k", "google/gemini-3.5-flash-lite", default);
+
+        stub.CatalogCancelled.Should().BeTrue();
+        stub.CatalogCalls.Should().Be(1);
+        stub.Calls.Should().Be(0);
+        result.Reading.Should().BeNull();
+        result.Error.Should().NotBeNull();
     }
 
     [Fact]

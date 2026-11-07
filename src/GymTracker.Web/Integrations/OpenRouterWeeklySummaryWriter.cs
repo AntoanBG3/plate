@@ -55,13 +55,14 @@ public class OpenRouterWeeklySummaryWriter(HttpClient http, OpenRouterModels cat
 
     public async Task<WeeklySummaryResult> WriteAsync(WeekFacts facts, bool bulgarian, string apiKey, string model, CancellationToken ct)
     {
-        var body = await BodyAsync(facts, bulgarian, model, ct);
+        JsonObject? body = null;
         for (var attempt = 1; attempt <= 2; attempt++)
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(AttemptTimeout);
             try
             {
+                body ??= await BodyAsync(facts, bulgarian, model, timeout.Token);
                 using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(body) };
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
@@ -73,7 +74,7 @@ public class OpenRouterWeeklySummaryWriter(HttpClient http, OpenRouterModels cat
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    log.LogWarning("OpenRouter returned {Status} for {Model} writing a weekly summary: {Body}", (int)response.StatusCode, model, Truncate(await response.Content.ReadAsStringAsync(ct)));
+                    log.LogWarning("OpenRouter returned {Status} for {Model} writing a weekly summary: {Body}", (int)response.StatusCode, model, Truncate(await response.Content.ReadAsStringAsync(timeout.Token)));
                     return WeeklySummaryResult.Failed("The weekly summary isn't available right now.");
                 }
 
