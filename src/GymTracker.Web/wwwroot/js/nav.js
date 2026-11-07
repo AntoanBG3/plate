@@ -15,6 +15,7 @@
     const SLOW_MS = 120;
     let prefetched = null;
     let current = null;
+    let navigation = 0;
     const loaded = new Set(Array.from(document.scripts, (s) => s.src && new URL(s.src).pathname).filter(Boolean));
 
     history.scrollRestoration = "manual";
@@ -184,7 +185,10 @@
     }
     scrollToFocus();
 
-    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant, same, posted }) {
+    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant, same, posted, isCurrent }) {
+        if (!isCurrent()) {
+            return;
+        }
         const next = doc.documentElement;
         const nextShell = doc.querySelector(".app-scale");
         const shell = document.querySelector(".app-scale");
@@ -198,7 +202,13 @@
         const scripts = Array.from(doc.querySelectorAll(".app-scale script[src], #overlays script[src]"));
         scripts.forEach((s) => s.remove());
         for (const s of scripts) {
+            if (!isCurrent()) {
+                return;
+            }
             await loadScript(s.getAttribute("src"));
+        }
+        if (!isCurrent()) {
+            return;
         }
 
         // The same page shown again after a change on it ("same") isn't arriving anywhere: no entrance (motion.js).
@@ -206,6 +216,9 @@
         const keepTabbar = !!shell.querySelector(".tabbar") && !!nextShell.querySelector(".tabbar");
 
         const apply = () => {
+            if (!isCurrent()) {
+                return;
+            }
             document.dispatchEvent(new CustomEvent("gym:beforeswap"));
             if (keepTabbar) {
                 shell.querySelector(".topbar").replaceWith(nextShell.querySelector(".topbar"));
@@ -258,15 +271,28 @@
     }
 
     async function go(url, { push = true, init = null, isBack = false, scrollY = 0, side = null, instant = false, keepScroll = false, fallback = () => { location.href = url.href; } } = {}) {
+        const generation = ++navigation;
+        const isCurrent = () => generation === navigation;
         // Remember where we were, for Back.
         history.replaceState(Object.assign({}, history.state, { gym: true, scrollY: window.scrollY }), "");
-        const slow = setTimeout(() => root.classList.add("is-navigating"), SLOW_MS);
+        const slow = setTimeout(() => {
+            if (isCurrent()) {
+                root.classList.add("is-navigating");
+            }
+        }, SLOW_MS);
         try {
             // A set edit still being typed is saved first, so the next page (or this one again) shows it.
             if (window.gymFlushEdits) {
                 await window.gymFlushEdits();
             }
+            // A submitted write must still run, even if the user chose another page while edits were flushing.
+            if (!isCurrent() && !init) {
+                return;
+            }
             const response = await ((!init && takePrefetch(url)) || request(url, init || undefined));
+            if (!isCurrent()) {
+                return;
+            }
             const finalUrl = new URL(response.url);
             const html = (response.headers.get("Content-Type") || "").includes("text/html");
             if (!html || response.status >= 500) {
@@ -277,15 +303,22 @@
                 }
                 throw new Error("not a page");
             }
-            const doc = new DOMParser().parseFromString(await response.text(), "text/html");
+            const text = await response.text();
+            if (!isCurrent()) {
+                return;
+            }
+            const doc = new DOMParser().parseFromString(text, "text/html");
             const samePage = finalUrl.href === location.href;
             // A change that comes back to the same page keeps the user's place on it (Phase 11).
             if (keepScroll && finalUrl.pathname === location.pathname && finalUrl.search === location.search) {
                 scrollY = window.scrollY;
             }
             const same = finalUrl.pathname === location.pathname && finalUrl.search === location.search;
-            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant, same, posted: init?.method === "POST" });
+            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant, same, posted: init?.method === "POST", isCurrent });
         } catch (error) {
+            if (!isCurrent()) {
+                return;
+            }
             if (error instanceof FullLoad) {
                 location.href = error.url;
             } else {
@@ -293,7 +326,9 @@
             }
         } finally {
             clearTimeout(slow);
-            root.classList.remove("is-navigating");
+            if (isCurrent()) {
+                root.classList.remove("is-navigating");
+            }
         }
     }
 
