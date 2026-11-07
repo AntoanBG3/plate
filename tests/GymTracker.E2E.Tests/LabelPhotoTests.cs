@@ -117,8 +117,8 @@ public class LabelPhotoTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.GoAsync(Manual);
 
         await phone.Page.FillAsync("#m-name", "slow");
-        await PickAsync(phone, "label.jpg");
-        await phone.Page.WaitForRequestAsync(r => r.Url.EndsWith("/food/label"));
+        await phone.Page.RunAndWaitForRequestAsync(() => PickAsync(phone, "label.jpg"),
+            r => r.Method == "POST" && r.Url.EndsWith("/food/label"));
         await phone.Page.FillAsync("#m-name", "");
         await PickAsync(phone, "label.jpg");
 

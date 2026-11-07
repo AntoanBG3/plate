@@ -29,16 +29,18 @@ public record OpenRouterModel(
 
 /// <summary>
 /// OpenRouter's public model list (GET models), narrowed to text models with structured outputs and cached for an
-/// hour. When OpenRouter can't be reached the last good list is used; with no list at all the result is null.
+/// hour. A failed refresh reuses the last good list for three minutes. With no saved list, the result is null.
 /// </summary>
 public class OpenRouterModels(HttpClient http, IMemoryCache cache, ILogger<OpenRouterModels> log)
 {
     private const string FreshKey = "openrouter-models";
     private const string LastGoodKey = "openrouter-models-last-good";
+    private const string BackoffKey = "openrouter-models-refresh-backoff";
 
     public async Task<IReadOnlyList<OpenRouterModel>?> ListAsync(CancellationToken ct)
     {
-        if (cache.TryGetValue(FreshKey, out IReadOnlyList<OpenRouterModel>? fresh))
+        if (cache.TryGetValue(FreshKey, out IReadOnlyList<OpenRouterModel>? fresh)
+            || cache.TryGetValue(BackoffKey, out fresh))
         {
             return fresh;
         }
@@ -58,7 +60,13 @@ public class OpenRouterModels(HttpClient http, IMemoryCache cache, ILogger<OpenR
             log.LogWarning(ex, "Could not load the OpenRouter model list");
         }
 
-        return cache.Get<IReadOnlyList<OpenRouterModel>>(LastGoodKey);
+        var lastGood = cache.Get<IReadOnlyList<OpenRouterModel>>(LastGoodKey);
+        if (lastGood is not null)
+        {
+            // Use a separate entry so a failed refresh cannot replace a concurrent successful refresh.
+            cache.Set(BackoffKey, lastGood, TimeSpan.FromMinutes(3));
+        }
+        return lastGood;
     }
 
     public async Task<OpenRouterModel?> FindAsync(string id, CancellationToken ct) =>

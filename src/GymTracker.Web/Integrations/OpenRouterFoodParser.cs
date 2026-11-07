@@ -96,13 +96,14 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
 
     public async Task<FoodParseResult> ParseAsync(string text, string apiKey, string model, CancellationToken ct)
     {
-        var body = await BodyAsync(text, model, ct);
+        JsonObject? body = null;
         for (var attempt = 1; attempt <= 2; attempt++)
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(AttemptTimeout);
             try
             {
+                body ??= await BodyAsync(text, model, timeout.Token);
                 using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(body) };
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
@@ -114,7 +115,7 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    log.LogWarning("OpenRouter returned {Status} for {Model}: {Body}", (int)response.StatusCode, model, Truncate(await response.Content.ReadAsStringAsync(ct)));
+                    log.LogWarning("OpenRouter returned {Status} for {Model}: {Body}", (int)response.StatusCode, model, Truncate(await response.Content.ReadAsStringAsync(timeout.Token)));
                     return FoodParseResult.Failed(response.StatusCode switch
                     {
                         HttpStatusCode.TooManyRequests => new LocalText("The food parser is busy. Try again in a minute, or enter the food by hand."),

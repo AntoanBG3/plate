@@ -83,13 +83,14 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
 
     public async Task<LabelReadResult> ReadAsync(IReadOnlyList<LabelImage> images, string apiKey, string model, CancellationToken ct)
     {
-        var body = await BodyAsync(images, model, ct);
+        JsonObject? body = null;
         for (var attempt = 1; attempt <= 2; attempt++)
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(AttemptTimeout);
             try
             {
+                body ??= await BodyAsync(images, model, timeout.Token);
                 using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(body) };
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
                 using var response = await http.SendAsync(request, timeout.Token);
@@ -100,7 +101,7 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    log.LogWarning("OpenRouter returned {Status} for {Model} reading a label: {Body}", (int)response.StatusCode, model, Truncate(await response.Content.ReadAsStringAsync(ct)));
+                    log.LogWarning("OpenRouter returned {Status} for {Model} reading a label: {Body}", (int)response.StatusCode, model, Truncate(await response.Content.ReadAsStringAsync(timeout.Token)));
                     return LabelReadResult.Failed(Unreadable, model);
                 }
 
