@@ -87,15 +87,17 @@ public class VisualSystemTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.SignInAsync(email, password);
         await phone.GoAsync("/welcome");
         await phone.Page.EvaluateAsync("() => window.scrollTo(0, document.body.scrollHeight)");
-        await phone.Page.Locator("form button[type=submit]").Last.TapAsync();
-        await phone.Page.WaitForTimeoutAsync(400);
+        await phone.Page.Locator("[data-setup-form] button[type=submit]").TapAsync();
 
-        // The browser scrolls to the first field still missing; it must not end up under the top bar.
-        var box = await phone.Page.EvaluateAsync<double[]>("""
-            () => [document.querySelector("input:invalid").closest(".segmented, .field-row, .choice-row").getBoundingClientRect().top,
-                   document.querySelector(".topbar").getBoundingClientRect().bottom]
+        await phone.Page.WaitForFunctionAsync("""
+            () => {
+                const field = document.querySelector("[data-setup-form] input:invalid");
+                if (!field) return false;
+                const row = field.closest(".segmented, .field-row, .choice-row").getBoundingClientRect();
+                const topbar = document.querySelector(".topbar").getBoundingClientRect();
+                return row.top >= topbar.bottom && row.bottom <= window.innerHeight;
+            }
             """);
-        box[0].Should().BeGreaterThanOrEqualTo(box[1], "the field with the error is not hidden under the top bar");
     }
 
     [Theory]

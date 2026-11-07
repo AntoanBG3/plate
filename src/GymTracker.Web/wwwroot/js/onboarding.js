@@ -20,6 +20,16 @@ window.gymModule("setup", (root) => {
     }
     requestAnimationFrame(() => showNewest(false));
 
+    // Native validation can focus a radio without scrolling its visible control into view.
+    const onInvalid = (event) => {
+        const field = event.target;
+        if (field.form?.matches("[data-setup-form]") && field.form.querySelector("input:invalid") === field) {
+            const row = field.closest(".segmented, .choice-row, .field-row");
+            requestAnimationFrame(() => row?.scrollIntoView({ block: "center" }));
+        }
+    };
+    root.addEventListener("invalid", onInvalid, true);
+
     // Shows the user's message and a typing bubble at once; the server's page replaces both when the reply is in.
     function echo(text) {
         if (!chat || !text.trim()) {
@@ -72,6 +82,7 @@ window.gymModule("setup", (root) => {
     }
 
     return () => {
+        root.removeEventListener("invalid", onInvalid, true);
         root.removeEventListener("submit", onSubmit);
         if (textarea) {
             textarea.removeEventListener("keydown", onKey);
