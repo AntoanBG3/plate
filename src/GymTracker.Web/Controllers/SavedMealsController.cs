@@ -28,6 +28,7 @@ public class SavedMealsController(SavedMealService saved, Localizer localizer) :
         PartialView("~/Views/Food/_SavedMeal.cshtml", new SavedMealViewModel(await saved.GetAsync(id, ct), date, meal));
 
     [HttpPost("{id:int}/log")]
+    [IdempotentFoodPost]
     public async Task<IActionResult> Log(int id, DateOnly date, Meal meal, List<decimal?> grams, CancellationToken ct)
     {
         var count = await saved.LogAsync(id, date, meal, grams, ct);

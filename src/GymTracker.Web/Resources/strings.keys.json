@@ -519,6 +519,9 @@
   "Couldn't find a nutrition table in that photo.": [
     "src/GymTracker.Core/Nutrition/LabelReading.cs"
   ],
+  "Couldn't load the page. That change may have been saved. Check before trying again.": [
+    "wwwroot/js"
+  ],
   "Couldn't read that photo. Type the digits instead.": [
     "wwwroot/js"
   ],
@@ -1338,9 +1341,6 @@
     "wwwroot/js"
   ],
   "No connection. Remove the screenshot to keep the message on this phone, or try again with signal.": [
-    "wwwroot/js"
-  ],
-  "No connection. That change was not saved; try again when you have signal.": [
     "wwwroot/js"
   ],
   "No custom exercises": [
@@ -2433,6 +2433,9 @@
   ],
   "This browser can't save pending changes. Keep this page open until they are sent.": [
     "wwwroot/js"
+  ],
+  "This food form is out of date. Check whether it was saved, then reload before trying again.": [
+    "src/GymTracker.Web/Features/Food/IdempotentFoodPostAttribute.cs"
   ],
   "This invite is no longer valid. Ask Antoan for a new one.": [
     "src/GymTracker.Web/Views/Join/Index.cshtml"

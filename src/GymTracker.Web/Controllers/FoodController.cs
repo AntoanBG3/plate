@@ -99,6 +99,7 @@ public class FoodController(
     }
 
     [HttpPost("confirm")]
+    [IdempotentFoodPost]
     public async Task<IActionResult> Confirm(DateOnly date, Meal meal, string? aiModel, int? parseRunId, List<ConfirmRow> items, CancellationToken ct)
     {
         if (!items.Any(i => i.Include))
@@ -164,6 +165,7 @@ public class FoodController(
     }
 
     [HttpPost("log-item")]
+    [IdempotentFoodPost]
     public async Task<IActionResult> LogItem(DateOnly date, Meal meal, int foodItemId, decimal grams, EntrySource source, string? name, string? next, CancellationToken ct)
     {
         var item = await foods.GetAsync(foodItemId, ct);
@@ -186,6 +188,7 @@ public class FoodController(
     }
 
     [HttpPost("items")]
+    [IdempotentFoodPost]
     public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, CancellationToken ct)
     {
         await manualFoods.SaveAndLogAsync(date, meal, name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, grams, share, labelScanId, ct);
@@ -243,6 +246,7 @@ public class FoodController(
     }
 
     [HttpPost("log-recent")]
+    [IdempotentFoodPost]
     public async Task<IActionResult> LogRecent(DateOnly date, Meal meal, string description, int? foodItemId, decimal grams, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
         await log.AddAsync([new NewEntry(date, meal, description, grams, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), foodItemId, EntrySource.Recent)], ct);
@@ -251,6 +255,7 @@ public class FoodController(
     }
 
     [HttpPost("copy")]
+    [IdempotentFoodPost]
     public async Task<IActionResult> Copy(DateOnly date, Meal meal, CancellationToken ct)
     {
         var copied = await log.CopyMealAsync(date.AddDays(-1), date, meal, ct);
@@ -279,6 +284,7 @@ public class FoodController(
     public IActionResult QuickForm(DateOnly date, Meal meal) => PartialView("_QuickAddForm", new QuickAddViewModel(date, meal));
 
     [HttpPost("quick")]
+    [IdempotentFoodPost]
     public async Task<IActionResult> Quick(DateOnly date, Meal meal, string? description, decimal kcal, decimal? protein, decimal? carbs, decimal? fat, decimal? fiber, decimal? saturatedFat, CancellationToken ct)
     {
         // Left empty, the name is shown as "Quick add" in whichever language is reading it (Localizer.Entry).

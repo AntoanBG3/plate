@@ -139,7 +139,11 @@
             const s = document.createElement("script");
             s.src = src;
             s.onload = resolve;
-            s.onerror = reject;
+            s.onerror = (error) => {
+                loaded.delete(path);
+                s.remove();
+                reject(error);
+            };
             document.head.appendChild(s);
         });
     }
@@ -333,7 +337,7 @@
             // A form that changes the whole look (the theme) comes back without a page transition.
             instant: form.hasAttribute("data-instant"),
             // No answer: the change may or may not have been saved, so say so instead of sending it again.
-            fallback: () => window.gymToast(t("No connection. That change was not saved; try again when you have signal.")),
+            fallback: () => window.gymToast(t("Couldn't load the page. That change may have been saved. Check before trying again.")),
         }).finally(() => {
             // A swapped-out form is gone anyway; one still on screen (an error) must be usable again.
             form.classList.remove("is-busy");

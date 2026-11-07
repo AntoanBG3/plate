@@ -121,6 +121,7 @@ public class LabelScanTests(PostgresFixture fixture) : IClassFixture<PostgresFix
             fields["labelScanId"] = id.ToString();
         }
 
+        fields["requestId"] = Guid.NewGuid().ToString();
         return a.Client.PostAsync("/food/items", new FormUrlEncodedContent(fields.Append(new("__RequestVerificationToken", a.Token))));
     }
 

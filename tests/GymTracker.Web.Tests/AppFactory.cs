@@ -114,7 +114,9 @@ public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDicti
 
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, string path, string token, Dictionary<string, string>? fields = null)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new FormUrlEncodedContent(fields ?? []) };
+        var payload = new Dictionary<string, string>(fields ?? []);
+        payload.TryAdd("requestId", Guid.NewGuid().ToString());
+        var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new FormUrlEncodedContent(payload) };
         request.Headers.Add("RequestVerificationToken", token);
         request.Headers.Add("HX-Request", "true");
         return client.SendAsync(request);

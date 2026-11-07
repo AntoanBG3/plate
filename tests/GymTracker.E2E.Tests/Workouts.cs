@@ -13,6 +13,7 @@ public static class Workouts
             async ([path, fields]) => {
                 const body = new URLSearchParams(fields || {});
                 body.set("__RequestVerificationToken", window.gymToken());
+                if (!body.has("requestId")) body.set("requestId", crypto.randomUUID());
                 const response = await fetch(path, { method: "POST", body, credentials: "same-origin" });
                 if (!response.ok) {
                     throw new Error(`${path}: ${response.status}`);

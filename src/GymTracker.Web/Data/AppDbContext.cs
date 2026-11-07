@@ -25,6 +25,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<BodyweightEntry> Bodyweights => Set<BodyweightEntry>();
     public DbSet<FoodItem> FoodItems => Set<FoodItem>();
     public DbSet<FoodLogEntry> FoodLog => Set<FoodLogEntry>();
+    public DbSet<FoodLogRequest> FoodLogRequests => Set<FoodLogRequest>();
     public DbSet<SavedMeal> SavedMeals => Set<SavedMeal>();
     public DbSet<SavedMealItem> SavedMealItems => Set<SavedMealItem>();
     public DbSet<UsualFood> UsualFoods => Set<UsualFood>();
@@ -196,6 +197,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasIndex(x => new { x.UserId, x.FoodItemId, x.CreatedAt }); // last amounts (SPEC 5.10)
             e.HasQueryFilter(OwnerFilter, x => x.UserId == CurrentUserId);
             e.HasQueryFilter(SoftDeleteFilter, x => x.DeletedAt == null);
+        });
+
+        builder.Entity<FoodLogRequest>(e =>
+        {
+            e.HasKey(x => new { x.UserId, x.RequestId });
+            e.Property(x => x.Location).HasMaxLength(2048);
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
         });
 
         builder.Entity<SavedMeal>(e =>

@@ -193,6 +193,10 @@ Seed about 90 common exercises, each with a Bulgarian name in the gym vocabulary
 - `Status` (nullable, up to 30 characters; how the food is, shown beside its name: "raw", "boiled", "dried", in the language it was logged in. Set for parsed entries and kept when a meal is copied; other entries show raw or cooked read from the linked food's name)
 - `CreatedAt`
 
+**FoodLogRequest** (user-owned, section 8)
+- Composite key `UserId`, `RequestId` (Guid), `CreatedAt`, `Location` (the first successful redirect).
+- A receipt committed atomically with a plain-POST food addition. Retained so an old form cannot add the same entries again, included in data export, and deleted with the account.
+
 **UsualFood** (user-owned, section 6.1)
 - `Id`, `UserId`, `Phrase` (up to 100 characters, the 5.10 key of a food's name as the user typed it; unique per user), `FoodItemId` (cascade on delete), `LastUsedAt`
 - Which food this account means by those words. Written when a parse is confirmed, read before the ranking. Removed after 180 days unused (section 11), included in the data export, deleted with the account.
@@ -569,6 +573,7 @@ Settings is a short hub, not one long page (progressive disclosure: NN/g, and th
 
 - Web app manifest per language (`/manifest.en.webmanifest` named "Repa", `/manifest.bg.webmanifest` named "Ряпа"; the layout links the one for the account language, and the page title and iPhone home-screen label follow it too), icons (192 and 512, a turnip on orange drawn in `tools/icons/icon.svg`), `display: standalone`, dark theme colour, start URL `/today`.
 - Service worker that precaches static assets (CSS, JS including the vendored libraries and the scanner `.wasm`, icons) and one offline fallback page. Static files carry a content-hash query string, so the worker serves a cached copy of the exact URL without revalidating ("No connection. Sets you log are saved on the phone and will send when you're back online."). Pages and data are otherwise always fetched from the server.
+- Every rendered plain-POST form that adds food entries has a fresh request ID. A resend by the same account returns the first successful redirect and does not add entries again, even if its fields changed. Validation or a failed transaction leaves that ID available for correction and retry; a newly rendered form is a new intent. A form without a valid ID is refused with a request to check and reload. If the response or a page script fails after a POST, the warning says the change may have saved and asks the user to check before retrying. A failed page script can be loaded on the next attempt.
 - **Set logging must survive bad gym signal.** iOS has no Background Sync, so the page drives all retries. The queue is write-ahead:
   - When the check button is tapped, generate the `ClientId` Guid, write the set (including `CompletedAt`) to the pending queue in `localStorage`, render it as "pending", and only then send it. A set is never only in flight; this way it survives the app being closed or suspended mid-request.
   - Sending uses plain `fetch` in a small module, not htmx. Read the anti-forgery token at send time rather than storing it with the set.

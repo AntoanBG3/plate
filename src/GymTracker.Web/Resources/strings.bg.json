@@ -294,7 +294,7 @@
   "No OpenRouter key is set.": "Не е зададен OpenRouter ключ.",
   "No barcode found in that photo. Try again closer, or type the digits.": "Не е намерен баркод на снимката. Опитай пак отблизо или въведи цифрите.",
   "No connection. Remove the screenshot to keep the message on this phone, or try again with signal.": "Няма връзка. Махни екранната снимка, за да запазиш съобщението на телефона, или опитай отново, когато имаш обхват.",
-  "No connection. That change was not saved; try again when you have signal.": "Няма връзка. Промяната не е запазена; опитай пак, когато имаш обхват.",
+  "Couldn't load the page. That change may have been saved. Check before trying again.": "Страницата не се зареди. Промяната може да е запазена. Провери, преди да опиташ отново.",
   "No database match, so these numbers are the AI's estimate.": "Няма съвпадение в базата, затова тези числа са оценка на AI.",
   "No exercise matches.": "Няма намерени упражнения.",
   "No exercises yet": "Все още няма упражнения",
@@ -919,5 +919,6 @@
   "Add the front or another side of the pack if the table doesn't show the name or serving.": "Добави предната или друга страна на опаковката, ако таблицата не показва името или порцията.",
   "Last time": "Последно",
   "Your usual": "Обичайно",
-  "Your usual amount, {0} g": "Обичайното ти количество, {0} г"
+  "Your usual amount, {0} g": "Обичайното ти количество, {0} г",
+  "This food form is out of date. Check whether it was saved, then reload before trying again.": "Тази форма за храна е остаряла. Провери дали храната е добавена, после презареди страницата и опитай отново."
 }
