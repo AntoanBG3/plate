@@ -128,6 +128,54 @@ public class UntestedAreasTests(E2EFixture app) : IClassFixture<E2EFixture>
         sets.Should().ContainSingle().Which.WeightKg.Should().Be(60);
     }
 
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_stalled_set_acknowledgement_times_out_and_replays_without_a_duplicate(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        var template = await phone.CreateTemplateAsync(app, "Upper", "Bench press");
+        var session = await phone.StartSessionAsync(template);
+        await phone.Page.Clock.InstallAsync();
+        await phone.Page.EvaluateAsync("""
+            () => {
+                const original = window.fetch;
+                window.__setAttempts = [];
+                window.fetch = async (url, options) => {
+                    if (url !== "/train/sets") return original(url, options);
+                    window.__setAttempts.push(new URLSearchParams(options.body).get("clientId"));
+                    const first = window.__setAttempts.length === 1;
+                    const response = await original(url, options);
+                    if (!first) return response;
+                    // The real server has saved the set, but its acknowledgement never reaches the queue.
+                    window.__setSaved = true;
+                    return new Promise((_, reject) => {
+                        options.signal?.addEventListener("abort", () => {
+                            window.__setAborted = true;
+                            reject(new DOMException("Timed out", "AbortError"));
+                        }, { once: true });
+                    });
+                };
+            }
+            """);
+
+        await phone.LogSetAsync(phone.Page.Locator(".rows.working .set-row").First, "60", "10");
+        await phone.Page.WaitForFunctionAsync("() => window.__setSaved === true");
+        (await phone.Page.Locator("#queue-status").InnerTextAsync()).Should().Contain("1 set is saved on this phone");
+        await phone.Page.Clock.FastForwardAsync(15_001);
+        await phone.Page.WaitForFunctionAsync("() => window.__setAborted === true");
+        await phone.Page.EvaluateAsync("() => window.dispatchEvent(new Event('online'))");
+        await phone.Page.Locator("#queue-status").WaitForAsync(new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden });
+
+        var attempts = await phone.Page.EvaluateAsync<string[]>("window.__setAttempts");
+        attempts.Should().HaveCount(2);
+        attempts.Distinct().Should().ContainSingle();
+        await using var db = app.Db.CreateContext(await UserIdAsync(phone));
+        var sets = await db.Sets.Where(x => x.SessionExercise.SessionId == session).ToListAsync();
+        sets.Should().ContainSingle().Which.ClientId.ToString().Should().Be(attempts[0]);
+        (await phone.Page.Locator(".set-row.done").CountAsync()).Should().Be(1);
+    }
+
     // Chromium only: Playwright's WebKit fails an offline load before the service worker can answer it. Safari on the
     // iPhone does answer it; that is on the iOS checklist.
     [Theory]
