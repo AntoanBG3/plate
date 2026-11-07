@@ -1,0 +1,3745 @@
+{
+  "environment": "PG18; 256 MiB/no CPU cap; 11,795 seeded foods; 5 synthetic users/730 days; warm buffers; app idle; no concurrent workload",
+  "method": "source SQL bodies with typed literals, not byte-for-byte captured EF commands; normal planner settings; five sequential alternating pairs per case",
+  "sourceSha256": {
+    "baseline": "e39f0328423d5080c048829132f212cd207a5cf2a5899358eb92babd45cb5b0c",
+    "candidate": "d93f5a32a77bedd1c8818d1e70fa0c225ae5346014733f4c8d830d42925e72bc"
+  },
+  "samples": [
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 0.962,
+      "executionMs": 91.095,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 11173,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 1.865,
+      "executionMs": 17.306,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 96,
+          "Shared Hit Blocks": 141,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 718.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 13.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 0.657,
+      "executionMs": 86.424,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 11173,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 1.915,
+      "executionMs": 18.137,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 96,
+          "Shared Hit Blocks": 141,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 718.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 13.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 0.79,
+      "executionMs": 85.958,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 11173,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 1.964,
+      "executionMs": 17.781,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 96,
+          "Shared Hit Blocks": 141,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 718.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 13.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 0.625,
+      "executionMs": 90.321,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 11173,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 1.833,
+      "executionMs": 17.3,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 96,
+          "Shared Hit Blocks": 141,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 718.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 13.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 0.686,
+      "executionMs": 90.479,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 11173,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 1.897,
+      "executionMs": 18.178,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 96,
+          "Shared Hit Blocks": 141,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 718.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 13.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "banana",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 0.668,
+      "executionMs": 88.535,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 11040,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "banana",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 1.789,
+      "executionMs": 19.186,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 172,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 172,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 53,
+          "Shared Hit Blocks": 161,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 807.0,
+          "Shared Hit Blocks": 14,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 41.0,
+          "Shared Hit Blocks": 13,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "banana",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 0.647,
+      "executionMs": 91.197,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 11040,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "banana",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 1.805,
+      "executionMs": 20.023,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 172,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 172,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 53,
+          "Shared Hit Blocks": 161,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 807.0,
+          "Shared Hit Blocks": 14,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 41.0,
+          "Shared Hit Blocks": 13,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "banana",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 0.542,
+      "executionMs": 91.249,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 11040,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "banana",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 1.845,
+      "executionMs": 19.899,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 172,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 172,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 53,
+          "Shared Hit Blocks": 161,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 807.0,
+          "Shared Hit Blocks": 14,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 41.0,
+          "Shared Hit Blocks": 13,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "banana",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 0.774,
+      "executionMs": 88.588,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 11040,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "banana",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 1.821,
+      "executionMs": 19.468,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 172,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 172,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 53,
+          "Shared Hit Blocks": 161,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 807.0,
+          "Shared Hit Blocks": 14,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 41.0,
+          "Shared Hit Blocks": 13,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "banana",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 0.61,
+      "executionMs": 88.683,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 11040,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "banana",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 2.007,
+      "executionMs": 19.889,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 172,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 172,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 755.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 53,
+          "Shared Hit Blocks": 161,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 807.0,
+          "Shared Hit Blocks": 14,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 41.0,
+          "Shared Hit Blocks": 13,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "ориз",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 0.628,
+      "executionMs": 84.537,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 272.0,
+          "Rows Removed by Filter": 11523,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "ориз",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 1.948,
+      "executionMs": 7.674,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 162,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 162,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 272.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 59,
+          "Shared Hit Blocks": 151,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 22,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 87.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 331.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "ориз",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 0.727,
+      "executionMs": 81.944,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 272.0,
+          "Rows Removed by Filter": 11523,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "ориз",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 1.825,
+      "executionMs": 7.571,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 162,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 162,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 272.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 59,
+          "Shared Hit Blocks": 151,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 22,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 87.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 331.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "ориз",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 0.581,
+      "executionMs": 82.905,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 272.0,
+          "Rows Removed by Filter": 11523,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "ориз",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 1.788,
+      "executionMs": 7.752,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 162,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 162,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 272.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 59,
+          "Shared Hit Blocks": 151,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 22,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 87.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 331.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "ориз",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 0.755,
+      "executionMs": 83.845,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 272.0,
+          "Rows Removed by Filter": 11523,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "ориз",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 1.754,
+      "executionMs": 7.4,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 162,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 162,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 272.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 59,
+          "Shared Hit Blocks": 151,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 22,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 87.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 331.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "ориз",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 0.608,
+      "executionMs": 83.98,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 272.0,
+          "Rows Removed by Filter": 11523,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "ориз",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 1.762,
+      "executionMs": 7.331,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 162,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 162,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 272.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 59,
+          "Shared Hit Blocks": 151,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 22,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 87.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 331.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "кисело мляко",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 0.773,
+      "executionMs": 108.551,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 776.0,
+          "Rows Removed by Filter": 11019,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "кисело мляко",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 2.115,
+      "executionMs": 26.773,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 226,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 226,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 776.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 55,
+          "Shared Hit Blocks": 215,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 56,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 374.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 831.0,
+          "Shared Hit Blocks": 29,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "кисело мляко",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 0.611,
+      "executionMs": 108.1,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 776.0,
+          "Rows Removed by Filter": 11019,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "кисело мляко",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 2.043,
+      "executionMs": 26.336,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 226,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 226,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 776.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 55,
+          "Shared Hit Blocks": 215,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 56,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 374.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 831.0,
+          "Shared Hit Blocks": 29,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "кисело мляко",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 0.514,
+      "executionMs": 110.091,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 776.0,
+          "Rows Removed by Filter": 11019,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "кисело мляко",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 2.153,
+      "executionMs": 26.958,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 226,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 226,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 776.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 55,
+          "Shared Hit Blocks": 215,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 56,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 374.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 831.0,
+          "Shared Hit Blocks": 29,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "кисело мляко",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 0.46,
+      "executionMs": 112.442,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 776.0,
+          "Rows Removed by Filter": 11019,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "кисело мляко",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 2.079,
+      "executionMs": 25.91,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 226,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 226,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 776.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 55,
+          "Shared Hit Blocks": 215,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 56,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 374.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 831.0,
+          "Shared Hit Blocks": 29,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "кисело мляко",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 0.659,
+      "executionMs": 111.311,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 776.0,
+          "Rows Removed by Filter": 11019,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "кисело мляко",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 2.189,
+      "executionMs": 26.182,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 226,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 226,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 776.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 55,
+          "Shared Hit Blocks": 215,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 56,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 374.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 831.0,
+          "Shared Hit Blocks": 29,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "chikcen",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 0.714,
+      "executionMs": 90.426,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 609.0,
+          "Rows Removed by Filter": 11186,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "chikcen",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 1.769,
+      "executionMs": 19.343,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 157,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 157,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 609.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 135,
+          "Shared Hit Blocks": 146,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 744.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 10.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "chikcen",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 0.676,
+      "executionMs": 91.004,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 609.0,
+          "Rows Removed by Filter": 11186,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "chikcen",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 1.707,
+      "executionMs": 18.235,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 157,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 157,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 609.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 135,
+          "Shared Hit Blocks": 146,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 744.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 10.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "chikcen",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 0.631,
+      "executionMs": 90.524,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 609.0,
+          "Rows Removed by Filter": 11186,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "chikcen",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 1.799,
+      "executionMs": 18.412,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 157,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 157,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 609.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 135,
+          "Shared Hit Blocks": 146,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 744.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 10.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "chikcen",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 0.622,
+      "executionMs": 88.829,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 609.0,
+          "Rows Removed by Filter": 11186,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "chikcen",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 1.913,
+      "executionMs": 18.473,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 157,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 157,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 609.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 135,
+          "Shared Hit Blocks": 146,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 744.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 10.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "picker",
+      "query": "chikcen",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 0.569,
+      "executionMs": 90.755,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 609.0,
+          "Rows Removed by Filter": 11186,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "picker",
+      "query": "chikcen",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 2.045,
+      "executionMs": 18.343,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 157,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 40.0,
+          "Shared Hit Blocks": 157,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 609.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 135,
+          "Shared Hit Blocks": 146,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 744.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 10.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 0.55,
+      "executionMs": 84.041,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 11173,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 1,
+      "planningMs": 1.79,
+      "executionMs": 13.269,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 96,
+          "Shared Hit Blocks": 141,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 718.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 13.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 0.484,
+      "executionMs": 84.147,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 11173,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 2,
+      "planningMs": 1.711,
+      "executionMs": 12.617,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 96,
+          "Shared Hit Blocks": 141,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 718.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 13.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 0.609,
+      "executionMs": 87.649,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 11173,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 3,
+      "planningMs": 1.765,
+      "executionMs": 12.8,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 96,
+          "Shared Hit Blocks": 141,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 718.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 13.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 0.654,
+      "executionMs": 86.011,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 11173,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 4,
+      "planningMs": 1.811,
+      "executionMs": 12.588,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 96,
+          "Shared Hit Blocks": 141,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 718.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 13.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 0.656,
+      "executionMs": 84.358,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 11173,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.3,
+      "run": 5,
+      "planningMs": 1.981,
+      "executionMs": 13.321,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 152,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 622.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 96,
+          "Shared Hit Blocks": 141,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 718.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 13.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.5,
+      "run": 1,
+      "planningMs": 0.49,
+      "executionMs": 82.102,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 434.0,
+          "Rows Removed by Filter": 11361,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.5,
+      "run": 1,
+      "planningMs": 1.8,
+      "executionMs": 8.873,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 109,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 109,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 434.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 21,
+          "Shared Hit Blocks": 98,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 455.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.5,
+      "run": 2,
+      "planningMs": 0.519,
+      "executionMs": 82.476,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 434.0,
+          "Rows Removed by Filter": 11361,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.5,
+      "run": 2,
+      "planningMs": 1.722,
+      "executionMs": 8.508,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 109,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 109,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 434.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 21,
+          "Shared Hit Blocks": 98,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 455.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.5,
+      "run": 3,
+      "planningMs": 0.54,
+      "executionMs": 84.574,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 434.0,
+          "Rows Removed by Filter": 11361,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.5,
+      "run": 3,
+      "planningMs": 1.74,
+      "executionMs": 8.72,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 109,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 109,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 434.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 21,
+          "Shared Hit Blocks": 98,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 455.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.5,
+      "run": 4,
+      "planningMs": 0.493,
+      "executionMs": 84.361,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 434.0,
+          "Rows Removed by Filter": 11361,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.5,
+      "run": 4,
+      "planningMs": 1.856,
+      "executionMs": 9.035,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 109,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 109,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 434.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 21,
+          "Shared Hit Blocks": 98,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 455.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.5,
+      "run": 5,
+      "planningMs": 0.564,
+      "executionMs": 84.504,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 434.0,
+          "Rows Removed by Filter": 11361,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "chicken",
+      "threshold": 0.5,
+      "run": 5,
+      "planningMs": 1.663,
+      "executionMs": 8.665,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 109,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 109,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 434.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 21,
+          "Shared Hit Blocks": 98,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 35,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 455.0,
+          "Shared Hit Blocks": 18,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 6.0,
+          "Shared Hit Blocks": 17,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "rice",
+      "threshold": 0.5,
+      "run": 1,
+      "planningMs": 0.633,
+      "executionMs": 78.457,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 304.0,
+          "Rows Removed by Filter": 11491,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "rice",
+      "threshold": 0.5,
+      "run": 1,
+      "planningMs": 1.637,
+      "executionMs": 8.678,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 139,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 139,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 304.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 167,
+          "Shared Hit Blocks": 128,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 23,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 470.0,
+          "Shared Hit Blocks": 12,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 10.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "rice",
+      "threshold": 0.5,
+      "run": 2,
+      "planningMs": 0.498,
+      "executionMs": 78.214,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 304.0,
+          "Rows Removed by Filter": 11491,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "rice",
+      "threshold": 0.5,
+      "run": 2,
+      "planningMs": 1.573,
+      "executionMs": 8.75,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 139,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 139,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 304.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 167,
+          "Shared Hit Blocks": 128,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 23,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 470.0,
+          "Shared Hit Blocks": 12,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 10.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "rice",
+      "threshold": 0.5,
+      "run": 3,
+      "planningMs": 0.588,
+      "executionMs": 79.886,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 304.0,
+          "Rows Removed by Filter": 11491,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "rice",
+      "threshold": 0.5,
+      "run": 3,
+      "planningMs": 1.613,
+      "executionMs": 8.717,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 139,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 139,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 304.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 167,
+          "Shared Hit Blocks": 128,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 23,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 470.0,
+          "Shared Hit Blocks": 12,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 10.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "rice",
+      "threshold": 0.5,
+      "run": 4,
+      "planningMs": 0.54,
+      "executionMs": 79.894,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 304.0,
+          "Rows Removed by Filter": 11491,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "rice",
+      "threshold": 0.5,
+      "run": 4,
+      "planningMs": 1.603,
+      "executionMs": 8.679,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 139,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 139,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 304.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 167,
+          "Shared Hit Blocks": 128,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 23,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 470.0,
+          "Shared Hit Blocks": 12,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 10.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "rice",
+      "threshold": 0.5,
+      "run": 5,
+      "planningMs": 0.547,
+      "executionMs": 77.526,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 304.0,
+          "Rows Removed by Filter": 11491,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "rice",
+      "threshold": 0.5,
+      "run": 5,
+      "planningMs": 1.71,
+      "executionMs": 9.099,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 139,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 139,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 304.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 167,
+          "Shared Hit Blocks": 128,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 23,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 470.0,
+          "Shared Hit Blocks": 12,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 10.0,
+          "Shared Hit Blocks": 11,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "banana",
+      "threshold": 0.5,
+      "run": 1,
+      "planningMs": 0.566,
+      "executionMs": 78.302,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 78.0,
+          "Rows Removed by Filter": 11717,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "banana",
+      "threshold": 0.5,
+      "run": 1,
+      "planningMs": 1.912,
+      "executionMs": 1.625,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 73,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 73,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 78.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 9,
+          "Shared Hit Blocks": 62,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 86.0,
+          "Shared Hit Blocks": 14,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 4.0,
+          "Shared Hit Blocks": 13,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "banana",
+      "threshold": 0.5,
+      "run": 2,
+      "planningMs": 0.629,
+      "executionMs": 80.129,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 78.0,
+          "Rows Removed by Filter": 11717,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "banana",
+      "threshold": 0.5,
+      "run": 2,
+      "planningMs": 1.804,
+      "executionMs": 1.681,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 73,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 73,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 78.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 9,
+          "Shared Hit Blocks": 62,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 86.0,
+          "Shared Hit Blocks": 14,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 4.0,
+          "Shared Hit Blocks": 13,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "banana",
+      "threshold": 0.5,
+      "run": 3,
+      "planningMs": 0.593,
+      "executionMs": 80.691,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 78.0,
+          "Rows Removed by Filter": 11717,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "banana",
+      "threshold": 0.5,
+      "run": 3,
+      "planningMs": 1.617,
+      "executionMs": 1.657,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 73,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 73,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 78.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 9,
+          "Shared Hit Blocks": 62,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 86.0,
+          "Shared Hit Blocks": 14,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 4.0,
+          "Shared Hit Blocks": 13,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "banana",
+      "threshold": 0.5,
+      "run": 4,
+      "planningMs": 0.486,
+      "executionMs": 80.458,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 78.0,
+          "Rows Removed by Filter": 11717,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "banana",
+      "threshold": 0.5,
+      "run": 4,
+      "planningMs": 1.798,
+      "executionMs": 1.599,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 73,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 73,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 78.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 9,
+          "Shared Hit Blocks": 62,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 86.0,
+          "Shared Hit Blocks": 14,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 4.0,
+          "Shared Hit Blocks": 13,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "baseline",
+      "kind": "matcher",
+      "query": "banana",
+      "threshold": 0.5,
+      "run": 5,
+      "planningMs": 0.546,
+      "executionMs": 78.368,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 304,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 78.0,
+          "Rows Removed by Filter": 11717,
+          "Shared Hit Blocks": 293,
+          "Shared Read Blocks": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "kind": "matcher",
+      "query": "banana",
+      "threshold": 0.5,
+      "run": 5,
+      "planningMs": 1.777,
+      "executionMs": 1.685,
+      "nodes": [
+        {
+          "Node Type": "Limit",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 73,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Sort",
+          "Actual Rows": 50.0,
+          "Shared Hit Blocks": 73,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Heap Scan",
+          "Relation Name": "FoodItems",
+          "Actual Rows": 78.0,
+          "Rows Removed by Filter": 0,
+          "Rows Removed by Index Recheck": 9,
+          "Shared Hit Blocks": 62,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "BitmapOr",
+          "Actual Rows": 0.0,
+          "Shared Hit Blocks": 27,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_Name",
+          "Actual Rows": 86.0,
+          "Shared Hit Blocks": 14,
+          "Shared Read Blocks": 0
+        },
+        {
+          "Node Type": "Bitmap Index Scan",
+          "Index Name": "IX_FoodItems_NameBg",
+          "Actual Rows": 4.0,
+          "Shared Hit Blocks": 13,
+          "Shared Read Blocks": 0
+        }
+      ]
+    }
+  ]
+}
