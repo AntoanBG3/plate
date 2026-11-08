@@ -44,6 +44,7 @@ public class ConfirmSheetTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.Page.Locator(".topbar-trailing form[action$='/archive'] button").TapAsync();
         var sheet = phone.Page.Locator("#confirm-sheet");
         (await sheet.Locator("[data-confirm-yes]").TextContentAsync())!.Trim().Should().Be("Archive");
+        await phone.AnimationsDoneAsync("#confirm-sheet .sheet-panel");
         await phone.NavigateByAsync(() => sheet.Locator("[data-confirm-yes]").TapAsync());
         phone.Page.Url.Should().EndWith("/train/templates");
         phone.ShouldHaveNoErrors();
