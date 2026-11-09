@@ -45,8 +45,10 @@ else
                 <label for="matcher">Matcher</label>
                 <select id="matcher" name="matcher">
                     <option value="">Current (@Model.MatcherModel)</option>
-                    <option value="off">Off</option>
-                    <option value="jev">Jev</option>
+                    @foreach (var m in Model.MatcherModels)
+                    {
+                        <option value="@m.Id">@(m.Id == Plate.Web.Integrations.AiTasks.Off ? "Off" : $"{m.Provider} {m.Name}")</option>
+                    }
                 </select>
             </div>
             <div class="row"><button type="submit" class="btn btn-plain" style="padding: 0" disabled="@(Model.Job is { Running: true })">Start</button></div>

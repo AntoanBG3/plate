@@ -24,15 +24,27 @@ public static class AiTasks
     /// <summary>The matcher's "model" for no model: the database ranking alone.</summary>
     public const string Off = "off";
 
+    /// <summary>The matcher can be turned off, which leaves the database ranking alone.</summary>
+    public static readonly OpenRouterModel MatcherOff = new(Off, "Plate", "Off: database ranking only", 0, 0, false, null);
+
+    /// <summary>How many of the most used chat models a picker shows.</summary>
+    public const int PickerSize = 40;
+
+    /// <summary>Models older than this are left out of the pickers.</summary>
+    public static readonly TimeSpan PickerMaxAge = TimeSpan.FromDays(365);
+
     /// <summary>
-    /// Decision models are not in OpenRouter's model list, and the matcher's thresholds are measured per version,
-    /// so only versions evaluated for food matching are offered.
+    /// The models a picker shows, in the list's order: no aliases, none OpenRouter is retiring, none older than a
+    /// year, and with a <paramref name="limit"/> only that many of the most used last week. Off and the current
+    /// model always stay, so a pick made before still shows as picked.
     /// </summary>
-    public static readonly IReadOnlyList<OpenRouterModel> MatcherModels =
-    [
-        new(Off, "Plate", "Off: database ranking only", 0, 0, false, null),
-        new(JevFoodMatchDecider.Jev113, "TypeSafe", "Jev 1.13", 0.042m, 0, false, null),
-    ];
+    public static IReadOnlyList<OpenRouterModel> ForPicker(IReadOnlyList<OpenRouterModel> models, string current, DateTimeOffset now, int? limit)
+    {
+        var recent = models.Where(m => m.Id != Off && !m.Id.StartsWith('~') && m.Expires is null
+            && (m.Created is not { } created || now - created <= PickerMaxAge));
+        var kept = (limit is { } n ? recent.OrderBy(m => m.Rank ?? int.MaxValue).Take(n) : recent).Select(m => m.Id).ToHashSet();
+        return models.Where(m => m.Id == Off || m.Id == current || kept.Contains(m.Id)).ToList();
+    }
 
     /// <summary>The setup chat can be turned off, which leaves the form.</summary>
     public static readonly OpenRouterModel OnboardingOff = new(Off, "Plate", "Off: setup form only", 0, 0, false, null);

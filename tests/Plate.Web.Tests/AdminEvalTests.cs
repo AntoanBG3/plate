@@ -5,6 +5,7 @@ using Plate.Core.Nutrition;
 using Plate.Web.Controllers;
 using Plate.Web.Features.Admin;
 using Plate.Web.Features.Feedback;
+using Plate.Web.Integrations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
@@ -37,11 +38,17 @@ public class AdminEvalTests(PostgresFixture fixture) : IClassFixture<PostgresFix
         var evaluator = new HeldEvaluator();
         using var app = new AppFactory(fixture,
             settings: new Dictionary<string, string?> { ["OpenRouter:ApiKey"] = "sk-or-v1-test-0123456789abcdef" },
-            services: s => s.AddScoped<IParseEvaluator>(_ => evaluator));
+            services: s =>
+            {
+                s.AddScoped<IParseEvaluator>(_ => evaluator);
+                s.AddHttpClient<OpenRouterModels>().ConfigurePrimaryHttpMessageHandler(() => new StubOpenRouter());
+            });
         var admin = await AdminTests.UnlockedDevAsync(app);
+        (await admin.GetStringAsync("/admin/ai/eval")).Should().Contain("value=\"typesafe/jev-1.14\"", "the matcher choices are OpenRouter's decision models");
         var token = await AppFactory.TokenAsync(admin, "/admin/ai/eval");
+        (await AppFactory.PostAsync(admin, "/admin/ai/eval", token, new() { ["matcher"] = "made/up" })).StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var start = await AppFactory.PostAsync(admin, "/admin/ai/eval", token, new() { ["limit"] = "99", ["since"] = "30d", ["matcher"] = "jev" });
+        var start = await AppFactory.PostAsync(admin, "/admin/ai/eval", token, new() { ["limit"] = "99", ["since"] = "30d", ["matcher"] = "typesafe/jev-1.14" });
         AppFactory.IsRedirectTo(start, "/admin/ai/eval").Should().BeTrue();
 
         // The run starts on a background thread; wait for its first progress report.
@@ -50,7 +57,7 @@ public class AdminEvalTests(PostgresFixture fixture) : IClassFixture<PostgresFix
         (await AppFactory.PostAsync(admin, "/admin/ai/eval", token, new() { ["limit"] = "5" })).StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         evaluator.Last!.Limit.Should().Be(EvalJobs.MaxLimit);
-        evaluator.Last.MatcherModel.Should().Be("jev");
+        evaluator.Last.MatcherModel.Should().Be("typesafe/jev-1.14");
         evaluator.Last.Since.Should().BeCloseTo(DateTimeOffset.UtcNow.AddDays(-30), TimeSpan.FromMinutes(1));
 
         evaluator.Release.SetResult();

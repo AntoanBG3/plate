@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 
 namespace Plate.Web.Tests;
 
-/// <summary>A fake OpenRouter: serves a small model list and answers chat completions with a fixed status and body.</summary>
+/// <summary>A fake OpenRouter: serves small chat and decision model lists and answers chat completions with a fixed status and body.</summary>
 internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, string? completion = null) : HttpMessageHandler
 {
     public const string Banana = """
@@ -44,8 +44,32 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
         ]}
         """;
 
+    /// <summary>
+    /// Two Jev versions, an alias, a model being retired, and a chat model the filter must drop. Added days ago
+    /// rather than on fixed dates, so the pickers' one-year limit never drops them.
+    /// </summary>
+    public static readonly string DecisionModels = $$$"""
+        {"data":[
+          {"id":"liquid/d1","name":"LiquidAI: d1","created":{{{DaysAgo(40)}}},"expiration_date":"2026-11-20",
+           "architecture":{"input_modalities":["text","image"],"output_modalities":["decisions"]},"pricing":{"prompt":"0.00000002","completion":"0"}},
+          {"id":"typesafe/jev-1.14","name":"TypeSafe: Jev 1.14","created":{{{DaysAgo(26)}}},
+           "architecture":{"input_modalities":["text","image"],"output_modalities":["decisions"]},"pricing":{"prompt":"0.000000042","completion":"0"}},
+          {"id":"~typesafe/jev-latest","name":"TypeSafe: Jev Latest","created":{{{DaysAgo(53)}}},
+           "architecture":{"input_modalities":["text","image"],"output_modalities":["decisions"]},"pricing":{"prompt":"0.000000042","completion":"0"}},
+          {"id":"typesafe/jev-1.13","name":"TypeSafe: Jev 1.13","created":{{{DaysAgo(53)}}},
+           "architecture":{"input_modalities":["text","image"],"output_modalities":["decisions"]},"pricing":{"prompt":"0.000000042","completion":"0"}},
+          {"id":"openai/gpt-x","name":"OpenAI: GPT X","architecture":{"output_modalities":["text"]},"pricing":{"prompt":"0.000001","completion":"0.000004"}}
+        ]}
+        """;
+
+    private static long DaysAgo(int days) => DateTimeOffset.UtcNow.AddDays(-days).ToUnixTimeSeconds();
+
     public bool ModelsDown { get; set; }
     public string CatalogJson { get; set; } = Models;
+    public string DecisionsJson { get; set; } = DecisionModels;
+
+    /// <summary>The query of each model-list request, in order.</summary>
+    public List<string> CatalogQueries { get; } = [];
     public TimeSpan CatalogDelay { get; set; }
     public int CatalogCalls { get; private set; }
     public bool CatalogCancelled { get; private set; }
@@ -65,6 +89,7 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
         if (request.RequestUri!.AbsolutePath.EndsWith("/models"))
         {
             CatalogCalls++;
+            CatalogQueries.Add(request.RequestUri.Query);
             try
             {
                 await Task.Delay(CatalogDelay, ct);
@@ -74,7 +99,8 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
                 CatalogCancelled = true;
                 throw;
             }
-            return ModelsDown ? throw new HttpRequestException("down") : Json(HttpStatusCode.OK, CatalogJson);
+            return ModelsDown ? throw new HttpRequestException("down")
+                : Json(HttpStatusCode.OK, request.RequestUri.Query.Contains("output_modalities=decisions") ? DecisionsJson : CatalogJson);
         }
 
         Calls++;
@@ -139,6 +165,44 @@ public class OpenRouterCatalogTests
     }
 
     [Fact]
+    public async Task The_chat_list_comes_most_used_first_and_keeps_each_models_place_age_and_retirement()
+    {
+        var stub = new StubOpenRouter
+        {
+            CatalogJson = StubOpenRouter.Models
+                .Replace("\"id\":\"google/gemini-3.5-flash-lite\",", "\"id\":\"google/gemini-3.5-flash-lite\",\"created\":1784592000,\"expiration_date\":\"2027-01-31\","),
+        };
+
+        var models = (await stub.Catalog().ListAsync(default))!;
+
+        stub.CatalogQueries.Should().Equal("?sort=top-weekly");
+        var gemini = models.Single(m => m.Id == "google/gemini-3.5-flash-lite");
+        gemini.Rank.Should().Be(0);
+        gemini.Created.Should().Be(DateTimeOffset.FromUnixTimeSeconds(1784592000));
+        gemini.Expires.Should().Be(new DateOnly(2027, 1, 31));
+        models.Single(m => m.Id == "openai/gpt-x").Should().Match<OpenRouterModel>(m => m.Rank == 1 && m.Created == null && m.Expires == null);
+    }
+
+    [Fact]
+    public async Task Decision_models_come_from_their_own_list_without_aliases_newest_first()
+    {
+        var stub = new StubOpenRouter();
+        var catalog = stub.Catalog();
+
+        var models = (await catalog.ListDecisionsAsync(default))!;
+
+        stub.CatalogQueries.Should().Equal("?output_modalities=decisions");
+        models.Select(m => m.Id).Should().Equal("liquid/d1", "typesafe/jev-1.14", "typesafe/jev-1.13");
+        models[1].Should().Match<OpenRouterModel>(m => m.Provider == "TypeSafe" && m.Name == "Jev 1.14" && m.PromptPerMillion == 0.042m && m.CompletionPerMillion == 0);
+        models[0].Expires.Should().Be(new DateOnly(2026, 11, 20));
+
+        // The two lists are cached apart.
+        (await catalog.ListAsync(default)).Should().HaveCount(2);
+        (await catalog.ListDecisionsAsync(default)).Should().BeSameAs(models);
+        stub.CatalogCalls.Should().Be(2);
+    }
+
+    [Fact]
     public async Task A_loaded_list_survives_OpenRouter_going_down_and_none_is_null()
     {
         var stub = new StubOpenRouter();
@@ -177,6 +241,57 @@ public class OpenRouterCatalogTests
         var refreshed = await catalog.ListAsync(default);
         refreshed.Should().Contain(m => m.Name == "GPT X refreshed");
         stub.CatalogCalls.Should().Be(3);
+    }
+}
+
+public class ModelPickerTests
+{
+    private static readonly DateTimeOffset Now = new(2026, 11, 9, 12, 0, 0, TimeSpan.Zero);
+
+    private static OpenRouterModel Model(string id, int? rank, int ageDays = 30, DateOnly? expires = null) =>
+        new(id, id.Split('/')[0], id, 1, 1, false, null, Rank: rank, Created: Now.AddDays(-ageDays), Expires: expires);
+
+    private static readonly IReadOnlyList<OpenRouterModel> Catalog =
+    [
+        AiTasks.MatcherOff,
+        Model("a/rare", rank: 90),
+        Model("a/popular", rank: 0),
+        Model("b/old", rank: 1, ageDays: 400),
+        Model("~b/latest", rank: 2),
+        Model("b/retiring", rank: 3, expires: new DateOnly(2026, 12, 1)),
+        Model("c/second", rank: 4),
+        Model("c/third", rank: 5),
+        Model("c/unranked", rank: null),
+    ];
+
+    [Fact]
+    public void A_chat_picker_keeps_the_most_used_recent_models_in_the_lists_order()
+    {
+        AiTasks.ForPicker(Catalog, "a/popular", Now, limit: 3).Select(m => m.Id)
+            .Should().Equal(AiTasks.Off, "a/popular", "c/second", "c/third");
+    }
+
+    [Fact]
+    public void The_current_model_stays_even_when_old_rare_or_retiring()
+    {
+        AiTasks.ForPicker(Catalog, "b/old", Now, limit: 1).Select(m => m.Id).Should().Equal(AiTasks.Off, "a/popular", "b/old");
+        AiTasks.ForPicker(Catalog, "a/rare", Now, limit: 1).Select(m => m.Id).Should().Equal(AiTasks.Off, "a/rare", "a/popular");
+        AiTasks.ForPicker(Catalog, "b/retiring", Now, limit: 1).Select(m => m.Id).Should().Equal(AiTasks.Off, "a/popular", "b/retiring");
+    }
+
+    [Fact]
+    public void Without_a_limit_only_aliases_retiring_and_old_models_go()
+    {
+        AiTasks.ForPicker(Catalog, AiTasks.Off, Now, limit: null).Select(m => m.Id)
+            .Should().Equal(AiTasks.Off, "a/rare", "a/popular", "c/second", "c/third", "c/unranked");
+    }
+
+    [Fact]
+    public void A_model_with_no_known_age_is_not_treated_as_old()
+    {
+        IReadOnlyList<OpenRouterModel> models = [new("x/undated", "x", "Undated", 1, 1, false, null, Rank: 0)];
+
+        AiTasks.ForPicker(models, AiTasks.Off, Now, limit: 40).Should().ContainSingle();
     }
 }
 
@@ -248,6 +363,30 @@ public class OpenRouterSettingsTests(PostgresFixture fixture) : IClassFixture<Po
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
 
         await Store(s).Invoking(x => x.SetKeyAsync(key, default)).Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task The_matcher_offers_OpenRouters_decision_models_and_its_picker_hides_retiring_ones()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        try
+        {
+            (await Store(s).ListModelsAsync(AiTask.Matcher, default))!.Select(m => m.Id)
+                .Should().Equal(AiTasks.Off, "liquid/d1", "typesafe/jev-1.14", "typesafe/jev-1.13");
+            (await Store(s).PickerModelsAsync(AiTask.Matcher, default))!.Select(m => m.Id)
+                .Should().Equal(AiTasks.Off, "typesafe/jev-1.14", "typesafe/jev-1.13");
+
+            await Store(s).SetModelAsync(AiTask.Matcher, "typesafe/jev-1.14", default);
+            (await Store(s).GetModelAsync(AiTask.Matcher, default)).Should().Be("typesafe/jev-1.14");
+
+            await Store(s, stub: new StubOpenRouter { ModelsDown = true }).Invoking(x => x.SetModelAsync(AiTask.Matcher, "typesafe/jev-1.13", default))
+                .Should().ThrowAsync<ValidationException>();
+            (await Store(s, stub: new StubOpenRouter { ModelsDown = true }).PickerModelsAsync(AiTask.Matcher, default)).Should().BeNull();
+        }
+        finally
+        {
+            await ClearAsync(s);
+        }
     }
 
     [Fact]

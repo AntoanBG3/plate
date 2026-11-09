@@ -279,14 +279,21 @@ public class AdminTests(PostgresFixture fixture) : IDisposable, IClassFixture<Po
         var admin = await UnlockedDevAsync(app);
         try
         {
-            // The test app can't reach OpenRouter, so the parser's catalog doesn't load; the matcher's list is fixed.
+            // The test app can't reach OpenRouter, so neither list loads and nothing can be picked.
             (await admin.GetStringAsync("/admin/ai/model/parser")).Should().Contain("be loaded right now");
-            (await admin.GetStringAsync("/admin/ai/model/matcher")).Should().Contain("Jev 1.13");
+            (await admin.GetStringAsync("/admin/ai/model/matcher")).Should().Contain("be loaded right now");
             var token = await AppFactory.TokenAsync(admin, "/admin/ai");
             var pick = await AppFactory.PostAsync(admin, "/admin/ai/model/parser", token, new() { ["modelId"] = "openai/gpt-x" });
             pick.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await AppFactory.PostAsync(admin, "/admin/ai/model/matcher", token, new() { ["modelId"] = JevFoodMatchDecider.Jev113 })).StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-            AppFactory.IsRedirectTo(await AppFactory.PostAsync(admin, "/admin/ai/model/matcher", token, new() { ["modelId"] = JevFoodMatchDecider.Jev113 }), "/admin/ai")
+            // With OpenRouter's lists from the stub, the matcher picker shows the live decision models.
+            await using var stubbed = new AppFactory(fixture, services: s => s.AddHttpClient<OpenRouterModels>().ConfigurePrimaryHttpMessageHandler(() => new StubOpenRouter()));
+            var stubAdmin = await UnlockedDevAsync(stubbed);
+            var picker = await stubAdmin.GetStringAsync("/admin/ai/model/matcher");
+            picker.Should().Contain("Jev 1.14").And.Contain("Jev 1.13").And.NotContain("jev-latest").And.NotContain("liquid/d1");
+            var stubToken = await AppFactory.TokenAsync(stubAdmin, "/admin/ai");
+            AppFactory.IsRedirectTo(await AppFactory.PostAsync(stubAdmin, "/admin/ai/model/matcher", stubToken, new() { ["modelId"] = JevFoodMatchDecider.Jev113 }), "/admin/ai")
                 .Should().BeTrue();
             (await AuditAsync()).Should().Contain(a => a.Action == AuditActions.ModelSet && a.Target == "matcher" && a.Detail == $"off -> {JevFoodMatchDecider.Jev113}");
 

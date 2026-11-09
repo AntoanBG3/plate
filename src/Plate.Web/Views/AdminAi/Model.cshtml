@@ -16,13 +16,10 @@
 }
 else
 {
-    @if (Model.Task != AiTask.Matcher)
-    {
-        <div class="search-field">
-            @Ui.Icon("search")
-            <input type="search" class="input" placeholder="@L["Search models"]" aria-label="@L["Search models"]" data-filter="#model-groups" autocomplete="off" />
-        </div>
-    }
+    <div class="search-field">
+        @Ui.Icon("search")
+        <input type="search" class="input" placeholder="@L["Search models"]" aria-label="@L["Search models"]" data-filter="#model-groups" autocomplete="off" />
+    </div>
 
     <div id="model-groups">
         @foreach (var group in Model.Models.GroupBy(m => m.Provider).OrderByDescending(g => g.Any(m => m.Id == Model.Current)))
@@ -64,11 +61,11 @@ else
     </div>
     <p class="section-footer">@(Model.Task switch
         {
-            AiTask.Parser => L["Only models that can return structured answers are listed. Prices are OpenRouter's, per million tokens; parsing one entry uses about a thousand."],
-            AiTask.Weekly => "Only models that can return structured answers are listed. Unset, the weekly summary uses the food parser's model. Each account uses one call of about two thousand tokens a week. Off removes the summary for every account.",
-            AiTask.Onboarding => "Only models that can return structured answers are listed. Unset, the setup chat uses the food parser's model. One setup is about ten turns of a few thousand tokens each. Off leaves the plain form.",
-            AiTask.Label => "Only models that accept images and return structured answers are listed. Unset, labels are read by Gemini 3.5 Flash Lite, never the food parser's model. One label photo is about two thousand tokens; a read with three photos about six thousand. Off hides label photos for every account.",
-            _ => L["Jev is a decision model from TypeSafe: it picks between the database foods the search finds, or says none fits. An entry uses a few thousand tokens, a fraction of a cent. Off keeps the database ranking alone."],
+            AiTask.Parser => "The 40 models used most on OpenRouter last week that can return structured answers, none older than a year. Prices are OpenRouter's, per million tokens; parsing one entry uses about a thousand.",
+            AiTask.Weekly => "The 40 most used recent models that can return structured answers are listed. Unset, the weekly summary uses the food parser's model. Each account uses one call of about two thousand tokens a week. Off removes the summary for every account.",
+            AiTask.Onboarding => "The 40 most used recent models that can return structured answers are listed. Unset, the setup chat uses the food parser's model. One setup is about ten turns of a few thousand tokens each. Off leaves the plain form.",
+            AiTask.Label => "The 40 most used recent models that accept images and return structured answers are listed. Unset, labels are read by Gemini 3.5 Flash Lite, never the food parser's model. One label photo is about two thousand tokens; a read with three photos about six thousand. Off hides label photos for every account.",
+            _ => "Every decision model OpenRouter serves now, newest first; aliases and models being retired are left out. A decision model picks between the database foods the search finds, or says none fits; an entry uses a few thousand tokens, a fraction of a cent. The confidence thresholds were measured on Jev 1.13, so run an evaluation before switching. Off keeps the database ranking alone.",
         })</p>
 }
 
