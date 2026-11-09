@@ -14,7 +14,7 @@ Baseline inspected: `462ef118827b00839941eab87cceb2a106c93065`. These are source
 | Today / tabs | `GET /today`, `/train`, `/food`, `/progress`, `/settings` | `Controllers/TodayController.cs:19-69`; `Features/Food/NutritionTargets.cs:30-84` |
 | Progress | `GET /progress?range=...` | `Controllers/ProgressController.cs:13-30`; `Features/Analytics/TrainingAnalytics.cs:137-189`; `Features/Body/BodyAnalytics.cs:22-70` |
 
-Paths above are relative to `src/GymTracker.Web/`.
+Paths above are relative to `src/Plate.Web/`.
 
 ## Findings to validate/rank
 

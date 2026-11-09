@@ -1,0 +1,129 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@using Plate.Web.Features.Localization
+@{
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var prefs = Context.Preferences();
+    var showTabs = ViewData["HideTabs"] is not true;
+    var segments = (Context.Request.Path.Value ?? "").Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+    var tab = segments.Length > 0 ? segments[0].ToLowerInvariant() : "today";
+    // Tab roots are depth 0; anything deeper pushes in from the right (motion.js).
+    var depth = ViewData["Depth"] as int? ?? Math.Max(0, segments.Length - 1);
+    var title = ViewData["Title"] as string;
+    var backUrl = ViewData["BackUrl"] as string;
+    var backLabel = ViewData["BackLabel"] as string;
+    string TabClass(string name) => name == tab ? "tab is-active" : "tab";
+    string? Current(string name) => name == tab ? "page" : null;
+    var error = Notices.Read(TempData[FeatureExceptionFilter.ErrorKey]);
+    var message = Notices.Read(TempData[Notices.MessageKey]);
+    var info = Notices.Read(TempData[Notices.InfoKey]);
+    var undo = Notices.ReadUndo(TempData);
+    var focus = Notices.ReadFocus(TempData);
+}
+<!DOCTYPE html>
+<html lang="@prefs.LangAttribute" data-user-id="@Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" data-version="@Plate.Web.Features.Diagnostics.AppVersion.Current" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth" data-shell="@prefs.LangAttribute-@(Context.User.Identity?.IsAuthenticated == true ? "in" : "out")">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    @switch (prefs.Theme)
+    {
+        case Theme.Light:
+            <meta data-page-head name="theme-color" content="#f5f5f7" />
+            <meta data-page-head name="apple-mobile-web-app-status-bar-style" content="default" />
+            break;
+        case Theme.System:
+            <meta data-page-head name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
+            <meta data-page-head name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+            <meta data-page-head name="apple-mobile-web-app-status-bar-style" content="default" />
+            break;
+        default:
+            <meta data-page-head name="theme-color" content="#000000" />
+            <meta data-page-head name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+            break;
+    }
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="@Brand.Name" />
+    <link rel="manifest" href="/manifest.@(prefs.LangAttribute).webmanifest" />
+    <link rel="icon" href="/icons/icon-32.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="htmx-config" content='{"defaultSwapStyle":"outerHTML","historyCacheSize":0,"allowEval":false,"includeIndicatorStyles":false,"selfRequestsOnly":true}' />
+    <title>@(title is not null ? $"{title} · {Brand.Name}" : Brand.Name)</title>
+    <link rel="stylesheet" href="~/lib/fonts/fonts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+    <script type="application/json" id="i18n">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(ScriptText.For(L)))</script>
+    <script src="~/js/i18n.js" asp-append-version="true"></script>
+    <script src="~/js/pages.js" asp-append-version="true"></script>
+    <script src="~/js/queue.js" asp-append-version="true"></script>
+    <script src="~/js/image.js" asp-append-version="true"></script>
+    <script src="~/js/feedback.js" asp-append-version="true"></script>
+    <script src="~/lib/htmx/htmx.min.js" asp-append-version="true" defer></script>
+    <script src="~/js/motion.js" asp-append-version="true" defer></script>
+    <script src="~/js/site.js" asp-append-version="true" defer></script>
+    <script src="~/js/session.js" asp-append-version="true" defer></script>
+    <script src="~/js/passkey.js" asp-append-version="true" defer></script>
+    <script src="~/js/nav.js" asp-append-version="true" defer></script>
+</head>
+<body class="@(showTabs ? null : "no-tabs")" hx-headers='{"RequestVerificationToken": "@token"}'>
+    <partial name="_Icons" />
+    <div class="app-scale">
+        <header class="topbar" data-topbar>
+            <div class="topbar-leading">
+                @if (backUrl is not null)
+                {
+                    <a class="topbar-back" href="@backUrl">@Ui.Icon("back")<span>@(backLabel ?? L["Go back"])</span></a>
+                }
+            </div>
+            <span class="topbar-title" aria-hidden="true">@title</span>
+            <div class="topbar-trailing">@await RenderSectionAsync("TopbarTrailing", required: false)</div>
+        </header>
+        <main class="page" id="main" tabindex="-1">
+            @if (error is not null)
+            {
+                <div class="banner is-error" role="alert">@Ui.Icon("alert")<span>@L[error]</span></div>
+            }
+            @if (message is not null)
+            {
+                <div class="banner is-success" role="status">@Ui.Icon("done")<span>@L[message]</span></div>
+            }
+            @if (info is not null)
+            {
+                <div class="banner is-info" role="status">@Ui.Icon("info")<span>@L[info]</span></div>
+            }
+            @if (undo is { } u)
+            {
+                <div hidden data-undo-url="@u.Url" data-undo-text="@L[u.Text]"></div>
+            }
+            @if (focus is not null)
+            {
+                <div hidden data-scroll-to="@focus"></div>
+            }
+            @RenderBody()
+        </main>
+        @if (showTabs)
+        {
+            <nav class="tabbar" aria-label="@L["Main"]">
+                <a class="@TabClass("today")" href="/today" aria-current="@Current("today")">@Ui.Icon("today")<span class="tab-label">@L["Today"]</span></a>
+                <a class="@TabClass("train")" href="/train" aria-current="@Current("train")">@Ui.Icon("train")<span class="tab-label">@L["Train"]</span></a>
+                <a class="@TabClass("food")" href="/food" aria-current="@Current("food")">@Ui.Icon("food")<span class="tab-label">@L["Food"]</span></a>
+                <a class="@TabClass("progress")" href="/progress" aria-current="@Current("progress")">@Ui.Icon("progress")<span class="tab-label">@L["Progress"]</span></a>
+                <a class="@TabClass("settings")" href="/settings" aria-current="@Current("settings")">@Ui.Icon("settings")<span class="tab-label">@L["Settings"]</span></a>
+            </nav>
+        }
+    </div>
+    <div id="toast" class="toast" role="alert" hidden></div>
+    @* The app's own "are you sure" (site.js), for forms with data-confirm; replaces the browser's confirm(). *@
+    <div class="sheet" id="confirm-sheet" hidden>
+        <div class="sheet-scrim"></div>
+        <div class="sheet-panel confirm-panel" role="alertdialog" aria-modal="true" aria-labelledby="confirm-text">
+            <div class="sheet-grabber" aria-hidden="true"></div>
+            <p id="confirm-text" class="confirm-text" data-confirm-text></p>
+            <div class="btn-stack">
+                <button type="button" class="btn btn-destructive btn-block" data-confirm-yes></button>
+                <button type="button" class="btn btn-secondary btn-block" data-sheet-close>@L["Cancel"]</button>
+            </div>
+        </div>
+    </div>
+    <div id="overlays">@await RenderSectionAsync("Overlays", required: false)</div>
+</body>
+</html>

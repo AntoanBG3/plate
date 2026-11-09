@@ -5,9 +5,9 @@
 import path from "node:path";
 import { repo, readCsv, writeCsv } from "./lib.mjs";
 
-const UA = "GymTracker/1.0 (personal food-database import)";
+const UA = "Plate/1.0 (personal food-database import)";
 const base = "https://search.openfoodfacts.org/search";
-const file = path.join(repo, "src/GymTracker.Web/Data/Seed/bg-foods.csv");
+const file = path.join(repo, "src/Plate.Web/Data/Seed/bg-foods.csv");
 const header = ["kind", "barcode", "name_bg", "name_en", "brand", "kcal", "protein", "carbs", "fat", "serving_g", "source", "fiber", "satfat"];
 
 const rows = readCsv(file);

@@ -36,16 +36,16 @@ collected["host"]={name:run(command) for name,command in [
     ("docker_disk",["docker","system","df"])]}
 collected["containers"]=run(["docker","inspect","--format",
     '{{json .Name}} status={{.State.Status}} oom={{.State.OOMKilled}} started={{.State.StartedAt}} memory={{.HostConfig.Memory}} nanocpus={{.HostConfig.NanoCpus}} mounts={{json .Mounts}} restarts={{.RestartCount}} logging={{json .HostConfig.LogConfig}}',
-    "gymtracker-app","gymtracker-db"])
+    "plate-app","plate-db"])
 collected["stats"]=[]
 for _ in range(5):
     collected["stats"].append([json.loads(line) for line in run([
-        "docker","stats","--no-stream","--format","{{json .}}","gymtracker-app","gymtracker-db"]).splitlines()])
+        "docker","stats","--no-stream","--format","{{json .}}","plate-app","plate-db"]).splitlines()])
 psql='PGOPTIONS="-c default_transaction_read_only=on -c statement_timeout=30000" psql -X -v ON_ERROR_STOP=1 -A -t -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
-collected["database"]=json_stream(run(["docker","exec","-i","gymtracker-db","sh","-c",psql],SQL))
+collected["database"]=json_stream(run(["docker","exec","-i","plate-db","sh","-c",psql],SQL))
 samples={"food_namer":[],"jev":[]}
 failures={"namer_timeout":0,"jev_timeout":0,"namer_failure":0,"jev_failure":0}
-process=subprocess.Popen(["docker","logs","--since","720h","gymtracker-app"],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+process=subprocess.Popen(["docker","logs","--since","720h","plate-app"],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
 for line in process.stdout:
     m=re.search(r"Food namer .* named (\d+) items in ([\d.]+) ms, (\d+) input and (\d+) output tokens, \$([\d.]+)",line)
     if m:samples["food_namer"].append([float(m[2]),int(m[3]),int(m[4]),float(m[5])])

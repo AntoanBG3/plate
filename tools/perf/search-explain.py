@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Usage: python3 tools/perf/search-explain.py > tools/perf/results/p7-explain.json
 
-Requires the audit branch's isolated repa-perf-db synthetic stack. No production connection.
+Requires the audit branch's isolated plate-perf-db synthetic stack. No production connection.
 Five sequential baseline/candidate EXPLAIN pairs per case; run without tests/builds/load.
 SQL bodies come from main/current FoodItemService, with psql literals replacing EF parameters.
 """
@@ -12,7 +12,7 @@ import re
 import subprocess
 
 repo = pathlib.Path(__file__).resolve().parents[2]
-path = "src/GymTracker.Web/Features/Food/FoodItemService.cs"
+path = "src/Plate.Web/Features/Food/FoodItemService.cs"
 sources = {
     "baseline": subprocess.check_output(["git", "show", "main:" + path], cwd=repo, text=True),
     "candidate": (repo / path).read_text(),
@@ -42,7 +42,7 @@ for kind, query, threshold in cases:
 BEGIN;
 SET LOCAL pg_trgm.word_similarity_threshold = ''' + ("0.29999998" if threshold == 0.3 else "0.49999997") + ";\nEXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) " + sql + ";\nROLLBACK;\n"
             result = subprocess.run([
-                "docker", "exec", "-i", "repa-perf-db", "psql", "-X", "-qAt", "-U", "gym", "-d", "gym_perf",
+                "docker", "exec", "-i", "plate-perf-db", "psql", "-X", "-qAt", "-U", "gym", "-d", "gym_perf",
                 "-v", "ON_ERROR_STOP=1", "-v", "query=" + query,
             ], input=script, capture_output=True, text=True, check=True)
             plan = json.loads(result.stdout)[0]

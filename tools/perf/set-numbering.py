@@ -10,7 +10,7 @@ query=f'''SELECT json_build_object(
  (SELECT count(*) FROM (SELECT "SetNumber" FROM "Sets" WHERE "SessionExerciseId"={exercise_id}
  GROUP BY "SetNumber" HAVING count(*)>1)d))
  FROM "Sets" WHERE "SessionExerciseId"={exercise_id};'''
-result=subprocess.run(['docker','exec','repa-perf-db','psql','-U','gym','-d','gym_perf','-Atc',query],
+result=subprocess.run(['docker','exec','plate-perf-db','psql','-U','gym','-d','gym_perf','-Atc',query],
                       check=True,capture_output=True,text=True)
 value=json.loads(result.stdout)
 if value['sets']==0:

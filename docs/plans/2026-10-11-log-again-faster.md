@@ -19,15 +19,15 @@
 
 ## Global Constraints
 
-- `GymTracker.Core` has no references to EF Core, ASP.NET Core or HttpClient. `LastAmount`, `RecentOrder` and `UsualFoods` are pure and take plain records.
+- `Plate.Core` has no references to EF Core, ASP.NET Core or HttpClient. `LastAmount`, `RecentOrder` and `UsualFoods` are pure and take plain records.
 - Every user-owned query is scoped to the current user. `UsualFoods` and `FoodLog` reads rely on their owner query filters; a usual food is used only when `db.FoodItems` (own or shared) returns its food.
 - No new NuGet packages or front-end libraries. No JS or CSS changes are planned; if a task does change a file under `wwwroot`, bump `CACHE` in `wwwroot/sw.js` from `gym-static-v25` to `gym-static-v26` once.
 - Mobile-first at 390 and 320 px; every tap target at least 44 px (the "Add and scan another" button).
 - Windows: last amount 90 days by `CreatedAt` (`LastAmount.Window`); Recent 30 days by `Date` and 20 foods (`RecentOrder.Days`, `RecentOrder.Count`); usual foods removed after 180 days unused (`SoftDeletePurge.KeepUsualFoods`); `UsualFood.Phrase` at most 100 characters (`UsualFoods.MaxLength`).
-- Exact English strings: "Last time", "Add and scan another", "Added: {0}", "Your usual", "Your usual amount, {0} g". Bulgarian in `Resources/strings.bg.json`, informal "ти": "Последно", "Добави и сканирай още", "Добавено: {0}", "Обичайно", "Обичайното ти количество, {0} г". After adding strings run `GYM_WRITE_KEYS=1 dotnet test tests/GymTracker.Web.Tests --filter CatalogueTests`; `CatalogueTests` and `BulgarianCatalogueTests` stay green.
+- Exact English strings: "Last time", "Add and scan another", "Added: {0}", "Your usual", "Your usual amount, {0} g". Bulgarian in `Resources/strings.bg.json`, informal "ти": "Последно", "Добави и сканирай още", "Добавено: {0}", "Обичайно", "Обичайното ти количество, {0} г". After adding strings run `GYM_WRITE_KEYS=1 dotnet test tests/Plate.Web.Tests --filter CatalogueTests`; `CatalogueTests` and `BulgarianCatalogueTests` stay green.
 - Numbers render with a dot in both languages (SPEC 8); grams in notes use `ToString("0.#", CultureInfo.InvariantCulture)` like the existing serving note.
 - Recording never gets in the way of logging food: a failure to write a usual food is logged and swallowed.
-- Test cadence: after each task run its new or affected E2E tests (filtered) plus all Core and Web tests (`dotnet test tests/GymTracker.Core.Tests && dotnet test tests/GymTracker.Web.Tests`). Full E2E suite in Task 8 and before merging. A failing run stops the task; never pipe test output through `grep` without keeping the exit code.
+- Test cadence: after each task run its new or affected E2E tests (filtered) plus all Core and Web tests (`dotnet test tests/Plate.Core.Tests && dotnet test tests/Plate.Web.Tests`). Full E2E suite in Task 8 and before merging. A failing run stops the task; never pipe test output through `grep` without keeping the exit code.
 - One commit per task, message ending with the session's attribution lines. Branch `log-again-faster` (exists, holds the spec); do not push.
 
 ## Review Focus
@@ -43,24 +43,24 @@
 ### Task 1: Repeat logging in Core (SPEC 5.10)
 
 **Files:**
-- Create: `src/GymTracker.Core/Nutrition/RepeatLogging.cs`
-- Test: `tests/GymTracker.Core.Tests/RepeatLoggingTests.cs`
+- Create: `src/Plate.Core/Nutrition/RepeatLogging.cs`
+- Test: `tests/Plate.Core.Tests/RepeatLoggingTests.cs`
 
 **Interfaces:**
-- Consumes: `GymTracker.Core.Domain.Meal`.
+- Consumes: `Plate.Core.Domain.Meal`.
 - Produces:
   - `record AmountUse(decimal Grams, DateTimeOffset CreatedAt)`; `static class LastAmount { static readonly TimeSpan Window; static decimal? Pick(IEnumerable<AmountUse> uses, DateTimeOffset now) }`
   - `record RecentUse(int EntryId, int? FoodItemId, string Description, Meal Meal, DateOnly Date, DateTimeOffset CreatedAt, decimal Grams)`; `record RecentGroup(int LastEntryId, int Times)`; `static class RecentOrder { const int Days = 30; const int Count = 20; static IReadOnlyList<RecentGroup> For(IEnumerable<RecentUse> uses, Meal meal, DateOnly today) }`
   - `static partial class UsualFoods { const int MaxLength = 100; static string? Key(string? typed) }`
 
-- [ ] **Step 1: Write the failing tests.** Create `tests/GymTracker.Core.Tests/RepeatLoggingTests.cs`:
+- [ ] **Step 1: Write the failing tests.** Create `tests/Plate.Core.Tests/RepeatLoggingTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using GymTracker.Core.Domain;
-using GymTracker.Core.Nutrition;
+using Plate.Core.Domain;
+using Plate.Core.Nutrition;
 
-namespace GymTracker.Core.Tests;
+namespace Plate.Core.Tests;
 
 public class RepeatLoggingTests
 {
@@ -174,15 +174,15 @@ public class RepeatLoggingTests
 }
 ```
 
-- [ ] **Step 2: Run them to see them fail.** `dotnet test tests/GymTracker.Core.Tests --filter RepeatLoggingTests` → build error, `LastAmount` not defined.
+- [ ] **Step 2: Run them to see them fail.** `dotnet test tests/Plate.Core.Tests --filter RepeatLoggingTests` → build error, `LastAmount` not defined.
 
-- [ ] **Step 3: Implement.** Create `src/GymTracker.Core/Nutrition/RepeatLogging.cs`:
+- [ ] **Step 3: Implement.** Create `src/Plate.Core/Nutrition/RepeatLogging.cs`:
 
 ```csharp
 using System.Text.RegularExpressions;
-using GymTracker.Core.Domain;
+using Plate.Core.Domain;
 
-namespace GymTracker.Core.Nutrition;
+namespace Plate.Core.Nutrition;
 
 /// <summary>One past entry of a food: how much, and when it was logged (SPEC 5.10).</summary>
 public record AmountUse(decimal Grams, DateTimeOffset CreatedAt);
@@ -320,37 +320,37 @@ public static partial class UsualFoods
 }
 ```
 
-- [ ] **Step 4: Run the tests.** `dotnet test tests/GymTracker.Core.Tests --filter RepeatLoggingTests` → all pass. Then `dotnet test tests/GymTracker.Core.Tests` → all pass.
+- [ ] **Step 4: Run the tests.** `dotnet test tests/Plate.Core.Tests --filter RepeatLoggingTests` → all pass. Then `dotnet test tests/Plate.Core.Tests` → all pass.
 
-- [ ] **Step 5: Commit.** `git add src/GymTracker.Core/Nutrition/RepeatLogging.cs tests/GymTracker.Core.Tests/RepeatLoggingTests.cs && git commit -m "Add repeat logging in Core: last amount, Recent order, usual food key"` (with attribution lines).
+- [ ] **Step 5: Commit.** `git add src/Plate.Core/Nutrition/RepeatLogging.cs tests/Plate.Core.Tests/RepeatLoggingTests.cs && git commit -m "Add repeat logging in Core: last amount, Recent order, usual food key"` (with attribution lines).
 
 ---
 
 ### Task 2: Store usual foods
 
 **Files:**
-- Modify: `src/GymTracker.Core/Domain/Nutrition.cs` (add `UsualFood` after `FoodLogEntry`)
-- Modify: `src/GymTracker.Web/Data/AppDbContext.cs` (DbSet, entity config, FoodLog index)
-- Create: `src/GymTracker.Web/Data/Migrations/<timestamp>_UsualFoods.cs` (generated)
-- Modify: `src/GymTracker.Web/Features/Undo/SoftDeletePurge.cs`
-- Modify: `src/GymTracker.Web/Features/Export/DataExport.cs`
-- Test: `tests/GymTracker.Web.Tests/RepeatLoggingTests.cs` (create), `tests/GymTracker.Web.Tests/ExportTests.cs`
+- Modify: `src/Plate.Core/Domain/Nutrition.cs` (add `UsualFood` after `FoodLogEntry`)
+- Modify: `src/Plate.Web/Data/AppDbContext.cs` (DbSet, entity config, FoodLog index)
+- Create: `src/Plate.Web/Data/Migrations/<timestamp>_UsualFoods.cs` (generated)
+- Modify: `src/Plate.Web/Features/Undo/SoftDeletePurge.cs`
+- Modify: `src/Plate.Web/Features/Export/DataExport.cs`
+- Test: `tests/Plate.Web.Tests/RepeatLoggingTests.cs` (create), `tests/Plate.Web.Tests/ExportTests.cs`
 
 **Interfaces:**
 - Consumes: `UsualFoods.MaxLength` (Task 1).
 - Produces: `class UsualFood { int Id; string UserId; string Phrase; int FoodItemId; DateTimeOffset LastUsedAt }`; `AppDbContext.UsualFoods`; `SoftDeletePurge.KeepUsualFoods`; export file `usual_foods.csv` with header `phrase,food_item_id,food,last_used_at_utc`.
 
-- [ ] **Step 1: Write the failing tests.** Create `tests/GymTracker.Web.Tests/RepeatLoggingTests.cs`:
+- [ ] **Step 1: Write the failing tests.** Create `tests/Plate.Web.Tests/RepeatLoggingTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using GymTracker.Core.Domain;
-using GymTracker.Core.Nutrition;
-using GymTracker.Web.Features.Food;
-using GymTracker.Web.Features.Undo;
+using Plate.Core.Domain;
+using Plate.Core.Nutrition;
+using Plate.Web.Features.Food;
+using Plate.Web.Features.Undo;
 using Microsoft.EntityFrameworkCore;
 
-namespace GymTracker.Web.Tests;
+namespace Plate.Web.Tests;
 
 /// <summary>SPEC 5.10 and 6.1: last amounts, the Recent order and usual foods, against a real database.</summary>
 public class RepeatLoggingTests(PostgresFixture fixture) : IClassFixture<PostgresFixture>
@@ -394,7 +394,7 @@ public class RepeatLoggingTests(PostgresFixture fixture) : IClassFixture<Postgre
 }
 ```
 
-In `tests/GymTracker.Web.Tests/ExportTests.cs`, add `"usual_foods.csv"` to the `BeEquivalentTo` list after `"label_scans.csv"` (around line 63), and add this test to the class:
+In `tests/Plate.Web.Tests/ExportTests.cs`, add `"usual_foods.csv"` to the `BeEquivalentTo` list after `"label_scans.csv"` (around line 63), and add this test to the class:
 
 ```csharp
     [Fact]
@@ -412,11 +412,11 @@ In `tests/GymTracker.Web.Tests/ExportTests.cs`, add `"usual_foods.csv"` to the `
     }
 ```
 
-(`ExportTests` takes `PostgresFixture fixture` and has the `Unzip` helper; add `using GymTracker.Core.Domain;` if missing.)
+(`ExportTests` takes `PostgresFixture fixture` and has the `Unzip` helper; add `using Plate.Core.Domain;` if missing.)
 
-- [ ] **Step 2: Run them to see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter "RepeatLoggingTests|ExportTests"` → build error, `UsualFood` not defined.
+- [ ] **Step 2: Run them to see them fail.** `dotnet test tests/Plate.Web.Tests --filter "RepeatLoggingTests|ExportTests"` → build error, `UsualFood` not defined.
 
-- [ ] **Step 3: Add the entity.** In `src/GymTracker.Core/Domain/Nutrition.cs`, after the `FoodLogEntry` class:
+- [ ] **Step 3: Add the entity.** In `src/Plate.Core/Domain/Nutrition.cs`, after the `FoodLogEntry` class:
 
 ```csharp
 /// <summary>Which food this account means by some typed words (SPEC 4, 6.1). Written on confirm, read before the ranking.</summary>
@@ -443,7 +443,7 @@ After the `SavedMealItem` entity block (the `UsualFoods` property shadows the Co
 ```csharp
         builder.Entity<UsualFood>(e =>
         {
-            e.Property(x => x.Phrase).HasMaxLength(GymTracker.Core.Nutrition.UsualFoods.MaxLength);
+            e.Property(x => x.Phrase).HasMaxLength(Plate.Core.Nutrition.UsualFoods.MaxLength);
             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<FoodItem>().WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => new { x.UserId, x.Phrase }).IsUnique();
@@ -457,7 +457,7 @@ In the `FoodLogEntry` block, after `e.HasIndex(x => new { x.UserId, x.Date });`:
             e.HasIndex(x => new { x.UserId, x.FoodItemId, x.CreatedAt }); // last amounts (SPEC 5.10)
 ```
 
-- [ ] **Step 5: Generate the migration.** `dotnet tool restore && dotnet ef migrations add UsualFoods --project src/GymTracker.Web --output-dir Data/Migrations`. Open the generated file and check it only creates `UsualFoods` (with the unique `(UserId, Phrase)` index and both cascading foreign keys) and the `FoodLog` index; `Down` drops both.
+- [ ] **Step 5: Generate the migration.** `dotnet tool restore && dotnet ef migrations add UsualFoods --project src/Plate.Web --output-dir Data/Migrations`. Open the generated file and check it only creates `UsualFoods` (with the unique `(UserId, Phrase)` index and both cascading foreign keys) and the `FoodLog` index; `Down` drops both.
 
 - [ ] **Step 6: Retention.** In `SoftDeletePurge.cs`, add beside the other `Keep…` fields:
 
@@ -493,7 +493,7 @@ and in `PurgeFeedbackAsync`, after the label scan line:
 
 Account deletion needs no change: the row cascades from the user (`UserDeleter` deletes the user last).
 
-- [ ] **Step 8: Run the tests.** `dotnet test tests/GymTracker.Web.Tests --filter "RepeatLoggingTests|ExportTests|MigrationTests"` → pass. Then Core and Web in full.
+- [ ] **Step 8: Run the tests.** `dotnet test tests/Plate.Web.Tests --filter "RepeatLoggingTests|ExportTests|MigrationTests"` → pass. Then Core and Web in full.
 
 - [ ] **Step 9: Commit.** "Store usual foods, with retention, export and a last-amount index".
 
@@ -502,14 +502,14 @@ Account deletion needs no change: the row cascades from the user (`UserDeleter` 
 ### Task 3: The last amount on barcode and search results
 
 **Files:**
-- Create: `src/GymTracker.Web/Features/Food/RepeatLoggingService.cs`
-- Modify: `src/GymTracker.Web/Program.cs` (register it beside `FoodMatcher`)
-- Modify: `src/GymTracker.Web/Controllers/FoodController.cs` (constructor, `Add`, `Barcode`)
-- Modify: `src/GymTracker.Web/ViewModels/ViewModels.cs` (`BarcodeViewModel`, `FoodAddViewModel`)
-- Modify: `src/GymTracker.Web/Views/Food/Barcode.cshtml`, `src/GymTracker.Web/Views/Food/Add.cshtml` (search rows)
-- Modify: `src/GymTracker.Web/Resources/strings.bg.json`, `strings.keys.json` (regenerated)
-- Modify: `tests/GymTracker.Web.Tests/UserScope.cs`
-- Test: `tests/GymTracker.Web.Tests/RepeatLoggingTests.cs`, `tests/GymTracker.E2E.Tests/RepeatLoggingFlowTests.cs` (create)
+- Create: `src/Plate.Web/Features/Food/RepeatLoggingService.cs`
+- Modify: `src/Plate.Web/Program.cs` (register it beside `FoodMatcher`)
+- Modify: `src/Plate.Web/Controllers/FoodController.cs` (constructor, `Add`, `Barcode`)
+- Modify: `src/Plate.Web/ViewModels/ViewModels.cs` (`BarcodeViewModel`, `FoodAddViewModel`)
+- Modify: `src/Plate.Web/Views/Food/Barcode.cshtml`, `src/Plate.Web/Views/Food/Add.cshtml` (search rows)
+- Modify: `src/Plate.Web/Resources/strings.bg.json`, `strings.keys.json` (regenerated)
+- Modify: `tests/Plate.Web.Tests/UserScope.cs`
+- Test: `tests/Plate.Web.Tests/RepeatLoggingTests.cs`, `tests/Plate.E2E.Tests/RepeatLoggingFlowTests.cs` (create)
 
 **Interfaces:**
 - Consumes: `LastAmount` (Task 1), `AppDbContext.FoodLog`.
@@ -537,16 +537,16 @@ Account deletion needs no change: the row cascades from the user (`UserDeleter` 
     }
 ```
 
-In `UserScope.cs`, after `Foods = …`, add `Repeat = new GymTracker.Web.Features.Food.RepeatLoggingService(Db, currentUser, TimeProvider.System, Microsoft.Extensions.Logging.Abstractions.NullLogger<GymTracker.Web.Features.Food.RepeatLoggingService>.Instance);` and the property `public GymTracker.Web.Features.Food.RepeatLoggingService Repeat { get; }`.
+In `UserScope.cs`, after `Foods = …`, add `Repeat = new Plate.Web.Features.Food.RepeatLoggingService(Db, currentUser, TimeProvider.System, Microsoft.Extensions.Logging.Abstractions.NullLogger<Plate.Web.Features.Food.RepeatLoggingService>.Instance);` and the property `public Plate.Web.Features.Food.RepeatLoggingService Repeat { get; }`.
 
-- [ ] **Step 2: Write the failing E2E test.** Create `tests/GymTracker.E2E.Tests/RepeatLoggingFlowTests.cs`:
+- [ ] **Step 2: Write the failing E2E test.** Create `tests/Plate.E2E.Tests/RepeatLoggingFlowTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using GymTracker.Core.Domain;
-using GymTracker.Core.Time;
+using Plate.Core.Domain;
+using Plate.Core.Time;
 
-namespace GymTracker.E2E.Tests;
+namespace Plate.E2E.Tests;
 
 /// <summary>Phase 16: log it again faster (SPEC 5.10, 7 Food).</summary>
 public class RepeatLoggingFlowTests(E2EFixture app) : IClassFixture<E2EFixture>
@@ -598,16 +598,16 @@ public class RepeatLoggingFlowTests(E2EFixture app) : IClassFixture<E2EFixture>
 }
 ```
 
-- [ ] **Step 3: Run them to see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter RepeatLoggingTests` → build error (`Repeat`). `dotnet test tests/GymTracker.E2E.Tests --filter RepeatLoggingFlowTests` → fails on `#grams` being 40 after logging 250.
+- [ ] **Step 3: Run them to see them fail.** `dotnet test tests/Plate.Web.Tests --filter RepeatLoggingTests` → build error (`Repeat`). `dotnet test tests/Plate.E2E.Tests --filter RepeatLoggingFlowTests` → fails on `#grams` being 40 after logging 250.
 
-- [ ] **Step 4: Implement the service.** Create `src/GymTracker.Web/Features/Food/RepeatLoggingService.cs`:
+- [ ] **Step 4: Implement the service.** Create `src/Plate.Web/Features/Food/RepeatLoggingService.cs`:
 
 ```csharp
-using GymTracker.Core.Nutrition;
-using GymTracker.Web.Data;
+using Plate.Core.Nutrition;
+using Plate.Web.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace GymTracker.Web.Features.Food;
+namespace Plate.Web.Features.Food;
 
 /// <summary>
 /// What this account did last time (SPEC 5.10): the amount per food, and which food it means by typed words (6.1).
@@ -657,7 +657,7 @@ builder.Services.AddScoped<RepeatLoggingService>();
 
 ```csharp
 /// <param name="LastGrams">This account's last amount for the product (SPEC 5.10), or null.</param>
-public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, GymTracker.Web.Features.Food.BarcodeResult Result, bool AddedByAnother = false, bool LabelAvailable = false, decimal? LastGrams = null);
+public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, Plate.Web.Features.Food.BarcodeResult Result, bool AddedByAnother = false, bool LabelAvailable = false, decimal? LastGrams = null);
 ```
 
 In `FoodController`, add `RepeatLoggingService repeat` to the constructor parameters (after `FoodItemService foods`), and in `Barcode` replace the `return View(new BarcodeViewModel(...))` with:
@@ -711,9 +711,9 @@ and pass `LastGrams: lastGrams` to the `FoodAddViewModel` it returns. In `Add.cs
 
 (the `data-totals` span after it already uses `serving`).
 
-- [ ] **Step 7: The string.** Add `"Last time": "Последно"` to `strings.bg.json` (a JSON object; keep its two-space indentation and add the entry before the closing brace), then `GYM_WRITE_KEYS=1 dotnet test tests/GymTracker.Web.Tests --filter CatalogueTests`.
+- [ ] **Step 7: The string.** Add `"Last time": "Последно"` to `strings.bg.json` (a JSON object; keep its two-space indentation and add the entry before the closing brace), then `GYM_WRITE_KEYS=1 dotnet test tests/Plate.Web.Tests --filter CatalogueTests`.
 
-- [ ] **Step 8: Run the tests.** `dotnet test tests/GymTracker.E2E.Tests --filter "RepeatLoggingFlowTests|FoodSearchTests|LabelPhotoTests|UntestedAreasTests"` → pass; then Core and Web in full.
+- [ ] **Step 8: Run the tests.** `dotnet test tests/Plate.E2E.Tests --filter "RepeatLoggingFlowTests|FoodSearchTests|LabelPhotoTests|UntestedAreasTests"` → pass; then Core and Web in full.
 
 - [ ] **Step 9: Commit.** "Offer the last amount on barcode and search results".
 
@@ -722,10 +722,10 @@ and pass `LastGrams: lastGrams` to the `FoodAddViewModel` it returns. In `Add.cs
 ### Task 4: Add and scan another
 
 **Files:**
-- Modify: `src/GymTracker.Web/Controllers/FoodController.cs` (`LogItem`)
-- Modify: `src/GymTracker.Web/Views/Food/Barcode.cshtml`
-- Modify: `src/GymTracker.Web/Resources/strings.bg.json`, `strings.keys.json`
-- Test: `tests/GymTracker.E2E.Tests/RepeatLoggingFlowTests.cs`
+- Modify: `src/Plate.Web/Controllers/FoodController.cs` (`LogItem`)
+- Modify: `src/Plate.Web/Views/Food/Barcode.cshtml`
+- Modify: `src/Plate.Web/Resources/strings.bg.json`, `strings.keys.json`
+- Test: `tests/Plate.E2E.Tests/RepeatLoggingFlowTests.cs`
 
 **Interfaces:**
 - Consumes: the barcode result form from Task 3.
@@ -782,7 +782,7 @@ and pass `LastGrams: lastGrams` to the `FoodAddViewModel` it returns. In `Add.cs
     }
 ```
 
-- [ ] **Step 2: Run them to see them fail.** `dotnet test tests/GymTracker.E2E.Tests --filter "Add_and_scan_another"` → fails: no `button[name=next]`.
+- [ ] **Step 2: Run them to see them fail.** `dotnet test tests/Plate.E2E.Tests --filter "Add_and_scan_another"` → fails: no `button[name=next]`.
 
 - [ ] **Step 3: The button.** In `Barcode.cshtml`, after the existing `<button type="submit" …>@L[AddTo[Model.Meal]]</button>` inside the form:
 
@@ -806,7 +806,7 @@ and pass `LastGrams: lastGrams` to the `FoodAddViewModel` it returns. In `Add.cs
 
 - [ ] **Step 5: The strings.** Add `"Add and scan another": "Добави и сканирай още"` and `"Added: {0}": "Добавено: {0}"` to `strings.bg.json` (note: `"Added {0}"` without the colon already exists with another meaning; keep both), then regenerate keys as in Task 3 Step 7.
 
-- [ ] **Step 6: Run the tests.** `dotnet test tests/GymTracker.E2E.Tests --filter "RepeatLoggingFlowTests|UntestedAreasTests|LabelPhotoTests"` → pass; Core and Web in full.
+- [ ] **Step 6: Run the tests.** `dotnet test tests/Plate.E2E.Tests --filter "RepeatLoggingFlowTests|UntestedAreasTests|LabelPhotoTests"` → pass; Core and Web in full.
 
 - [ ] **Step 7: Commit.** "Add and scan another from the barcode result".
 
@@ -815,10 +815,10 @@ and pass `LastGrams: lastGrams` to the `FoodAddViewModel` it returns. In `Add.cs
 ### Task 5: Recent by meal
 
 **Files:**
-- Modify: `src/GymTracker.Web/Features/Food/FoodLogService.cs` (`RecentsAsync`)
-- Modify: `src/GymTracker.Web/Controllers/FoodController.cs` (`Add`)
-- Modify: `tests/GymTracker.Web.Tests/NutritionTests.cs` (lines 182, 202), `tests/GymTracker.Web.Tests/QuickAddTests.cs` (line 22)
-- Test: `tests/GymTracker.Web.Tests/RepeatLoggingTests.cs`, `tests/GymTracker.E2E.Tests/RepeatLoggingFlowTests.cs`
+- Modify: `src/Plate.Web/Features/Food/FoodLogService.cs` (`RecentsAsync`)
+- Modify: `src/Plate.Web/Controllers/FoodController.cs` (`Add`)
+- Modify: `tests/Plate.Web.Tests/NutritionTests.cs` (lines 182, 202), `tests/Plate.Web.Tests/QuickAddTests.cs` (line 22)
+- Test: `tests/Plate.Web.Tests/RepeatLoggingTests.cs`, `tests/Plate.E2E.Tests/RepeatLoggingFlowTests.cs`
 
 **Interfaces:**
 - Consumes: `RecentOrder.For`, `RecentUse`, `RecentGroup` (Task 1).
@@ -858,7 +858,7 @@ and pass `LastGrams: lastGrams` to the `FoodAddViewModel` it returns. In `Add.cs
 
 Change the three existing calls `RecentsAsync(Day, default)` in `NutritionTests.cs` (lines 182 and 202) and `QuickAddTests.cs` (line 22) to `RecentsAsync(Day, Meal.Lunch, default)`.
 
-- [ ] **Step 2: Run them to see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter "RepeatLoggingTests|NutritionTests|QuickAddTests"` → build error, no three-argument overload.
+- [ ] **Step 2: Run them to see them fail.** `dotnet test tests/Plate.Web.Tests --filter "RepeatLoggingTests|NutritionTests|QuickAddTests"` → build error, no three-argument overload.
 
 - [ ] **Step 3: Implement.** Replace `RecentsAsync` in `FoodLogService.cs` with:
 
@@ -919,7 +919,7 @@ In `FoodController.Add`, change `log.RecentsAsync(today, ct)` to `log.RecentsAsy
     }
 ```
 
-Run `dotnet test tests/GymTracker.E2E.Tests --filter "RepeatLoggingFlowTests|ConfirmSheetTests|UntestedAreasTests"` → pass; Core and Web in full.
+Run `dotnet test tests/Plate.E2E.Tests --filter "RepeatLoggingFlowTests|ConfirmSheetTests|UntestedAreasTests"` → pass; Core and Web in full.
 
 - [ ] **Step 5: Commit.** "Order Recent by what the account eats at the meal".
 
@@ -928,10 +928,10 @@ Run `dotnet test tests/GymTracker.E2E.Tests --filter "RepeatLoggingFlowTests|Con
 ### Task 6: The parser says whether the amount was given
 
 **Files:**
-- Modify: `src/GymTracker.Core/Nutrition/FoodParsing.cs` (`ParsedFoodItem`)
-- Modify: `src/GymTracker.Web/Integrations/OpenRouterFoodParser.cs` (prompt, schema, reading)
-- Modify: `src/GymTracker.Web/Integrations/FakeFoodParser.cs`
-- Test: `tests/GymTracker.Web.Tests/OpenRouterTests.cs`, `tests/GymTracker.Web.Tests/RepeatLoggingTests.cs`
+- Modify: `src/Plate.Core/Nutrition/FoodParsing.cs` (`ParsedFoodItem`)
+- Modify: `src/Plate.Web/Integrations/OpenRouterFoodParser.cs` (prompt, schema, reading)
+- Modify: `src/Plate.Web/Integrations/FakeFoodParser.cs`
+- Test: `tests/Plate.Web.Tests/OpenRouterTests.cs`, `tests/Plate.Web.Tests/RepeatLoggingTests.cs`
 
 **Interfaces:**
 - Produces: `ParsedFoodItem.AmountGiven` (`bool`, last positional parameter, default `true`, so old stored `Parsed` JSON and existing callers mean "given" and nothing is ever replaced by accident).
@@ -968,10 +968,10 @@ Add to `RepeatLoggingTests`:
     [InlineData("2 eggs", true)]
     [InlineData("две яйца", true)]
     public async Task The_fake_parser_marks_typed_amounts_and_counts(string text, bool given) =>
-        (await new GymTracker.Web.Integrations.FakeFoodParser().ParseAsync(text, default)).Items.Single().AmountGiven.Should().Be(given);
+        (await new Plate.Web.Integrations.FakeFoodParser().ParseAsync(text, default)).Items.Single().AmountGiven.Should().Be(given);
 ```
 
-- [ ] **Step 2: Run them to see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter "Reads_whether_the_amount_was_given|The_fake_parser_marks"` → build error, no `AmountGiven`.
+- [ ] **Step 2: Run them to see them fail.** `dotnet test tests/Plate.Web.Tests --filter "Reads_whether_the_amount_was_given|The_fake_parser_marks"` → build error, no `AmountGiven`.
 
 - [ ] **Step 3: The record.** In `FoodParsing.cs`, add a `<param>` line and the parameter:
 
@@ -1022,21 +1022,21 @@ In `Schema`, add `"amountGiven": { "type": "boolean" },` after `"grams"` and add
 ### Task 7: Usual foods in matching, and the usual amount
 
 **Files:**
-- Modify: `src/GymTracker.Web/Features/Food/RepeatLoggingService.cs` (`UsualMatchesAsync`, `RememberAsync`)
-- Modify: `src/GymTracker.Web/Features/Food/FoodMatcher.cs` (constructor, `ResolveAsync`, `ConfirmItem.Usual`)
-- Modify: `src/GymTracker.Web/Features/Feedback/ParseRunService.cs` (constructor, `ResolvedRow.Usual`, `RememberAsync`)
-- Modify: `src/GymTracker.Web/Controllers/FoodController.cs` (`Confirm`)
-- Modify: `src/GymTracker.Web/Views/Food/Confirm.cshtml` (chip)
-- Modify: `src/GymTracker.Web/Cli/FeedbackCommand.cs` (line 445)
-- Modify: `src/GymTracker.Web/Resources/strings.bg.json`, `strings.keys.json`
-- Modify: `tests/GymTracker.Web.Tests/UserScope.cs`
-- Test: `tests/GymTracker.Web.Tests/RepeatLoggingTests.cs`, `tests/GymTracker.E2E.Tests/RepeatLoggingFlowTests.cs`
+- Modify: `src/Plate.Web/Features/Food/RepeatLoggingService.cs` (`UsualMatchesAsync`, `RememberAsync`)
+- Modify: `src/Plate.Web/Features/Food/FoodMatcher.cs` (constructor, `ResolveAsync`, `ConfirmItem.Usual`)
+- Modify: `src/Plate.Web/Features/Feedback/ParseRunService.cs` (constructor, `ResolvedRow.Usual`, `RememberAsync`)
+- Modify: `src/Plate.Web/Controllers/FoodController.cs` (`Confirm`)
+- Modify: `src/Plate.Web/Views/Food/Confirm.cshtml` (chip)
+- Modify: `src/Plate.Web/Cli/FeedbackCommand.cs` (line 445)
+- Modify: `src/Plate.Web/Resources/strings.bg.json`, `strings.keys.json`
+- Modify: `tests/Plate.Web.Tests/UserScope.cs`
+- Test: `tests/Plate.Web.Tests/RepeatLoggingTests.cs`, `tests/Plate.E2E.Tests/RepeatLoggingFlowTests.cs`
 
 **Interfaces:**
 - Consumes: `UsualFoods.Key` (Task 1), `AppDbContext.UsualFoods` (Task 2), `LastAmountsAsync` (Task 3), `ParsedFoodItem.AmountGiven` (Task 6).
 - Produces: `Task<Dictionary<int, FoodMatch>> UsualMatchesAsync(IReadOnlyList<ParsedFoodItem> items, CancellationToken ct)` (item index → food); `Task RememberAsync(IReadOnlyList<(string Typed, int FoodItemId)> saved, CancellationToken ct)`; `FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, RepeatLoggingService? repeat = null)`; `ConfirmItem.Usual` (`bool`, last parameter, default false); `ResolvedRow.Usual` (same); `ParseRunService(…, ILogger<ParseRunService> log, RepeatLoggingService? repeat = null)` with `Task RememberAsync(int? runId, IReadOnlyList<SavedItem> saved, CancellationToken ct)`.
 
-- [ ] **Step 1: Wire the test scope.** In `UserScope.cs`, move the `Repeat = …` line above `Matcher = …`, construct the matcher as `new GymTracker.Web.Features.Food.FoodMatcher(Foods, MatchDecider, Repeat)`, and add `, Repeat` as the last argument of the `ParseRunService` constructor call.
+- [ ] **Step 1: Wire the test scope.** In `UserScope.cs`, move the `Repeat = …` line above `Matcher = …`, construct the matcher as `new Plate.Web.Features.Food.FoodMatcher(Foods, MatchDecider, Repeat)`, and add `, Repeat` as the last argument of the `ParseRunService` constructor call.
 
 - [ ] **Step 2: Write the failing Web tests.** Add to `RepeatLoggingTests`:
 
@@ -1081,7 +1081,7 @@ In `Schema`, add `"amountGiven": { "type": "boolean" },` after `"grams"` and add
         item.Notes.Should().ContainSingle(n => n.Format == "Your usual amount, {0} g");
         s.MatchDecider.Calls.Single()[0].Candidates.Should().BeEmpty("a usual food is context for the decider, not a question");
         var run = await s.Db.ParseRuns.SingleAsync(r => r.Id == outcome.RunId);
-        GymTracker.Web.Features.Feedback.FeedbackJson.Read<List<GymTracker.Web.Features.Feedback.ResolvedRow>>(run.Resolved)![0].Usual.Should().BeTrue();
+        Plate.Web.Features.Feedback.FeedbackJson.Read<List<Plate.Web.Features.Feedback.ResolvedRow>>(run.Resolved)![0].Usual.Should().BeTrue();
     }
 
     [Fact]
@@ -1182,9 +1182,9 @@ In `Schema`, add `"amountGiven": { "type": "boolean" },` after `"grams"` and add
     }
 ```
 
-- [ ] **Step 3: Run them to see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter RepeatLoggingTests` → build errors (`Usual`, `RememberAsync`).
+- [ ] **Step 3: Run them to see them fail.** `dotnet test tests/Plate.Web.Tests --filter RepeatLoggingTests` → build errors (`Usual`, `RememberAsync`).
 
-- [ ] **Step 4: The service.** Add to `RepeatLoggingService` (add `using GymTracker.Core.Domain;`):
+- [ ] **Step 4: The service.** Add to `RepeatLoggingService` (add `using Plate.Core.Domain;`):
 
 ```csharp
     /// <summary>
@@ -1386,7 +1386,7 @@ In `FeedbackCommand.cs` line 445, append the mark after `{row["confidence"]}`:
 
 - [ ] **Step 8: The strings.** Add `"Your usual": "Обичайно"` and `"Your usual amount, {0} g": "Обичайното ти количество, {0} г"`; regenerate keys.
 
-- [ ] **Step 9: Run the Web tests.** `dotnet test tests/GymTracker.Web.Tests --filter "RepeatLoggingTests|FoodMatchingTests|ParseRunTests|ParseRegressionTests|FallbackMatchTests|JevTests|CatalogueTests"` → pass.
+- [ ] **Step 9: Run the Web tests.** `dotnet test tests/Plate.Web.Tests --filter "RepeatLoggingTests|FoodMatchingTests|ParseRunTests|ParseRegressionTests|FallbackMatchTests|JevTests|CatalogueTests"` → pass.
 
 - [ ] **Step 10: Write and run the E2E test.** Add to `RepeatLoggingFlowTests`:
 
@@ -1416,7 +1416,7 @@ In `FeedbackCommand.cs` line 445, append the mark after `{row["confidence"]}`:
     }
 ```
 
-Run `dotnet test tests/GymTracker.E2E.Tests --filter "RepeatLoggingFlowTests|ConfirmFoodsTests|AiPathTests"` → pass; Core and Web in full.
+Run `dotnet test tests/Plate.E2E.Tests --filter "RepeatLoggingFlowTests|ConfirmFoodsTests|AiPathTests"` → pass; Core and Web in full.
 
 - [ ] **Step 11: Commit.** "Propose the food last confirmed for typed words, with the usual amount".
 
@@ -1426,8 +1426,8 @@ Run `dotnet test tests/GymTracker.E2E.Tests --filter "RepeatLoggingFlowTests|Con
 
 **Files:** none changed unless a check fails.
 
-- [ ] **Step 1: Full suites.** `dotnet build` (no warnings added), `dotnet test tests/GymTracker.Core.Tests`, `dotnet test tests/GymTracker.Web.Tests`, `dotnet test tests/GymTracker.E2E.Tests`. Report the counts.
+- [ ] **Step 1: Full suites.** `dotnet build` (no warnings added), `dotnet test tests/Plate.Core.Tests`, `dotnet test tests/Plate.Web.Tests`, `dotnet test tests/Plate.E2E.Tests`. Report the counts.
 
-- [ ] **Step 2: Bulgarian at 320 px.** With the dev stack running (`docker compose -f docker/docker-compose.dev.yml up -d db`, `dotnet run --project src/GymTracker.Web`), open a barcode result for a product logged before, as a Bulgarian account, at 320 and 390 px in Chromium and WebKit (an E2E-style script or the browser tools): "Последно" under the field, "Добави и сканирай още" fits on one line or wraps inside the button without sideways scroll, and the confirmation chip "Обичайно" fits beside the status chip. Fix and commit any overflow as its own commit.
+- [ ] **Step 2: Bulgarian at 320 px.** With the dev stack running (`docker compose -f docker/docker-compose.dev.yml up -d db`, `dotnet run --project src/Plate.Web`), open a barcode result for a product logged before, as a Bulgarian account, at 320 and 390 px in Chromium and WebKit (an E2E-style script or the browser tools): "Последно" under the field, "Добави и сканирай още" fits on one line or wraps inside the button without sideways scroll, and the confirmation chip "Обичайно" fits beside the status chip. Fix and commit any overflow as its own commit.
 
 - [ ] **Step 3: Leave for Antoan.** The iPhone checks from the Phase 16 "Done when" (390 px, English and Bulgarian, the real camera through "Add and scan another"), the merge, the deploy with a pre-deploy dump, and the What's new entries are his to approve; list them in the final report with the test counts.

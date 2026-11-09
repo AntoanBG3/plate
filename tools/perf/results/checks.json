@@ -10,15 +10,15 @@
       "jsPassed": 29,
       "dotnet": [
         {
-          "project": "GymTracker.Core.Tests",
+          "project": "Plate.Core.Tests",
           "passed": 470
         },
         {
-          "project": "GymTracker.Web.Tests",
+          "project": "Plate.Web.Tests",
           "passed": 540
         },
         {
-          "project": "GymTracker.E2E.Tests",
+          "project": "Plate.E2E.Tests",
           "passed": 241
         }
       ]
@@ -31,15 +31,15 @@
       "jsPassed": 29,
       "dotnet": [
         {
-          "project": "GymTracker.Core.Tests",
+          "project": "Plate.Core.Tests",
           "passed": 470
         },
         {
-          "project": "GymTracker.Web.Tests",
+          "project": "Plate.Web.Tests",
           "passed": 540
         },
         {
-          "project": "GymTracker.E2E.Tests",
+          "project": "Plate.E2E.Tests",
           "passed": 241
         }
       ]
@@ -52,15 +52,15 @@
       "jsPassed": 29,
       "dotnet": [
         {
-          "project": "GymTracker.Core.Tests",
+          "project": "Plate.Core.Tests",
           "passed": 470
         },
         {
-          "project": "GymTracker.Web.Tests",
+          "project": "Plate.Web.Tests",
           "passed": 540
         },
         {
-          "project": "GymTracker.E2E.Tests",
+          "project": "Plate.E2E.Tests",
           "passed": 241
         }
       ]
@@ -73,15 +73,15 @@
       "jsPassed": 29,
       "dotnet": [
         {
-          "project": "GymTracker.Core.Tests",
+          "project": "Plate.Core.Tests",
           "passed": 470
         },
         {
-          "project": "GymTracker.Web.Tests",
+          "project": "Plate.Web.Tests",
           "passed": 540
         },
         {
-          "project": "GymTracker.E2E.Tests",
+          "project": "Plate.E2E.Tests",
           "passed": 241
         }
       ]
@@ -94,15 +94,15 @@
       "jsPassed": 29,
       "dotnet": [
         {
-          "project": "GymTracker.Core.Tests",
+          "project": "Plate.Core.Tests",
           "passed": 470
         },
         {
-          "project": "GymTracker.Web.Tests",
+          "project": "Plate.Web.Tests",
           "passed": 540
         },
         {
-          "project": "GymTracker.E2E.Tests",
+          "project": "Plate.E2E.Tests",
           "passed": 241
         }
       ]

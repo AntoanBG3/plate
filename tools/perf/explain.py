@@ -4,7 +4,7 @@
 import json,subprocess,pathlib
 sql=pathlib.Path(__file__).with_suffix('.sql').read_text();out=[]
 for run in range(1,6):
- p=subprocess.run(['docker','exec','-i','repa-perf-db','psql','-X','-A','-t','-U','gym','-d','gym_perf','-v','email=demo@example.test'],input=sql,capture_output=True,text=True,check=True)
+ p=subprocess.run(['docker','exec','-i','plate-perf-db','psql','-X','-A','-t','-U','gym','-d','gym_perf','-v','email=demo@example.test'],input=sql,capture_output=True,text=True,check=True)
  s=p.stdout;dec=json.JSONDecoder();section=None
  while s.strip():
   s=s.lstrip()

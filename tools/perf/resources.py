@@ -4,6 +4,6 @@
 import subprocess,json,sys,datetime
 samples=[]
 for i in range(5):
- s=subprocess.run(['docker','stats','--no-stream','--format','{{json .}}','repa-perf-app','repa-perf-db'],check=True,text=True,capture_output=True)
+ s=subprocess.run(['docker','stats','--no-stream','--format','{{json .}}','plate-perf-app','plate-perf-db'],check=True,text=True,capture_output=True)
  samples.append({'run':i+1,'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'containers':[json.loads(x)for x in s.stdout.splitlines()]})
 print(json.dumps({'phase':sys.argv[1],'env':'native linux-arm64 app256MiB1CPU; db256MiB noCPUcap; synthetic5users730d','samples':samples},indent=2))

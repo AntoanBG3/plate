@@ -1,7 +1,7 @@
 // Merges the collected Bulgarian foods with the USDA subset and removes duplicates across them.
 //   node tools/foods/merge.mjs
 // Inputs: raw/tables.csv, raw/dishes.csv, raw/off-bg.csv and the committed USDA seed.
-// Output: src/GymTracker.Web/Data/Seed/bg-foods.csv (new foods) and raw/usda-bg-names.csv (Bulgarian names found
+// Output: src/Plate.Web/Data/Seed/bg-foods.csv (new foods) and raw/usda-bg-names.csv (Bulgarian names found
 // for USDA foods that a Bulgarian source duplicated; the USDA translation pass uses them).
 //
 // Duplicates are decided by an LLM through OpenRouter on candidates found locally: a Bulgarian generic food is compared with
@@ -13,7 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { raw, repo, llm, readCsv, writeCsv, pool } from "./lib.mjs";
 
-const seedDir = path.join(repo, "src/GymTracker.Web/Data/Seed");
+const seedDir = path.join(repo, "src/Plate.Web/Data/Seed");
 const usda = readCsv(path.join(seedDir, "usda-foods.csv")).map((r) => ({ ...r, id: "u" + r.fdc_id }));
 const tables = readCsv(path.join(raw, "tables.csv")).map((r) => ({ ...r, sources: 1, origin: "table" }));
 const dishes = fs.existsSync(path.join(raw, "dishes.csv")) ? readCsv(path.join(raw, "dishes.csv")).map((r) => ({ ...r, origin: "dish" })) : [];
@@ -136,7 +136,7 @@ for (const p of off) {
     out.push({ kind: "product", barcode: p.barcode, name_bg: clean(p.name_bg), name_en: "", brand: p.brand, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, serving_g: p.serving_g, source: "https://world.openfoodfacts.org/product/" + p.barcode, fiber: p.fiber ?? "", satfat: p.satfat ?? "" });
 }
 // A Latin letter that looks Cyrillic inside a Cyrillic word ("чипc"), or the reverse, takes the alphabet of the rest
-// of its word; the same rule as GymTracker.Core MixedScript, which the app also applies when seeding.
+// of its word; the same rule as Plate.Core MixedScript, which the app also applies when seeding.
 const LATIN = "aeopcxyAEOPCXBKMHT", CYRILLIC = "аеорсхуАЕОРСХВКМНТ";
 const mixedScript = (text) => (text || "").replace(/\p{L}+/gu, (w) => {
     const c = [...w].filter((ch) => /[\u0400-\u04FF]/.test(ch)).length;

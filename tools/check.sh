@@ -7,16 +7,16 @@ cd "$(dirname "$0")/.."
 run_js=true
 install_browser_deps=false
 case "${1:-}" in
-    "") set -- GymTracker.slnx ;;
+    "") set -- Plate.slnx ;;
     --browser-deps)
         install_browser_deps=true
-        set -- GymTracker.slnx
+        set -- Plate.slnx
         ;;
-    --ci-core-web) set -- tests/GymTracker.Core.Tests tests/GymTracker.Web.Tests ;;
+    --ci-core-web) set -- tests/Plate.Core.Tests tests/Plate.Web.Tests ;;
     --ci-browser)
         run_js=false
         install_browser_deps=true
-        set -- tests/GymTracker.E2E.Tests
+        set -- tests/Plate.E2E.Tests
         ;;
     *) echo "Usage: $0 [--browser-deps | --ci-core-web | --ci-browser]" >&2; exit 2 ;;
 esac
@@ -31,7 +31,7 @@ for project in "$@"; do
     dotnet restore "$project"
     dotnet build "$project" --configuration Release --no-restore
     if [ "$install_browser_deps" = true ]; then
-        pwsh tests/GymTracker.E2E.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium webkit
+        pwsh tests/Plate.E2E.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium webkit
     fi
     dotnet test "$project" --configuration Release --no-build --no-restore
 done

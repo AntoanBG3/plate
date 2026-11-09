@@ -1,0 +1,83 @@
+@model BarcodeViewModel
+@using Plate.Core.Nutrition
+@{
+    var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    var item = Model.Result.Item;
+    var amount = Model.LastGrams ?? item?.DefaultServingGrams ?? 100;
+    ViewData["Title"] = item?.DisplayName() ?? L["Barcode"];
+    ViewData["BackUrl"] = $"/food/add?date={date}&meal={Model.Meal}&tab=barcode";
+    ViewData["BackLabel"] = L["Scan"];
+}
+@if (item is not null)
+{
+    <header class="page-head">
+        <p class="eyebrow">@(item.Brand ?? L["Barcode {0}", Model.Code])</p>
+        <h1 class="large-title" style="font-size: var(--text-title-1)">@item.DisplayName()</h1>
+        @if (Model.AddedByAnother)
+        {
+            <p class="footnote">@L["Added by another user"]</p>
+        }
+    </header>
+    <div class="card stat-grid stat-grid-4">
+        <div class="stat"><div class="stat-value num">@Math.Round(item.KcalPer100g)</div><div class="stat-label">@L["kcal"]</div></div>
+        <div class="stat"><div class="stat-value num">@item.ProteinPer100g.Kg(1)</div><div class="stat-label">@L["protein"]</div></div>
+        <div class="stat"><div class="stat-value num">@item.CarbsPer100g.Kg(1)</div><div class="stat-label">@L["carbs"]</div></div>
+        <div class="stat"><div class="stat-value num">@item.FatPer100g.Kg(1)</div><div class="stat-label">@L["fat"]</div></div>
+    </div>
+    <p class="section-footer">@L["Per 100 g"]</p>
+    <form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/log-item" class="section portion-form" data-per100="@item.KcalPer100g.Kg(),@item.ProteinPer100g.Kg()">
+        <input type="hidden" name="date" value="@date" />
+        <input type="hidden" name="meal" value="@Model.Meal" />
+        <input type="hidden" name="foodItemId" value="@item.Id" />
+        <input type="hidden" name="source" value="Barcode" />
+        @if (item.Unnamed)
+        {
+            <div class="list">
+                <div class="field-row stacked"><label for="b-name" class="sr-only">@L["Name"]</label><input id="b-name" type="text" name="name" value="@item.Name" maxlength="@Plate.Web.Features.Food.FoodItemService.MaxGivenName" required autocomplete="off" /></div>
+            </div>
+            <p class="section-footer">@L["Open Food Facts has no name for this product. The name you give it is saved for everyone."]</p>
+        }
+        <div class="list">
+            <div class="field-row"><label for="grams">@L["How much?"]</label><input id="grams" class="num" type="text" name="grams" value="@amount.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required autofocus="@(!item.Unnamed)" /><span class="unit">@L["g"]</span></div>
+        </div>
+        @if (Model.LastGrams is not null)
+        {
+            <p class="section-footer" data-last-time>@L["Last time"]</p>
+        }
+        <p class="section-footer num" data-totals>@L["{0} kcal · {1} g protein", Math.Round(item.KcalPer100g * amount / 100), (item.ProteinPer100g * amount / 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)]</p>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L[AddTo[Model.Meal]]</button>
+        <button type="submit" name="next" value="scan" class="btn btn-secondary btn-block" style="margin-top: var(--s-2)">@Ui.Icon("barcode")@L["Add and scan another"]</button>
+    </form>
+    <a class="btn btn-plain btn-block" style="margin-top: var(--s-2)" href="/feedback/new?about=Barcode&id=@item.Id">@Ui.Icon("flag")@L["Wrong product or values?"]</a>
+}
+else
+{
+    <header class="page-head">
+        <p class="eyebrow">@L["Barcode {0}", Model.Code]</p>
+        <h1 class="large-title">@(Model.Result.Status switch { LookupStatus.NoNutrition => L["No nutrition data"], LookupStatus.RateLimited => L["Try again shortly"], LookupStatus.Unavailable => L["Lookup failed"], _ => L["Not found"] })</h1>
+        <p class="subhead">@(Model.Result.Status switch
+        {
+            LookupStatus.NoNutrition => L["Open Food Facts knows this product but not its nutrition. Enter it from the label once and it's saved for everyone."],
+            LookupStatus.RateLimited => L["Open Food Facts is limiting requests. Wait a minute, or enter it from the label."],
+            LookupStatus.Unavailable => L["Open Food Facts didn't answer. Enter it from the label, or try again later."],
+            _ => L["This product isn't in Open Food Facts. Enter it from the label once and it's saved for everyone."],
+        })</p>
+    </header>
+    <div data-module="label">
+        <partial name="_ManualFoodForm" model="new ManualFoodFormModel(Model.Date, Model.Meal, Model.Code, null, BarcodeField: false, LabelAvailable: Model.LabelAvailable)" />
+    </div>
+}
+
+@functions {
+    private static readonly Dictionary<Meal, string> AddTo = new()
+    {
+        [Meal.Breakfast] = "Add to breakfast",
+        [Meal.Lunch] = "Add to lunch",
+        [Meal.Dinner] = "Add to dinner",
+        [Meal.Snack] = "Add a snack",
+    };
+}
+@if (Model.LabelAvailable)
+{
+    <script src="~/js/label.js" asp-append-version="true"></script>
+}

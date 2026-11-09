@@ -74,12 +74,12 @@ Existing tests that cover the touched code (UndoToastTests, NavigationTests, Cha
 
 ## Files
 
-- `src/GymTracker.Web/wwwroot/css/app.css`: menu visibility and item stagger; `is-pending-rise` and its rise animation; `.scroll-fade`; reduced-motion rules.
-- `src/GymTracker.Web/wwwroot/js/motion.js`: in-view observer for `reveal()`; below-the-fold rise; `motionDuration`; scroll fade updater.
-- `src/GymTracker.Web/wwwroot/js/progress.js`: per-chart deferred entrance.
-- `src/GymTracker.Web/Views/Onboarding/Index.cshtml`, `src/GymTracker.Web/Views/Food/Confirm.cshtml`: add the `scroll-fade` classes.
-- `src/GymTracker.Web/wwwroot/sw.js`: bump `CACHE` (v24 to v25) so the precached unversioned copies of the changed CSS and JS are refreshed.
-- `tests/GymTracker.E2E.Tests/MotionPolishTests.cs`: new.
+- `src/Plate.Web/wwwroot/css/app.css`: menu visibility and item stagger; `is-pending-rise` and its rise animation; `.scroll-fade`; reduced-motion rules.
+- `src/Plate.Web/wwwroot/js/motion.js`: in-view observer for `reveal()`; below-the-fold rise; `motionDuration`; scroll fade updater.
+- `src/Plate.Web/wwwroot/js/progress.js`: per-chart deferred entrance.
+- `src/Plate.Web/Views/Onboarding/Index.cshtml`, `src/Plate.Web/Views/Food/Confirm.cshtml`: add the `scroll-fade` classes.
+- `src/Plate.Web/wwwroot/sw.js`: bump `CACHE` (v24 to v25) so the precached unversioned copies of the changed CSS and JS are refreshed.
+- `tests/Plate.E2E.Tests/MotionPolishTests.cs`: new.
 
 ## Release
 

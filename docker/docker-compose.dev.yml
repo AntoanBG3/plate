@@ -1,6 +1,6 @@
 # Local development only: Postgres on 127.0.0.1:5432 for `dotnet run` and `dotnet ef`.
 # The password is a throwaway that matches appsettings.Development.json.
-name: gymtracker-dev
+name: plate-dev
 
 services:
   db:

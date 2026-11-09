@@ -1,11 +1,11 @@
-// Adds Bulgarian names to the USDA subset (src/GymTracker.Web/Data/Seed/usda-foods.csv, column name_bg) with
+// Adds Bulgarian names to the USDA subset (src/Plate.Web/Data/Seed/usda-foods.csv, column name_bg) with
 // an LLM through OpenRouter (tools/foods/lib.mjs). Cached in raw/usda-bg.json, so re-runs only translate new rows. Run again after
 // tools/usda/build_usda_subset.py rebuilds the CSV.
 import fs from "node:fs";
 import path from "node:path";
 import { raw, repo, llm, readCsv, writeCsv, pool } from "./lib.mjs";
 
-const file = path.join(repo, "src/GymTracker.Web/Data/Seed/usda-foods.csv");
+const file = path.join(repo, "src/Plate.Web/Data/Seed/usda-foods.csv");
 const rows = readCsv(file);
 const cacheFile = path.join(raw, "usda-bg.json");
 const cache = fs.existsSync(cacheFile) ? JSON.parse(fs.readFileSync(cacheFile, "utf8")) : {};

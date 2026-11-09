@@ -18,7 +18,7 @@
 
 ## Global Constraints
 
-- `GymTracker.Core` has no references to EF Core, ASP.NET Core or HttpClient. `LabelImage` is a plain record in Core.
+- `Plate.Core` has no references to EF Core, ASP.NET Core or HttpClient. `LabelImage` is a plain record in Core.
 - Every user-owned query is scoped to the current user. `/food/barcode/known` relies on the `FoodItems` query filter (own and shared foods only) and never reveals another user's private food.
 - No new NuGet packages or front-end libraries. Reuse `wwwroot/lib/barcode-detector` and `window.gymImage.shrink`.
 - No CDNs. Any changed JS file stays in `wwwroot/sw.js` `PRECACHE`; bump `CACHE` (currently `gym-static-v23`) to `gym-static-v24` once, in Task 2.
@@ -27,9 +27,9 @@
 - Model call unchanged: 20 s timeout per attempt, one retry on 5xx only, no retry on timeout.
 - Retention unchanged: label photos 30 days, LabelScans 180 days, in `SoftDeletePurge`; data export never includes photos.
 - Attribution text is exactly "Added by another user" ("Добавено от друг потребител"); never a name, email or id.
-- Every user-facing string is in `Resources/strings.bg.json`, Bulgarian in the informal "ти". Regenerate keys with `GYM_WRITE_KEYS=1 dotnet test tests/GymTracker.Web.Tests --filter CatalogueTests`; `CatalogueTests` and `BulgarianCatalogueTests` stay green.
+- Every user-facing string is in `Resources/strings.bg.json`, Bulgarian in the informal "ти". Regenerate keys with `GYM_WRITE_KEYS=1 dotnet test tests/Plate.Web.Tests --filter CatalogueTests`; `CatalogueTests` and `BulgarianCatalogueTests` stay green.
 - Numbers render with a dot in both languages (SPEC 8).
-- Test cadence: after each task run the new or affected E2E tests (filtered) plus all Core and Web tests (`dotnet test tests/GymTracker.Core.Tests && dotnet test tests/GymTracker.Web.Tests`). Run the full E2E suite at the end of each workstream (after Task 3 and Task 7) and before merging. A failing test run must stop the task; never pipe test output through `grep` without keeping the exit code.
+- Test cadence: after each task run the new or affected E2E tests (filtered) plus all Core and Web tests (`dotnet test tests/Plate.Core.Tests && dotnet test tests/Plate.Web.Tests`). Run the full E2E suite at the end of each workstream (after Task 3 and Task 7) and before merging. A failing test run must stop the task; never pipe test output through `grep` without keeping the exit code.
 - Each task is one commit (unless a step says otherwise), message ending with the session's attribution lines. Work on branch `scan-and-photos`; do not push.
 
 ## Review Focus
@@ -103,16 +103,16 @@ git commit -m "Spec Phase 15: scan into the barcode field and up to three label 
 ### Task 2: Scan into the barcode field
 
 **Files:**
-- Create: `src/GymTracker.Web/Views/Food/_ScannerSheet.cshtml`
-- Modify: `src/GymTracker.Web/Views/Food/Add.cshtml:249-279` (Overlays section)
-- Modify: `src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml:47-50` (barcode row)
-- Modify: `src/GymTracker.Web/wwwroot/js/scanner.js` (whole file)
-- Modify: `src/GymTracker.Web/wwwroot/js/label.js` (remove `toggleShare` and the `input` listener)
-- Modify: `src/GymTracker.Web/wwwroot/css/app.css` (after line 180)
-- Modify: `src/GymTracker.Web/wwwroot/sw.js:4` (cache version)
-- Modify: `src/GymTracker.Web/Resources/strings.bg.json`, `strings.keys.json` (regenerated)
-- Create: `tests/GymTracker.E2E.Tests/BarcodeFieldTests.cs`
-- Test: `tests/GymTracker.Web.Tests/LabelScanTests.cs` (render checks)
+- Create: `src/Plate.Web/Views/Food/_ScannerSheet.cshtml`
+- Modify: `src/Plate.Web/Views/Food/Add.cshtml:249-279` (Overlays section)
+- Modify: `src/Plate.Web/Views/Food/_ManualFoodForm.cshtml:47-50` (barcode row)
+- Modify: `src/Plate.Web/wwwroot/js/scanner.js` (whole file)
+- Modify: `src/Plate.Web/wwwroot/js/label.js` (remove `toggleShare` and the `input` listener)
+- Modify: `src/Plate.Web/wwwroot/css/app.css` (after line 180)
+- Modify: `src/Plate.Web/wwwroot/sw.js:4` (cache version)
+- Modify: `src/Plate.Web/Resources/strings.bg.json`, `strings.keys.json` (regenerated)
+- Create: `tests/Plate.E2E.Tests/BarcodeFieldTests.cs`
+- Test: `tests/Plate.Web.Tests/LabelScanTests.cs` (render checks)
 
 **Interfaces:**
 - Consumes: `window.gymSheet.show/hide`, `window.gymModule`, `UntestedAreasTests.Ean13Png(string)` (internal static, E2E).
@@ -147,7 +147,7 @@ public async Task The_form_after_a_barcode_miss_has_no_scan_button()
 }
 ```
 
-- [ ] **Step 2: Run them and see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~LabelScanTests.The_manual_tab_has_a_scan_button|FullyQualifiedName~LabelScanTests.The_form_after_a_barcode_miss"`. Expected: the first FAILS (no `data-scan-into`, no `id="scanner"` on the manual tab); the second passes already and guards the miss page.
+- [ ] **Step 2: Run them and see them fail.** `dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~LabelScanTests.The_manual_tab_has_a_scan_button|FullyQualifiedName~LabelScanTests.The_form_after_a_barcode_miss"`. Expected: the first FAILS (no `data-scan-into`, no `id="scanner"` on the manual tab); the second passes already and guards the miss page.
 
 - [ ] **Step 3: Move the sheet into a partial.** Create `Views/Food/_ScannerSheet.cshtml` with the markup now at `Add.cshtml:251-266`, unchanged:
 
@@ -373,23 +373,23 @@ Note the one behaviour change on the photo input: `event.target.value = ""` so p
 
 - [ ] **Step 6: Remove the duplicate from `label.js`.** Delete `toggleShare`, the `onInput` handler, its `root.addEventListener("input", onInput)` and `root.removeEventListener("input", onInput)`, and the `toggleShare(placed.querySelector("form"));` call after the swap. The server already renders `[data-share]` hidden or shown from the barcode it knows (`hasBarcode` in `_ManualFoodForm.cshtml`), so the swapped form is right without it. On the barcode miss page (`Barcode.cshtml`) there is no barcode input, so nothing is lost there.
 
-- [ ] **Step 7: Strings.** Add to `strings.bg.json`: `"Scan the barcode": "Сканирай баркода"`. Regenerate keys: `GYM_WRITE_KEYS=1 dotnet test tests/GymTracker.Web.Tests --filter CatalogueTests`.
+- [ ] **Step 7: Strings.** Add to `strings.bg.json`: `"Scan the barcode": "Сканирай баркода"`. Regenerate keys: `GYM_WRITE_KEYS=1 dotnet test tests/Plate.Web.Tests --filter CatalogueTests`.
 
 - [ ] **Step 8: Bump the service worker cache.** In `wwwroot/sw.js` change `const CACHE = "gym-static-v23";` to `const CACHE = "gym-static-v24";`. Do not bump again in later tasks; the branch ships as one deploy.
 
-- [ ] **Step 9: Write the E2E tests.** Create `tests/GymTracker.E2E.Tests/BarcodeFieldTests.cs`:
+- [ ] **Step 9: Write the E2E tests.** Create `tests/Plate.E2E.Tests/BarcodeFieldTests.cs`:
 
 ```csharp
 using FluentAssertions;
 using Microsoft.Playwright;
 
-namespace GymTracker.E2E.Tests;
+namespace Plate.E2E.Tests;
 
 /// <summary>The scan button beside the manual form's barcode field (SPEC 7, Phase 15).</summary>
 [Collection(E2ECollection.Name)]
 public class BarcodeFieldTests(E2EFixture app)
 {
-    private static string Today => GymTracker.Core.Time.UserClock.Today(DateTimeOffset.UtcNow, GymTracker.Core.Domain.UserProfile.DefaultTimeZoneId).ToString("yyyy-MM-dd");
+    private static string Today => Plate.Core.Time.UserClock.Today(DateTimeOffset.UtcNow, Plate.Core.Domain.UserProfile.DefaultTimeZoneId).ToString("yyyy-MM-dd");
 
     private static string Fixture(string name) => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Fixtures", name));
 
@@ -473,9 +473,9 @@ public class BarcodeFieldTests(E2EFixture app)
 
 ```bash
 dotnet build
-dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~LabelScanTests"
-dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~BarcodeFieldTests|FullyQualifiedName~UntestedAreasTests.A_photo_of_a_barcode|FullyQualifiedName~LabelPhotoTests"
-dotnet test tests/GymTracker.Core.Tests && dotnet test tests/GymTracker.Web.Tests
+dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~LabelScanTests"
+dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~BarcodeFieldTests|FullyQualifiedName~UntestedAreasTests.A_photo_of_a_barcode|FullyQualifiedName~LabelPhotoTests"
+dotnet test tests/Plate.Core.Tests && dotnet test tests/Plate.Web.Tests
 ```
 
 Expected: all PASS. `LabelPhotoTests.The_share_choice_follows_the_barcode_field` must stay green now that `scanner.js` owns the toggle.
@@ -483,7 +483,7 @@ Expected: all PASS. `LabelPhotoTests.The_share_choice_follows_the_barcode_field`
 - [ ] **Step 11: Commit.**
 
 ```bash
-git add -A src/GymTracker.Web tests
+git add -A src/Plate.Web tests
 git commit -m "Scan a barcode into the manual form's barcode field
 
 The scanner sheet is now on the Manual tab too, and a code found from the
@@ -497,16 +497,16 @@ without a label model."
 ### Task 3: Offer the food the app already has for a scanned or typed barcode
 
 **Files:**
-- Modify: `src/GymTracker.Web/Features/Food/FoodItemService.cs:112-132` (extract `FindByBarcodeAsync`)
-- Modify: `src/GymTracker.Web/Controllers/FoodController.cs` (new action after `Barcode`)
-- Modify: `src/GymTracker.Web/ViewModels/ViewModels.cs` (new `KnownBarcodeModel`)
-- Create: `src/GymTracker.Web/Views/Food/_KnownBarcode.cshtml`
-- Modify: `src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml` (a `data-known` slot after the name/barcode list)
-- Modify: `src/GymTracker.Web/wwwroot/js/scanner.js` (check and reject)
-- Modify: `src/GymTracker.Web/wwwroot/js/label.js` (announce a barcode found in the photo)
-- Modify: `src/GymTracker.Web/wwwroot/css/app.css`
-- Modify: `src/GymTracker.Web/Resources/strings.bg.json`, `strings.keys.json`
-- Test: `tests/GymTracker.Web.Tests/SharedFoodTests.cs`, `tests/GymTracker.E2E.Tests/BarcodeFieldTests.cs`
+- Modify: `src/Plate.Web/Features/Food/FoodItemService.cs:112-132` (extract `FindByBarcodeAsync`)
+- Modify: `src/Plate.Web/Controllers/FoodController.cs` (new action after `Barcode`)
+- Modify: `src/Plate.Web/ViewModels/ViewModels.cs` (new `KnownBarcodeModel`)
+- Create: `src/Plate.Web/Views/Food/_KnownBarcode.cshtml`
+- Modify: `src/Plate.Web/Views/Food/_ManualFoodForm.cshtml` (a `data-known` slot after the name/barcode list)
+- Modify: `src/Plate.Web/wwwroot/js/scanner.js` (check and reject)
+- Modify: `src/Plate.Web/wwwroot/js/label.js` (announce a barcode found in the photo)
+- Modify: `src/Plate.Web/wwwroot/css/app.css`
+- Modify: `src/Plate.Web/Resources/strings.bg.json`, `strings.keys.json`
+- Test: `tests/Plate.Web.Tests/SharedFoodTests.cs`, `tests/Plate.E2E.Tests/BarcodeFieldTests.cs`
 
 **Interfaces:**
 - Consumes: Task 2's `data-barcode-input`, the `change` event `scanner.js` dispatches after a scan; `FoodItemService.AddedByAnother(FoodItem, string?)` (existing static).
@@ -594,7 +594,7 @@ public async Task Saving_privately_after_rejecting_a_shared_match_succeeds()
 
 The last test passes already (the private index allows it); it pins the rule the client relies on.
 
-- [ ] **Step 2: Run them and see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~SharedFoodTests"`. Expected: the four `Known` tests FAIL with 404 (no route).
+- [ ] **Step 2: Run them and see them fail.** `dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~SharedFoodTests"`. Expected: the four `Known` tests FAIL with 404 (no route).
 
 - [ ] **Step 3: Extract the local lookup.** In `FoodItemService.cs`, add above `LookupBarcodeAsync` and use it there:
 
@@ -634,13 +634,13 @@ public async Task<IActionResult> KnownBarcode(DateOnly date, Meal meal, string? 
 }
 ```
 
-`ViewModels.cs` already imports `GymTracker.Core.Domain`.
+`ViewModels.cs` already imports `Plate.Core.Domain`.
 
 - [ ] **Step 5: The partial.** Create `Views/Food/_KnownBarcode.cshtml`:
 
 ```cshtml
 @model KnownBarcodeModel
-@using GymTracker.Core.Nutrition
+@using Plate.Core.Nutrition
 @{
     var inv = System.Globalization.CultureInfo.InvariantCulture;
     var item = Model.Item;
@@ -696,7 +696,7 @@ CSS, after the rule added in Task 2:
 
 Regenerate keys as in Task 2 Step 7.
 
-- [ ] **Step 7: Run the Web tests.** `dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~SharedFoodTests"`. Expected: PASS.
+- [ ] **Step 7: Run the Web tests.** `dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~SharedFoodTests"`. Expected: PASS.
 
 - [ ] **Step 8: The client check and reject.** In `scanner.js`, after `document.addEventListener("input", onInput);` (before the `api` check, so it works even without the detector), add:
 
@@ -893,9 +893,9 @@ Filling `#m-barcode` with `FillAsync` and then tapping Save blurs the field, whi
 
 ```bash
 dotnet build
-dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~BarcodeFieldTests|FullyQualifiedName~LabelPhotoTests"
-dotnet test tests/GymTracker.Core.Tests && dotnet test tests/GymTracker.Web.Tests
-dotnet test tests/GymTracker.E2E.Tests
+dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~BarcodeFieldTests|FullyQualifiedName~LabelPhotoTests"
+dotnet test tests/Plate.Core.Tests && dotnet test tests/Plate.Web.Tests
+dotnet test tests/Plate.E2E.Tests
 ```
 
 Expected: all PASS. If `NavigationTests.Quick_add_shows_the_meal_it_went_into` (WebKit) flakes, rerun it alone three times before treating it as a failure (known flake).
@@ -903,7 +903,7 @@ Expected: all PASS. If `NavigationTests.Quick_add_shows_the_meal_it_went_into` (
 - [ ] **Step 12: Commit.**
 
 ```bash
-git add -A src/GymTracker.Web tests
+git add -A src/Plate.Web tests
 git commit -m "Offer the food the app already has for a barcode in the manual form
 
 A scanned or typed barcode that is already the user's own food or a shared
@@ -918,16 +918,16 @@ no Open Food Facts call."
 ### Task 4: The label reader takes up to three images
 
 **Files:**
-- Modify: `src/GymTracker.Core/Nutrition/LabelReading.cs:33-38`
-- Modify: `src/GymTracker.Web/Integrations/OpenRouterLabelReader.cs` (instructions, `TestAsync`, `ReadAsync`, `BodyAsync`, `SwitchingLabelReader.ReadAsync`)
-- Modify: `src/GymTracker.Web/Features/Food/LabelScanService.cs:30` (call site only)
-- Modify: `tests/GymTracker.Web.Tests/FakeLabelReader.cs`, `tests/GymTracker.E2E.Tests/AiStubs.cs:52-72`
-- Test: `tests/GymTracker.Web.Tests/OpenRouterTests.cs` (`OpenRouterLabelReaderTests`)
+- Modify: `src/Plate.Core/Nutrition/LabelReading.cs:33-38`
+- Modify: `src/Plate.Web/Integrations/OpenRouterLabelReader.cs` (instructions, `TestAsync`, `ReadAsync`, `BodyAsync`, `SwitchingLabelReader.ReadAsync`)
+- Modify: `src/Plate.Web/Features/Food/LabelScanService.cs:30` (call site only)
+- Modify: `tests/Plate.Web.Tests/FakeLabelReader.cs`, `tests/Plate.E2E.Tests/AiStubs.cs:52-72`
+- Test: `tests/Plate.Web.Tests/OpenRouterTests.cs` (`OpenRouterLabelReaderTests`)
 
 **Interfaces:**
 - Consumes: nothing new.
 - Produces:
-  - `public record LabelImage(byte[] Bytes, string ContentType);` in `GymTracker.Core.Nutrition`.
+  - `public record LabelImage(byte[] Bytes, string ContentType);` in `Plate.Core.Nutrition`.
   - `ILabelReader.ReadAsync(IReadOnlyList<LabelImage> images, CancellationToken ct)` (replaces the `byte[]`/`string` overload).
   - `OpenRouterLabelReader.ReadAsync(IReadOnlyList<LabelImage> images, string apiKey, string model, CancellationToken ct)`.
   - `FakeLabelReader.LastImages` (`IReadOnlyList<LabelImage>?`), used by Task 6's tests.
@@ -970,7 +970,7 @@ public async Task Several_photos_go_in_order_as_image_parts_of_one_message()
 
 Update every other `stub.Label().ReadAsync(Jpeg, "image/jpeg", ...)` call in the file to the list form.
 
-- [ ] **Step 2: Run them and see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~OpenRouterLabelReaderTests"`. Expected: compile FAIL (`LabelImage` doesn't exist).
+- [ ] **Step 2: Run them and see them fail.** `dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~OpenRouterLabelReaderTests"`. Expected: compile FAIL (`LabelImage` doesn't exist).
 
 - [ ] **Step 3: Core types.** In `LabelReading.cs`, before `ILabelReader`:
 
@@ -1049,9 +1049,9 @@ and change the interface method to:
 
 ```bash
 dotnet build
-dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~OpenRouterLabelReaderTests|FullyQualifiedName~LabelScanTests|FullyQualifiedName~LabelReaderSwitchTests"
-dotnet test tests/GymTracker.Core.Tests && dotnet test tests/GymTracker.Web.Tests
-dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~LabelPhotoTests"
+dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~OpenRouterLabelReaderTests|FullyQualifiedName~LabelScanTests|FullyQualifiedName~LabelReaderSwitchTests"
+dotnet test tests/Plate.Core.Tests && dotnet test tests/Plate.Web.Tests
+dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~LabelPhotoTests"
 ```
 
 Expected: all PASS; single-photo behaviour is unchanged.
@@ -1068,17 +1068,17 @@ git commit -m "Let the label reader send up to three photos in one call"
 ### Task 5: Store up to three photos per scan
 
 **Files:**
-- Modify: `src/GymTracker.Core/Domain/LabelScan.cs`
-- Modify: `src/GymTracker.Web/Data/AppDbContext.cs:290-300`
-- Create: `src/GymTracker.Web/Data/Migrations/<timestamp>_LabelPhotoSlots.cs` (generated, then edited)
-- Modify: `src/GymTracker.Web/Features/Food/LabelScanService.cs:41` (`Photo =` → `Photos =`)
-- Modify: `src/GymTracker.Web/Features/Feedback/LabelScanReport.cs`
-- Modify: `src/GymTracker.Web/Controllers/AdminLabelsController.cs`
-- Modify: `src/GymTracker.Web/Views/AdminLabels/Scan.cshtml:13-20`, `Views/AdminLabels/List.cshtml:41`
-- Modify: `src/GymTracker.Web/Cli/FeedbackCommand.cs:31, 208-219, 496-499`
-- Modify: `src/GymTracker.Web/Views/AdminAi/Model.cshtml:70`
+- Modify: `src/Plate.Core/Domain/LabelScan.cs`
+- Modify: `src/Plate.Web/Data/AppDbContext.cs:290-300`
+- Create: `src/Plate.Web/Data/Migrations/<timestamp>_LabelPhotoSlots.cs` (generated, then edited)
+- Modify: `src/Plate.Web/Features/Food/LabelScanService.cs:41` (`Photo =` → `Photos =`)
+- Modify: `src/Plate.Web/Features/Feedback/LabelScanReport.cs`
+- Modify: `src/Plate.Web/Controllers/AdminLabelsController.cs`
+- Modify: `src/Plate.Web/Views/AdminLabels/Scan.cshtml:13-20`, `Views/AdminLabels/List.cshtml:41`
+- Modify: `src/Plate.Web/Cli/FeedbackCommand.cs:31, 208-219, 496-499`
+- Modify: `src/Plate.Web/Views/AdminAi/Model.cshtml:70`
 - Modify tests that build `Photo = new LabelScanPhoto {...}`: `ExportTests.cs:78`, `FeedbackExtrasTests.cs:144-158`, `AdminLabelsTests.cs:36`, `LabelDataTests.cs:87`, `AccountCliTests.cs:216`, `LabelScanTests.cs:150-152`
-- Test: `tests/GymTracker.Web.Tests/AdminLabelsTests.cs`, `tests/GymTracker.Web.Tests/MigrationTests.cs`
+- Test: `tests/Plate.Web.Tests/AdminLabelsTests.cs`, `tests/Plate.Web.Tests/MigrationTests.cs`
 
 **Interfaces:**
 - Consumes: nothing new.
@@ -1160,7 +1160,7 @@ public async Task Rolling_back_label_photo_slots_keeps_the_first_photo()
 
 Fix the remaining `Photo = new LabelScanPhoto { ... }` sites in the listed tests to `Photos = [new LabelScanPhoto { ... }]` and `Include(s => s.Photo)` to `Include(s => s.Photos)`; in `FeedbackExtrasTests` assert `left[fresh.Id].Photos.Should().NotBeEmpty();` and `left[month.Id].Photos.Should().BeEmpty("the photo is kept 30 days, the scan 180");`; in `LabelScanTests.Each_read_stores_a_scan_and_its_photo` use `var photo = scan.Photos.Single();` and `(photo.Position, photo.ContentType, photo.Bytes.Length, photo.Width).Should().Be((0, "image/jpeg", 5000, 1200));`.
 
-- [ ] **Step 2: Run them and see them fail.** `dotnet build tests/GymTracker.Web.Tests`. Expected: compile FAIL (`Photos`, `Position` don't exist).
+- [ ] **Step 2: Run them and see them fail.** `dotnet build tests/Plate.Web.Tests`. Expected: compile FAIL (`Photos`, `Position` don't exist).
 
 - [ ] **Step 3: Domain.** In `LabelScan.cs`, replace `public LabelScanPhoto? Photo { get; set; }` with `public List<LabelScanPhoto> Photos { get; set; } = [];`, change the `LabelScanPhoto` summary to "One of a scan's photos (up to three, in the order taken), in its own table so lists never load them. Deleted after 30 days.", and add:
 
@@ -1184,7 +1184,7 @@ and in the `LabelScanPhoto` block add `e.HasIndex(x => new { x.LabelScanId, x.Po
 
 ```bash
 dotnet tool restore
-dotnet ef migrations add LabelPhotoSlots --project src/GymTracker.Web --output-dir Data/Migrations
+dotnet ef migrations add LabelPhotoSlots --project src/Plate.Web --output-dir Data/Migrations
 ```
 
 Read the generated `Up`: it should drop `IX_LabelScanPhotos_LabelScanId`, add `Position integer NOT NULL DEFAULT 0`, and create unique `IX_LabelScanPhotos_LabelScanId_Position`. Existing photos get `Position` 0. In `Down`, before the statement that recreates the unique `IX_LabelScanPhotos_LabelScanId` index, add:
@@ -1194,7 +1194,7 @@ Read the generated `Up`: it should drop `IX_LabelScanPhotos_LabelScanId`, add `P
             migrationBuilder.Sql("""DELETE FROM "LabelScanPhotos" WHERE "Position" > 0;""");
 ```
 
-Check the SQL against a dev database: `docker compose -f docker/docker-compose.dev.yml up -d db`, then `dotnet ef migrations script UnnamedFoods LabelPhotoSlots --project src/GymTracker.Web` and read it.
+Check the SQL against a dev database: `docker compose -f docker/docker-compose.dev.yml up -d db`, then `dotnet ef migrations script UnnamedFoods LabelPhotoSlots --project src/Plate.Web` and read it.
 
 - [ ] **Step 6: Report, admin, CLI.** In `LabelScanReport.cs`:
 
@@ -1271,8 +1271,8 @@ and `LabelLine` ends with `+ (s.PhotoCount == 0 ? " (photo deleted)" : s.PhotoCo
 
 ```bash
 dotnet build
-dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~AdminLabelsTests|FullyQualifiedName~MigrationTests|FullyQualifiedName~LabelScanTests|FullyQualifiedName~LabelDataTests|FullyQualifiedName~FeedbackExtrasTests|FullyQualifiedName~ExportTests|FullyQualifiedName~AccountCliTests"
-dotnet test tests/GymTracker.Core.Tests && dotnet test tests/GymTracker.Web.Tests
+dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~AdminLabelsTests|FullyQualifiedName~MigrationTests|FullyQualifiedName~LabelScanTests|FullyQualifiedName~LabelDataTests|FullyQualifiedName~FeedbackExtrasTests|FullyQualifiedName~ExportTests|FullyQualifiedName~AccountCliTests"
+dotnet test tests/Plate.Core.Tests && dotnet test tests/Plate.Web.Tests
 ```
 
 Expected: all PASS, including `LabelDataTests` (a third account sees no other account's photos) and the export test (no photo bytes).
@@ -1296,10 +1296,10 @@ audited. Rolling back keeps each scan's first photo."
 ### Task 6: Read one to three photos at `POST /food/label`
 
 **Files:**
-- Modify: `src/GymTracker.Web/Features/Food/LabelScanService.cs:12-46`
-- Modify: `src/GymTracker.Web/Controllers/FoodController.cs:163-197`
-- Modify: `src/GymTracker.Web/Resources/strings.bg.json`, `strings.keys.json`
-- Test: `tests/GymTracker.Web.Tests/LabelScanTests.cs`, `tests/GymTracker.E2E.Tests/LabelPhotoTests.cs` (size limit)
+- Modify: `src/Plate.Web/Features/Food/LabelScanService.cs:12-46`
+- Modify: `src/Plate.Web/Controllers/FoodController.cs:163-197`
+- Modify: `src/Plate.Web/Resources/strings.bg.json`, `strings.keys.json`
+- Test: `tests/Plate.Web.Tests/LabelScanTests.cs`, `tests/Plate.E2E.Tests/LabelPhotoTests.cs` (size limit)
 
 **Interfaces:**
 - Consumes: `LabelImage`, `ILabelReader.ReadAsync(IReadOnlyList<LabelImage>, ...)` (Task 4); `LabelScan.Photos`, `LabelScanPhoto.Position`, `LabelScanPhoto.MaxPerScan` (Task 5); `FakeLabelReader.LastImages`.
@@ -1391,7 +1391,7 @@ public async Task A_three_photo_read_counts_once_toward_the_limit()
 
 The last test uses the same `RateLimits:AiLabelPerWindow` override as the existing rate-limit test in this file.
 
-- [ ] **Step 2: Run them and see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~LabelScanTests"`. Expected: the new tests FAIL (only the first photo is bound).
+- [ ] **Step 2: Run them and see them fail.** `dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~LabelScanTests"`. Expected: the new tests FAIL (only the first photo is bound).
 
 - [ ] **Step 3: The service.** In `LabelScanService.cs` add `public record LabelPhotoUpload(byte[] Bytes, int Width, int Height);` next to `LabelScanResult`, change the class summary to "Reads one to three label photos, stores the scan with its photos, and records what the user saved (SPEC 6.6).", and replace `ReadAsync` with:
 
@@ -1531,9 +1531,9 @@ The last test uses the same `RateLimits:AiLabelPerWindow` override as the existi
 
 ```bash
 dotnet build
-dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~LabelScanTests"
-dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~LabelPhotoTests"
-dotnet test tests/GymTracker.Core.Tests && dotnet test tests/GymTracker.Web.Tests
+dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~LabelScanTests"
+dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~LabelPhotoTests"
+dotnet test tests/Plate.Core.Tests && dotnet test tests/Plate.Web.Tests
 ```
 
 Expected: all PASS. The existing single-photo E2E tests still pass because `label.js` still sends one `photo` field.
@@ -1553,13 +1553,13 @@ model call and stores them in order on one scan."
 ### Task 7: The client — optional extra slots, read together
 
 **Files:**
-- Create: `src/GymTracker.Web/Views/Food/_LabelPhotoSlots.cshtml`
-- Modify: `src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml:15-24` (the `label-pick` block)
-- Modify: `src/GymTracker.Web/Views/Food/Add.cshtml:51-70` (Scan tab)
-- Modify: `src/GymTracker.Web/wwwroot/js/label.js`
-- Modify: `src/GymTracker.Web/wwwroot/css/app.css` (after line 412)
-- Modify: `src/GymTracker.Web/Resources/strings.bg.json`, `strings.keys.json`
-- Test: `tests/GymTracker.Web.Tests/LabelScanTests.cs` (markup), `tests/GymTracker.E2E.Tests/LabelPhotoTests.cs`
+- Create: `src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml`
+- Modify: `src/Plate.Web/Views/Food/_ManualFoodForm.cshtml:15-24` (the `label-pick` block)
+- Modify: `src/Plate.Web/Views/Food/Add.cshtml:51-70` (Scan tab)
+- Modify: `src/Plate.Web/wwwroot/js/label.js`
+- Modify: `src/Plate.Web/wwwroot/css/app.css` (after line 412)
+- Modify: `src/Plate.Web/Resources/strings.bg.json`, `strings.keys.json`
+- Test: `tests/Plate.Web.Tests/LabelScanTests.cs` (markup), `tests/Plate.E2E.Tests/LabelPhotoTests.cs`
 
 **Interfaces:**
 - Consumes: Task 6's repeated `photo`/`width`/`height` fields; Task 4's E2E stub (one image: "Айрян", no serving; two or more: "Айрян Верея", serving 250; typed name "no label" fails, "slow" answers slowly); Task 3's `label:barcode` dispatch (kept as is).
@@ -1771,13 +1771,13 @@ public async Task The_extra_photo_slots_are_there_but_closed_until_asked_for()
     }
 ```
 
-- [ ] **Step 3: Run them and see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~The_extra_photo_slots"` and `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~LabelPhotoTests"`. Expected: the new tests FAIL (no `data-label-more`); the existing label tests pass.
+- [ ] **Step 3: Run them and see them fail.** `dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~The_extra_photo_slots"` and `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~LabelPhotoTests"`. Expected: the new tests FAIL (no `data-label-more`); the existing label tests pass.
 
 - [ ] **Step 4: The slots partial.** Create `Views/Food/_LabelPhotoSlots.cshtml`:
 
 ```cshtml
 @model bool
-@using GymTracker.Core.Domain
+@using Plate.Core.Domain
 @* Up to three photos read together (SPEC 6.6). Closed until "Add more photos"; then the single photo button gives way to
    the slots and nothing is sent until "Read the label". The model is true on the Scan tab, where the filled form opens below. *@
 <button type="button" class="btn btn-plain btn-block label-more" data-label-more aria-expanded="false">@Ui.Icon("plus")@L["Add more photos"]</button>
@@ -2057,16 +2057,16 @@ Keep the existing behaviours: only the latest request's answer is used, a photo 
 
 ```bash
 dotnet build
-dotnet test tests/GymTracker.Web.Tests --filter "FullyQualifiedName~LabelScanTests"
-dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~LabelPhotoTests|FullyQualifiedName~BarcodeFieldTests"
-dotnet test tests/GymTracker.Core.Tests && dotnet test tests/GymTracker.Web.Tests
+dotnet test tests/Plate.Web.Tests --filter "FullyQualifiedName~LabelScanTests"
+dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~LabelPhotoTests|FullyQualifiedName~BarcodeFieldTests"
+dotnet test tests/Plate.Core.Tests && dotnet test tests/Plate.Web.Tests
 ```
 
 Expected: all PASS, including the existing `A_second_photo_replaces_a_first_one_still_being_read` and `A_file_the_browser_cannot_open_leaves_the_form_alone` (single-button path unchanged).
 
-- [ ] **Step 9: Check the layout by eye at 390 px.** Run locally (`docker compose -f docker/docker-compose.dev.yml up -d db`, `dotnet run --project src/GymTracker.Web`), open the Manual tab and the Scan tab in Chromium at 390 × 844 with the label model on, open the slots, fill two, and screenshot in light and dark and in Bulgarian. Nothing scrolls sideways; slots are square; the remove button doesn't cover the slot's label; "Таблица" and "По желание" fit their slots.
+- [ ] **Step 9: Check the layout by eye at 390 px.** Run locally (`docker compose -f docker/docker-compose.dev.yml up -d db`, `dotnet run --project src/Plate.Web`), open the Manual tab and the Scan tab in Chromium at 390 × 844 with the label model on, open the slots, fill two, and screenshot in light and dark and in Bulgarian. Nothing scrolls sideways; slots are square; the remove button doesn't cover the slot's label; "Таблица" and "По желание" fit their slots.
 
-- [ ] **Step 10: Run the full E2E suite (end of workstream B).** `dotnet test tests/GymTracker.E2E.Tests`. Expected: all PASS (rerun the known WebKit flake alone if it fails).
+- [ ] **Step 10: Run the full E2E suite (end of workstream B).** `dotnet test tests/Plate.E2E.Tests`. Expected: all PASS (rerun the known WebKit flake alone if it fails).
 
 - [ ] **Step 11: Commit.**
 
@@ -2094,7 +2094,7 @@ are disabled while a read runs."
 ```bash
 dotnet build
 dotnet test
-dotnet test tests/GymTracker.E2E.Tests
+dotnet test tests/Plate.E2E.Tests
 git status
 ```
 
@@ -2104,16 +2104,16 @@ Report the actual counts. Every test must pass; the tree must be clean.
 
 - [ ] **Step 3: Merge.** `git switch main && git merge --no-ff scan-and-photos -m "Merge branch 'scan-and-photos'"`. Do not push unless Antoan asks.
 
-- [ ] **Step 4: Pre-deploy dump on wizard.** The migration changes `LabelScanPhotos`. Take a dump into `~` (never the stack folder; rsync `--delete` removes it), using the command in `README.md` "Backups" with the output `~/gymtracker-pre-label-photo-slots-20261010.dump`.
+- [ ] **Step 4: Pre-deploy dump on wizard.** The migration changes `LabelScanPhotos`. Take a dump into `~` (never the stack folder; rsync `--delete` removes it), using the command in `README.md` "Backups" with the output `~/plate-pre-label-photo-slots-20261010.dump`.
 
 - [ ] **Step 5: Deploy.** Follow `README.md` "Updating" exactly: the rsync line with its `P` filters, then the build on wizard with `APP_VERSION` set to the merge commit's short sha so reports record it.
 
 - [ ] **Step 6: Verify live.**
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" https://gym.peychev.uk/account/login
-ssh wizard docker logs --since 5m gymtracker-app 2>&1 | grep -iE "error|fail|exception" || true
-ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll ai test label
+curl -s -o /dev/null -w "%{http_code}\n" https://plate.peychev.uk/account/login
+ssh wizard docker logs --since 5m plate-app 2>&1 | grep -iE "error|fail|exception" || true
+ssh wizard docker exec plate-app dotnet Plate.Web.dll ai test label
 ```
 
 Expected: `200`, no new errors, and the sample label read correctly. Then check `/food/add?tab=manual` on the live site at 390 px shows the scan button.
@@ -2121,11 +2121,11 @@ Expected: `200`, no new errors, and the sample label read correctly. Then check 
 - [ ] **Step 7: What's new.** Two user-visible changes, two entries (match the tone of `feedback changelog list`; Bulgarian uses "ти" and the app's own names from `strings.bg.json`):
 
 ```bash
-ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll feedback changelog add \
+ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback changelog add \
   --en "Manual: tap the barcode icon next to Barcode to scan it instead of typing it. If the app already has that product, it asks whether it's the same food." \
   --bg "Ръчно: докосни иконата до Баркод, за да го сканираш, вместо да го пишеш. Ако продуктът вече е в приложението, ще те попита дали е същата храна." \
   --version <sha>
-ssh wizard docker exec gymtracker-app dotnet GymTracker.Web.dll feedback changelog add \
+ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback changelog add \
   --en "Reading a label from a photo: tap Add more photos to add the front or another side of the pack as well, then Read the label to read them all together." \
   --bg "Четене на етикет от снимка: докосни „Добави още снимки“, за да добавиш и предната или друга страна на опаковката, после „Прочети етикета“, за да се прочетат всички заедно." \
   --version <sha>

@@ -1,10 +1,10 @@
 // Translates the interface strings into Bulgarian with an LLM through OpenRouter (dev-only; the app never calls this).
 //
-//   GYM_WRITE_KEYS=1 dotnet test --filter CatalogueTests      # writes src/GymTracker.Web/Resources/strings.keys.json
+//   GYM_WRITE_KEYS=1 dotnet test --filter CatalogueTests      # writes src/Plate.Web/Resources/strings.keys.json
 //   node tools/i18n/translate.mjs [--all] [--dry-run]           # fills in strings.bg.json
 //
 // Only keys missing from strings.bg.json are sent unless --all is given. The API key is read from OPENROUTER_API_KEY
-// or ~/.config/gymtracker/openrouter-key; the model from OPENROUTER_MODEL (see the default below), the reasoning effort
+// or ~/.config/plate/openrouter-key; the model from OPENROUTER_MODEL (see the default below), the reasoning effort
 // from OPENROUTER_EFFORT.
 // Review the output by hand before committing: this produces a draft, not the final text.
 import fs from "node:fs";
@@ -12,8 +12,8 @@ import path from "node:path";
 import { llm } from "../foods/lib.mjs";
 
 const repo = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
-const keysFile = path.join(repo, "src/GymTracker.Web/Resources/strings.keys.json");
-const bgFile = path.join(repo, "src/GymTracker.Web/Resources/strings.bg.json");
+const keysFile = path.join(repo, "src/Plate.Web/Resources/strings.keys.json");
+const bgFile = path.join(repo, "src/Plate.Web/Resources/strings.bg.json");
 const all = process.argv.includes("--all");
 const dryRun = process.argv.includes("--dry-run");
 
@@ -83,7 +83,7 @@ Domain vocabulary (use these consistently)
 
 Hard rules
 - Keep every placeholder ({0}, {1}, …) exactly once, unchanged; move it wherever Bulgarian grammar wants it.
-- Keep product and format names as they are: OpenRouter, Open Food Facts, USDA, CSV, EAN, UPC, .env, GymTracker.
+- Keep product and format names as they are: OpenRouter, Open Food Facts, USDA, CSV, EAN, UPC, .env, Plate.
 - Strings that already contain Bulgarian (example food names) keep that Bulgarian.
 - "W" is the label for a warm-up set in a narrow column: use a single letter (З).
 - If a string is a count form ("1 set" / "{0} sets"), give the matching Bulgarian form (1 серия / {0} серии).

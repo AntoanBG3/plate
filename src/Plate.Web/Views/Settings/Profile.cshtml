@@ -1,0 +1,37 @@
+@model UserProfile
+@using Plate.Core.Nutrition
+@inject TimeProvider Time
+@{
+    ViewData["Title"] = L["Profile"];
+    ViewData["BackUrl"] = "/settings";
+    ViewData["BackLabel"] = L["Settings"];
+    var year = Time.GetUtcNow().Year;
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Profile"]</h1>
+</header>
+
+<form method="post" asp-antiforgery="true" action="/settings/profile" id="profile-form"
+      data-autosave data-status-near hx-post="/settings/profile" hx-trigger="change delay:500ms, submit" hx-sync="this:replace" hx-swap="none">
+    <input type="hidden" name="autosave" value="true" />
+    <section class="section">
+        <div class="list">
+            <div class="row"><span class="row-main">@L["Email"]</span><span class="row-value row-ellipsis">@ViewData["Email"]</span></div>
+            <div class="field-row"><label for="displayName">@L["Name"]</label><input id="displayName" type="text" name="displayName" value="@Model.DisplayName" maxlength="@ProfileLimits.MaxNameLength" required autocomplete="name" /></div>
+            <div class="field-row">
+                <label for="sex">@L["Sex"]</label>
+                <select id="sex" name="sex">
+                    <option value="" selected="@(Model.Sex is null)">@L["Not set"]</option>
+                    <option value="Male" selected="@(Model.Sex == Sex.Male)">@L["Male"]</option>
+                    <option value="Female" selected="@(Model.Sex == Sex.Female)">@L["Female"]</option>
+                </select>
+            </div>
+            <div class="field-row"><label for="birthYear">@L["Birth year"]</label><input id="birthYear" class="num" type="number" name="birthYear" value="@Model.BirthYear" min="@ProfileLimits.MinBirthYear(year)" max="@ProfileLimits.MaxBirthYear(year)" inputmode="numeric" /></div>
+            <div class="field-row"><label for="heightCm">@L["Height"]</label><input id="heightCm" class="num" type="number" name="heightCm" value="@Model.HeightCm" min="@ProfileLimits.MinHeightCm" max="@ProfileLimits.MaxHeightCm" inputmode="numeric" /><span class="unit">@L["cm"]</span></div>
+        </div>
+        <p class="section-footer">@L["Sex, age and height are used to estimate your starting calories and protein target."]</p>
+    </section>
+
+    <partial name="_AutosaveStatus" />
+    <noscript><button type="submit" class="btn btn-primary btn-block">@L["Save profile"]</button></noscript>
+</form>

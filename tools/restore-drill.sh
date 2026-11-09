@@ -1,33 +1,33 @@
 #!/bin/bash
-# Restore drill, run on wizard. Restores a GymTracker dump into a throwaway postgres:18 container with no
+# Restore drill, run on wizard. Restores a Plate dump into a throwaway postgres:18 container with no
 # network and compares table names, column definitions and row counts with the live database. Touches nothing live.
 #   tools/restore-drill.sh           dump the live database now, the way the nightly backup does
 #   tools/restore-drill.sh nightly   use the latest nightly dump from /mnt/storage/backups/latest
 set -euo pipefail
-DUMP=$(mktemp /tmp/gymtracker-drill.XXXXXX.dump)
-trap 'docker rm -f -v gymtracker-restore-drill >/dev/null 2>&1; rm -f "$DUMP"' EXIT
+DUMP=$(mktemp /tmp/plate-drill.XXXXXX.dump)
+trap 'docker rm -f -v plate-restore-drill >/dev/null 2>&1; rm -f "$DUMP"' EXIT
 
 if [ "${1:-}" = nightly ]; then
     # /mnt/storage is root-only; read it through a container like ~/bin/export-latest-backup does.
-    docker run --rm -v /mnt/storage:/s:ro alpine cat /s/backups/latest/gymtracker-db.dump > "$DUMP"
+    docker run --rm -v /mnt/storage:/s:ro alpine cat /s/backups/latest/plate-db.dump > "$DUMP"
     echo "nightly dump from $(docker run --rm -v /mnt/storage:/s:ro alpine readlink /s/backups/latest)"
 else
-    docker exec gymtracker-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$DUMP"
+    docker exec plate-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$DUMP"
 fi
 echo "dump size: $(du -h "$DUMP" | cut -f1)"
 
-docker run -d --name gymtracker-restore-drill --network none \
+docker run -d --name plate-restore-drill --network none \
     -e POSTGRES_USER=gym -e POSTGRES_DB=gym -e POSTGRES_PASSWORD=drill postgres:18 >/dev/null
-for _ in $(seq 30); do docker exec gymtracker-restore-drill pg_isready -U gym -d gym -q && break; sleep 1; done
+for _ in $(seq 30); do docker exec plate-restore-drill pg_isready -U gym -d gym -q && break; sleep 1; done
 sleep 2 # the image restarts the server once after initdb
-docker exec -i gymtracker-restore-drill pg_restore -U gym -d gym --no-owner --exit-on-error < "$DUMP"
+docker exec -i plate-restore-drill pg_restore -U gym -d gym --no-owner --exit-on-error < "$DUMP"
 
 # Pass SQL as an argument rather than interpolating it into the container shell command.
 live_query() {
-    docker exec gymtracker-db sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "$1"' sh "$1"
+    docker exec plate-db sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "$1"' sh "$1"
 }
 restored_query() {
-    docker exec gymtracker-restore-drill psql -X -v ON_ERROR_STOP=1 -U gym -d gym -tAc "$1"
+    docker exec plate-restore-drill psql -X -v ON_ERROR_STOP=1 -U gym -d gym -tAc "$1"
 }
 
 TABLE_SQL="select string_agg(quote_ident(table_name), E'\\n' order by table_name) from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'"

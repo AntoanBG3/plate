@@ -34,7 +34,7 @@ Everything here is read by JavaScript, htmx, the service worker or the tests. Re
 - `PRECACHE` lists every static path; each must exist or install fails. Cache name `gym-static-v4` must be bumped when CSS/JS change.
 - `/offline.html` is standalone (links `/lib/fonts/fonts.css` and `/css/site.css` directly, no asp-append-version).
 
-## Tests (`tests/GymTracker.Web.Tests`)
+## Tests (`tests/Plate.Web.Tests`)
 - `/today` contains the text `Logged today: 82.4 kg, trend 82.4 kg`.
 - `/settings` contains `Food text parser` and `No OpenRouter key`.
 - `/progress` contains `id="weight-data"` and `Trend now: <strong>82.4 kg</strong>`.

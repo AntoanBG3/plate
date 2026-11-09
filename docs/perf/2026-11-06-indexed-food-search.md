@@ -53,7 +53,7 @@ The final captured-command planner regression failed against main and passed wit
 
 ## Reproduce
 
-Use the audit branch's `tools/perf/setup.sh 730` to create the disposable local stack, as documented there. Keep baseline and candidate native publishes in separate directories. Replace only `repa-perf-app` between runs, retaining the same database and limits; the candidate invocation differs only in its read-only `/app` bind path. Do not run tests or builds alongside timings.
+Use the audit branch's `tools/perf/setup.sh 730` to create the disposable local stack, as documented there. Keep baseline and candidate native publishes in separate directories. Replace only `plate-perf-app` between runs, retaining the same database and limits; the candidate invocation differs only in its read-only `/app` bind path. Do not run tests or builds alongside timings.
 
 ```sh
 NODE_TLS_REJECT_UNAUTHORIZED=0 node tools/perf/search-c1.mjs baseline tools/perf/results/p7-baseline-c1.json
@@ -64,4 +64,4 @@ python3 tools/perf/search-explain.py > tools/perf/results/p7-explain.json
 bash tools/check.sh
 ```
 
-The HTTP harness is fixed to loopback and the synthetic account. TLS verification is disabled only for that disposable local certificate. The EXPLAIN harness is fixed to `repa-perf-db` / `gym_perf`. No app package, new index, model policy or production configuration changes.
+The HTTP harness is fixed to loopback and the synthetic account. TLS verification is disabled only for that disposable local certificate. The EXPLAIN harness is fixed to `plate-perf-db` / `gym_perf`. No app package, new index, model policy or production configuration changes.

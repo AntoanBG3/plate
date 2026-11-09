@@ -1,0 +1,76 @@
+@model UserProfile
+@{
+    ViewData["Title"] = L["General"];
+    ViewData["BackUrl"] = "/settings";
+    ViewData["BackLabel"] = L["Settings"];
+}
+<header class="page-head">
+    <h1 class="large-title">@L["General"]</h1>
+</header>
+
+<form method="post" asp-antiforgery="true" action="/settings/appearance" data-autosubmit data-instant>
+    <section class="section">
+        <h2 class="section-title">@L["Appearance"]</h2>
+        <div class="list">
+            <div class="field-row stacked">
+                <span class="field-label">@L["Theme"]</span>
+                <div class="segmented tall" data-thumb role="radiogroup" aria-label="@L["Theme"]">
+                    @foreach (var theme in new[] { Theme.Dark, Theme.Light, Theme.System })
+                    {
+                        <label class="segment"><input type="radio" name="theme" value="@theme" checked="@(Model.Theme == theme)" data-theme-preview="@theme.ToString().ToLowerInvariant()" />@L[theme == Theme.System ? "Match phone" : theme.ToString()]</label>
+                    }
+                </div>
+            </div>
+            <div class="field-row stacked">
+                <span class="field-label">@L["Language"]</span>
+                <div class="segmented tall" role="radiogroup" aria-label="@L["Language"]">
+                    <label class="segment"><input type="radio" name="language" value="English" checked="@(Model.Language == Language.English)" />English</label>
+                    <label class="segment" lang="bg"><input type="radio" name="language" value="Bulgarian" checked="@(Model.Language == Language.Bulgarian)" />Български</label>
+                </div>
+            </div>
+        </div>
+        <noscript><button type="submit" class="btn btn-secondary btn-block" style="margin-top: var(--s-3)">@L["Save"]</button></noscript>
+        <p class="section-footer">@L["Saved for your account, so every phone you sign in on looks the same."]</p>
+    </section>
+</form>
+
+<form method="post" asp-antiforgery="true" action="/settings/time-zone" id="region-form"
+      data-autosave data-status-near hx-post="/settings/time-zone" hx-trigger="change delay:500ms, submit" hx-sync="this:replace" hx-swap="none">
+    <input type="hidden" name="autosave" value="true" />
+    <section class="section">
+        <h2 class="section-title">@L["Region"]</h2>
+        <div class="list">
+            <div class="field-row">
+                <label for="timeZoneId">@L["Time zone"]</label>
+                <select id="timeZoneId" name="timeZoneId">
+                    @foreach (var (region, ids) in Plate.Web.Features.Profile.TimeZones.Grouped(Model.TimeZoneId))
+                    {
+                        <optgroup label="@region">
+                            @foreach (var id in ids)
+                            {
+                                <option value="@id" selected="@(id == Model.TimeZoneId)">@Plate.Web.Features.Profile.TimeZones.Label(region, id)</option>
+                            }
+                        </optgroup>
+                    }
+                </select>
+            </div>
+        </div>
+        <p class="section-footer">@L["Days for food and weigh-ins start at midnight in this time zone."]</p>
+    </section>
+    <partial name="_AutosaveStatus" />
+    <noscript><button type="submit" class="btn btn-secondary btn-block">@L["Save"]</button></noscript>
+</form>
+
+<form method="post" asp-antiforgery="true" action="/settings/weekly-summary" data-autosubmit>
+    <section class="section">
+        <h2 class="section-title">@L["Weekly summary"]</h2>
+        <div class="list">
+            <label class="field-row switch-row">
+                <span>@L["AI summary of last week on Today"]</span>
+                <input type="checkbox" class="switch" name="enabled" value="true" checked="@Model.WeeklySummaryEnabled" />
+                <input type="hidden" name="enabled" value="false" />
+            </label>
+        </div>
+        <p class="section-footer">@L["Last week's numbers are sent to an AI model through OpenRouter: calories, macros, weight trend and workouts, without your name."]</p>
+    </section>
+</form>
