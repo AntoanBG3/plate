@@ -10,6 +10,11 @@
     <h1 class="large-title">@L["Sign in"]</h1>
     <p class="subhead">@Brand.Name</p>
 
+    @if (Model.MoveNotice)
+    {
+        <div class="banner is-info" role="status" style="margin-top: var(--s-5); text-align: left" data-move-notice>@Ui.Icon("info")<span>@L["Plate has moved to plate.peychev.uk. Passkeys from the old address don't work here, so sign in with your password once, then add a passkey again in Settings → Sign-in & security. If you don't remember your password, ask Antoan to reset it."]</span></div>
+    }
+
     @if (Model.Error is not null)
     {
         <div class="banner is-error" role="alert" style="margin-top: var(--s-5); text-align: left">@Ui.Icon("alert")<span>@L[Model.Error]</span></div>

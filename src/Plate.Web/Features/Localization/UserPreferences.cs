@@ -92,8 +92,8 @@ public class UserPreferencesMiddleware(RequestDelegate next)
 }
 
 /// <summary>
-/// An anonymous page a first-time visitor can land on from a link (the join page), so it can't rely on the language
-/// cookie: <see cref="UserPreferencesMiddleware.FromRequest"/> picks the language. A signed-in account's choice still wins.
+/// An anonymous page a first-time visitor can land on from a link (the join page) or on a host whose cookies it has never
+/// set (the sign-in page after the move to plate.peychev.uk), so it can't rely on the language cookie: <see cref="UserPreferencesMiddleware.FromRequest"/> picks the language. A signed-in account's choice still wins.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public sealed class LanguageFromRequestAttribute : Attribute;

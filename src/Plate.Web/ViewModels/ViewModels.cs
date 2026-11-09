@@ -5,7 +5,7 @@ using Plate.Web.Features.Training;
 
 namespace Plate.Web.ViewModels;
 
-public record LoginViewModel(string? Email, string? ReturnUrl, string? Error);
+public record LoginViewModel(string? Email, string? ReturnUrl, string? Error, bool MoveNotice = false);
 
 public enum JoinState
 {
