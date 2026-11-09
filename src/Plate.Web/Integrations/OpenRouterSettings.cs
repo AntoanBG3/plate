@@ -80,13 +80,25 @@ public class OpenRouterSettings(
         AiTask.Onboarding => await catalog.ListAsync(ct) is { } models ? [AiTasks.OnboardingOff, .. models] : null,
         AiTask.Weekly => await catalog.ListAsync(ct) is { } weekly ? [AiTasks.WeeklyOff, .. weekly] : null,
         AiTask.Label => await catalog.ListAsync(ct) is { } vision ? [AiTasks.LabelOff, .. vision.Where(m => m.AcceptsImages)] : null,
-        _ => AiTasks.MatcherModels,
+        _ => await catalog.ListDecisionsAsync(ct) is { } decisions ? [AiTasks.MatcherOff, .. decisions] : null,
     };
+
+    /// <summary>
+    /// What a task's picker shows: every current decision model for the matcher, and for the chat tasks the
+    /// most used recent models (<see cref="AiTasks.ForPicker"/>). Any listed model can still be set from the CLI.
+    /// </summary>
+    public async Task<IReadOnlyList<OpenRouterModel>?> PickerModelsAsync(AiTask task, CancellationToken ct) =>
+        await ListModelsAsync(task, ct) is { } models
+            ? AiTasks.ForPicker(models, await GetModelAsync(task, ct), time.GetUtcNow(), task == AiTask.Matcher ? null : AiTasks.PickerSize)
+            : null;
 
     public async Task<OpenRouterModel?> FindModelAsync(AiTask task, string id, CancellationToken ct) =>
         (await ListModelsAsync(task, ct))?.FirstOrDefault(m => m.Id == id);
 
-    /// <summary>Only listed models are accepted: for the parser, catalog models that can return structured JSON.</summary>
+    /// <summary>
+    /// Only listed models are accepted: for the parser, catalog models that can return structured JSON; for the
+    /// matcher, OpenRouter's decision models.
+    /// </summary>
     public async Task SetModelAsync(AiTask task, string id, CancellationToken ct)
     {
         var models = await ListModelsAsync(task, ct)

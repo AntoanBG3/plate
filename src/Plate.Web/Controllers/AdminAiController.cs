@@ -60,7 +60,7 @@ public class AdminAiController(OpenRouterSettings openRouter, AiAdmin ai, ModelA
     [HttpGet("model/{task}")]
     public async Task<IActionResult> Model(string task, CancellationToken ct) =>
         AiTasks.FromSlug(task) is { } t
-            ? View(new ModelPickerViewModel(t, await openRouter.ListModelsAsync(t, ct), await openRouter.GetModelAsync(t, ct), await accuracy.ForAsync(t, ct)))
+            ? View(new ModelPickerViewModel(t, await openRouter.PickerModelsAsync(t, ct), await openRouter.GetModelAsync(t, ct), await accuracy.ForAsync(t, ct)))
             : NotFound();
 
     [HttpPost("model/{task}")]
@@ -104,7 +104,7 @@ public class AdminAiController(OpenRouterSettings openRouter, AiAdmin ai, ModelA
     [HttpGet("eval")]
     public async Task<IActionResult> Eval(CancellationToken ct) =>
         View(new AdminEvalPage(evals.Current, await openRouter.GetModelAsync(AiTask.Parser, ct), await openRouter.GetModelAsync(AiTask.Matcher, ct),
-            await openRouter.GetKeyAsync(ct) is not null));
+            await openRouter.GetKeyAsync(ct) is not null, await openRouter.PickerModelsAsync(AiTask.Matcher, ct) ?? []));
 
     /// <summary>The progress block, polled by the Eval page while a run is going.</summary>
     [HttpGet("eval/status")]
@@ -119,14 +119,19 @@ public class AdminAiController(OpenRouterSettings openRouter, AiAdmin ai, ModelA
             throw new ValidationException("No OpenRouter key is set.");
         }
 
-        // Only models the pickers offer: the parser from OpenRouter's catalog, the matcher off or Jev.
+        // Only models OpenRouter lists for the task: a chat model for the parser, off or a decision model for the matcher.
         parser = string.IsNullOrWhiteSpace(parser) ? null : parser.Trim();
         if (parser is not null && await openRouter.FindModelAsync(AiTask.Parser, parser, ct) is null)
         {
             throw new ValidationException("That model can't parse food.");
         }
 
-        matcher = matcher is "off" or "jev" ? matcher : null;
+        matcher = string.IsNullOrWhiteSpace(matcher) ? null : matcher.Trim();
+        if (matcher is not null && await openRouter.FindModelAsync(AiTask.Matcher, matcher, ct) is null)
+        {
+            throw new ValidationException("That model can't match food.");
+        }
+
         var sinceDate = time.GetUtcNow().AddDays(-(since is "30d" ? 30 : since is "90d" ? 90 : 365));
         var request = new EvalRequest(sinceDate, flagged, Math.Clamp(limit ?? 10, 1, EvalJobs.MaxLimit), parser, matcher);
         if (!evals.TryStart(request))

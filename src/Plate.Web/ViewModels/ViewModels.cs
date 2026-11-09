@@ -256,4 +256,5 @@ public record AdminErrorList(string Since, IReadOnlyList<Plate.Core.Domain.Error
 
 public record AdminLabelList(string Since, bool Edited, bool Failed, IReadOnlyList<Plate.Web.Features.Feedback.LabelScanRow> Scans);
 
-public record AdminEvalPage(Plate.Web.Features.Admin.EvalJob? Job, string ParserModel, string MatcherModel, bool HasKey);
+public record AdminEvalPage(Plate.Web.Features.Admin.EvalJob? Job, string ParserModel, string MatcherModel, bool HasKey,
+    IReadOnlyList<Plate.Web.Integrations.OpenRouterModel> MatcherModels);
