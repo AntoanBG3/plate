@@ -1,6 +1,6 @@
-# GymTracker: Product and Technical Specification
+# Plate: Product and Technical Specification
 
-Self-hosted training and nutrition tracker for me, my father and a few people I invite. Runs in Docker on the headless Ubuntu home server "wizard", used from iPhones as an installed PWA, reached remotely at `https://gym.peychev.uk` through the server's existing Cloudflare Tunnel. Replaces ad hoc calorie tracking with a system that logs workouts, suggests progression, parses food entries with an LLM, and estimates real maintenance calories from logged data.
+Self-hosted training and nutrition tracker for me, my father and a few people I invite. Runs in Docker on the headless Ubuntu home server "wizard", used from iPhones as an installed PWA, reached remotely at `https://plate.peychev.uk` through the server's existing Cloudflare Tunnel. Replaces ad hoc calorie tracking with a system that logs workouts, suggests progression, parses food entries with an LLM, and estimates real maintenance calories from logged data.
 
 Build in the phases at the end of this document. Each phase must be usable on its own before the next starts.
 
@@ -39,7 +39,7 @@ Build in the phases at the end of this document. Each phase must be usable on it
 | Food database | Users' own and shared `FoodItem`s, a locally imported subset of USDA FoodData Central for generic foods, and Open Food Facts API v3 for barcodes |
 | Barcode scanning | `barcode-detector` ponyfill (ZXing-C++ compiled to WASM), self-hosted. Safari on iOS ships the native `BarcodeDetector` API disabled, and `@zxing/browser` sits on a library in maintenance mode |
 | Tests | xUnit, FluentAssertions; Testcontainers (`postgres:18`) for PostgreSQL integration tests |
-| Deployment | docker-compose on wizard; HTTPS via the existing Cloudflare Tunnel (`gym.peychev.uk`) |
+| Deployment | docker-compose on wizard; HTTPS via the existing Cloudflare Tunnel (`plate.peychev.uk`) |
 | Runtime image | `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra` (includes ICU and time zone data for `Europe/Sofia` and Bulgarian text). No Native AOT (unsupported for MVC and cookie auth) |
 
 Server-rendered MVC with htmx is chosen over Blazor Server deliberately: gym signal drops would kill Blazor Server circuits mid-workout, while plain HTTP requests can simply be retried.
@@ -51,23 +51,23 @@ Server-rendered MVC with htmx is chosen over Blazor Server deliberately: gym sig
 ## 3. Solution structure
 
 ```
-GymTracker.sln
+Plate.sln
 src/
-  GymTracker.Core/            Domain entities, enums, pure calculation services. No EF, no HTTP, no ASP.NET references.
-  GymTracker.Web/             Controllers, views, view models, htmx partials, static assets, PWA manifest and service worker.
+  Plate.Core/            Domain entities, enums, pure calculation services. No EF, no HTTP, no ASP.NET references.
+  Plate.Web/             Controllers, views, view models, htmx partials, static assets, PWA manifest and service worker.
     Data/                     EF DbContext, migrations, seed data (exercises, USDA subset).
     Integrations/             OpenRouter client and model catalog, Jev match decider, label reader, Open Food Facts client.
     Features/                 Thin feature services that use the DbContext directly and call Core for the math.
 tests/
-  GymTracker.Core.Tests/      Unit tests for all calculation logic.
-  GymTracker.Web.Tests/       Integration tests against real PostgreSQL via Testcontainers, including user-isolation tests.
+  Plate.Core.Tests/      Unit tests for all calculation logic.
+  Plate.Web.Tests/       Integration tests against real PostgreSQL via Testcontainers, including user-isolation tests.
 docker/
   Dockerfile
   docker-compose.yml
   docker-compose.dev.yml
 ```
 
-All business math (progression, e1RM, volume, trend weight, maintenance estimate, targets) lives in `GymTracker.Core` as pure, deterministic functions that take data in and return results. Controllers never contain calculations.
+All business math (progression, e1RM, volume, trend weight, maintenance estimate, targets) lives in `Plate.Core` as pure, deterministic functions that take data in and return results. Controllers never contain calculations.
 
 There is no separate Infrastructure project and no generic repository layer: the DbContext, with its global query filters, is injected into feature services. The `Core` boundary is what keeps the math testable; a third project adds wiring without adding safety at this size.
 
@@ -217,7 +217,7 @@ Seed about 90 common exercises, each with a Bulgarian name in the gym vocabulary
 
 ---
 
-## 5. Core calculations (GymTracker.Core)
+## 5. Core calculations (Plate.Core)
 
 Each of these is a pure service with its own unit test class. Tests must cover the edge cases listed.
 
@@ -346,7 +346,7 @@ Test: the latest entry wins over a more frequent older one; entries of 0 g and e
 
 ---
 
-## 6. External integrations (GymTracker.Web/Integrations)
+## 6. External integrations (Plate.Web/Integrations)
 
 ### 6.1 Food parsing via OpenRouter
 
@@ -414,7 +414,7 @@ Also provide `FakeFoodParser` for tests and local development without a key (sel
 - Use API v3 (v2 is deprecated): `GET https://world.openfoodfacts.org/api/v3/product/{barcode}` with a `fields` parameter limited to name, brands, nutriments and serving quantity. Confirm the v3 field names against the current OFF docs before coding.
 - Read `energy-kcal_100g`, `proteins_100g`, `carbohydrates_100g`, `fat_100g`. If kcal is missing but kJ is present, convert by dividing by 4.184.
 - Also read `fiber_100g` and `saturated-fat_100g` when present. They are optional: a product without them still counts as having nutrition data.
-- Set the `User-Agent` OFF requires: `GymTracker/<version> (<contact email from config>)`.
+- Set the `User-Agent` OFF requires: `Plate/<version> (<contact email from config>)`.
 - Rate limits are 15 product reads and 10 searches per minute per IP, shared by all users because all calls leave from wizard. Call OFF search only on explicit submit (never as-you-type), and treat HTTP 429 as "try again shortly" without breaking the page.
 - Cache every successful lookup as a shared `FoodItem` so repeat scans are instant and work offline from the API.
 - The name is `product_name`, else `product_name_en`, `generic_name` or `generic_name_en`. With none of them, the brand and `quantity` stand in ("Monster 500ml"; "Product <barcode>" without a brand) and the item is `Unnamed`. Its barcode result then has a name field above the grams, filled with the stand-in, with "Open Food Facts has no name for this product. The name you give it is saved for everyone." The first name saved replaces the stand-in on the shared item for everyone, along with that user's entries still carrying it; later names are ignored. A logged packaged food reads "name (brand)", without the brand when the name already starts with it.
@@ -423,7 +423,7 @@ Also provide `FakeFoodParser` for tests and local development without a key (sel
 ### 6.3 USDA FoodData Central subset
 
 Generic foods (chicken breast, cooked rice, banana) come from USDA FoodData Central, which is public domain (CC0).
-- A one-off script, committed to the repository, converts the Foundation and SR Legacy downloads into a trimmed CSV (name, kcal, protein, carbs, fat, fiber and saturated fat per 100 g, the last two blank where USDA has no value, raw/cooked where the name states it) under `src/GymTracker.Web/Data/Seed/`.
+- A one-off script, committed to the repository, converts the Foundation and SR Legacy downloads into a trimmed CSV (name, kcal, protein, carbs, fat, fiber and saturated fat per 100 g, the last two blank where USDA has no value, raw/cooked where the name states it) under `src/Plate.Web/Data/Seed/`.
 - On startup, if no `Usda` items exist, the app imports the CSV as shared `FoodItem`s with `Source = Usda`. No runtime calls to the USDA API.
 - Databases seeded before the CSV had fiber and saturated fat get them once, matched by English name, the way Bulgarian names were added. Rows that already have a value are left alone.
 - The Bulgarian foods CSV (`bg-foods.csv`) has the same two optional columns. Products get them from Open Food Facts by barcode (`tools/foods/add-fiber.mjs`), and existing databases get them on the next start where both are still unknown. Dishes stay blank, since their source pages don't give them.
@@ -595,27 +595,27 @@ Settings is a short hub, not one long page (progressive disclosure: NN/g, and th
 
 ## 9. Security
 
-- Public registration is disabled. Accounts are created with a CLI command, `dotnet GymTracker.Web.dll create-user --email ... --name ...`, which prompts for the password, or by redeeming a single-use invite from the developer (Invites, below).
+- Public registration is disabled. Accounts are created with a CLI command, `dotnet Plate.Web.dll create-user --email ... --name ...`, which prompts for the password, or by redeeming a single-use invite from the developer (Invites, below).
 - Every controller action requires authentication except login and the invite page.
 - Global EF query filters plus explicit ownership checks on every write; integration tests must verify that user A cannot read or modify user B's sessions, sets, food entries or weigh-ins by ID.
 - Anti-forgery tokens on all POSTs, including htmx requests (send the token via `hx-headers`) and the set queue's `fetch` calls.
 - Secrets only from environment variables, except the OpenRouter key, which the developer may also save from the admin area (encrypted with Data Protection). Provide `.env.example`; `.env` is in `.gitignore`.
 - Roles: one Identity role, `Dev`, granted and revoked only with the CLI over SSH (section 12). No web page grants a role, and the invite page is the only one that creates an account.
 
-**Exposure.** The app is reachable at `https://gym.peychev.uk` through wizard's Cloudflare Tunnel, with no Cloudflare Access in front of it (decided 2026-10-02). Access would add a second login with an emailed code about monthly, and an expired Access session turns htmx and queue requests into failed cross-origin redirects. The app's own login is therefore the only gate and must be hardened:
+**Exposure.** The app is reachable at `https://plate.peychev.uk` through wizard's Cloudflare Tunnel, with no Cloudflare Access in front of it (decided 2026-10-02). Access would add a second login with an emailed code about monthly, and an expired Access session turns htmx and queue requests into failed cross-origin redirects. The app's own login is therefore the only gate and must be hardened:
 - Lockout on: `PasswordSignInAsync(..., lockoutOnFailure: true)` (the template default is `false`), 5 failed attempts, 15-minute lockout.
 - ASP.NET Core rate limiting middleware on the login POST, partitioned by client IP.
 - Forwarded headers: behind cloudflared every request comes from 172.30.0.10, so configure `ForwardedHeadersOptions` with that address as the only known proxy, read the client IP from `CF-Connecting-IP` and the scheme from `X-Forwarded-Proto`. Without this, rate limiting puts every client in one bucket.
 - Passwords: minimum 12 characters, no composition rules. An unknown email costs one password hash like a known one, so timing does not reveal which accounts exist.
 - A second, global login limit across all addresses (30 attempts per 15 minutes). Per-user limits on password and API key changes (5 per 15 minutes), admin unlock requests (10 per 15 minutes, two per unlock), AI food parsing (30 per 10 minutes), setup chat messages (40 per 10 minutes), label reads (20 per 10 minutes), weekly summaries (6 per hour) and admin writes (60 per 10 minutes).
-- Passkeys alongside passwords: registered in Settings, usernameless sign-in on the login page (button and autofill), relying party `gym.peychev.uk`.
+- Passkeys alongside passwords: registered in Settings, usernameless sign-in on the login page (button and autofill), relying party `plate.peychev.uk`.
 - Response headers: Content-Security-Policy (`script-src 'self' 'wasm-unsafe-eval'`, no inline scripts or event handlers; sent report-only with a `/csp-report` log until `CSP_ENFORCE=true`), HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, `Permissions-Policy` (camera only), COOP. `AllowedHosts` limited to the public host name. Request bodies over 1 MB are refused, except label photos (`POST /food/label`, 7 MB for up to three photos; section 6.6).
 - Cookie: `Secure`, `HttpOnly`, `SameSite=Lax`, `__Host-` prefix, sliding 30-day expiration. "Log out everywhere" in Settings updates the security stamp.
 - Data Protection keys persisted to a bind-mounted directory, so rebuilding the container does not log everyone out.
 - The container publishes no host port. cloudflared reaches it by container name on the external `tunnel` Docker network. An optional LAN-only port may be added for testing (pick one that is free on wizard; 8080 is AdGuard's).
 
 **Invites.** People Antoan knows join through a link he sends them himself (Viber, Messenger); the app never sends email, so there is no email verification, and the address is only the login name. The link is the proof that the developer meant to let this person in.
-- Only accounts with the `Dev` role create invites, from the CLI (`invite create`) or the admin area (section 12). The token is 32 random bytes in base64url; the link `https://gym.peychev.uk/join/<token>` is shown once at creation, since only its hash is stored. Expiry 1 to 30 days, default 7. At most 5 invites are open (not redeemed, revoked or expired) at a time.
+- Only accounts with the `Dev` role create invites, from the CLI (`invite create`) or the admin area (section 12). The token is 32 random bytes in base64url; the link `https://plate.peychev.uk/join/<token>` is shown once at creation, since only its hash is stored. Expiry 1 to 30 days, default 7. At most 5 invites are open (not redeemed, revoked or expired) at a time.
 - `/join/{token}` is anonymous and in English and Bulgarian, defaulting from `Accept-Language`. It asks for name, email, password (the same 12-character minimum) and language. A token that is unknown, used, revoked or expired shows one message, "This invite is no longer valid. Ask Antoan for a new one.", and no form; the token's 256 bits make guessing pointless, so the page doesn't need to hide that the route exists. A visitor who is already signed in is told to log out first, and the token is not used.
 - Redeeming runs in one transaction: a conditional update marks the invite redeemed (`RedeemedAt IS NULL AND RevokedAt IS NULL AND ExpiresAt > now`), and the account is created with the same `UserCreator` as the CLI, with the chosen language in its profile. If the update touches no row, or the account cannot be created (the email is taken, the password is too short), the transaction rolls back, the invite stays open and the form shows the error. Two submissions of one token create one account.
 - After redeeming, the new account is signed in and lands on the onboarding splash (section 6.4). Passkeys are added in Settings as for any account.
@@ -628,11 +628,11 @@ If Cloudflare Access is ever added in front of the whole app (it covers only `/a
 
 ## 10. Deployment
 
-The stack lives at `~/docker/gymtracker` on wizard, like the other stacks. wizard's boot SSD is failing and Docker named volumes live on it outside the nightly backup, so all state uses bind mounts under the stack folder.
+The stack lives at `~/docker/plate` on wizard, like the other stacks. wizard's boot SSD is failing and Docker named volumes live on it outside the nightly backup, so all state uses bind mounts under the stack folder.
 
 **docker-compose.yml** with:
-- `db`: `postgres:18`, container name `gymtracker-db`, bind mount `./db:/var/lib/postgresql` (the 18 image moved its data directory to `/var/lib/postgresql/18/docker`; mounting the old `/var/lib/postgresql/data` path can silently put the data in an anonymous volume). Small-footprint settings: `shared_buffers=32MB`, `max_connections=15`, `jit=off`. `mem_limit` (start at 256m, adjust from Beszel readings). Healthcheck with `pg_isready`. Default network only.
-- `app`: built from `docker/Dockerfile` (multi-stage build on the .NET 10 SDK image, runtime on `aspnet:10.0-noble-chiseled-extra`), container name `gymtracker-app`, depends on a healthy `db`, no published ports, joined to the default network and the external `tunnel` network, bind mount `./keys` for Data Protection keys, environment from `.env`, `mem_limit: 256m` (adjust from Beszel readings), `cpus: "1.0"`, `restart: unless-stopped`. Workstation (non-concurrent) GC and a ReadyToRun publish for `linux-x64`; connection pool capped at 8. The container runs read-only (tmpfs `/tmp`), with all capabilities dropped, `no-new-privileges` and a PID limit. Base images are pinned by digest and refreshed monthly; the build fails on high or critical NuGet advisories.
+- `db`: `postgres:18`, container name `plate-db`, bind mount `./db:/var/lib/postgresql` (the 18 image moved its data directory to `/var/lib/postgresql/18/docker`; mounting the old `/var/lib/postgresql/data` path can silently put the data in an anonymous volume). Small-footprint settings: `shared_buffers=32MB`, `max_connections=15`, `jit=off`. `mem_limit` (start at 256m, adjust from Beszel readings). Healthcheck with `pg_isready`. Default network only.
+- `app`: built from `docker/Dockerfile` (multi-stage build on the .NET 10 SDK image, runtime on `aspnet:10.0-noble-chiseled-extra`), container name `plate-app`, depends on a healthy `db`, no published ports, joined to the default network and the external `tunnel` network, bind mount `./keys` for Data Protection keys, environment from `.env`, `mem_limit: 256m` (adjust from Beszel readings), `cpus: "1.0"`, `restart: unless-stopped`. Workstation (non-concurrent) GC and a ReadyToRun publish for `linux-x64`; connection pool capped at 8. The container runs read-only (tmpfs `/tmp`), with all capabilities dropped, `no-new-privileges` and a PID limit. Base images are pinned by digest and refreshed monthly; the build fails on high or critical NuGet advisories.
 - No backup container (see below).
 
 **docker-compose.dev.yml** for local development on a Mac: only `db` (`postgres:18`), published on `127.0.0.1:5432`, no `tunnel` network (it exists only on wizard).
@@ -640,12 +640,12 @@ The stack lives at `~/docker/gymtracker` on wizard, like the other stacks. wizar
 The app applies EF migrations automatically on startup (including `CREATE EXTENSION pg_trgm`), adds any seed exercise the shared library lacks (matched by name) and imports the USDA subset if absent.
 
 **Backups** go through wizard's existing nightly host script `/usr/local/bin/homeserver-backup` (03:30), which already writes dated snapshots to the HDD with 14-day retention, Telegram alerts on failure and the PC pull. Two changes to it, which need sudo and are run by Antoan:
-- Add a dump step, e.g. `docker exec gymtracker-db pg_dump -Fc -U gym gym > "$DEST/gymtracker-db.dump"`.
-- Exclude `gymtracker/db` from the `~/docker` rsync, the same way `nextcloud/db_data` is excluded (a file copy of a running database is not a consistent backup).
+- Add a dump step, e.g. `docker exec plate-db pg_dump -Fc -U gym gym > "$DEST/plate-db.dump"`.
+- Exclude `plate/db` from the `~/docker` rsync, the same way `nextcloud/db_data` is excluded (a file copy of a running database is not a consistent backup).
 
 Building the image on wizard pulls the .NET SDK image onto the failing SSD; prune the build cache after builds (`docker builder prune`), or build elsewhere for `linux/amd64`.
 
-HTTPS (required for the camera and PWA install): add the public hostname `gym.peychev.uk` → `http://gymtracker-app:8080` to the "wizard" tunnel in the Cloudflare Zero Trust dashboard. No Access application on it (section 9).
+HTTPS (required for the camera and PWA install): add the public hostname `plate.peychev.uk` → `http://plate-app:8080` to the "wizard" tunnel in the Cloudflare Zero Trust dashboard. No Access application on it (section 9).
 
 **README** must cover: prerequisites, `.env` setup, `docker compose up -d`, creating users and invites, resetting a password, deleting an account, the Cloudflare public hostname, the two backup-script changes, restoring from a dump (`pg_restore` into a fresh database), and installing the PWA on iPhone (Safari, Share, Add to Home Screen).
 
@@ -694,7 +694,7 @@ Users report problems and ideas from their phones, food parsing collects ratings
 
 ### CLI
 
-`dotnet GymTracker.Web.dll feedback <command>` (run on wizard as `docker exec gymtracker-app dotnet GymTracker.Web.dll feedback ...`). Logs go to stderr so stdout can be piped. Text output, or `--json`.
+`dotnet Plate.Web.dll feedback <command>` (run on wizard as `docker exec plate-app dotnet Plate.Web.dll feedback ...`). Logs go to stderr so stdout can be piped. Text output, or `--json`.
 - `list [--status new|open|all|<status>] [--since 7d] [--area <area>]`, `show <id>`, `attachment <id>` (raw bytes), `status <id> <status> [--reply ...] [--version <sha>]`.
 - `parses [--since 30d] [--flagged] [--export-eval]` (an item matched through a usual food is marked "usual"), `eval [--parser <model>] [--matcher off|jev] [--limit N]` (re-runs the live parser and matcher on exported cases; never part of the tests).
 - `labels [--since 30d] [--edited]`, `label <id>` (the model's reading, the normalized values and what was saved), `label-photo <id> [n]` (the nth photo's raw bytes, 1 by default, while the photos are kept).
@@ -712,7 +712,7 @@ The developer's account (Antoan) has an admin area at `/admin` that does what th
 
 Every `/admin` request needs all of these; anything short of the role gets a 404, so the area is not discoverable.
 - Signed in, with the `Dev` role. `role grant|revoke dev --email ...` and `role list` in the CLI. The role is checked in the database on every admin request, so a revoke takes effect at once; a grant shows up in a live session within 5 minutes, when the sign-in cookie is refreshed, or at the next sign-in.
-- A valid Cloudflare Access token. Cloudflare Access protects `gym.peychev.uk/admin*` (one-time email code, only the developer's address). The app still checks `Cf-Access-Jwt-Assertion` itself: RS256 against the team's certs (cached an hour, refetched for an unknown key id), `aud` equal to `Admin:CloudflareAccess:Audience`, `iss` equal to the team domain, expiry with one minute of skew, and the token's email equal to the account's. In Production the area is off until `Admin:CloudflareAccess:TeamDomain` and `Audience` are set; Development and Testing skip the check unless they are set.
+- A valid Cloudflare Access token. Cloudflare Access protects `plate.peychev.uk/admin*` (one-time email code, only the developer's address). The app still checks `Cf-Access-Jwt-Assertion` itself: RS256 against the team's certs (cached an hour, refetched for an unknown key id), `aud` equal to `Admin:CloudflareAccess:Audience`, `iss` equal to the team domain, expiry with one minute of skew, and the token's email equal to the account's. In Production the area is off until `Admin:CloudflareAccess:TeamDomain` and `Audience` are set; Development and Testing skip the check unless they are set.
 - A passkey unlock: `/admin/unlock` asks for one of the account's own passkeys with user verification required, then sets `__Host-gym.admin` (HttpOnly, Secure, SameSite=Lax like the sign-in cookie, so arriving back from Cloudflare's login keeps the unlock; every admin write is a POST with an anti-forgery token) holding the user id, security stamp and unlock time. It lasts 30 minutes from the last admin request and 4 hours at most, and ends on Lock now, log out, Log out everywhere or a password change. A signed-in `Dev` account without it is sent to the unlock page. The unlock page is reached from Settings, so it follows the account's language (the admin pages themselves are English); its button reads "Unlock with a passkey", and an account with no passkey is told to add one in Settings, with a link to Sign-in & security, instead of a button that can only fail.
 
 Admin responses are `Cache-Control: no-store`. When the Access session has expired, an admin page change falls back to a full page load (soft navigation already does this when a fetch fails), which shows Cloudflare's login; the eval progress poll reloads the page when a request fails.
@@ -753,7 +753,7 @@ Admin responses are `Cache-Control: no-store`. When the Access session has expir
 - Exercise seed, templates CRUD, start and log sessions, history.
 - Bodyweight entry on the Today page.
 - Login hardening from section 9, the Cloudflare hostname, and the backup-script changes from section 10.
-- **Done when:** every account can log a full workout from an iPhone at `gym.peychev.uk` over mobile data; the data lives in `~/docker/gymtracker/db` and persists across `docker compose down` and `up`; the host script's dump restores into a fresh database; lockout and login rate limiting are tested; and user isolation tests pass.
+- **Done when:** every account can log a full workout from an iPhone at `plate.peychev.uk` over mobile data; the data lives in `~/docker/plate/db` and persists across `docker compose down` and `up`; the host script's dump restores into a fresh database; lockout and login rate limiting are tested; and user isolation tests pass.
 
 ### Phase 2: Progression and training analytics
 - Progression service with suggestions in the active session view.

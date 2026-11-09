@@ -19,8 +19,8 @@ Minor findings from the review of the barcode field scan and label photo slots w
 
 ## Code tidy-up
 
-7. Stale "3 MB" comments (the limit is now 7 MB): `tests/GymTracker.Web.Tests/LabelScanTests.cs:246` and `tests/GymTracker.E2E.Tests/LabelPhotoTests.cs:247`.
-8. `LabelScanReport.PhotoAsync` in `src/GymTracker.Web/Features/Feedback/LabelScanReport.cs` is indented one level too deep.
+7. Stale "3 MB" comments (the limit is now 7 MB): `tests/Plate.Web.Tests/LabelScanTests.cs:246` and `tests/Plate.E2E.Tests/LabelPhotoTests.cs:247`.
+8. `LabelScanReport.PhotoAsync` in `src/Plate.Web/Features/Feedback/LabelScanReport.cs` is indented one level too deep.
 9. SPEC 6.6 "Model call" schema line still says `name` and `brand` come "only when printed in the photo"; it should read "in any of the photos".
 
 ## Pre-existing

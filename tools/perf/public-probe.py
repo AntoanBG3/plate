@@ -12,11 +12,11 @@ import statistics
 import subprocess
 import tempfile
 
-BASE = "https://gym.peychev.uk"
+BASE = "https://plate.peychev.uk"
 rows = []
 for path in ["/account/login", "/sw.js", "/lib/chartjs/chart.umd.min.js"]:
     for run in range(1, 6):
-        with tempfile.TemporaryDirectory(prefix="repa-public-") as directory:
+        with tempfile.TemporaryDirectory(prefix="plate-public-") as directory:
             headers = pathlib.Path(directory, "headers")
             body = pathlib.Path(directory, "body")
             command = ["curl", "--silent", "--show-error", "--compressed", "--max-time", "30",

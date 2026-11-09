@@ -1,4 +1,4 @@
-# Repa performance and reliability plan — 2026-11-05
+# Plate performance and reliability plan — 2026-11-05
 
 Review plan only. Baseline `462ef118827b00839941eab87cceb2a106c93065`, branch `perf-audit`; no fixes, push, merge or deploy accompany this audit. Each accepted item gets its own branch, focused commit, relevant regression tests and independent deployment/rollback. Findings F1–F12 refer to [the audit](../perf/2026-11-05-audit.md); raw evidence is in `tools/perf/results/` and source evidence in the three review notes under `docs/perf/`.
 
@@ -333,12 +333,12 @@ These are future actions, not audit commands already performed. Production remai
    sudo less /usr/local/bin/homeserver-backup
    ```
 
-   `sudo less` shows the script for Antoan's local inspection without editing it. Verify the actual `pg_dump -Fc`, archive validation, exclusion of live `gymtracker/db/`, 14-day retention, failure alert and PC pull. Do not paste the script or Telegram/OpenRouter credentials into chat. Verify newest successful HDD and PC snapshot timestamps at their actual configured paths; paths were not read in this audit, so no fabricated `ls` command is supplied.
+   `sudo less` shows the script for Antoan's local inspection without editing it. Verify the actual `pg_dump -Fc`, archive validation, exclusion of live `plate/db/`, 14-day retention, failure alert and PC pull. Do not paste the script or Telegram/OpenRouter credentials into chat. Verify newest successful HDD and PC snapshot timestamps at their actual configured paths; paths were not read in this audit, so no fabricated `ls` command is supplied.
 
 3. After authorizing a throwaway restore that creates a container and temporary data:
 
    ```bash
-   cd ~/docker/gymtracker
+   cd ~/docker/plate
    tools/restore-drill.sh nightly
    ```
 
@@ -350,7 +350,7 @@ Inspect the Cache Rules/browser-origin TTL that match `/sw.js`. The audit saw `m
 
 ### iPhone and next deploy
 
-Enable iPhone Safari → Advanced → Web Inspector, connect/trust the Mac, then select the installed Repa app from Mac Safari's Develop menu. Note phone/iOS version, viewport, Low Power Mode, app version and network. Record five warm Today→Train→Food→Progress cycles on gym mobile data, then five food text/search/cached-barcode/repeat journeys as appropriate. Keep HAR/cookies/food bodies locally; return only route/stage timings, bytes/request counts, long tasks and Server-Timing aggregates. A paid parse/label is Antoan's deliberate action, not required audit load.
+Enable iPhone Safari → Advanced → Web Inspector, connect/trust the Mac, then select the installed Plate app from Mac Safari's Develop menu. Note phone/iOS version, viewport, Low Power Mode, app version and network. Record five warm Today→Train→Food→Progress cycles on gym mobile data, then five food text/search/cached-barcode/repeat journeys as appropriate. Keep HAR/cookies/food bodies locally; return only route/stage timings, bytes/request counts, long tasks and Server-Timing aggregates. A paid parse/label is Antoan's deliberate action, not required audit load.
 
 With synced queues, observe the next normal deploy's first PWA launch and worker update. Do not clear website data/uninstall while pending work exists. Verify a planned offline set survives close/reopen/reconnect exactly once; separately check latest-tab intent and camera close during late permission/device acquisition. Cold install belongs on an expendable local/staging installation. For deploy interruption, collect one sequential anonymous login request/second before/during/after an already authorized replacement and correlate version/container timestamps; do not schedule a disruptive deploy just to measure it.
 

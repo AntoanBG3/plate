@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
 
-const source = fs.readFileSync(path.join(__dirname, "../../src/GymTracker.Web/wwwroot/js/scanner.js"), "utf8");
+const source = fs.readFileSync(path.join(__dirname, "../../src/Plate.Web/wwwroot/js/scanner.js"), "utf8");
 const settle = () => new Promise(setImmediate);
 
 function deferred() {

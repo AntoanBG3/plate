@@ -1,0 +1,27 @@
+@model KnownBarcodeModel
+@using Plate.Core.Nutrition
+@{
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    var item = Model.Item;
+    var date = Model.Date.ToString("yyyy-MM-dd", inv);
+    string note = Model.Own
+        ? L["You already have a food with this barcode, so this one is saved without it."]
+        : Model.SharedByYou
+            ? L["You already shared a food with this barcode, so this one is kept for you only."]
+            : L["Another food already shares this barcode, so this one is kept for you only."];
+}
+@* Offered when the manual form's barcode is already a food (SPEC 7). Rejecting is handled in scanner.js. *@
+<div class="card known-food" role="status" data-known-food data-own="@(Model.Own ? "true" : "false")" data-reject-note="@note">
+    <p class="footnote">@L["Already in the app"]</p>
+    <p class="headline">@item.DisplayName()</p>
+    @if (Model.AddedByAnother)
+    {
+        <p class="footnote">@L["Added by another user"]</p>
+    }
+    <p class="footnote num">@L["{0} kcal · {1} g protein", Math.Round(item.KcalPer100g), item.ProteinPer100g.ToString("0.#", inv)] · @L["Per 100 g"]</p>
+    <p style="margin-top: var(--s-3)">@L["Is this the same food?"]</p>
+    <div class="known-actions">
+        <a class="btn btn-tinted" href="/food/barcode?date=@date&amp;meal=@Model.Meal&amp;code=@Model.Code">@L["Yes, use it"]</a>
+        <button type="button" class="btn btn-plain" data-known-reject>@L["No, it's different"]</button>
+    </div>
+</div>

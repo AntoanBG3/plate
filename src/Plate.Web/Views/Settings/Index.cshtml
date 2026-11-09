@@ -1,0 +1,107 @@
+@model UserProfile
+@{
+    ViewData["Title"] = L["Settings"];
+    var passkeys = ViewData["PasskeyCount"] as int? ?? 0;
+    var unreadFeedback = ViewData["UnreadFeedback"] as int? ?? 0;
+    // Each row says what is set now, so most questions are answered without opening it.
+    var profile = string.Join(" · ", new[] { Model.DisplayName, Model.HeightCm is { } cm ? $"{cm} {L["cm"]}" : null }.Where(s => !string.IsNullOrEmpty(s)));
+    var goal = string.Join(" · ", new[]
+    {
+        L.Enum(Model.Goal),
+        Model.Goal == Goal.Maintain ? null : L["{0}% a week", Model.TargetRatePercentPerWeek.Kg()],
+        Model.ActivityLevel is { } level ? L.Enum(level) : null,
+    }.Where(s => s is not null));
+    var training = $"{L["Bar {0} kg", Model.BarWeightKg.Kg()]} · {L["Jump {0} kg", Model.DefaultWeightIncrementKg.Kg()]}";
+    var general = $"{L[Model.Theme == Theme.System ? "Match phone" : Model.Theme.ToString()]} · {(Model.Language == Language.Bulgarian ? "Български" : "English")}";
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Settings"]</h1>
+</header>
+
+@{
+    void Row(string href, string icon, string title, string? sub)
+    {
+        <a class="row row-link" href="@href">
+            <span class="row-icon neutral">@Ui.Icon(icon)</span>
+            <span class="row-main">
+                <span class="row-title" style="display: block">@title</span>
+                @if (!string.IsNullOrEmpty(sub))
+                {
+                    <span class="row-sub row-ellipsis" style="display: block">@sub</span>
+                }
+            </span>
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+    }
+}
+
+<section class="section">
+    <div class="list">
+        @{ Row("/settings/profile", "person", L["Profile"], profile); }
+        @{ Row("/settings/goal", "target", L["Goal & nutrition"], goal); }
+        @{ Row("/welcome?restart=1", "text", L["Run the setup chat again"], null); }
+    </div>
+</section>
+
+<section class="section">
+    <div class="list">
+        @{ Row("/settings/training", "train", L["Training"], training); }
+        @{ Row("/settings/exercises", "pencil", L["Custom exercises"], null); }
+    </div>
+</section>
+
+<section class="section">
+    <div class="list">
+        @{ Row("/settings/general", "settings", L["General"], general); }
+        @{ Row("/settings/security", "lock", L["Sign-in & security"], passkeys == 0 ? L["Password only"] : L.Count(passkeys, "1 passkey", "{0} passkeys")); }
+    </div>
+</section>
+
+<section class="section">
+    <div class="list">
+        <a class="row row-link" href="/feedback/new">
+            <span class="row-icon neutral">@Ui.Icon("feedback")</span>
+            <span class="row-main">@L["Send feedback"]</span>
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+        <a class="row row-link" href="/feedback">
+            <span class="row-icon neutral">@Ui.Icon("list")</span>
+            <span class="row-main">@L["Your feedback"]</span>
+            @if (unreadFeedback > 0)
+            {
+                <span class="count-badge" aria-label="@L.Count(unreadFeedback, "1 new reply", "{0} new replies")">@unreadFeedback</span>
+            }
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+    </div>
+    <p class="section-footer">@L["Report a problem or suggest an idea. Answers show under Your feedback."]</p>
+</section>
+
+<section class="section">
+    <div class="list">
+        <a class="row row-link" href="/settings/export" download>
+            <span class="row-icon neutral">@Ui.Icon("download")</span>
+            <span class="row-main">@L["Export all data"]</span>
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+        @if (User.IsInRole(Plate.Web.Features.Admin.AdminPolicy.Role))
+        {
+            @* Presentation only: the admin policy decides who gets in. *@
+            <a class="row row-link" href="/admin">
+                <span class="row-icon neutral">@Ui.Icon("key")</span>
+                <span class="row-main">@L["Admin"]</span>
+                @Ui.Icon("chevron", "row-chevron")
+            </a>
+        }
+    </div>
+    <p class="section-footer">@L["Workouts, sets, templates, weigh-ins, food log and targets as CSV files in a zip."]</p>
+</section>
+
+<section class="section">
+    <div class="list">
+        <form method="post" asp-antiforgery="true" action="/account/logout" class="row" style="padding-top: 0; padding-bottom: 0">
+            <button type="submit" class="btn btn-plain" style="padding: 0">@Ui.Icon("logout")@L["Log out"]</button>
+        </form>
+    </div>
+    <p class="section-footer">@L["Account: {0}", ViewData["Email"] ?? ""]</p>
+</section>

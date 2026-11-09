@@ -10,8 +10,8 @@ This publishes existing sources,creates only local audit containers with bind mo
 
 Change dataset size without touching production/development databases:
 
-    python3 tools/perf/generate.py --days 30 > /private/tmp/repa-perf-seed.sql
-    docker exec -i repa-perf-db psql -U gym -d gym_perf -v ON_ERROR_STOP=1 < /private/tmp/repa-perf-seed.sql
+    python3 tools/perf/generate.py --days 30 > /private/tmp/plate-perf-seed.sql
+    docker exec -i plate-perf-db psql -U gym -d gym_perf -v ON_ERROR_STOP=1 < /private/tmp/plate-perf-seed.sql
 
 Generator refuses a database name other than gym_perf. Synthetic journey rows are replaced transactionally;shared seeded foods remain. Use --days730 for two years. CLI account creation is only for a fresh scratch database;setup creates a fresh uniquely named bind directory to avoid stale synthetic accounts on a rerun.
 
@@ -30,9 +30,9 @@ Capture numbering immediately after the HTTP run,before reseeding:\n\n    python
 
 Browser development tool,pinned to measured version:
 
-    npm install --cache /private/tmp/repa-perf-npm-cache --prefix /private/tmp/repa-perf-node playwright-core@1.64.1
+    npm install --cache /private/tmp/plate-perf-npm-cache --prefix /private/tmp/plate-perf-node playwright-core@1.64.1
 
-Link design-samples/tools/node_modules to /private/tmp/repa-perf-node/node_modules, replacing only the existing dangling symlink. Then:
+Link design-samples/tools/node_modules to /private/tmp/plate-perf-node/node_modules, replacing only the existing dangling symlink. Then:
 
     node design-samples/tools/perf-audit.mjs https://localhost:5443 > tools/perf/results/browser.json
 
@@ -47,16 +47,16 @@ Resource and fault probes:
 
 Optional full-GC request,only after workload ends:
 
-    dotnet tool install --tool-path /private/tmp/repa-perf-dotnet dotnet-gcdump --version 10.0.750501
-    docker exec repa-perf-app dotnet /tools/.store/dotnet-gcdump/10.0.750501/dotnet-gcdump/10.0.750501/tools/net8.0/any/dotnet-gcdump.dll collect --process-id 1 -o /tmp/perf.gcdump
+    dotnet tool install --tool-path /private/tmp/plate-perf-dotnet dotnet-gcdump --version 10.0.750501
+    docker exec plate-perf-app dotnet /tools/.store/dotnet-gcdump/10.0.750501/dotnet-gcdump/10.0.750501/tools/net8.0/any/dotnet-gcdump.dll collect --process-id 1 -o /tmp/perf.gcdump
     python3 tools/perf/resources.py after-full-gc > tools/perf/results/memory-after-gc.json
 
 Sample after diagnostic process exits. Its7.53MiB dump remains in tmpfs until restart,cgroup memory includes it. No dumps/traces committed. Audit tmpfs64MiB differs from production16MiB to fit diagnostics.
 
 Native image footprint:
 
-    docker build -f tools/perf/runtime.Dockerfile -t repa-perf-arm64 /private/tmp/repa-perf-publish
-    docker image inspect repa-perf-arm64 --format '{{json .Size}}'
+    docker build -f tools/perf/runtime.Dockerfile -t plate-perf-arm64 /private/tmp/plate-perf-publish
+    docker image inspect plate-perf-arm64 --format '{{json .Size}}'
 
 Production read-only aggregation and anonymous bounded probes:
 
@@ -71,6 +71,6 @@ Full check with elapsed time:
 
 After measurement,remove only the disposable local audit containers:
 
-    docker rm -f repa-perf-app repa-perf-db
+    docker rm -f plate-perf-app plate-perf-db
 
 startup.py's throwaway databases live in that isolated DB bind mount. Scratch files remain under /private/tmp for inspection. Audit image and scratch node/.NET tools are dev artifacts,not app dependencies.

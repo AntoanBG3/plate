@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds src/GymTracker.Web/Data/Seed/usda-foods.csv from USDA FoodData Central (public domain, CC0).
+"""Builds src/Plate.Web/Data/Seed/usda-foods.csv from USDA FoodData Central (public domain, CC0).
 
 Uses the Foundation Foods and SR Legacy CSV downloads and keeps, per food, energy (kcal), protein,
 carbohydrate, fat, fiber and saturated fat per 100 g (the last two blank where USDA has no value).
@@ -19,7 +19,7 @@ SOURCES = [
     "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_foundation_food_csv_2026-04-30.zip",
     "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip",
 ]
-OUT = Path(__file__).resolve().parents[2] / "src/GymTracker.Web/Data/Seed/usda-foods.csv"
+OUT = Path(__file__).resolve().parents[2] / "src/Plate.Web/Data/Seed/usda-foods.csv"
 
 # FoodData Central nutrient ids, best first where there are alternatives.
 ENERGY = ["1008", "2048", "2047"]   # Energy kcal; Atwater specific; Atwater general

@@ -1,0 +1,45 @@
+@model AdminErrorList
+@{
+    ViewData["Title"] = "Errors";
+    ViewData["BackUrl"] = "/admin";
+    ViewData["BackLabel"] = "Admin";
+}
+<header class="page-head">
+    <h1 class="large-title">Errors</h1>
+</header>
+<partial name="_AdminNav" />
+
+<form method="get" action="/admin/errors" class="section" data-autosubmit>
+    <div class="list">
+        <div class="field-row">
+            <label for="since">Last seen since</label>
+            <select id="since" name="since">
+                @foreach (var s in new[] { "1d", "7d", "30d", "90d" })
+                {
+                    <option value="@s" selected="@(s == Model.Since)">@s</option>
+                }
+            </select>
+        </div>
+    </div>
+</form>
+
+<section class="section">
+    <div class="list">
+        @foreach (var e in Model.Errors)
+        {
+            <details class="feedback-item">
+                <summary>
+                    <span class="feedback-head">
+                        <span class="footnote">#@e.Id · @e.Origin · ×@e.Count · last @e.LastSeenAt.ToUniversalTime().ToString("d MMM HH:mm") (@(e.LastVersion ?? "?"))</span>
+                    </span>
+                    <span class="feedback-message admin-text" style="display: block">@e.Type: @(e.Message.Length > 160 ? e.Message[..160] + "…" : e.Message)</span>
+                </summary>
+                <pre class="admin-pre">@Plate.Web.Cli.FeedbackCommand.ErrorText(e)</pre>
+            </details>
+        }
+        @if (Model.Errors.Count == 0)
+        {
+            <div class="row"><span class="row-main footnote">No errors.</span></div>
+        }
+    </div>
+</section>

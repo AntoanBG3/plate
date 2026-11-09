@@ -1,7 +1,7 @@
 // Drives the admin area in the running app at 390 px and saves screenshots (SPEC 12): the read-only AI section for
 // the other account, the passkey unlock with a virtual authenticator, every admin page, a status with a reply, a
 // What's new line added and removed, and a model change. The demo account needs the Dev role first:
-//   dotnet run --project src/GymTracker.Web -- role grant dev --email demo@example.test
+//   dotnet run --project src/Plate.Web -- role grant dev --email demo@example.test
 //   node design-samples/tools/admin-check.mjs [base url] [screenshot dir]
 import { chromium } from "playwright-core";
 import { appUrl, collectErrors, signIn } from "./app.mjs";

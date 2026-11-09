@@ -32,9 +32,9 @@
 ## Commands
 
 - Build: `dotnet build`
-- One browser test class: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests"`
-- One browser test: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.<MethodName>"`
-- Core and Web: `dotnet test tests/GymTracker.Core.Tests && dotnet test tests/GymTracker.Web.Tests`
+- One browser test class: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests"`
+- One browser test: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.<MethodName>"`
+- Core and Web: `dotnet test tests/Plate.Core.Tests && dotnet test tests/Plate.Web.Tests`
 - Everything: `dotnet test`
 
 Every browser test is a `[Theory]` with `[InlineData(E2EFixture.Chromium)]` and `[InlineData(E2EFixture.WebKit)]`, like the existing classes.
@@ -44,9 +44,9 @@ Every browser test is a `[Theory]` with `[InlineData(E2EFixture.Chromium)]` and 
 ### Task 1: Closed menus leave the accessibility tree
 
 **Files:**
-- Create: `tests/GymTracker.E2E.Tests/MotionPolishTests.cs`
-- Modify: `src/GymTracker.Web/wwwroot/css/app.css` (the `.menu` rules in "Context menu" around line 689, and the reduced-motion block around line 875)
-- Modify: `src/GymTracker.Web/wwwroot/js/motion.js` (`closeMenus`, around line 326)
+- Create: `tests/Plate.E2E.Tests/MotionPolishTests.cs`
+- Modify: `src/Plate.Web/wwwroot/css/app.css` (the `.menu` rules in "Context menu" around line 689, and the reduced-motion block around line 875)
+- Modify: `src/Plate.Web/wwwroot/js/motion.js` (`closeMenus`, around line 326)
 
 **Interfaces:**
 - Consumes: `E2EFixture.SignedInPhoneAsync`, `Workouts.CreateTemplateAsync`, `Phone.GoAsync`.
@@ -54,16 +54,16 @@ Every browser test is a `[Theory]` with `[InlineData(E2EFixture.Chromium)]` and 
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/GymTracker.E2E.Tests/MotionPolishTests.cs`:
+Create `tests/Plate.E2E.Tests/MotionPolishTests.cs`:
 
 ```csharp
 using FluentAssertions;
-using GymTracker.Core.Domain;
-using GymTracker.Core.Time;
+using Plate.Core.Domain;
+using Plate.Core.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Playwright;
 
-namespace GymTracker.E2E.Tests;
+namespace Plate.E2E.Tests;
 
 /// <summary>Motion refinements taken from apple.com (docs/plans/2026-10-11-motion-polish-design.md).</summary>
 public class MotionPolishTests(E2EFixture app) : IClassFixture<E2EFixture>
@@ -101,7 +101,7 @@ public class MotionPolishTests(E2EFixture app) : IClassFixture<E2EFixture>
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.A_closed_menu"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.A_closed_menu"`
 Expected: FAIL on both browsers, `Expected ... to be "hidden", but "visible" ...`.
 
 - [ ] **Step 3: Hide the closed menu with visibility, and stagger its items in**
@@ -201,13 +201,13 @@ This also means a menu item that opens a sheet (Notes & bar, Save as a meal) now
 
 - [ ] **Step 5: Run the test and the affected classes**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~ReorderTests|FullyQualifiedName~ConfirmSheetTests|FullyQualifiedName~UntestedAreasTests|FullyQualifiedName~UndoToastTests"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~ReorderTests|FullyQualifiedName~ConfirmSheetTests|FullyQualifiedName~UntestedAreasTests|FullyQualifiedName~UndoToastTests"`
 Expected: PASS. Then run Core and Web: PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add tests/GymTracker.E2E.Tests/MotionPolishTests.cs src/GymTracker.Web/wwwroot/css/app.css src/GymTracker.Web/wwwroot/js/motion.js
+git add tests/Plate.E2E.Tests/MotionPolishTests.cs src/Plate.Web/wwwroot/css/app.css src/Plate.Web/wwwroot/js/motion.js
 git commit -m "Take closed menus out of the tab order and stagger their items in
 
 A closed menu was only transparent, so Tab and VoiceOver still reached
@@ -220,9 +220,9 @@ as apple.com's nav does. Escape returns focus to the menu's button."
 ### Task 2: First-sight animations start when on screen
 
 **Files:**
-- Modify: `src/GymTracker.Web/wwwroot/js/pages.js` (add `gymWhenSeen`)
-- Modify: `src/GymTracker.Web/wwwroot/js/motion.js` (`reveal`, its first call, the `gym:page` handler, the header comment)
-- Test: `tests/GymTracker.E2E.Tests/MotionPolishTests.cs`
+- Modify: `src/Plate.Web/wwwroot/js/pages.js` (add `gymWhenSeen`)
+- Modify: `src/Plate.Web/wwwroot/js/motion.js` (`reveal`, its first call, the `gym:page` handler, the header comment)
+- Test: `tests/Plate.E2E.Tests/MotionPolishTests.cs`
 
 **Interfaces:**
 - Produces: `window.gymWhenSeen(el: Element, fn: (el: Element, index: number) => void): void`. It calls `fn` at once (index 0) if any part of `el` is on screen, if `el` has no box (`display: none`), or if `IntersectionObserver` is missing. Otherwise it calls `fn` once, when `el`'s top comes within 85 % of the viewport height, with `index` = its position among the elements entering in the same observer callback. Pending waits are dropped on `gym:beforeswap`.
@@ -303,7 +303,7 @@ Add to `MotionPolishTests`:
 
 - [ ] **Step 2: Run them to verify the first fails and the guard passes**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.Below_the_fold_animations|FullyQualifiedName~MotionPolishTests.Reduced_motion"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.Below_the_fold_animations|FullyQualifiedName~MotionPolishTests.Reduced_motion"`
 Expected: `Below_the_fold_animations_wait_until_scrolled_into_view` FAILS on `Expected ... to be 0` (the line is already animating at load). `Reduced_motion_hides_nothing` PASSES. If the first test fails on the "below the fold" precondition instead, lower `ShortScreen` until the Body section starts below the fold, and note it in the commit.
 
 - [ ] **Step 3: Add `gymWhenSeen` to pages.js**
@@ -438,13 +438,13 @@ In the header comment at the top of motion.js, change `numbers and rings that an
 
 - [ ] **Step 5: Run the tests and the affected classes**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~VisualSystemTests|FullyQualifiedName~AiPathTests|FullyQualifiedName~WorkoutFlowTests|FullyQualifiedName~SmokeTests"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~VisualSystemTests|FullyQualifiedName~AiPathTests|FullyQualifiedName~WorkoutFlowTests|FullyQualifiedName~SmokeTests"`
 Expected: PASS. Then Core and Web: PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/GymTracker.Web/wwwroot/js/pages.js src/GymTracker.Web/wwwroot/js/motion.js tests/GymTracker.E2E.Tests/MotionPolishTests.cs
+git add src/Plate.Web/wwwroot/js/pages.js src/Plate.Web/wwwroot/js/motion.js tests/Plate.E2E.Tests/MotionPolishTests.cs
 git commit -m "Start count-ups, rings and line draws when they come on screen
 
 They all ran at load, so anything below the fold had finished before it
@@ -457,9 +457,9 @@ within 85 % of the viewport, as apple.com's staggered reveals do."
 ### Task 3: Blocks below the fold rise in on first sight
 
 **Files:**
-- Modify: `src/GymTracker.Web/wwwroot/js/motion.js` (new `riseBelowFold`; the first `reveal` call; the `gym:page` handler)
-- Modify: `src/GymTracker.Web/wwwroot/css/app.css` (motion section: the `#main.is-entering` rule, new rise rules)
-- Test: `tests/GymTracker.E2E.Tests/MotionPolishTests.cs`
+- Modify: `src/Plate.Web/wwwroot/js/motion.js` (new `riseBelowFold`; the first `reveal` call; the `gym:page` handler)
+- Modify: `src/Plate.Web/wwwroot/css/app.css` (motion section: the `#main.is-entering` rule, new rise rules)
+- Test: `tests/Plate.E2E.Tests/MotionPolishTests.cs`
 
 **Interfaces:**
 - Consumes: `window.gymWhenSeen`, `firstSight()`, `reveal(scope, animate)` from Task 2; `FirstSightAsync`, `SeedWeightsAsync`, `ShortScreen` from Task 2.
@@ -530,7 +530,7 @@ Add to `MotionPolishTests`:
 
 - [ ] **Step 2: Run them to verify they fail**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.Blocks_below|FullyQualifiedName~MotionPolishTests.Leaving_a_page|FullyQualifiedName~MotionPolishTests.A_screen_taller"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.Blocks_below|FullyQualifiedName~MotionPolishTests.Leaving_a_page|FullyQualifiedName~MotionPolishTests.A_screen_taller"`
 Expected: `Blocks_below_the_fold_rise_in_once` FAILS (class missing), `Leaving_a_page...` FAILS (count is 0). `A_screen_taller_than_the_page_hides_nothing` PASSES (a guard, like the reduced-motion one).
 
 - [ ] **Step 3: Add `riseBelowFold` and call it on first sight**
@@ -615,13 +615,13 @@ with:
 
 - [ ] **Step 5: Run the tests and the affected classes**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~LayoutTests|FullyQualifiedName~AiPathTests|FullyQualifiedName~UntestedAreasTests|FullyQualifiedName~SmokeTests"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~NavigationTests|FullyQualifiedName~LayoutTests|FullyQualifiedName~AiPathTests|FullyQualifiedName~UntestedAreasTests|FullyQualifiedName~SmokeTests"`
 Expected: PASS. Then Core and Web: PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/GymTracker.Web/wwwroot/js/motion.js src/GymTracker.Web/wwwroot/css/app.css tests/GymTracker.E2E.Tests/MotionPolishTests.cs
+git add src/Plate.Web/wwwroot/js/motion.js src/Plate.Web/wwwroot/css/app.css tests/Plate.E2E.Tests/MotionPolishTests.cs
 git commit -m "Let blocks below the fold rise in as they come into view
 
 On a page's first sight in a session, blocks that start below the fold
@@ -634,8 +634,8 @@ from apple.com's StaggeredFadeIn, smaller and quicker."
 ### Task 4: Progress charts draw in when seen
 
 **Files:**
-- Modify: `src/GymTracker.Web/wwwroot/js/progress.js`
-- Test: `tests/GymTracker.E2E.Tests/MotionPolishTests.cs`
+- Modify: `src/Plate.Web/wwwroot/js/progress.js`
+- Test: `tests/Plate.E2E.Tests/MotionPolishTests.cs`
 
 **Interfaces:**
 - Consumes: `window.gymWhenSeen` (Task 2), `FirstSightAsync`, `ShortScreen` (Task 2), `Workouts.WithTargetsAsync`, `Workouts.PostAsync`.
@@ -704,7 +704,7 @@ Add to `MotionPolishTests`:
 
 - [ ] **Step 2: Run them to verify the first fails**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.A_chart_below|FullyQualifiedName~MotionPolishTests.A_theme_change"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.A_chart_below|FullyQualifiedName~MotionPolishTests.A_theme_change"`
 Expected: `A_chart_below_the_fold_draws_in_when_scrolled_to` FAILS: either `running` is true at load, or, if its 900 ms entrance already ended, the wait after scrolling times out. `A_theme_change...` may pass already (the redraw never animates); it guards the new deferred path.
 
 - [ ] **Step 3: Defer each chart's entrance until it is seen**
@@ -756,13 +756,13 @@ A chart already on screen at load gets its callback synchronously right after it
 
 - [ ] **Step 4: Run the tests and the affected classes**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~ChartTests"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~ChartTests"`
 Expected: PASS. Then Core and Web: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/GymTracker.Web/wwwroot/js/progress.js tests/GymTracker.E2E.Tests/MotionPolishTests.cs
+git add src/Plate.Web/wwwroot/js/progress.js tests/Plate.E2E.Tests/MotionPolishTests.cs
 git commit -m "Play each Progress chart's entrance when it comes into view
 
 All charts animated at load, so the lower ones had finished before they
@@ -775,8 +775,8 @@ replayed once the canvas is on screen."
 ### Task 5: Row animations scale with height and fit the swap
 
 **Files:**
-- Modify: `src/GymTracker.Web/wwwroot/js/motion.js` (`appear`, `collapse`, the `htmx:beforeSwap` listener)
-- Test: `tests/GymTracker.E2E.Tests/MotionPolishTests.cs`
+- Modify: `src/Plate.Web/wwwroot/js/motion.js` (`appear`, `collapse`, the `htmx:beforeSwap` listener)
+- Test: `tests/Plate.E2E.Tests/MotionPolishTests.cs`
 
 **Interfaces:**
 - Produces: `motionDuration(height: number): number` in motion.js, exposed as `window.gymMotionDuration`; `swapDelay(el: Element | null): number`; `collapse(el, maxMs = Infinity): Promise<void>` (`window.gymCollapse` keeps its name).
@@ -819,7 +819,7 @@ Add to `MotionPolishTests`:
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.Row_animation"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.Row_animation"`
 Expected: FAIL, `window.gymMotionDuration is not a function`.
 
 - [ ] **Step 3: Scale appear and collapse, and cap collapse at the swap delay**
@@ -886,13 +886,13 @@ In `motion.js`, replace from `function appear(el) {` through the `htmx:beforeSwa
 
 - [ ] **Step 4: Run the test and the affected classes**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~SessionTests|FullyQualifiedName~UndoToastTests|FullyQualifiedName~WorkoutFlowTests"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~SessionTests|FullyQualifiedName~UndoToastTests|FullyQualifiedName~WorkoutFlowTests"`
 Expected: PASS. Then Core and Web: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/GymTracker.Web/wwwroot/js/motion.js tests/GymTracker.E2E.Tests/MotionPolishTests.cs
+git add src/Plate.Web/wwwroot/js/motion.js tests/Plate.E2E.Tests/MotionPolishTests.cs
 git commit -m "Scale row animations with height and fit collapses in the swap
 
 Appear and collapse used fixed 340 and 260 ms. They now scale with the
@@ -905,11 +905,11 @@ swap delay: set rows swap at 180 ms and were cut off mid-collapse."
 ### Task 6: Faded edges on scroll areas
 
 **Files:**
-- Modify: `src/GymTracker.Web/wwwroot/css/app.css` (new rules after the `.change-food-results` rule, around line 720)
-- Modify: `src/GymTracker.Web/wwwroot/js/motion.js` (new section after "instant filter for long lists")
-- Modify: `src/GymTracker.Web/Views/Food/Confirm.cshtml:104`
-- Modify: `src/GymTracker.Web/Views/Onboarding/Index.cshtml:83`
-- Test: `tests/GymTracker.E2E.Tests/MotionPolishTests.cs`
+- Modify: `src/Plate.Web/wwwroot/css/app.css` (new rules after the `.change-food-results` rule, around line 720)
+- Modify: `src/Plate.Web/wwwroot/js/motion.js` (new section after "instant filter for long lists")
+- Modify: `src/Plate.Web/Views/Food/Confirm.cshtml:104`
+- Modify: `src/Plate.Web/Views/Onboarding/Index.cshtml:83`
+- Test: `tests/Plate.E2E.Tests/MotionPolishTests.cs`
 
 **Interfaces:**
 - Produces: classes `scroll-fade` plus `scroll-fade-x` or `scroll-fade-y`; inline custom properties `--fade-start` and `--fade-end`, each `transparent` (fade) or `#000` (no fade).
@@ -961,7 +961,7 @@ Add to `MotionPolishTests`:
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.Scroll_fades"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests.Scroll_fades"`
 Expected: FAIL, the mask is `none` (the assertion on "gradient").
 
 - [ ] **Step 3: Add the fade styles**
@@ -1049,13 +1049,13 @@ with:
 
 - [ ] **Step 6: Run the test and the affected classes**
 
-Run: `dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~ConfirmFoodsTests|FullyQualifiedName~AiPathTests|FullyQualifiedName~AccountTests"`
+Run: `dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionPolishTests|FullyQualifiedName~ConfirmFoodsTests|FullyQualifiedName~AiPathTests|FullyQualifiedName~AccountTests"`
 Expected: PASS. Then Core and Web: PASS.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/GymTracker.Web/wwwroot/css/app.css src/GymTracker.Web/wwwroot/js/motion.js src/GymTracker.Web/Views/Food/Confirm.cshtml src/GymTracker.Web/Views/Onboarding/Index.cshtml tests/GymTracker.E2E.Tests/MotionPolishTests.cs
+git add src/Plate.Web/wwwroot/css/app.css src/Plate.Web/wwwroot/js/motion.js src/Plate.Web/Views/Food/Confirm.cshtml src/Plate.Web/Views/Onboarding/Index.cshtml tests/Plate.E2E.Tests/MotionPolishTests.cs
 git commit -m "Fade the edges of the setup chips and the Change food results
 
 Both cut off hard, so it wasn't clear they scroll. An edge now fades
@@ -1068,8 +1068,8 @@ masks do."
 ### Task 7: Service worker, full suites and a look at 390 px
 
 **Files:**
-- Modify: `src/GymTracker.Web/wwwroot/sw.js:4`
-- Create, run and delete (not committed): `tests/GymTracker.E2E.Tests/MotionShotsTemp.cs`
+- Modify: `src/Plate.Web/wwwroot/sw.js:4`
+- Create, run and delete (not committed): `tests/Plate.E2E.Tests/MotionShotsTemp.cs`
 
 - [ ] **Step 1: Bump the static cache**
 
@@ -1082,14 +1082,14 @@ Expected: build with no warnings added by this work; Core, Web and the full brow
 
 - [ ] **Step 3: Take screenshots for a visual check**
 
-Create `tests/GymTracker.E2E.Tests/MotionShotsTemp.cs` (it is deleted again in Step 4):
+Create `tests/Plate.E2E.Tests/MotionShotsTemp.cs` (it is deleted again in Step 4):
 
 ```csharp
-using GymTracker.Core.Domain;
-using GymTracker.Core.Time;
+using Plate.Core.Domain;
+using Plate.Core.Time;
 using Microsoft.EntityFrameworkCore;
 
-namespace GymTracker.E2E.Tests;
+namespace Plate.E2E.Tests;
 
 public class MotionShotsTemp(E2EFixture app) : IClassFixture<E2EFixture>
 {
@@ -1132,13 +1132,13 @@ public class MotionShotsTemp(E2EFixture app) : IClassFixture<E2EFixture>
 }
 ```
 
-Run, with `$SHOTS` a new folder in the session scratchpad: `GYM_SHOTS=$SHOTS dotnet test tests/GymTracker.E2E.Tests --filter "FullyQualifiedName~MotionShotsTemp"` (create the folder first). Open each PNG and check at 390 px, in both themes: the rising block is partly faded and offset, not missing or clipped; the settled page matches main's layout; the menu items are mid-stagger inside the panel, and nothing leaves the screen.
+Run, with `$SHOTS` a new folder in the session scratchpad: `GYM_SHOTS=$SHOTS dotnet test tests/Plate.E2E.Tests --filter "FullyQualifiedName~MotionShotsTemp"` (create the folder first). Open each PNG and check at 390 px, in both themes: the rising block is partly faded and offset, not missing or clipped; the settled page matches main's layout; the menu items are mid-stagger inside the panel, and nothing leaves the screen.
 
 - [ ] **Step 4: Remove the screenshot test and commit**
 
 ```bash
-rm tests/GymTracker.E2E.Tests/MotionShotsTemp.cs
-git add src/GymTracker.Web/wwwroot/sw.js
+rm tests/Plate.E2E.Tests/MotionShotsTemp.cs
+git add src/Plate.Web/wwwroot/sw.js
 git commit -m "Bump the static cache for the motion polish CSS and JS"
 ```
 

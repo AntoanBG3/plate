@@ -1,0 +1,3057 @@
+{
+  "${0} in, ${1} out per million tokens": [
+    "src/Plate.Web/Integrations/OpenRouterModels.cs"
+  ],
+  "% of weight": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "1 exercise": [
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "1 item": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "1 new reply": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "1 passkey": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "1 planned set isn't logged. Finish anyway?": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "1 set": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "src/Plate.Web/Views/Train/History.cshtml"
+  ],
+  "1 set is saved on this phone and will send when the connection is back.": [
+    "wwwroot/js"
+  ],
+  "12 weeks": [
+    "range"
+  ],
+  "12+ characters": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "4 weeks": [
+    "range"
+  ],
+  "A bulk can't be faster than {0}% of bodyweight per week.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "A cut can't be faster than {0}% of bodyweight per week.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "A diet break pauses a cut.": [
+    "src/Plate.Web/Controllers/TodayController.cs"
+  ],
+  "A few quick questions and your calorie and protein targets are ready. It takes about two minutes.": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "A food reading rated wrong.": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "A food with that barcode is already shared. Scan it again to use it.": [
+    "src/Plate.Web/Features/Food/FoodItemService.cs"
+  ],
+  "A name is 1 to {0} characters.": [
+    "src/Plate.Web/Features/Training/ExerciseService.cs"
+  ],
+  "A template is the list of exercises for one workout, like Upper A or Legs.": [
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "AI estimate": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "AI summary of last week on Today": [
+    "src/Plate.Web/Views/Settings/General.cshtml"
+  ],
+  "Ab wheel rollout": [
+    "exercise"
+  ],
+  "About": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "About the error on the previous page ({0}).": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "About you": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
+  "About: the suggestion for {0}": [
+    "src/Plate.Web/Features/Feedback/FeedbackSnapshots.cs"
+  ],
+  "About: your maintenance estimate of {0} kcal": [
+    "src/Plate.Web/Features/Feedback/FeedbackSnapshots.cs"
+  ],
+  "About: {0}": [
+    "src/Plate.Web/Features/Feedback/FeedbackSnapshots.cs"
+  ],
+  "Above a BMI of 27, protein uses the weight at BMI 27 for your height, since grams per kg of total weight overshoots.": [
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Abs": [
+    "enum"
+  ],
+  "Account: {0}": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Actions for {0}": [
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/Plate.Web/Views/Templates/Edit.cshtml",
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "Active": [
+    "enum"
+  ],
+  "Activity": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Activity level": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Add": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Shared/ExercisePicker.cshtml",
+    "wwwroot/js"
+  ],
+  "Add a passkey": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Add a passkey in Settings first": [
+    "src/Plate.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
+  "Add a screenshot": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "Add a snack": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml"
+  ],
+  "Add an exercise the library doesn't have. Only you see it.": [
+    "src/Plate.Web/Views/SettingsExercises/Index.cshtml"
+  ],
+  "Add and scan another": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Add exercise": [
+    "src/Plate.Web/Views/Templates/Edit.cshtml",
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Add more photos": [
+    "src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
+  "Add set": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml"
+  ],
+  "Add the first exercise to start logging sets.": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Add the front or another side of the pack if the table doesn't show the name or serving.": [
+    "src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
+  "Add to breakfast": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml"
+  ],
+  "Add to dinner": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml"
+  ],
+  "Add to lunch": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml"
+  ],
+  "Add to {0}": [
+    "src/Plate.Web/Controllers/TemplatesController.cs"
+  ],
+  "Add {0}": [
+    "wwwroot/js"
+  ],
+  "Added": [
+    "src/Plate.Web/Views/Shared/ExercisePicker.cshtml"
+  ],
+  "Added 1 item.": [
+    "src/Plate.Web/Controllers/SavedMealsController.cs"
+  ],
+  "Added a second {0}.": [
+    "src/Plate.Web/Controllers/TemplatesController.cs",
+    "src/Plate.Web/Controllers/TrainController.cs"
+  ],
+  "Added by another user": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
+  "Added something I didn't eat": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Added {0}": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Added {0} items.": [
+    "src/Plate.Web/Controllers/SavedMealsController.cs"
+  ],
+  "Added: {0}": [
+    "src/Plate.Web/Controllers/FoodController.cs"
+  ],
+  "Admin": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Aim": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "wwwroot/js"
+  ],
+  "All": [
+    "range"
+  ],
+  "All sets hit {0}, +{1} kg": [
+    "src/Plate.Core/Training/Progression.cs"
+  ],
+  "Already in the app": [
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
+  "Also works": [
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml"
+  ],
+  "Amount": [
+    "src/Plate.Web/Views/Food/Entry.cshtml"
+  ],
+  "An account with this email already exists.": [
+    "src/Plate.Web/Features/Users/UserCreator.cs"
+  ],
+  "An estimate, no database food": [
+    "src/Plate.Web/Views/Food/Entry.cshtml"
+  ],
+  "An exercise keeps at least one set.": [
+    "src/Plate.Web/Controllers/TrainController.cs"
+  ],
+  "Another food already shares this barcode, so this one is kept for you only.": [
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
+  "Anything else?": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Anything else? What should it have been?": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "App": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Appearance": [
+    "src/Plate.Web/Views/Settings/General.cshtml"
+  ],
+  "Archive": [
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml",
+    "src/Plate.Web/Views/Templates/Edit.cshtml"
+  ],
+  "Archive exercise": [
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml"
+  ],
+  "Archive template": [
+    "src/Plate.Web/Views/Templates/Edit.cshtml"
+  ],
+  "Archive this exercise? Workouts and templates that use it keep it.": [
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml"
+  ],
+  "Archive this template? Past workouts keep their history.": [
+    "src/Plate.Web/Views/Templates/Edit.cshtml"
+  ],
+  "Arnold press": [
+    "exercise"
+  ],
+  "At least {0} g protein in this meal": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Attach a photo (JPEG, PNG or WebP).": [
+    "src/Plate.Web/Controllers/FoodController.cs",
+    "src/Plate.Web/Features/Food/LabelScanService.cs"
+  ],
+  "Attach a screenshot or photo (JPEG, PNG or WebP).": [
+    "src/Plate.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "Attach one to three photos.": [
+    "src/Plate.Web/Controllers/FoodController.cs",
+    "src/Plate.Web/Features/Food/LabelScanService.cs"
+  ],
+  "Auto": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Average on logged days, last 4 weeks": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Back": [
+    "enum"
+  ],
+  "Back extension": [
+    "exercise"
+  ],
+  "Back to Today": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "Back to today": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Bar and plates": [
+    "src/Plate.Web/Views/Settings/Training.cshtml"
+  ],
+  "Bar weight": [
+    "src/Plate.Web/Views/Settings/Training.cshtml",
+    "src/Plate.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
+  ],
+  "Bar weight must be between 0 and 50 kg.": [
+    "src/Plate.Web/Features/Training/ExerciseSettingsService.cs"
+  ],
+  "Bar weight must be between {0} and {1} kg.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Bar {0} kg": [
+    "src/Plate.Web/Views/Settings/Index.cshtml",
+    "src/Plate.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Barbell": [
+    "enum"
+  ],
+  "Barbell curl": [
+    "exercise"
+  ],
+  "Barbell row": [
+    "exercise"
+  ],
+  "Barbell shrug": [
+    "exercise"
+  ],
+  "Barcode": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Barcode digits": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Barcode scanning": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Barcode scanning isn't available here. Type the digits instead.": [
+    "wwwroot/js"
+  ],
+  "Barcode {0}": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Based on {0} kg, a healthy weight for your height.": [
+    "src/Plate.Web/Views/Settings/_ProteinNote.cshtml"
+  ],
+  "Bench dip": [
+    "exercise"
+  ],
+  "Bench press": [
+    "exercise"
+  ],
+  "Biceps": [
+    "enum"
+  ],
+  "Birth year": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "Birth year must be between {0} and {1} (age {2} to {3}).": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Body": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Bodyweight": [
+    "enum",
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Breakfast": [
+    "enum"
+  ],
+  "Bulgarian split squat": [
+    "exercise"
+  ],
+  "Bulgarian wording": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Bulk": [
+    "enum"
+  ],
+  "Cable": [
+    "enum"
+  ],
+  "Cable crunch": [
+    "exercise"
+  ],
+  "Cable curl": [
+    "exercise"
+  ],
+  "Cable fly": [
+    "exercise"
+  ],
+  "Cable lateral raise": [
+    "exercise"
+  ],
+  "Calorie target and maintenance": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Calories": [
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "Calories are at maintenance; protein stays at your cut aim. The cut resumes on its own.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Calories must be between 1 and 5000.": [
+    "src/Plate.Core/Nutrition/FoodMath.cs"
+  ],
+  "Calves": [
+    "enum"
+  ],
+  "Camera access was refused. Type the digits or take a photo instead.": [
+    "wwwroot/js"
+  ],
+  "Cancel": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Food/_SaveMealForm.cshtml",
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml",
+    "src/Plate.Web/Views/Food/_ScannerSheet.cshtml",
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml",
+    "src/Plate.Web/Views/Shared/ExercisePicker.cshtml",
+    "src/Plate.Web/Views/Shared/Reorder.cshtml",
+    "src/Plate.Web/Views/Shared/_ExerciseSettingsForm.cshtml",
+    "src/Plate.Web/Views/Shared/_Layout.cshtml"
+  ],
+  "Carbs": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Carbs: whatever calories are left after protein and fat.": [
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Change a quick entry's calories instead of its amount.": [
+    "src/Plate.Web/Features/Food/FoodLogService.cs"
+  ],
+  "Change food": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Change password": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Change this entry's amount instead.": [
+    "src/Plate.Web/Features/Food/FoodLogService.cs"
+  ],
+  "Changing the amount scales calories and macros with it.": [
+    "src/Plate.Web/Views/Food/Entry.cshtml"
+  ],
+  "Check foods": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Check match": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Check the details and change anything that's off. Nothing is saved until you tap Save.": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
+  "Chest": [
+    "enum"
+  ],
+  "Chest-supported row": [
+    "exercise"
+  ],
+  "Chin-up": [
+    "exercise"
+  ],
+  "Close-grip bench press": [
+    "exercise"
+  ],
+  "Closest you can load: {0} kg (you asked for {1})": [
+    "src/Plate.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Concentration curl": [
+    "exercise"
+  ],
+  "Confirm it's you with one of this account's passkeys. The admin area stays open for 30 minutes after the last page, and 4 hours at most.": [
+    "src/Plate.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
+  "Copied 1 item.": [
+    "src/Plate.Web/Controllers/FoodController.cs"
+  ],
+  "Copied {0} items.": [
+    "src/Plate.Web/Controllers/FoodController.cs"
+  ],
+  "Copy yesterday's breakfast": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Copy yesterday's dinner": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Copy yesterday's lunch": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Copy yesterday's snacks": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Couldn't add the passkey. Try again.": [
+    "wwwroot/js"
+  ],
+  "Couldn't find a nutrition table in that photo.": [
+    "src/Plate.Core/Nutrition/LabelReading.cs"
+  ],
+  "Couldn't load the page. That change may have been saved. Check before trying again.": [
+    "wwwroot/js"
+  ],
+  "Couldn't read that photo. Type the digits instead.": [
+    "wwwroot/js"
+  ],
+  "Couldn't read that picture. Try a screenshot.": [
+    "wwwroot/js"
+  ],
+  "Couldn't read that picture. Try another photo.": [
+    "wwwroot/js"
+  ],
+  "Couldn't read that.": [
+    "src/Plate.Web/Controllers/FoodController.cs"
+  ],
+  "Couldn't read the label. Enter the values by hand.": [
+    "src/Plate.Web/Controllers/FoodController.cs",
+    "src/Plate.Web/Integrations/OpenRouterLabelReader.cs",
+    "wwwroot/js"
+  ],
+  "Create a custom exercise": [
+    "src/Plate.Web/Views/Shared/ExercisePicker.cshtml"
+  ],
+  "Create a template": [
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "Create account": [
+    "src/Plate.Web/Views/Join/Index.cshtml"
+  ],
+  "Create and add": [
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml"
+  ],
+  "Create exercise": [
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml"
+  ],
+  "Create template": [
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "Create your account": [
+    "src/Plate.Web/Views/Join/Index.cshtml"
+  ],
+  "Crunch": [
+    "exercise"
+  ],
+  "Current": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Custom exercises": [
+    "src/Plate.Web/Views/Settings/Index.cshtml",
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml",
+    "src/Plate.Web/Views/SettingsExercises/Index.cshtml"
+  ],
+  "Cut": [
+    "enum"
+  ],
+  "Cuts are capped at 1% and bulks at 0.5% of bodyweight per week.": [
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Cuts are capped at 1% and bulks at 0.5% of bodyweight per week; the rate is ignored for maintain. Leave starting maintenance empty unless you know it from tracking.": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
+  "Daily calories against target for the last 4 weeks": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Daily protein against the aim and minimum for the last 4 weeks": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Dark": [
+    "extra"
+  ],
+  "Database": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "wwwroot/js"
+  ],
+  "Database values come from USDA or foods you saved. AI estimates are the model's own numbers; check them against the label if you can.": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Database: {0}": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "wwwroot/js"
+  ],
+  "Day": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Days for food and weigh-ins start at midnight in this time zone.": [
+    "src/Plate.Web/Views/Settings/General.cshtml"
+  ],
+  "Deadlift": [
+    "exercise"
+  ],
+  "Decline bench press": [
+    "exercise"
+  ],
+  "Delete": [
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml"
+  ],
+  "Delete entry": [
+    "src/Plate.Web/Views/Food/Entry.cshtml"
+  ],
+  "Delete saved meal": [
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml"
+  ],
+  "Delete this saved meal?": [
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml"
+  ],
+  "Delete this workout and all its sets? This can't be undone.": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Delete workout": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Description": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml"
+  ],
+  "Description must be 1 to 200 characters.": [
+    "src/Plate.Web/Features/Food/FoodLogService.cs"
+  ],
+  "Desk job and everyday errands, up to about 8,000 steps a day.": [
+    "src/Plate.Core/Nutrition/ActivityLevels.cs"
+  ],
+  "Diamond push-up": [
+    "exercise"
+  ],
+  "Did this read your food right?": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Didn't understand my wording": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Diet break until {0}": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Digits under the barcode": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Dinner": [
+    "enum"
+  ],
+  "Dip": [
+    "exercise"
+  ],
+  "Discard": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Discard these reports? They can't be recovered.": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Dismiss for a week": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Done": [
+    "src/Plate.Web/Views/Shared/Reorder.cshtml",
+    "src/Plate.Web/Views/Shared/_Plates.cshtml",
+    "src/Plate.Web/Views/Train/Session.cshtml",
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "Done today: {0}": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Dumbbell": [
+    "enum"
+  ],
+  "Dumbbell Romanian deadlift": [
+    "exercise"
+  ],
+  "Dumbbell bench press": [
+    "exercise"
+  ],
+  "Dumbbell curl": [
+    "exercise"
+  ],
+  "Dumbbell fly": [
+    "exercise"
+  ],
+  "Dumbbell lunge": [
+    "exercise"
+  ],
+  "Dumbbell pullover": [
+    "exercise"
+  ],
+  "Dumbbell row": [
+    "exercise"
+  ],
+  "Dumbbell shrug": [
+    "exercise"
+  ],
+  "Duplicate": [
+    "src/Plate.Web/Views/Templates/Edit.cshtml",
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "Duration": [
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "EAN-13, EAN-8, UPC-A or UPC-E: 8, 12 or 13 digits.": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "EZ-bar curl": [
+    "exercise"
+  ],
+  "Eaten": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "wwwroot/js"
+  ],
+  "Eaten {0} of {1} kcal and {2} of {3} g protein": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Eaten {0} of {1} kcal and {2} of {3} g protein (minimum {4} g)": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Edit": [
+    "src/Plate.Web/Views/Templates/Index.cshtml",
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "Edit workout": [
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "Email": [
+    "src/Plate.Web/Views/Account/Login.cshtml",
+    "src/Plate.Web/Views/Join/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "Email or password is wrong.": [
+    "src/Plate.Web/Controllers/AccountController.cs"
+  ],
+  "End the break now": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Energy": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Enter a valid email address.": [
+    "src/Plate.Web/Features/Users/UserCreator.cs"
+  ],
+  "Enter a weekly rate for a cut or bulk.": [
+    "src/Plate.Core/Domain/ProfileRules.cs",
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Enter a weight.": [
+    "src/Plate.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Enter it by hand instead": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Entry deleted.": [
+    "extra"
+  ],
+  "Equipment": [
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml"
+  ],
+  "Error": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "Estimate": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Estimated 1RM": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Estimated 1RM, first time": [
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "Estimated 1RM, was {0} kg": [
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "Estimated one-rep max per session": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Everyday life plus about an hour of brisk walking or similar every day, roughly 11,000 to 14,000 steps.": [
+    "src/Plate.Core/Nutrition/ActivityLevels.cs"
+  ],
+  "Everyday life plus about two hours of activity a day, some of it hard (cycling, a sport), or a job on your feet with lifting and carrying.": [
+    "src/Plate.Core/Nutrition/ActivityLevels.cs"
+  ],
+  "Exercise": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Exercise removed.": [
+    "extra"
+  ],
+  "Exercises": [
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "Export all data": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Face pull": [
+    "exercise"
+  ],
+  "Fat": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Fat: at least 20% of calories and 0.5 g per kg, up to 35%. Very low fat lowers testosterone. Whittaker 2021, ACSM.": [
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Female": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "Fiber": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Fiber can't be over 100 g, and saturated fat can't be more than fat.": [
+    "src/Plate.Core/Nutrition/FoodMath.cs"
+  ],
+  "Fiber must be between 0 and 200 g, and saturated fat between 0 and the fat.": [
+    "src/Plate.Core/Nutrition/FoodMath.cs"
+  ],
+  "Fill in every field to finish, or skip for now.": [
+    "src/Plate.Web/Features/Onboarding/OnboardingService.cs"
+  ],
+  "Fill in sex, height and birth year (or a starting maintenance) in Settings to get a calorie target.": [
+    "src/Plate.Web/Features/Food/NutritionTargets.cs"
+  ],
+  "Finish": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Finish this workout?": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Finished workouts show up here, newest first.": [
+    "src/Plate.Web/Views/Train/History.cshtml"
+  ],
+  "First time": [
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "Fixed": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Food": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs",
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Shared/_Layout.cshtml"
+  ],
+  "Food database": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Food name, e.g. Кисело мляко 2%": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Food rating": [
+    "wwwroot/js"
+  ],
+  "Food search": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Food today": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Foods you log in the next 30 days show up here for one-tap logging.": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "For example: 200 g chicken breast, 150 g cooked rice, a banana. English or Bulgarian. You check every item before anything is saved.": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "For example: seat 4, neutral grip": [
+    "src/Plate.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
+  ],
+  "Forearms": [
+    "enum"
+  ],
+  "Found {0}. Looking it up…": [
+    "wwwroot/js"
+  ],
+  "Free": [
+    "src/Plate.Web/Integrations/OpenRouterModels.cs"
+  ],
+  "Freestyle": [
+    "extra",
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "src/Plate.Web/Views/Train/History.cshtml",
+    "src/Plate.Web/Views/Train/Index.cshtml",
+    "src/Plate.Web/Views/Train/Session.cshtml",
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "From 65, under 1.2 g per kg is below what keeps muscle when you train.": [
+    "src/Plate.Web/Views/Settings/_ProteinNote.cshtml"
+  ],
+  "From a starting maintenance of about {0} kcal, with {1} g of protein. It adapts as you log food and weight.": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
+  "Front raise": [
+    "exercise"
+  ],
+  "Front squat": [
+    "exercise"
+  ],
+  "General": [
+    "src/Plate.Web/Views/Settings/General.cshtml",
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Glute bridge": [
+    "exercise"
+  ],
+  "Glutes": [
+    "enum"
+  ],
+  "Go back": [
+    "src/Plate.Web/Views/Feedback/New.cshtml",
+    "src/Plate.Web/Views/Shared/_Layout.cshtml"
+  ],
+  "Go to passkeys": [
+    "src/Plate.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
+  "Goal": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Goal & nutrition": [
+    "src/Plate.Web/Views/Settings/Goal.cshtml",
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Goblet squat": [
+    "exercise"
+  ],
+  "Good morning": [
+    "exercise"
+  ],
+  "Got it": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Grams": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Grams must be above 0 and at most {0}.": [
+    "src/Plate.Core/Nutrition/FoodMath.cs"
+  ],
+  "Hack squat": [
+    "exercise"
+  ],
+  "Hammer curl": [
+    "exercise"
+  ],
+  "Hamstrings": [
+    "enum"
+  ],
+  "Hanging knee raise": [
+    "exercise"
+  ],
+  "Hanging leg raise": [
+    "exercise"
+  ],
+  "Height": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "Height must be between {0} and {1} cm.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Hip abduction machine": [
+    "exercise"
+  ],
+  "Hip thrust": [
+    "exercise"
+  ],
+  "History": [
+    "src/Plate.Web/Views/Train/History.cshtml",
+    "src/Plate.Web/Views/Train/Index.cshtml",
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Hold {0} kg, add a rep": [
+    "src/Plate.Core/Training/Progression.cs"
+  ],
+  "How it went, what to change next time": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "How much?": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "How to add": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "How your targets are set": [
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Idea": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "In progress · {0}": [
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "Inactive": [
+    "enum"
+  ],
+  "Incline bench press": [
+    "exercise"
+  ],
+  "Incline dumbbell curl": [
+    "exercise"
+  ],
+  "Incline dumbbell fly": [
+    "exercise"
+  ],
+  "Incline dumbbell press": [
+    "exercise"
+  ],
+  "Include {0}": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Increment must be above 0 and at most 50 kg.": [
+    "src/Plate.Web/Features/Training/TemplateService.cs"
+  ],
+  "Inverted row": [
+    "exercise"
+  ],
+  "Is this the same food?": [
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
+  "It adapts weekly once you have 2 weeks of weigh-ins on most days and food logged on 80% of days.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "It goes straight to the developer. The answer shows under Your feedback in Settings.": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "It's too late to undo that.": [
+    "src/Plate.Web/Features/Undo/UndoService.cs"
+  ],
+  "Judged on the 7 days before today, against today's targets.": [
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "Jump {0} kg": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Just the bar": [
+    "src/Plate.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Keep a message under {0} characters.": [
+    "src/Plate.Web/Features/Onboarding/OnboardingService.cs"
+  ],
+  "Keep it under {0} characters.": [
+    "src/Plate.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "Kettlebell swing": [
+    "exercise"
+  ],
+  "Kind": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "Language": [
+    "src/Plate.Web/Views/Join/Index.cshtml",
+    "src/Plate.Web/Views/Settings/General.cshtml"
+  ],
+  "Last time": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Last time: {0}": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml"
+  ],
+  "Last week": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "wwwroot/js"
+  ],
+  "Last week · {0}–{1}": [
+    "src/Plate.Web/Views/Today/_WeeklySummary.cshtml"
+  ],
+  "Last week's numbers are sent to an AI model through OpenRouter: calories, macros, weight trend and workouts, without your name.": [
+    "src/Plate.Web/Views/Settings/General.cshtml"
+  ],
+  "Last weigh-in: {0} kg on {1}": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Last: {0}": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Lat pulldown": [
+    "exercise"
+  ],
+  "Lateral raise": [
+    "exercise"
+  ],
+  "Latest, best set of the session (Epley)": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Layout and design": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Leave protein empty for Auto: 1.8 g per kg, 2.2 on a cut and 2.4 on a cut faster than 0.75% a week.": [
+    "src/Plate.Web/Views/Settings/_ProteinNote.cshtml"
+  ],
+  "Leave starting maintenance empty to estimate it from sex, age, height, weight and activity. It adapts to your logged data later.": [
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Leave the bar empty to use {0} kg for barbell exercises. Set it on any exercise to get the plate calculator, 0 for a plate-loaded machine.": [
+    "src/Plate.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
+  ],
+  "Leg extension": [
+    "exercise"
+  ],
+  "Leg press": [
+    "exercise"
+  ],
+  "Leg press calf raise": [
+    "exercise"
+  ],
+  "Let's set you up": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Lifting 3 to 4 times a week counts for about half a level; add it to your walking. Used only until about three weeks of logs give an adaptive estimate.": [
+    "src/Plate.Core/Nutrition/ActivityLevels.cs"
+  ],
+  "Light": [
+    "extra"
+  ],
+  "Log a few workouts to see your strength trend.": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Log food": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Log out": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Log out everywhere": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Log set": [
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml"
+  ],
+  "Log your weight and fill in your profile to get a calorie target.": [
+    "src/Plate.Web/Features/Food/NutritionTargets.cs"
+  ],
+  "Log your weight on the Today page; the trend appears after a few days.": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Log your weight to get a protein target.": [
+    "src/Plate.Web/Features/Food/NutritionTargets.cs"
+  ],
+  "Log your weight to get a target for your goal.": [
+    "src/Plate.Web/Features/Food/NutritionTargets.cs"
+  ],
+  "Logged today: {0} kg": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Logging workouts": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Look up": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Lookup failed": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Low active": [
+    "enum"
+  ],
+  "Low confidence: weigh-ins had a gap of 3 or more days.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Lunch": [
+    "enum"
+  ],
+  "Lying leg curl": [
+    "exercise"
+  ],
+  "Lying leg raise": [
+    "exercise"
+  ],
+  "Machine": [
+    "enum"
+  ],
+  "Machine chest press": [
+    "exercise"
+  ],
+  "Machine shoulder press": [
+    "exercise"
+  ],
+  "Main": [
+    "src/Plate.Web/Views/Shared/_Layout.cshtml"
+  ],
+  "Main muscle": [
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml"
+  ],
+  "Maintain": [
+    "enum"
+  ],
+  "Maintenance": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "wwwroot/js"
+  ],
+  "Maintenance {0} kcal, adaptive from {1} days of data.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Maintenance {0} kcal, initial estimate ({1} days of data, food logged on {2}%).": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Maintenance {0} kcal, initial estimate.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Make a template with the exercises you do, and Today will suggest the next one.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Male": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "Manual": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Match phone": [
+    "extra"
+  ],
+  "Maximum reps": [
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml"
+  ],
+  "Meal": [
+    "src/Plate.Web/Views/Food/Entry.cshtml"
+  ],
+  "Message": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "Minimum": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "wwwroot/js"
+  ],
+  "Minimum reps": [
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml"
+  ],
+  "Missed a food": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "More than two hours of hard activity a day (running, cycling, sport), or heavy manual work plus training.": [
+    "src/Plate.Core/Nutrition/ActivityLevels.cs"
+  ],
+  "Move down": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/Plate.Web/Views/Templates/Edit.cshtml",
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "Move up": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/Plate.Web/Views/Templates/Edit.cshtml",
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "Move {0} down": [
+    "src/Plate.Web/Views/Shared/Reorder.cshtml"
+  ],
+  "Move {0} up": [
+    "src/Plate.Web/Views/Shared/Reorder.cshtml"
+  ],
+  "Name": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Food/_SaveMealForm.cshtml",
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml",
+    "src/Plate.Web/Views/Join/Index.cshtml",
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Profile.cshtml",
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml",
+    "src/Plate.Web/Views/Templates/_TemplateNameForm.cshtml"
+  ],
+  "Name must be 1 to 100 characters.": [
+    "src/Plate.Web/Features/Training/TemplateService.cs",
+    "src/Plate.Web/Features/Users/UserCreator.cs"
+  ],
+  "Name must be 1 to 200 characters.": [
+    "src/Plate.Web/Features/Food/FoodItemService.cs"
+  ],
+  "Name must be 1 to 60 characters.": [
+    "src/Plate.Web/Features/Food/SavedMealService.cs"
+  ],
+  "Name must be 1 to {0} characters.": [
+    "src/Plate.Core/Domain/ProfileRules.cs",
+    "src/Plate.Core/Onboarding/OnboardingDraft.cs"
+  ],
+  "Name, e.g. Upper A": [
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "Needs a connection": [
+    "wwwroot/js"
+  ],
+  "Needs more detail": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Neutral-grip pull-up": [
+    "exercise"
+  ],
+  "New": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "New exercise": [
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml",
+    "src/Plate.Web/Views/SettingsExercises/Index.cshtml"
+  ],
+  "New records": [
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "New template": [
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "Next day": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Next: {0}": [
+    "wwwroot/js"
+  ],
+  "No OpenRouter key is set.": [
+    "src/Plate.Web/Features/Feedback/ParseEvaluation.cs"
+  ],
+  "No barcode found in that photo. Try again closer, or type the digits.": [
+    "wwwroot/js"
+  ],
+  "No connection. Remove the screenshot to keep the message on this phone, or try again with signal.": [
+    "wwwroot/js"
+  ],
+  "No custom exercises": [
+    "src/Plate.Web/Views/SettingsExercises/Index.cshtml"
+  ],
+  "No database match, so these numbers are the AI's estimate.": [
+    "src/Plate.Web/Features/Food/FoodMatcher.cs"
+  ],
+  "No exercise matches.": [
+    "src/Plate.Web/Views/Shared/ExercisePicker.cshtml"
+  ],
+  "No exercises yet": [
+    "src/Plate.Web/Views/Train/Index.cshtml",
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "No food found in that text.": [
+    "src/Plate.Web/Integrations/FakeFoodParser.cs",
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "No food logged in the last 4 weeks.": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "No nutrition data": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "No products with nutrition data found.": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "No sets": [
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "No sets of 1 to 12 reps logged for this exercise yet.": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "No snacks were logged the day before.": [
+    "src/Plate.Web/Controllers/FoodController.cs"
+  ],
+  "No strength data yet": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "No targets for this day yet.": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "No templates yet": [
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "No weigh-ins yet": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "No working sets in the last two weeks.": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "No workouts yet": [
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "src/Plate.Web/Views/Train/History.cshtml"
+  ],
+  "No, it's different": [
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
+  "No, something is wrong": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Not found": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "Not saved yet. It tries again when you have signal.": [
+    "src/Plate.Web/Views/Settings/_AutosaveStatus.cshtml",
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml",
+    "src/Plate.Web/Views/Templates/_TemplateNameForm.cshtml"
+  ],
+  "Not saved. Tap ✓ to try again.": [
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml"
+  ],
+  "Not set": [
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "Note": [
+    "src/Plate.Web/Views/Shared/_ExerciseSettingsForm.cshtml"
+  ],
+  "Notes": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Notes & bar": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/Plate.Web/Views/Templates/Edit.cshtml"
+  ],
+  "Notes can be at most 200 characters.": [
+    "src/Plate.Web/Features/Training/ExerciseSettingsService.cs"
+  ],
+  "Notes can be at most 2000 characters.": [
+    "src/Plate.Web/Features/Training/SessionService.cs"
+  ],
+  "Nothing matches.": [
+    "src/Plate.Web/Views/Food/_Candidates.cshtml"
+  ],
+  "Nothing recent yet": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Nothing saved matches.": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Nothing sent yet": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Nothing was logged for breakfast the day before.": [
+    "src/Plate.Web/Controllers/FoodController.cs"
+  ],
+  "Nothing was logged for dinner the day before.": [
+    "src/Plate.Web/Controllers/FoodController.cs"
+  ],
+  "Nothing was logged for lunch the day before.": [
+    "src/Plate.Web/Controllers/FoodController.cs"
+  ],
+  "Nutrition table": [
+    "src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
+  "Nutrition values": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Nutrition values can't be negative.": [
+    "src/Plate.Core/Nutrition/FoodMath.cs"
+  ],
+  "OK": [
+    "wwwroot/js"
+  ],
+  "Oats, skyr, кашкавал…": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Offline and sending": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "One serving": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Only an exercise with no sets logged can be swapped.": [
+    "src/Plate.Web/Features/Training/SessionService.cs"
+  ],
+  "Only {0} of {1} sets last time. Hold {2} kg": [
+    "src/Plate.Core/Training/Progression.cs"
+  ],
+  "Open Food Facts didn't answer. Enter it from the label, or try again later.": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Open Food Facts didn't answer. Try again later, or add the food by hand.": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Open Food Facts has no name for this product. The name you give it is saved for everyone.": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Open Food Facts is limiting requests right now. Try again in a minute.": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Open Food Facts is limiting requests. Wait a minute, or enter it from the label.": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Open Food Facts knows this product but not its nutrition. Enter it from the label once and it's saved for everyone.": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Open the rest timer": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "OpenRouter rejected the API key ({0}).": [
+    "src/Plate.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
+  "OpenRouter rejected the API key ({0}). Check it in Settings, or enter the food by hand.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "OpenRouter's model list can't be loaded right now. Try again later.": [
+    "src/Plate.Web/Integrations/OpenRouterSettings.cs"
+  ],
+  "Optional": [
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Or type the digits": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Other": [
+    "enum",
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Others who scan this barcode get this food instead of entering it again. Your name isn't shown.": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Overhead cable triceps extension": [
+    "exercise"
+  ],
+  "Overhead dumbbell triceps extension": [
+    "exercise"
+  ],
+  "Overhead press": [
+    "exercise"
+  ],
+  "Passkey": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Passkey added.": [
+    "src/Plate.Web/Controllers/PasskeyController.cs"
+  ],
+  "Passkey removed.": [
+    "src/Plate.Web/Controllers/PasskeyController.cs"
+  ],
+  "Passkeys": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Password": [
+    "src/Plate.Web/Views/Account/Login.cshtml",
+    "src/Plate.Web/Views/Join/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Password changed. Other devices will be signed out.": [
+    "src/Plate.Web/Controllers/SettingsController.cs"
+  ],
+  "Password only": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Password, 12+ characters": [
+    "src/Plate.Web/Views/Join/Index.cshtml"
+  ],
+  "Pec deck": [
+    "exercise"
+  ],
+  "Per 100 g": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
+  "Per 100 g values": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Per 100 g, from the label": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Per 100 ml, used as per 100 g.": [
+    "src/Plate.Core/Nutrition/LabelReading.cs"
+  ],
+  "Per meal: about 0.3 g of protein per kg at breakfast, lunch and dinner; 0.4 g and at least 25 g from 65. Morton 2018.": [
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Per side": [
+    "src/Plate.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Photograph a label": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Pick sex, goal and activity level from the list.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Pick what this is about.": [
+    "src/Plate.Web/Controllers/FeedbackController.cs",
+    "src/Plate.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "Picking the right food": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Plank": [
+    "exercise"
+  ],
+  "Planned": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Plate calculator": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Plate weights must be from the list.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Plates": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/Plate.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Plates you have": [
+    "src/Plate.Web/Views/Settings/Training.cshtml"
+  ],
+  "Point the camera at the barcode.": [
+    "src/Plate.Web/Views/Food/_ScannerSheet.cshtml",
+    "wwwroot/js"
+  ],
+  "Portion": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Preacher curl": [
+    "exercise"
+  ],
+  "Previous day": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Problems, ideas and wrong food matches you report show here, with the answer.": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Profile": [
+    "src/Plate.Web/Views/Settings/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "Profile saved.": [
+    "src/Plate.Web/Controllers/SettingsController.cs"
+  ],
+  "Progress": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "src/Plate.Web/Views/Shared/_Layout.cshtml"
+  ],
+  "Progress charts": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Progression": [
+    "src/Plate.Web/Views/Settings/Training.cshtml"
+  ],
+  "Protein": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml",
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "Protein and fat fill your whole calorie target.": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Protein at least {0} g, aiming for {1} g; fat {2}–{3} g; carbs {4}–{5} g.": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
+  "Protein averaged {0} g this week, under your minimum of {1} g.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Protein must be between {0} and {1} g per kg.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Protein, carbs and fat add up to more than 100 g. Check them.": [
+    "src/Plate.Core/Nutrition/LabelReading.cs"
+  ],
+  "Protein, carbs and fat must be between 0 and 500 g.": [
+    "src/Plate.Core/Nutrition/FoodMath.cs"
+  ],
+  "Protein: at least 1.6 g per kg (1.2 from age 65), aiming higher on a cut to keep muscle. Morton 2018, Nunes 2022, Helms 2014.": [
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Pull-up": [
+    "exercise"
+  ],
+  "Push-up": [
+    "exercise"
+  ],
+  "Quads": [
+    "enum"
+  ],
+  "Quick add": [
+    "src/Plate.Web/Features/Localization/Localizer.cs",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Quick add a snack": [
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Quick add to breakfast": [
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Quick add to dinner": [
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Quick add to lunch": [
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml"
+  ],
+  "Quick add, typed in": [
+    "src/Plate.Web/Views/Food/Entry.cshtml"
+  ],
+  "RPE must be between 5 and 10 in steps of 0.5.": [
+    "src/Plate.Core/Training/SetRules.cs"
+  ],
+  "Raised to the minimum for your sex.": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
+  "Raised to the {0} kcal minimum. Consider a slower rate in Settings.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Range": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Rate can't be negative.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Rate per week": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Read from the photo. Check each value against the label.": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Read it": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Read the label": [
+    "src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
+  "Read the label from a photo": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Reading the label…": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Reading the photo…": [
+    "wwwroot/js"
+  ],
+  "Reading typed food": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Reading…": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Rear delt fly": [
+    "exercise"
+  ],
+  "Recent": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Reference {0}": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "Region": [
+    "src/Plate.Web/Views/Settings/General.cshtml"
+  ],
+  "Remove": [
+    "src/Plate.Web/Views/Feedback/New.cshtml",
+    "src/Plate.Web/Views/Settings/Security.cshtml",
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml",
+    "src/Plate.Web/Views/Templates/Edit.cshtml"
+  ],
+  "Remove exercise": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml"
+  ],
+  "Remove photo": [
+    "src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
+  "Remove this passkey? You can still sign in with your password.": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Rename": [
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml",
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml"
+  ],
+  "Reorder": [
+    "src/Plate.Web/Views/Shared/Reorder.cshtml"
+  ],
+  "Reorder exercises": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/Plate.Web/Views/Templates/Edit.cshtml"
+  ],
+  "Rep range must be between 1 and 100, with the minimum not above the maximum.": [
+    "src/Plate.Web/Features/Training/TemplateService.cs"
+  ],
+  "Repeat new": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Report": [
+    "wwwroot/js"
+  ],
+  "Report a problem or suggest an idea. Answers show under Your feedback.": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Report a reading problem": [
+    "src/Plate.Web/Views/Food/Entry.cshtml"
+  ],
+  "Report this": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "Report this suggestion": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml"
+  ],
+  "Reps": [
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml",
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml"
+  ],
+  "Reps must be between 0 and {0}.": [
+    "src/Plate.Core/Training/SetRules.cs"
+  ],
+  "Reps, suggested {0}": [
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml"
+  ],
+  "Rest": [
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml",
+    "src/Plate.Web/Views/Train/Session.cshtml",
+    "wwwroot/js"
+  ],
+  "Rest must be between 0 and 1800 seconds.": [
+    "src/Plate.Web/Features/Training/TemplateService.cs"
+  ],
+  "Rest over": [
+    "wwwroot/js"
+  ],
+  "Rest timer": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Resume workout": [
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "Reverse curl": [
+    "exercise"
+  ],
+  "Reverse pec deck": [
+    "exercise"
+  ],
+  "Romanian deadlift": [
+    "exercise"
+  ],
+  "Run the setup chat again": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Russian twist": [
+    "exercise"
+  ],
+  "Saturated fat": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "Saturated fat is more than fat. Check both.": [
+    "src/Plate.Core/Nutrition/LabelReading.cs"
+  ],
+  "Save": [
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/_SaveMealForm.cshtml",
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/General.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml",
+    "src/Plate.Web/Views/Settings/Training.cshtml",
+    "src/Plate.Web/Views/Shared/_ExerciseSettingsForm.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Save and add": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Save as a meal": [
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Food/_SaveMealForm.cshtml"
+  ],
+  "Save as a snack": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Save changes": [
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml"
+  ],
+  "Save notes": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Save profile": [
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "Save to breakfast": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Save to dinner": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Save to lunch": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Saved": [
+    "src/Plate.Web/Views/Settings/_AutosaveStatus.cshtml",
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml",
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml",
+    "src/Plate.Web/Views/Templates/_TemplateNameForm.cshtml"
+  ],
+  "Saved as a meal.": [
+    "src/Plate.Web/Controllers/SavedMealsController.cs"
+  ],
+  "Saved before an update": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Saved for your account, so every phone you sign in on looks the same.": [
+    "src/Plate.Web/Views/Settings/General.cshtml"
+  ],
+  "Saved meals": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs",
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Saved on this phone. It will send when you're back online.": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "Saving…": [
+    "src/Plate.Web/Views/Settings/_AutosaveStatus.cshtml",
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml",
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml",
+    "src/Plate.Web/Views/Templates/_TemplateNameForm.cshtml"
+  ],
+  "Scan": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Scan a barcode": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/_ScannerSheet.cshtml"
+  ],
+  "Scan the barcode": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Screenshot": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Screenshot to send": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "Screenshots need a connection. The message alone can wait on this phone.": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "Search": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Search Open Food Facts": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Search exercises": [
+    "src/Plate.Web/Views/Shared/ExercisePicker.cshtml"
+  ],
+  "Search foods": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Seated cable row": [
+    "exercise"
+  ],
+  "Seated calf raise": [
+    "exercise"
+  ],
+  "Seated dumbbell shoulder press": [
+    "exercise"
+  ],
+  "Seated leg curl": [
+    "exercise"
+  ],
+  "Secondary muscles count as half a set in the weekly sets chart.": [
+    "src/Plate.Web/Views/SettingsExercises/Edit.cshtml"
+  ],
+  "Seems off?": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Seen": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Send": [
+    "src/Plate.Web/Views/Feedback/New.cshtml",
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Send feedback": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml",
+    "src/Plate.Web/Views/Feedback/New.cshtml",
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Send from this account": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Sent": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Sent with it: this page, the app version, your phone's screen size and browser, and any recent errors on this phone.": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "Set deleted.": [
+    "wwwroot/js"
+  ],
+  "Set up": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Settings": [
+    "src/Plate.Web/Views/AdminUnlock/Unlock.cshtml",
+    "src/Plate.Web/Views/Feedback/Index.cshtml",
+    "src/Plate.Web/Views/Feedback/New.cshtml",
+    "src/Plate.Web/Views/Join/Index.cshtml",
+    "src/Plate.Web/Views/Settings/General.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml",
+    "src/Plate.Web/Views/Settings/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Profile.cshtml",
+    "src/Plate.Web/Views/Settings/Security.cshtml",
+    "src/Plate.Web/Views/Settings/Training.cshtml",
+    "src/Plate.Web/Views/SettingsExercises/Index.cshtml",
+    "src/Plate.Web/Views/Shared/_Layout.cshtml"
+  ],
+  "Sex": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "Sex, age and height are used to estimate your starting calories and protein target.": [
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "Share with other users": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "Should be split or joined": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Shoulders": [
+    "enum"
+  ],
+  "Show": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Side plank": [
+    "exercise"
+  ],
+  "Sign in": [
+    "src/Plate.Web/Views/Account/Login.cshtml"
+  ],
+  "Sign in with Face ID or Touch ID instead of typing your password.": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Sign in with a passkey": [
+    "src/Plate.Web/Views/Account/Login.cshtml"
+  ],
+  "Sign out on every device, including this one?": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Sign-in & security": [
+    "src/Plate.Web/Views/Settings/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Signing in and passkeys": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Signs out every phone and browser, including this one.": [
+    "src/Plate.Web/Views/Settings/Security.cshtml"
+  ],
+  "Skip": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Skip for now": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Skip rest": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "Skipped 1 item with impossible amounts or values.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "Skipped {0} items with impossible amounts or values.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "Skull crusher": [
+    "exercise"
+  ],
+  "Smith machine bench press": [
+    "exercise"
+  ],
+  "Smith machine squat": [
+    "exercise"
+  ],
+  "Snack": [
+    "enum"
+  ],
+  "Some foods have no fiber or saturated fat value, so these are at least what is shown.": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Some older sets on this phone couldn't be sent from this account. They send when the account that logged them signs in.": [
+    "wwwroot/js"
+  ],
+  "Some values were outside what a food can have and were left empty.": [
+    "src/Plate.Core/Nutrition/LabelReading.cs"
+  ],
+  "Something else": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Something went wrong": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "Something went wrong ({0}). Try again.": [
+    "wwwroot/js"
+  ],
+  "Something's wrong": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Speed": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Squat": [
+    "exercise"
+  ],
+  "Standing calf raise": [
+    "exercise"
+  ],
+  "Start": [
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "Start a workout": [
+    "src/Plate.Web/Views/Train/History.cshtml"
+  ],
+  "Start an empty workout": [
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "Start over": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Start {0}": [
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "Starting maintenance": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Starting maintenance must be between {0} and {1} kcal.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Starting…": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Stiff-leg deadlift": [
+    "exercise"
+  ],
+  "Straight-arm pulldown": [
+    "exercise"
+  ],
+  "Summary": [
+    "src/Plate.Web/Views/Train/Session.cshtml",
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "Sumo deadlift": [
+    "exercise"
+  ],
+  "Swap exercise": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml"
+  ],
+  "Swap {0}": [
+    "src/Plate.Web/Controllers/TrainController.cs"
+  ],
+  "T-bar row": [
+    "exercise"
+  ],
+  "Take a 2-week break": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Take a photo instead": [
+    "src/Plate.Web/Views/Food/_ScannerSheet.cshtml"
+  ],
+  "Target": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "wwwroot/js"
+  ],
+  "Targets and progress": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Targets are ranges because the evidence is. Judge them over a week, not a single day.": [
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "Targets start on {0}": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "Template name": [
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "Templates": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs",
+    "src/Plate.Web/Views/Templates/Edit.cshtml",
+    "src/Plate.Web/Views/Templates/Index.cshtml",
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "Thanks!": [
+    "wwwroot/js"
+  ],
+  "Thanks. The answer will show here.": [
+    "src/Plate.Web/Controllers/FeedbackController.cs",
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Thanks. This helps it read food better.": [
+    "wwwroot/js"
+  ],
+  "Thanks. What was wrong?": [
+    "wwwroot/js"
+  ],
+  "That day is too far back.": [
+    "src/Plate.Web/Features/Food/FoodDays.cs"
+  ],
+  "That doesn't look like an API key.": [
+    "src/Plate.Web/Integrations/OpenRouterSettings.cs"
+  ],
+  "That food isn't in this list.": [
+    "src/Plate.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "That isn't a valid EAN or UPC barcode.": [
+    "src/Plate.Web/Features/Food/FoodItemService.cs"
+  ],
+  "That model can't match food.": [
+    "src/Plate.Web/Integrations/OpenRouterSettings.cs"
+  ],
+  "That model can't parse food.": [
+    "src/Plate.Web/Integrations/OpenRouterSettings.cs"
+  ],
+  "That model can't read labels.": [
+    "src/Plate.Web/Integrations/OpenRouterSettings.cs"
+  ],
+  "That model can't run the setup chat.": [
+    "src/Plate.Web/Integrations/OpenRouterSettings.cs"
+  ],
+  "That model can't write the weekly summary.": [
+    "src/Plate.Web/Integrations/OpenRouterSettings.cs"
+  ],
+  "That page doesn't exist, or it isn't yours.": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "That passkey didn't work. Try again or use your password.": [
+    "wwwroot/js"
+  ],
+  "That passkey didn't work. Try again.": [
+    "wwwroot/js"
+  ],
+  "That photo is too large.": [
+    "src/Plate.Web/Controllers/FoodController.cs",
+    "src/Plate.Web/Features/Food/LabelScanService.cs"
+  ],
+  "That picture is too large. Try a screenshot instead of a photo.": [
+    "src/Plate.Web/Controllers/FeedbackController.cs",
+    "src/Plate.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "That rating wasn't valid.": [
+    "src/Plate.Web/Controllers/FeedbackController.cs"
+  ],
+  "That report can't be saved. Send it again from the form.": [
+    "src/Plate.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "That set was not valid.": [
+    "wwwroot/js"
+  ],
+  "That set's exercise no longer exists.": [
+    "wwwroot/js"
+  ],
+  "That was more than the app accepts. For a screenshot, attach it from the Send feedback page, which shrinks it first.": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "That's less than the bar ({0} kg).": [
+    "src/Plate.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "That's the end of the chat. Check the summary and save, or use the form.": [
+    "src/Plate.Web/Features/Onboarding/OnboardingService.cs",
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "The OpenRouter account is out of credits.": [
+    "src/Plate.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
+  "The OpenRouter account is out of credits. Top it up, or enter the food by hand.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The admin area opens only with a passkey on this account.": [
+    "src/Plate.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
+  "The assistant is busy. Try again in a minute, or use the form.": [
+    "src/Plate.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The assistant is out of credits. Use the form for now.": [
+    "src/Plate.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The assistant is unreachable. Use the form instead.": [
+    "src/Plate.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The assistant isn't available right now. Use the form instead.": [
+    "src/Plate.Web/Features/Onboarding/OnboardingService.cs",
+    "src/Plate.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The assistant returned something unreadable. Try again, or use the form.": [
+    "src/Plate.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The assistant took too long. Try again, or use the form.": [
+    "src/Plate.Web/Integrations/OpenRouterOnboardingAssistant.cs"
+  ],
+  "The calories don't add up from the macros.": [
+    "src/Plate.Web/Features/Food/FoodMatcher.cs"
+  ],
+  "The calories don't match the protein, carbs and fat. Check the energy row.": [
+    "src/Plate.Core/Nutrition/LabelReading.cs"
+  ],
+  "The camera may ask for permission each time the app opens.": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "The chart appears after a few more sessions.": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "The chat sends your answers to an AI model through OpenRouter. The form doesn't.": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "The current password is wrong.": [
+    "src/Plate.Web/Controllers/SettingsController.cs"
+  ],
+  "The food matcher answered, but did not pick the banana for \"a banana\".": [
+    "src/Plate.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
+  "The food matcher can't be reached right now ({0}).": [
+    "src/Plate.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
+  "The food matcher returned something unreadable.": [
+    "src/Plate.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
+  "The food matcher took too long.": [
+    "src/Plate.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
+  "The food parser could not read that. Enter the food by hand.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The food parser is busy. Try again in a minute, or enter the food by hand.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The food parser is unavailable. Enter the food by hand.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The food parser is unreachable. Enter the food by hand.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The food parser returned nothing. Enter the food by hand.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The food parser returned something unreadable. Enter the food by hand.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The food parser took too long. Try again, or enter the food by hand.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The label only gives values per serving. Enter them by hand or photograph the per-100 g column.": [
+    "src/Plate.Core/Nutrition/LabelReading.cs"
+  ],
+  "The label's kJ and kcal disagree; the kcal value was used.": [
+    "src/Plate.Core/Nutrition/LabelReading.cs"
+  ],
+  "The list changed while you were reordering. Try again.": [
+    "src/Plate.Web/Features/Training/TemplateService.cs"
+  ],
+  "The model misread the sample label (read {0} kcal, expected {1}).": [
+    "src/Plate.Web/Integrations/OpenRouterLabelReader.cs"
+  ],
+  "The model returned no food for \"1 banana\".": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The model {0} can't parse food right now. Pick another one in Settings, or enter the food by hand.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
+  ],
+  "The new password needs at least 12 characters.": [
+    "src/Plate.Web/Controllers/SettingsController.cs"
+  ],
+  "The new passwords do not match.": [
+    "src/Plate.Web/Controllers/SettingsController.cs"
+  ],
+  "The password needs at least 12 characters.": [
+    "src/Plate.Web/Features/Users/UserCreator.cs"
+  ],
+  "The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked.": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "The plate calculator uses this bar and these plates. Set a different bar for one exercise under Notes & bar.": [
+    "src/Plate.Web/Views/Settings/Training.cshtml"
+  ],
+  "The trend line appears after a few more weigh-ins.": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "The weekly summary isn't available right now.": [
+    "src/Plate.Web/Integrations/OpenRouterWeeklySummaryWriter.cs"
+  ],
+  "The weekly summary model returned something unreadable.": [
+    "src/Plate.Web/Integrations/OpenRouterWeeklySummaryWriter.cs"
+  ],
+  "The weight jump is how much is added when every set reaches the top of its range.": [
+    "src/Plate.Web/Views/Settings/Training.cshtml"
+  ],
+  "Theme": [
+    "src/Plate.Web/Views/Settings/General.cshtml"
+  ],
+  "There is already an exercise called {0}.": [
+    "src/Plate.Web/Features/Training/ExerciseService.cs"
+  ],
+  "There is no empty warm-up row to remove.": [
+    "src/Plate.Web/Controllers/TrainController.cs"
+  ],
+  "These were saved on this phone before reports were linked to an account. Send them only if you wrote them.": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Thinking…": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "This browser can't open the camera. Type the digits or take a photo instead.": [
+    "wwwroot/js"
+  ],
+  "This browser can't save pending changes. Keep this page open until they are sent.": [
+    "wwwroot/js"
+  ],
+  "This food form is out of date. Check whether it was saved, then reload before trying again.": [
+    "src/Plate.Web/Features/Food/IdempotentFoodPostAttribute.cs"
+  ],
+  "This invite is no longer valid. Ask Antoan for a new one.": [
+    "src/Plate.Web/Views/Join/Index.cshtml"
+  ],
+  "This meal has nothing logged yet.": [
+    "src/Plate.Web/Features/Food/SavedMealService.cs"
+  ],
+  "This product isn't in Open Food Facts. Enter it from the label once and it's saved for everyone.": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "This report is waiting to send. Its contents are locked. Keep this page open and press Send to retry.": [
+    "wwwroot/js"
+  ],
+  "This session expired. Sign in again in another tab, then return here to send pending changes.": [
+    "wwwroot/js"
+  ],
+  "This sets your starting calorie and protein targets. They adapt as you log food and weight.": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "This week": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml",
+    "wwwroot/js"
+  ],
+  "Tick at least one food to save.": [
+    "src/Plate.Web/Controllers/FoodController.cs"
+  ],
+  "Time zone": [
+    "src/Plate.Web/Views/Settings/General.cshtml"
+  ],
+  "Today": [
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Shared/_Layout.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Today suggests the template after the last one you finished, in this order.": [
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "Today's weight": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Today: at least {0} g, aiming for {1} g.": [
+    "src/Plate.Web/Views/Settings/_ProteinNote.cshtml"
+  ],
+  "Too large": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "Too many attempts": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "Too many failed attempts. Try again in 15 minutes.": [
+    "src/Plate.Web/Controllers/AccountController.cs"
+  ],
+  "Too many photos for now. Try again in a few minutes.": [
+    "wwwroot/js"
+  ],
+  "Train": [
+    "src/Plate.Web/Views/Shared/_Layout.cshtml",
+    "src/Plate.Web/Views/Templates/Index.cshtml",
+    "src/Plate.Web/Views/Train/History.cshtml",
+    "src/Plate.Web/Views/Train/Index.cshtml",
+    "src/Plate.Web/Views/Train/Session.cshtml",
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "Training": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs",
+    "src/Plate.Web/Views/Settings/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Training.cshtml"
+  ],
+  "Trap bar deadlift": [
+    "exercise"
+  ],
+  "Trend": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "wwwroot/js"
+  ],
+  "Trend weight": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Triceps": [
+    "enum"
+  ],
+  "Triceps kickback": [
+    "exercise"
+  ],
+  "Triceps pushdown": [
+    "exercise"
+  ],
+  "Try again": [
+    "wwwroot/js"
+  ],
+  "Try again shortly": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Try again. If it keeps happening, the server may be restarting.": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "Type": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Type a message first.": [
+    "src/Plate.Web/Features/Onboarding/OnboardingService.cs"
+  ],
+  "Under {0} reps twice at {1} kg, deload to {2} kg": [
+    "src/Plate.Core/Training/Progression.cs"
+  ],
+  "Undo": [
+    "wwwroot/js"
+  ],
+  "Undo didn't go through.": [
+    "wwwroot/js"
+  ],
+  "Unknown time zone.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Unlock admin": [
+    "src/Plate.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
+  "Unlock with a passkey": [
+    "src/Plate.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
+  "Unlocking needs JavaScript.": [
+    "src/Plate.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
+  "Untick anything wrong and fix the grams. Nothing is saved until you tap Save.": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Up next": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Update": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Upright row": [
+    "exercise"
+  ],
+  "Use one photo": [
+    "src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml"
+  ],
+  "Use the form instead": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Values per 100 g are impossible (over 900 kcal or over 100 g of macros).": [
+    "src/Plate.Core/Nutrition/FoodMath.cs"
+  ],
+  "Very active": [
+    "enum"
+  ],
+  "Wait a few minutes and try again.": [
+    "src/Plate.Web/Views/Home/Error.cshtml"
+  ],
+  "Waiting for signal": [
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml",
+    "wwwroot/js"
+  ],
+  "Waiting to send": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml"
+  ],
+  "Warm-up": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml"
+  ],
+  "Weekly sets": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Weekly summary": [
+    "src/Plate.Web/Views/Settings/General.cshtml"
+  ],
+  "Weigh-in": [
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "wwwroot/js"
+  ],
+  "Weigh-ins and trend weight": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Weight": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "Weight and rep suggestions": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Weight can have at most two decimal places.": [
+    "src/Plate.Core/Training/SetRules.cs"
+  ],
+  "Weight in kg": [
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml"
+  ],
+  "Weight in kg, suggested {0}": [
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml"
+  ],
+  "Weight increment must be between {0} and {1} kg.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Weight jump": [
+    "src/Plate.Web/Views/Settings/Training.cshtml",
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml"
+  ],
+  "Weight must be between 0 and 9999.99 kg.": [
+    "src/Plate.Core/Training/SetRules.cs"
+  ],
+  "Weight must be between {0} and {1} kg.": [
+    "src/Plate.Core/Domain/ProfileRules.cs"
+  ],
+  "Welcome": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Welcome, {0}": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "What did you eat?": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "What happened, and what did you expect?": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "What was wrong?": [
+    "src/Plate.Web/Views/Feedback/New.cshtml",
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "What would you like it to do?": [
+    "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "What's new": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Won't change": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Working sets": [
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml",
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "Working sets must be between 1 and 20.": [
+    "src/Plate.Web/Features/Training/TemplateService.cs"
+  ],
+  "Working sets per muscle this week and last week": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Working sets per muscle, this week ({0}–{1}) against last week. Secondary muscles count as half a set.": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Workout": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Workout finished": [
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "Workouts": [
+    "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "Workouts, sets, templates, weigh-ins, food log and targets as CSV files in a zip.": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Wrist curl": [
+    "exercise"
+  ],
+  "Write a few words about it.": [
+    "src/Plate.Web/Features/Feedback/FeedbackService.cs"
+  ],
+  "Writing your summary of last week…": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Written by AI from your numbers. Turn it off in Settings.": [
+    "src/Plate.Web/Views/Today/_WeeklySummary.cshtml"
+  ],
+  "Wrong amount": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Wrong calories or macros": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Wrong food": [
+    "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Wrong product or values?": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Yes, it read it right": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Yes, use it": [
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
+  "Yesterday": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "You already have a food with that barcode.": [
+    "src/Plate.Web/Features/Food/FoodItemService.cs"
+  ],
+  "You already have a food with this barcode, so this one is saved without it.": [
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
+  "You already shared a food with this barcode, so this one is kept for you only.": [
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+  ],
+  "You are already signed in. Log out first to use this invite.": [
+    "src/Plate.Web/Views/Join/Index.cshtml"
+  ],
+  "You ate": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "You can't log food for a future day.": [
+    "src/Plate.Web/Features/Food/FoodDays.cs"
+  ],
+  "You reported this": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "You're all set.": [
+    "src/Plate.Web/Controllers/OnboardingController.cs"
+  ],
+  "You're losing about {0}% of your weight a week, faster than planned. Fast cuts cost more muscle; your target will adjust, or lower the rate in Settings.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "You've been cutting for 12 weeks. A 2-week break at maintenance can help you keep muscle and stick with it.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Your answer": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Your email is only for signing in. Nothing is ever sent to it.": [
+    "src/Plate.Web/Views/Join/Index.cshtml"
+  ],
+  "Your feedback": [
+    "src/Plate.Web/Views/Feedback/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "Your food is still not saved; you can fix it and save as usual.": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Your foods": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "Your profile": [
+    "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Your sign-in changed. Reload this page before sending pending changes.": [
+    "wwwroot/js"
+  ],
+  "Your sign-in changed. Sign back into this account in another tab, then return here to send pending changes.": [
+    "wwwroot/js"
+  ],
+  "Your starting maintenance is about {0} kcal, with {1} g of protein. It adapts as you log food and weight.": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
+  "Your summary": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
+  "Your usual": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "Your usual amount, {0} g": [
+    "src/Plate.Web/Features/Food/FoodMatcher.cs"
+  ],
+  "aim {0}": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "aim {0} · min {1}": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "assumed 100 g": [
+    "extra"
+  ],
+  "assumed 100 g each": [
+    "extra"
+  ],
+  "at least the floor {0} of {1} days": [
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "average of 1 logged day": [
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "average of {0} logged days": [
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "carbs": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "cm": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Profile.cshtml"
+  ],
+  "cooked": [
+    "src/Plate.Web/Features/Localization/Localizer.cs"
+  ],
+  "fat": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "fiber": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "finished": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "from {0} days with enough known": [
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "g": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml",
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "g per kg": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "in progress": [
+    "src/Plate.Web/Views/Train/History.cshtml",
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "kcal": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml",
+    "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Goal.cshtml"
+  ],
+  "kcal a day": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml"
+  ],
+  "kcal left": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "kcal over": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "kg": [
+    "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
+    "src/Plate.Web/Views/Progress/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Training.cshtml",
+    "src/Plate.Web/Views/Shared/_ExerciseSettingsForm.cshtml",
+    "src/Plate.Web/Views/Shared/_Plates.cshtml",
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml",
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "src/Plate.Web/Views/Train/Summary.cshtml"
+  ],
+  "logged once in 30 days": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "logged {0}× in 30 days": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "max {0}": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "min {0}": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "min {0} g": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "minimum reached {0} of {1} days": [
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "not enough known": [
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "of which saturated": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
+  "of {0}": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "protein": [
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "protein left": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "raw": [
+    "src/Plate.Web/Features/Localization/Localizer.cs"
+  ],
+  "reps": [
+    "src/Plate.Web/Views/Shared/_SetRow.cshtml"
+  ],
+  "s": [
+    "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml"
+  ],
+  "saturated fat": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "{0} (copy)": [
+    "src/Plate.Web/Controllers/TemplatesController.cs"
+  ],
+  "{0} exercises": [
+    "src/Plate.Web/Views/Templates/Index.cshtml"
+  ],
+  "{0} g": [
+    "src/Plate.Web/Views/Food/Entry.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "wwwroot/js"
+  ],
+  "{0} g carbs, range {1} to {2} g": [
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "{0} g fat, range {1} to {2} g": [
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "{0} g saturated fat, up to {1} g": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "{0} g · {1}–{2}": [
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "{0} g, up to {1}": [
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "{0} h {1} min": [
+    "src/Plate.Web/Features/Localization/Localizer.cs"
+  ],
+  "{0} is wrong": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
+  "{0} items": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "{0} kcal": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml",
+    "wwwroot/js"
+  ],
+  "{0} kcal eaten": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "{0} kcal per 100 g": [
+    "src/Plate.Web/Views/Food/Add.cshtml"
+  ],
+  "{0} kcal · {1} g protein": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Barcode.cshtml",
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml",
+    "wwwroot/js"
+  ],
+  "{0} kcal, {1} g protein per 100 g": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/_Candidates.cshtml"
+  ],
+  "{0} kg": [
+    "wwwroot/js"
+  ],
+  "{0} kg in total": [
+    "src/Plate.Web/Views/Shared/_Plates.cshtml"
+  ],
+  "{0} kg over this range": [
+    "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "{0} kg this week": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "{0} kg × {1}": [
+    "wwwroot/js"
+  ],
+  "{0} min": [
+    "src/Plate.Web/Features/Localization/Localizer.cs"
+  ],
+  "{0} new replies": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "{0} of {1} g": [
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "{0} of {1} g fiber": [
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "{0} of {1} g protein, minimum {2} g": [
+    "src/Plate.Web/Views/Food/Index.cshtml"
+  ],
+  "{0} of {1} kcal": [
+    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
+  ],
+  "{0} passkeys": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "{0} planned sets aren't logged. Finish anyway?": [
+    "src/Plate.Web/Views/Train/Session.cshtml"
+  ],
+  "{0} sets": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml",
+    "src/Plate.Web/Views/Today/Index.cshtml",
+    "src/Plate.Web/Views/Train/History.cshtml",
+    "wwwroot/js"
+  ],
+  "{0} sets are saved on this phone and will send when the connection is back.": [
+    "wwwroot/js"
+  ],
+  "{0} × a serving of {1} g": [
+    "extra"
+  ],
+  "{0}% a week": [
+    "src/Plate.Web/Views/Settings/Index.cshtml"
+  ],
+  "{0}–{1} g": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "{0}–{1} reps · {2} · rest {3}": [
+    "src/Plate.Web/Views/Shared/_ExerciseCard.cshtml"
+  ]
+}

@@ -12,7 +12,7 @@ export function openRouterKey() {
     if (process.env.OPENROUTER_API_KEY) {
         return process.env.OPENROUTER_API_KEY.trim();
     }
-    const file = path.join(os.homedir(), ".config/gymtracker/openrouter-key");
+    const file = path.join(os.homedir(), ".config/plate/openrouter-key");
     if (!fs.existsSync(file)) {
         throw new Error(`No OpenRouter key: set OPENROUTER_API_KEY or save it to ${file}`);
     }
@@ -63,7 +63,7 @@ export async function llm({ model = defaultModel, effort = defaultEffort, system
             res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 signal: AbortSignal.timeout(600000), // high reasoning effort on a full batch can take minutes
-                headers: { "content-type": "application/json", authorization: `Bearer ${key}`, "x-title": "GymTracker tools" },
+                headers: { "content-type": "application/json", authorization: `Bearer ${key}`, "x-title": "Plate tools" },
                 body: JSON.stringify(body),
             });
         } catch (e) {

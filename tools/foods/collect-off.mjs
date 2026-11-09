@@ -4,7 +4,7 @@
 import path from "node:path";
 import { raw, writeCsv, plausible } from "./lib.mjs";
 
-const UA = "GymTracker/1.0 (personal food-database import)";
+const UA = "Plate/1.0 (personal food-database import)";
 const base = "https://search.openfoodfacts.org/search";
 const q = 'countries_tags:"en:bulgaria" AND states_tags:"en:nutrition-facts-completed"';
 const fields = "code,product_name,product_name_bg,generic_name_bg,brands,nutriments,serving_quantity,lang";

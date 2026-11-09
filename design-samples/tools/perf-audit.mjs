@@ -3,7 +3,7 @@
 // Optional PERF_EMAIL/PERF_PASSWORD, PERF_RUNS (>=5), PERF_RTTS=100,400, PERF_CPU=4, PERF_FIXTURE label.
 // Optional untimed cache diagnostic: PERF_DIAGNOSTIC=1 PERF_RTTS=0 PERF_CPU=1 (writes proxy-only worker reply hook).
 // Reseed the clean synthetic fixture before running; do not measure a day filled by prior POST load tests.
-// HTTPS upstream requires scratch PERF_TLS_DIR (default /private/tmp/repa-perf-tls) with key.pem and cert.pem.
+// HTTPS upstream requires scratch PERF_TLS_DIR (default /private/tmp/plate-perf-tls) with key.pem and cert.pem.
 // A loopback proxy changes ONLY the worker's cache name to model a deploy; no app or source files are changed.
 import { chromium } from "playwright-core";
 import http from "node:http";
@@ -23,7 +23,7 @@ let revision = "initial";
 let requests = [];
 let proxyLatencyMs = 0;
 let nextNetworkSlotMs = 0;
-const tlsDir = process.env.PERF_TLS_DIR || "/private/tmp/repa-perf-tls";
+const tlsDir = process.env.PERF_TLS_DIR || "/private/tmp/plate-perf-tls";
 const serve = upstream.protocol === "https:" ? (handler) => https.createServer({ key: fs.readFileSync(`${tlsDir}/key.pem`), cert: fs.readFileSync(`${tlsDir}/cert.pem`) }, handler) : (handler) => http.createServer(handler);
 const proxy = serve((req, res) => {
     const begin = performance.now();

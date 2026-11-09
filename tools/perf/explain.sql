@@ -1,5 +1,5 @@
 -- Local synthetic database only. Run after seeding:
--- docker exec -i repa-perf-db psql -X -U gym -d gym_perf -v email=demo@example.test < tools/perf/explain.sql > /tmp/repa-explain.txt
+-- docker exec -i plate-perf-db psql -X -U gym -d gym_perf -v email=demo@example.test < tools/perf/explain.sql > /tmp/plate-explain.txt
 -- Override email with the synthetic account used by the harness. No production data is needed.
 -- These are representative SQL shapes, not a claim to be byte-for-byte EF-generated SQL.
 \set ON_ERROR_STOP on

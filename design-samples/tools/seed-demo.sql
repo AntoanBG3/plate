@@ -1,5 +1,5 @@
 -- Dev-only demo data for screenshots. Run against the local dev database only:
---   docker exec -i gymtracker-dev-db-1 psql -U gym -d gym -v email=demo@example.test < design-samples/tools/seed-demo.sql
+--   docker exec -i plate-dev-db-1 psql -U gym -d gym -v email=demo@example.test < design-samples/tools/seed-demo.sql
 -- Create the user first with the create-user command. Re-running replaces the demo user's data.
 \set ON_ERROR_STOP on
 

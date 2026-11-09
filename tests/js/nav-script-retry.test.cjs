@@ -5,7 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 function loader() {
-    const source = fs.readFileSync(path.resolve(__dirname, "../../src/GymTracker.Web/wwwroot/js/nav.js"), "utf8");
+    const source = fs.readFileSync(path.resolve(__dirname, "../../src/Plate.Web/wwwroot/js/nav.js"), "utf8");
     const start = source.indexOf("    function loadScript(src) {");
     const end = source.indexOf("\n    function markActiveTab", start);
     assert.ok(start >= 0 && end > start);

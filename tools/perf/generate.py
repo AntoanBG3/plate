@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Usage: python3 tools/perf/generate.py --days 730 --users 5 | docker exec -i repa-perf-db psql -U gym -d gym_perf -v ON_ERROR_STOP=1
+# Usage: python3 tools/perf/generate.py --days 730 --users 5 | docker exec -i plate-perf-db psql -U gym -d gym_perf -v ON_ERROR_STOP=1
 # Local synthetic database ONLY; create demo@example.test via create-user first. Replaces synthetic journey data.
 import argparse
 p=argparse.ArgumentParser(); p.add_argument('--days',type=int,default=730); p.add_argument('--users',type=int,default=5); a=p.parse_args()

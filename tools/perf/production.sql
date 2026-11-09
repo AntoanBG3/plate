@@ -1,4 +1,4 @@
--- Run (read-only): ssh wizard 'docker exec -i gymtracker-db sh -c '\''PGOPTIONS="-c default_transaction_read_only=on -c statement_timeout=30000" psql -X -v ON_ERROR_STOP=1 -A -t -U "$POSTGRES_USER" -d "$POSTGRES_DB"'\''' < tools/perf/production.sql
+-- Run (read-only): ssh wizard 'docker exec -i plate-db sh -c '\''PGOPTIONS="-c default_transaction_read_only=on -c statement_timeout=30000" psql -X -v ON_ERROR_STOP=1 -A -t -U "$POSTGRES_USER" -d "$POSTGRES_DB"'\''' < tools/perf/production.sql
 -- Emits aggregates only. Account numbers are anonymous and local to this capture.
 -- No messages, food names, dates of personal logs, identities, photos or JSON payloads leave wizard.
 SELECT json_build_object('section', 'environment', 'captured_at_utc', now(),

@@ -1,12 +1,12 @@
-# Production stack on wizard. The repository is checked out at ~/docker/gymtracker and this file is
+# Production stack on wizard. The repository is checked out at ~/docker/plate and this file is
 # run from there: docker compose -f docker/docker-compose.yml up -d --build
 # State lives next to the checkout (../db, ../keys) so the nightly ~/docker snapshot covers it.
-name: gymtracker
+name: plate
 
 services:
   db:
     image: postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
-    container_name: gymtracker-db
+    container_name: plate-db
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -33,8 +33,8 @@ services:
       args:
         # Set by the deploy command from the Mac: APP_VERSION=$(git rev-parse --short HEAD)
         APP_VERSION: ${APP_VERSION:-unknown}
-    image: gymtracker-app:latest
-    container_name: gymtracker-app
+    image: plate-app:latest
+    container_name: plate-app
     # antoan, so the bind-mounted keys directory is writable without sudo.
     user: "1000:1000"
     depends_on:
@@ -47,9 +47,9 @@ services:
       OpenRouter__ApiKey: "${OPENROUTER_API_KEY:-}"
       OpenRouter__Model: "${OPENROUTER_MODEL:-}"
       OpenFoodFacts__ContactEmail: "${OFF_CONTACT_EMAIL:-}"
-      AllowedHosts: "gym.peychev.uk;localhost"
+      AllowedHosts: "plate.peychev.uk;localhost"
       # Passkeys are bound to this host name; changing it makes existing passkeys stop working.
-      Passkeys__ServerDomain: gym.peychev.uk
+      Passkeys__ServerDomain: plate.peychev.uk
       Security__CspEnforce: "${CSP_ENFORCE:-false}"
       Telegram__BotToken: "${TELEGRAM_BOT_TOKEN:-}"
       Telegram__ChatId: "${TELEGRAM_CHAT_ID:-}"
@@ -57,7 +57,7 @@ services:
       Admin__CloudflareAccess__Audience: "${CF_ACCESS_AUD:-}"
     volumes:
       - ../keys:/keys
-    # No published ports: cloudflared reaches http://gymtracker-app:8080 over the tunnel network.
+    # No published ports: cloudflared reaches http://plate-app:8080 over the tunnel network.
     networks:
       - default
       - tunnel

@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- `GymTracker.Core` has no references to EF Core, ASP.NET Core or HttpClient. `LabelValues` is pure.
+- `Plate.Core` has no references to EF Core, ASP.NET Core or HttpClient. `LabelValues` is pure.
 - Every 6.6 normalizing case gets a Core unit test before any UI uses it.
 - Every user-owned query is scoped to the current user; a scan id or food id from the client is checked for ownership (missing or foreign scan id never blocks saving food).
 - No new NuGet packages or front-end libraries. The barcode detector already vendored in `wwwroot/lib/barcode-detector` is reused.
@@ -23,7 +23,7 @@
 - Retention: label photos 30 days, LabelScans 180 days, both in the hourly `SoftDeletePurge`.
 - Attribution text is exactly "Added by another user" ("Добавено от друг потребител"); never a name, email or id.
 - Model call: 20 s timeout, one retry on 5xx only, no retry on timeout.
-- Every user-facing string is in `Resources/strings.bg.json`; `CatalogueTests` and `BulgarianCatalogueTests` stay green. Regenerate keys with `GYM_WRITE_KEYS=1 dotnet test tests/GymTracker.Web.Tests --filter CatalogueTests`.
+- Every user-facing string is in `Resources/strings.bg.json`; `CatalogueTests` and `BulgarianCatalogueTests` stay green. Regenerate keys with `GYM_WRITE_KEYS=1 dotnet test tests/Plate.Web.Tests --filter CatalogueTests`.
 - Test cadence (memory): after each task run the affected tests plus all Core and Web tests; run the full E2E suite at the end of Task 10 and before merging.
 - Each task is one commit ending with the attribution lines from the session.
 
@@ -40,8 +40,8 @@
 ### Task 1: Centre the composer text
 
 **Files:**
-- Modify: `src/GymTracker.Web/wwwroot/css/app.css:400`
-- Test: `tests/GymTracker.E2E.Tests/LayoutTests.cs`
+- Modify: `src/Plate.Web/wwwroot/css/app.css:400`
+- Test: `tests/Plate.E2E.Tests/LayoutTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -76,7 +76,7 @@ public async Task ComposerTextIsLevelWithSendButton(string browser, string langu
 
 Use whatever helper names `LayoutTests.cs` already has for signing in, choosing the AI app and the browser matrix; adjust the two calls above to match. If the setup chat composer lives at another path, take it from `Views/Onboarding`.
 
-- [ ] **Step 2: Run it and see it fail.** `dotnet test tests/GymTracker.E2E.Tests --filter ComposerTextIsLevelWithSendButton`. Expected: FAIL with an offset of about 3.5.
+- [ ] **Step 2: Run it and see it fail.** `dotnet test tests/Plate.E2E.Tests --filter ComposerTextIsLevelWithSendButton`. Expected: FAIL with an offset of about 3.5.
 
 - [ ] **Step 3: Fix the padding.** In `app.css:400` change `padding: 7px 0;` to:
 
@@ -95,11 +95,11 @@ The textarea is 44 px tall (with `margin: -4px 0` inside the 6 px composer paddi
 ### Task 2: Core label types and normalizing
 
 **Files:**
-- Create: `src/GymTracker.Core/Nutrition/LabelReading.cs`
-- Test: `tests/GymTracker.Core.Tests/LabelValuesTests.cs`
+- Create: `src/Plate.Core/Nutrition/LabelReading.cs`
+- Test: `tests/Plate.Core.Tests/LabelValuesTests.cs`
 
 **Interfaces:**
-- Consumes: `Per100g`, `FoodMath.MacrosDisagree` (`src/GymTracker.Core/Nutrition/FoodMath.cs`), `LocalText`.
+- Consumes: `Per100g`, `FoodMath.MacrosDisagree` (`src/Plate.Core/Nutrition/FoodMath.cs`), `LocalText`.
 - Produces (used by Tasks 6 to 10):
   - `enum LabelBasis { Per100g, Per100ml, PerServing }`
   - `record LabelReading(bool IsLabel, string? Name, string? Brand, LabelBasis Basis, decimal? ServingGrams, decimal? EnergyKcal, decimal? EnergyKj, decimal? Protein, decimal? Carbs, decimal? Fat, decimal? SaturatedFat, decimal? Fiber)`
@@ -114,9 +114,9 @@ The textarea is 44 px tall (with `margin: -4px 0` inside the 6 px composer paddi
 
 ```csharp
 using FluentAssertions;
-using GymTracker.Core.Nutrition;
+using Plate.Core.Nutrition;
 
-namespace GymTracker.Core.Tests;
+namespace Plate.Core.Tests;
 
 public class LabelValuesTests
 {
@@ -250,14 +250,14 @@ public class LabelValuesTests
 }
 ```
 
-- [ ] **Step 2: Run and see them fail.** `dotnet test tests/GymTracker.Core.Tests --filter LabelValuesTests`. Expected: build error, `LabelValues` not defined.
+- [ ] **Step 2: Run and see them fail.** `dotnet test tests/Plate.Core.Tests --filter LabelValuesTests`. Expected: build error, `LabelValues` not defined.
 
 - [ ] **Step 3: Implement `LabelReading.cs`.**
 
 ```csharp
-using GymTracker.Core.Text;
+using Plate.Core.Text;
 
-namespace GymTracker.Core.Nutrition;
+namespace Plate.Core.Nutrition;
 
 public enum LabelBasis
 {
@@ -456,10 +456,10 @@ public record LabelValues(
 ### Task 3: Data model and migration
 
 **Files:**
-- Create: `src/GymTracker.Core/Domain/LabelScan.cs`
-- Modify: `src/GymTracker.Core/Domain/Nutrition.cs:35-56` (FoodItem), `src/GymTracker.Web/Data/AppDbContext.cs` (DbSets near line 32, FoodItem config near line 151-162, new entity configs after ParseRun near line 255)
+- Create: `src/Plate.Core/Domain/LabelScan.cs`
+- Modify: `src/Plate.Core/Domain/Nutrition.cs:35-56` (FoodItem), `src/Plate.Web/Data/AppDbContext.cs` (DbSets near line 32, FoodItem config near line 151-162, new entity configs after ParseRun near line 255)
 - Create: migration `AddLabelScansAndSharedBy` via `dotnet ef`
-- Test: `tests/GymTracker.Web.Tests/MigrationTests.cs` (stays green), new `tests/GymTracker.Web.Tests/LabelDataTests.cs`
+- Test: `tests/Plate.Web.Tests/MigrationTests.cs` (stays green), new `tests/Plate.Web.Tests/LabelDataTests.cs`
 
 **Interfaces:**
 - Consumes: nothing new.
@@ -475,7 +475,7 @@ public record LabelValues(
 New `LabelScan.cs`:
 
 ```csharp
-namespace GymTracker.Core.Domain;
+namespace Plate.Core.Domain;
 
 /// <summary>One label photo read by the label model (SPEC 6.6), kept to measure misreads.</summary>
 public class LabelScan
@@ -558,7 +558,7 @@ After the ParseRun block:
 
 Check how `ParseRun` declares its filter (by `UserId == CurrentUserId` or a named filter) and match it.
 
-- [ ] **Step 3: Create the migration.** `dotnet ef migrations add AddLabelScansAndSharedBy --project src/GymTracker.Web --output-dir Data/Migrations`. Then add the one-off backfill at the end of `Up`, after the column exists:
+- [ ] **Step 3: Create the migration.** `dotnet ef migrations add AddLabelScansAndSharedBy --project src/Plate.Web --output-dir Data/Migrations`. Then add the one-off backfill at the end of `Up`, after the column exists:
 
 ```csharp
             // Shared manual foods made before this change: credit whoever logged them first (SPEC 4).
@@ -584,7 +584,7 @@ Confirm the food log table name (`FoodLog` vs `FoodLogEntries`) in the model sna
   - `ScanIsInvisibleToOtherUsers`: user A's `LabelScan` and photo aren't returned to user B through the query filters (use `UserScope` like `UserIsolationTests`).
   - `BackfillCreditsFirstLogger`: run the backfill SQL above against seeded rows and check `AddedByUserId`. Keep the SQL in an `internal const string` on the migration class so the test calls the same text.
 
-- [ ] **Step 5: Run.** `dotnet test tests/GymTracker.Web.Tests --filter "LabelDataTests|MigrationTests"`. Expected: PASS. Then all Core and Web tests.
+- [ ] **Step 5: Run.** `dotnet test tests/Plate.Web.Tests --filter "LabelDataTests|MigrationTests"`. Expected: PASS. Then all Core and Web tests.
 
 - [ ] **Step 6: Commit.** "Data: LabelScan, photo table, FoodItem.AddedByUserId and split barcode index"
 
@@ -593,11 +593,11 @@ Confirm the food log table name (`FoodLog` vs `FoodLogEntries`) in the model sna
 ### Task 4: Sharing choice, own-first lookup and the anonymous mark
 
 **Files:**
-- Modify: `src/GymTracker.Web/Features/Food/FoodItemService.cs` (`FoodMatch` record line 9, `SearchAsync` lines 26-44, `SearchForPickerAsync` SQL lines 60-82, `LookupBarcodeAsync` lines 98-118, `CacheAsync` lines 121-147, `CreateManualAsync` lines 149-195)
-- Modify: `src/GymTracker.Web/Controllers/FoodController.cs:144-151` (`CreateItem`), `:207-217` (`Entry`)
-- Modify: `src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml`, `Views/Food/Barcode.cshtml`, `Views/Food/Add.cshtml` (search rows near line 100 and manual tab), `Views/Food/Entry.cshtml:22-25`
-- Modify: `src/GymTracker.Web/Resources/strings.bg.json` (and regenerate keys)
-- Test: new `tests/GymTracker.Web.Tests/SharedFoodTests.cs`, `UserIsolationTests.cs`
+- Modify: `src/Plate.Web/Features/Food/FoodItemService.cs` (`FoodMatch` record line 9, `SearchAsync` lines 26-44, `SearchForPickerAsync` SQL lines 60-82, `LookupBarcodeAsync` lines 98-118, `CacheAsync` lines 121-147, `CreateManualAsync` lines 149-195)
+- Modify: `src/Plate.Web/Controllers/FoodController.cs:144-151` (`CreateItem`), `:207-217` (`Entry`)
+- Modify: `src/Plate.Web/Views/Food/_ManualFoodForm.cshtml`, `Views/Food/Barcode.cshtml`, `Views/Food/Add.cshtml` (search rows near line 100 and manual tab), `Views/Food/Entry.cshtml:22-25`
+- Modify: `src/Plate.Web/Resources/strings.bg.json` (and regenerate keys)
+- Test: new `tests/Plate.Web.Tests/SharedFoodTests.cs`, `UserIsolationTests.cs`
 
 **Interfaces:**
 - Consumes: `FoodItem.AddedByUserId` (Task 3).
@@ -620,7 +620,7 @@ Confirm the food log table name (`FoodLog` vs `FoodLogEntries`) in the model sna
   - `SharingRaceGivesValidationError` (Review Focus 4): A shares barcode X; then B posts a manual food with `share=true` for X (a stale form) and gets a 200 with "A food with that barcode is already shared. Scan it again to use it.", not a 500. Repeat with a forced `DbUpdateException`: insert the conflicting shared row directly between the service's check and save by calling `CreateManualAsync` twice in parallel from two scopes. Exactly one succeeds and the other gets the same validation message.
   - `NoBarcodeIsAlwaysPrivate`: posting `share=true` without a barcode creates a private item.
 
-- [ ] **Step 2: Run them and see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter SharedFoodTests`.
+- [ ] **Step 2: Run them and see them fail.** `dotnet test tests/Plate.Web.Tests --filter SharedFoodTests`.
 
 - [ ] **Step 3: Change the service.**
 
@@ -753,19 +753,19 @@ Use an icon that exists in `Ui.Icon`'s sprite; grep for the list and pick a pers
 ### Task 5: The label AI task and vision model catalog
 
 **Files:**
-- Modify: `src/GymTracker.Web/Integrations/OpenRouterModels.cs` (record line 12, `Parse` lines 64-99)
-- Modify: `src/GymTracker.Web/Integrations/AiTasks.cs`
-- Modify: `src/GymTracker.Web/Integrations/OpenRouterSettings.cs:67-102`
-- Modify: `src/GymTracker.Web/Controllers/AdminAiController.cs:66-97`, `src/GymTracker.Web/Views/AdminAi/Index.cshtml` and `Model.cshtml` if they enumerate tasks by hand
-- Modify: `src/GymTracker.Web/Cli/AiCommand.cs` (usage text and `set-model` slugs)
-- Test: `tests/GymTracker.Web.Tests/OpenRouterTests.cs` (stub catalog + new tests)
+- Modify: `src/Plate.Web/Integrations/OpenRouterModels.cs` (record line 12, `Parse` lines 64-99)
+- Modify: `src/Plate.Web/Integrations/AiTasks.cs`
+- Modify: `src/Plate.Web/Integrations/OpenRouterSettings.cs:67-102`
+- Modify: `src/Plate.Web/Controllers/AdminAiController.cs:66-97`, `src/Plate.Web/Views/AdminAi/Index.cshtml` and `Model.cshtml` if they enumerate tasks by hand
+- Modify: `src/Plate.Web/Cli/AiCommand.cs` (usage text and `set-model` slugs)
+- Test: `tests/Plate.Web.Tests/OpenRouterTests.cs` (stub catalog + new tests)
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.
 - Produces:
   - `OpenRouterModel` gains a trailing `bool AcceptsImages = false`.
   - `AiTask.Label`, slug `label`, title "Label reader", setting `OpenRouter:Model:Label`.
-  - `AiTasks.LabelOff` (`new(Off, "GymTracker", "Off: no label photos", 0, 0, false, null)`), `AiTasks.DefaultLabelModel = "google/gemini-3.5-flash-lite"`.
+  - `AiTasks.LabelOff` (`new(Off, "Plate", "Off: no label photos", 0, 0, false, null)`), `AiTasks.DefaultLabelModel = "google/gemini-3.5-flash-lite"`.
   - `OpenRouterSettings.GetModelAsync(AiTask.Label)` returns the stored value or `DefaultLabelModel`; `ListModelsAsync(AiTask.Label)` returns `[LabelOff, ..catalog.Where(m => m.AcceptsImages)]`.
 
 - [ ] **Step 1: Failing tests.** In `OpenRouterTests.cs`, give the stub catalog's `google/gemini-3.5-flash-lite` entry `"input_modalities":["text","image"]` and leave `openai/gpt-x` text-only. Add:
@@ -775,7 +775,7 @@ Use an icon that exists in `Ui.Icon`'s sprite; grep for the list and pick a pers
   - `TextOnlyModelIsRefusedForLabels`: `SetModelAsync(AiTask.Label, "openai/gpt-x")` throws `ValidationException` "That model can't read labels."
   - `AdminCanPickLabelModel`: in `AdminTests` style, POST `/admin/ai/model/label` with `off` saves it.
 
-- [ ] **Step 2: Run and see them fail.** `dotnet test tests/GymTracker.Web.Tests --filter "OpenRouterCatalogTests|OpenRouterSettingsTests"`.
+- [ ] **Step 2: Run and see them fail.** `dotnet test tests/Plate.Web.Tests --filter "OpenRouterCatalogTests|OpenRouterSettingsTests"`.
 
 - [ ] **Step 3: Implement.**
 
@@ -817,10 +817,10 @@ and `AiTask.Label => "That model can't read labels."` in `SetModelAsync`'s messa
 ### Task 6: OpenRouterLabelReader
 
 **Files:**
-- Create: `src/GymTracker.Web/Integrations/OpenRouterLabelReader.cs`
-- Create: `src/GymTracker.Web/Integrations/Assets/sample-label.jpg` (synthetic, made by a committed script, see Step 4) and include it as an embedded resource in `GymTracker.Web.csproj`
-- Modify: `src/GymTracker.Web/Program.cs:117-153` (HttpClient + DI), `src/GymTracker.Web/Features/Admin/AiAdmin.cs` (`TestLabelAsync`), `Controllers/AdminAiController.cs` (Label branch), `Cli/AiCommand.cs` (`ai test [label]`)
-- Test: `tests/GymTracker.Web.Tests/OpenRouterTests.cs` (`OpenRouterLabelReaderTests`), `tests/GymTracker.Web.Tests/FakeLabelReader.cs`
+- Create: `src/Plate.Web/Integrations/OpenRouterLabelReader.cs`
+- Create: `src/Plate.Web/Integrations/Assets/sample-label.jpg` (synthetic, made by a committed script, see Step 4) and include it as an embedded resource in `Plate.Web.csproj`
+- Modify: `src/Plate.Web/Program.cs:117-153` (HttpClient + DI), `src/Plate.Web/Features/Admin/AiAdmin.cs` (`TestLabelAsync`), `Controllers/AdminAiController.cs` (Label branch), `Cli/AiCommand.cs` (`ai test [label]`)
+- Test: `tests/Plate.Web.Tests/OpenRouterTests.cs` (`OpenRouterLabelReaderTests`), `tests/Plate.Web.Tests/FakeLabelReader.cs`
 
 **Interfaces:**
 - Consumes: `ILabelReader`, `LabelReading`, `LabelReadResult` (Task 2); `AiTask.Label`, `OpenRouterModel` (Task 5).
@@ -1031,7 +1031,7 @@ public class SwitchingLabelReader(OpenRouterSettings settings, IServiceProvider 
     /// <summary>Reads the bundled sample label: null when the model reads its energy right, otherwise what went wrong.</summary>
     public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct)
     {
-        await using var stream = typeof(OpenRouterLabelReader).Assembly.GetManifestResourceStream("GymTracker.Web.Integrations.Assets.sample-label.jpg")
+        await using var stream = typeof(OpenRouterLabelReader).Assembly.GetManifestResourceStream("Plate.Web.Integrations.Assets.sample-label.jpg")
             ?? throw new InvalidOperationException("The sample label isn't embedded.");
         using var buffer = new MemoryStream();
         await stream.CopyToAsync(buffer, ct);
@@ -1094,12 +1094,12 @@ public sealed class FakeLabelReader : ILabelReader
 ### Task 7: LabelScanService and the endpoint
 
 **Files:**
-- Create: `src/GymTracker.Web/Features/Food/LabelScanService.cs`
-- Create: `src/GymTracker.Web/Features/ImageSniffer.cs` (moved out of `FeedbackService.ImageType`)
-- Modify: `src/GymTracker.Web/Features/Feedback/FeedbackService.cs:225-246` (use `ImageSniffer`)
-- Modify: `src/GymTracker.Web/Features/FeatureExceptionFilter.cs:8-20` (`RateLimits.AiLabel = "ai-label"`), `Program.cs:299-303` (policy), DI for the service
-- Modify: `src/GymTracker.Web/Controllers/FoodController.cs` (new `Label` action; `CreateItem` records the save)
-- Test: new `tests/GymTracker.Web.Tests/LabelScanTests.cs`, `UserIsolationTests.cs`
+- Create: `src/Plate.Web/Features/Food/LabelScanService.cs`
+- Create: `src/Plate.Web/Features/ImageSniffer.cs` (moved out of `FeedbackService.ImageType`)
+- Modify: `src/Plate.Web/Features/Feedback/FeedbackService.cs:225-246` (use `ImageSniffer`)
+- Modify: `src/Plate.Web/Features/FeatureExceptionFilter.cs:8-20` (`RateLimits.AiLabel = "ai-label"`), `Program.cs:299-303` (policy), DI for the service
+- Modify: `src/Plate.Web/Controllers/FoodController.cs` (new `Label` action; `CreateItem` records the save)
+- Test: new `tests/Plate.Web.Tests/LabelScanTests.cs`, `UserIsolationTests.cs`
 
 **Interfaces:**
 - Consumes: `ILabelReader`, `LabelValues` (Task 2), entities (Task 3), `CreateManualAsync(..., share, ...)` and `ManualFoodFormModel` (Task 4), `FakeLabelReader` (Task 6).
@@ -1130,7 +1130,7 @@ public sealed class FakeLabelReader : ILabelReader
 - [ ] **Step 3: `ImageSniffer`.** Move the three-way magic-byte check from `FeedbackService.ImageType` into:
 
 ```csharp
-namespace GymTracker.Web.Features;
+namespace Plate.Web.Features;
 
 /// <summary>An upload's real type from its first bytes, never from what the browser declared.</summary>
 public static class ImageSniffer
@@ -1275,10 +1275,10 @@ Check how `FeatureExceptionFilter` renders a `ValidationException` for htmx requ
 ### Task 8: The form UI (server side)
 
 **Files:**
-- Modify: `src/GymTracker.Web/Views/Food/_ManualFoodForm.cshtml`, `Views/Food/Add.cshtml` (manual tab and Scan tab), `Views/Food/Barcode.cshtml:49` (partial call), `src/GymTracker.Web/ViewModels/` (the `ManualFoodFormModel` record from Task 4), `Controllers/FoodController.cs` (`Add` and `Barcode` set `LabelAvailable`)
-- Modify: `src/GymTracker.Web/wwwroot/css/app.css` (banner and highlight)
+- Modify: `src/Plate.Web/Views/Food/_ManualFoodForm.cshtml`, `Views/Food/Add.cshtml` (manual tab and Scan tab), `Views/Food/Barcode.cshtml:49` (partial call), `src/Plate.Web/ViewModels/` (the `ManualFoodFormModel` record from Task 4), `Controllers/FoodController.cs` (`Add` and `Barcode` set `LabelAvailable`)
+- Modify: `src/Plate.Web/wwwroot/css/app.css` (banner and highlight)
 - Modify: `Resources/strings.bg.json`
-- Test: `tests/GymTracker.Web.Tests/LabelScanTests.cs` (markup tests)
+- Test: `tests/Plate.Web.Tests/LabelScanTests.cs` (markup tests)
 
 **Interfaces:**
 - Consumes: `ManualFoodFormModel`, `LabelValues`, `LabelScanService.IsAvailableAsync`.
@@ -1362,13 +1362,13 @@ Use the existing colour tokens; check `:root` for the warning token name.
 ### Task 9: The client (resize, barcode from photo, swap)
 
 **Files:**
-- Create: `src/GymTracker.Web/wwwroot/js/image.js`
-- Create: `src/GymTracker.Web/wwwroot/js/label.js`
-- Modify: `src/GymTracker.Web/wwwroot/js/feedback.js:12-13, 253-280` (use `image.js`)
-- Modify: `src/GymTracker.Web/Views/Shared/_Layout.cshtml:55-57` (load `image.js` before `feedback.js`), `Views/Food/Add.cshtml` and `Views/Food/Barcode.cshtml` (load `label.js`, and the barcode-detector ponyfill on the manual and barcode-miss pages too)
-- Modify: `src/GymTracker.Web/wwwroot/sw.js:15-25` (precache both files)
-- Modify: `tests/GymTracker.E2E.Tests/AiStubs.cs` (a `StubLabelReader`), `E2EFixture.cs:54-56` (register it on the AI app)
-- Test: new `tests/GymTracker.E2E.Tests/LabelPhotoTests.cs`, fixture images under `tests/GymTracker.E2E.Tests/Fixtures/`
+- Create: `src/Plate.Web/wwwroot/js/image.js`
+- Create: `src/Plate.Web/wwwroot/js/label.js`
+- Modify: `src/Plate.Web/wwwroot/js/feedback.js:12-13, 253-280` (use `image.js`)
+- Modify: `src/Plate.Web/Views/Shared/_Layout.cshtml:55-57` (load `image.js` before `feedback.js`), `Views/Food/Add.cshtml` and `Views/Food/Barcode.cshtml` (load `label.js`, and the barcode-detector ponyfill on the manual and barcode-miss pages too)
+- Modify: `src/Plate.Web/wwwroot/sw.js:15-25` (precache both files)
+- Modify: `tests/Plate.E2E.Tests/AiStubs.cs` (a `StubLabelReader`), `E2EFixture.cs:54-56` (register it on the AI app)
+- Test: new `tests/Plate.E2E.Tests/LabelPhotoTests.cs`, fixture images under `tests/Plate.E2E.Tests/Fixtures/`
 
 **Interfaces:**
 - Consumes: Task 8's markup hooks; `POST /food/label`.
@@ -1595,7 +1595,7 @@ Test photos: commit `Fixtures/label.jpg` (copy of Task 6's `sample-label.jpg`), 
   - `OfflineDisablesPhoto`: `context.SetOfflineAsync(true)`; the photo button is disabled with "Needs a connection".
   - `ShareToggleFollowsBarcodeField`: on the Manual tab the share block is hidden, appears after 13 digits are typed, hides when cleared.
 
-- [ ] **Step 5: Run.** `dotnet test tests/GymTracker.E2E.Tests --filter "LabelPhotoTests|FeedbackExtras|AiPathTests"` (feedback screenshots still work with the moved `shrink`), then all Core and Web.
+- [ ] **Step 5: Run.** `dotnet test tests/Plate.E2E.Tests --filter "LabelPhotoTests|FeedbackExtras|AiPathTests"` (feedback screenshots still work with the moved `shrink`), then all Core and Web.
 
 - [ ] **Step 6: Commit.** "Client: label photo resize, barcode from the photo and form swap"
 
@@ -1604,10 +1604,10 @@ Test photos: commit `Fixtures/label.jpg` (copy of Task 6's `sample-label.jpg`), 
 ### Task 10: Retention, account deletion and export
 
 **Files:**
-- Modify: `src/GymTracker.Web/Features/Undo/SoftDeletePurge.cs:12-15, 56-75`
-- Modify: `src/GymTracker.Web/Features/Admin/UserDeleter.cs:20-35`
-- Modify: `src/GymTracker.Web/Features/Export/DataExport.cs:16-28`
-- Test: `tests/GymTracker.Web.Tests/DeletedRowsTests.cs` (or wherever `PurgeFeedbackAsync` is tested), `AccountCliTests.cs`, `ExportTests.cs`
+- Modify: `src/Plate.Web/Features/Undo/SoftDeletePurge.cs:12-15, 56-75`
+- Modify: `src/Plate.Web/Features/Admin/UserDeleter.cs:20-35`
+- Modify: `src/Plate.Web/Features/Export/DataExport.cs:16-28`
+- Test: `tests/Plate.Web.Tests/DeletedRowsTests.cs` (or wherever `PurgeFeedbackAsync` is tested), `AccountCliTests.cs`, `ExportTests.cs`
 
 **Interfaces:**
 - Consumes: entities (Task 3).
@@ -1641,13 +1641,13 @@ Test photos: commit `Fixtures/label.jpg` (copy of Task 6's `sample-label.jpg`), 
 ### Task 11: Admin Labels page, label accuracy and CLI
 
 **Files:**
-- Create: `src/GymTracker.Web/Controllers/AdminLabelsController.cs`, `Views/AdminLabels/List.cshtml`, `Views/AdminLabels/Scan.cshtml`
-- Create: `src/GymTracker.Web/Features/Feedback/LabelScanReport.cs` (queries shared by admin and CLI)
-- Modify: `src/GymTracker.Web/Features/Feedback/ModelAccuracyReport.cs:17` (`ForAsync(AiTask.Label)`), `Views/AdminAi/Model.cshtml` (label wording)
-- Modify: `src/GymTracker.Web/Cli/FeedbackCommand.cs` (`labels`, `label`, `label-photo`, digest counts)
-- Modify: `src/GymTracker.Web/Features/Admin/AdminAuditLog.cs` (`AuditActions.LabelPhotoDownload`)
+- Create: `src/Plate.Web/Controllers/AdminLabelsController.cs`, `Views/AdminLabels/List.cshtml`, `Views/AdminLabels/Scan.cshtml`
+- Create: `src/Plate.Web/Features/Feedback/LabelScanReport.cs` (queries shared by admin and CLI)
+- Modify: `src/Plate.Web/Features/Feedback/ModelAccuracyReport.cs:17` (`ForAsync(AiTask.Label)`), `Views/AdminAi/Model.cshtml` (label wording)
+- Modify: `src/Plate.Web/Cli/FeedbackCommand.cs` (`labels`, `label`, `label-photo`, digest counts)
+- Modify: `src/Plate.Web/Features/Admin/AdminAuditLog.cs` (`AuditActions.LabelPhotoDownload`)
 - Modify: admin nav partial (add Labels), `README.md`, `docs/feedback-triage.md` (if the project skill lists commands)
-- Test: new `tests/GymTracker.Web.Tests/AdminLabelsTests.cs`, `FeedbackTests.cs` (CLI)
+- Test: new `tests/Plate.Web.Tests/AdminLabelsTests.cs`, `FeedbackTests.cs` (CLI)
 
 **Interfaces:**
 - Consumes: entities (Task 3), `ModelAccuracy.Summarize` and `RunOutcome` (Core).
@@ -1679,7 +1679,7 @@ Test photos: commit `Fixtures/label.jpg` (copy of Task 6's `sample-label.jpg`), 
 ## Verification
 
 1. `dotnet build` with no warnings added; `dotnet test` (Core, Web, E2E) all green. Report the real counts.
-2. Locally with a real key (`OPENROUTER_API_KEY` in the shell, dev db up): `dotnet run --project src/GymTracker.Web`, then `dotnet src/GymTracker.Web/bin/Debug/net10.0/GymTracker.Web.dll ai test label` reads the sample at 250 kcal.
+2. Locally with a real key (`OPENROUTER_API_KEY` in the shell, dev db up): `dotnet run --project src/Plate.Web`, then `dotnet src/Plate.Web/bin/Debug/net10.0/Plate.Web.dll ai test label` reads the sample at 250 kcal.
 3. Chrome at 390 px, English and Bulgarian: the composer looks centred on Food and in the setup chat; a real label photo fills the form on all three entry points.
 4. Merge `label-photos` into `main` after the full E2E run, take the pre-deploy dump as in previous phases, deploy to wizard (`docker compose -f docker/docker-compose.yml up -d --build`), check the migration applied and the backfill row count in the logs.
 5. On the iPhone (Phase 13 Done-when): camera and library photos of a real Bulgarian label after a barcode miss; the other account scans it and sees "Added by another user"; an unticked product stays private; a per-serving label converts; a non-label photo shows the message; `ai test label` on wizard.

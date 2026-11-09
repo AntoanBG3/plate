@@ -33,7 +33,7 @@ if(process.argv.includes('--faults')){
   const parsed=await req('/food/parse',{date,meal:'Lunch',text:'100g banana'});
   const runId=/name="parseRunId" value="(\d+)"/.exec(parsed.html)?.[1];if(!runId)throw Error('No parse id');
   const form={date,meal:'Lunch',parseRunId:runId,'items[0].Include':'true','items[0].Description':'Synthetic duplicate probe','items[0].Grams':'100','items[0].Kcal':'100','items[0].Protein':'10','items[0].Carbs':'10','items[0].Fat':'2'};
-  const count=()=>+execFileSync('docker',['exec','repa-perf-db','psql','-U','gym','-d','gym_perf','-Atc',`SELECT count(*) FROM "FoodLog" WHERE "ParseRunId"=${runId}`],{encoding:'utf8'}).trim();
+  const count=()=>+execFileSync('docker',['exec','plate-perf-db','psql','-U','gym','-d','gym_perf','-Atc',`SELECT count(*) FROM "FoodLog" WHERE "ParseRunId"=${runId}`],{encoding:'utf8'}).trim();
   const before=count(),first=await req('/food/confirm',form),afterFirst=count(),second=await req('/food/confirm',form),afterSecond=count();
   trials.push({run:i+1,firstStatus:first.status,secondStatus:second.status,before,afterFirst,afterSecond});
  }

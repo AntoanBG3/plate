@@ -1,0 +1,58 @@
+@model AdminParseList
+@{
+    ViewData["Title"] = "Parses";
+    ViewData["BackUrl"] = "/admin";
+    ViewData["BackLabel"] = "Admin";
+}
+<header class="page-head">
+    <h1 class="large-title">Parses</h1>
+</header>
+<partial name="_AdminNav" />
+
+<form method="get" action="/admin/parses" class="section" data-autosubmit>
+    <div class="list">
+        <div class="field-row">
+            <label for="since">Since</label>
+            <select id="since" name="since">
+                @foreach (var s in new[] { "7d", "30d", "90d", "365d" })
+                {
+                    <option value="@s" selected="@(s == Model.Since)">@s</option>
+                }
+            </select>
+        </div>
+        <div class="field-row">
+            <label for="flagged">Corrected or rated down only</label>
+            <input id="flagged" class="check-input" type="checkbox" name="flagged" value="true" checked="@Model.Flagged" />
+        </div>
+    </div>
+</form>
+
+<section class="section">
+    <div class="list">
+        @foreach (var run in Model.Runs)
+        {
+            <a class="row row-link" href="/admin/parses/@run.Id">
+                <span class="row-main">
+                    <span class="row-title">@run.Text</span>
+                    <span class="row-sub" style="display: block">#@run.Id · @run.CreatedAt.ToUniversalTime().ToString("d MMM HH:mm") · @run.Reporter · @(run.ConfirmedAt is null ? "not saved" : run.Corrections == Plate.Core.Nutrition.ParseCorrection.None ? "saved as suggested" : $"saved: {run.Corrections}")@(run.Ratings.Count > 0 ? $" · {run.Ratings.Count} rating(s)" : "")</span>
+                </span>
+                @Ui.Icon("chevron", "row-chevron")
+            </a>
+        }
+        @if (Model.Runs.Count == 0)
+        {
+            <div class="row"><span class="row-main footnote">Nothing here.</span></div>
+        }
+    </div>
+</section>
+
+<section class="section">
+    <h2 class="section-title">Regression cases</h2>
+    <div class="list">
+        <a class="row row-link" href="/admin/parses/export?since=@Model.Since&flagged=@(Model.Flagged ? "true" : "false")" download>
+            <span class="row-main">Download as JSONL</span>
+            @Ui.Icon("download", "row-chevron")
+        </a>
+    </div>
+    <p class="section-footer">For tests/Plate.Web.Tests/Fixtures. The lines hold what users typed: review them before committing any.</p>
+</section>

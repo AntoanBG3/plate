@@ -24,7 +24,7 @@ function drill(options = {}) {
         'else if (a.includes("cat") || a.some(x => x.includes("pg_dump"))) { if (c.fail === "archive") process.exit(8); console.log("synthetic archive"); }',
         'else if (a.includes("psql") || a.some(x => x.includes("psql"))) {',
         '  if (c.fail === "query") process.exit(9);',
-        '  const live = a.includes("gymtracker-db"), sql = a[a.length - 1];',
+        '  const live = a.includes("plate-db"), sql = a[a.length - 1];',
         '  console.log(sql.includes("information_schema.columns") ? (live ? c.liveSchema : c.restoredSchema)',
         '    : sql.includes("query_to_xml") ? (live ? c.live : c.restored)',
         '    : (live ? c.liveTables : c.restoredTables));',
@@ -79,6 +79,6 @@ for (const fail of ["archive", "restore", "query"]) {
         const result = drill({ fail });
         assert.notEqual(result.status, 0);
         assert.doesNotMatch(result.stdout, /Restore OK/);
-        assert.ok(result.calls.some(a => a[0] === "rm" && a.includes("gymtracker-restore-drill")), "temporary container cleanup runs");
+        assert.ok(result.calls.some(a => a[0] === "rm" && a.includes("plate-restore-drill")), "temporary container cleanup runs");
     });
 }

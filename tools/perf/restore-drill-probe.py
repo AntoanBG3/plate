@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 
 root = pathlib.Path(__file__).resolve().parents[2]
-with tempfile.TemporaryDirectory(prefix="repa-restore-probe-") as directory:
+with tempfile.TemporaryDirectory(prefix="plate-restore-probe-") as directory:
     docker = pathlib.Path(directory, "docker")
     docker.write_text('''#!/usr/bin/env python3
 import sys
@@ -20,8 +20,8 @@ args=sys.argv[1:]
 if "readlink" in args: print("synthetic-nightly")
 elif "cat" in args: print("synthetic archive; not read by real pg_restore")
 elif args[:2]==["run","-d"]: print("synthetic-container")
-elif "gymtracker-db" in args and "psql" in " ".join(args): print("FoodLog=38 Profiles=5")
-elif "gymtracker-restore-drill" in args and "psql" in args: print("Profiles=5")
+elif "plate-db" in args and "psql" in " ".join(args): print("FoodLog=38 Profiles=5")
+elif "plate-restore-drill" in args and "psql" in args: print("Profiles=5")
 sys.exit(0)
 ''')
     docker.chmod(0o700)

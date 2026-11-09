@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Plate.Core/Plate.Core.csproj" />
+    <Project Path="src/Plate.Web/Plate.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Plate.Core.Tests/Plate.Core.Tests.csproj" />
+    <Project Path="tests/Plate.E2E.Tests/Plate.E2E.Tests.csproj" />
+    <Project Path="tests/Plate.Web.Tests/Plate.Web.Tests.csproj" />
+  </Folder>
+</Solution>

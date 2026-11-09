@@ -4,7 +4,7 @@
 import subprocess,ssl,urllib.request,time,json,os,tempfile
 samples=[]
 for run in range(1,6):
- subprocess.run(['docker','restart','repa-perf-app'],check=True,capture_output=True)
+ subprocess.run(['docker','restart','plate-perf-app'],check=True,capture_output=True)
  deadline=time.monotonic()+60
  while True:
   try:

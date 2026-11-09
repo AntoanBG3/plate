@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-const scripts = path.resolve(__dirname, "../../src/GymTracker.Web/wwwroot/js");
+const scripts = path.resolve(__dirname, "../../src/Plate.Web/wwwroot/js");
 const source = (name) => fs.readFileSync(path.join(scripts, name), "utf8");
 const settle = () => new Promise(setImmediate);
 

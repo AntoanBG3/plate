@@ -3,7 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
-const root = path.resolve(__dirname, "../../src/GymTracker.Web/wwwroot");
+const root = path.resolve(__dirname, "../../src/Plate.Web/wwwroot");
 const source = (name) => fs.readFileSync(path.join(root, "js", name), "utf8");
 const settle = () => new Promise(setImmediate);
 
