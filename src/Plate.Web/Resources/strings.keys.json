@@ -1607,6 +1607,9 @@
   "Plate calculator": [
     "src/Plate.Web/Features/Feedback/FeedbackText.cs"
   ],
+  "Plate has moved to plate.peychev.uk. Passkeys from the old address don't work here, so sign in with your password once, then add a passkey again in Settings → Sign-in & security. If you don't remember your password, ask Antoan to reset it.": [
+    "src/Plate.Web/Views/Account/Login.cshtml"
+  ],
   "Plate weights must be from the list.": [
     "src/Plate.Core/Domain/ProfileRules.cs"
   ],

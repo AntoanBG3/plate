@@ -1,5 +1,6 @@
 using Plate.Web.Data;
 using Plate.Web.Features;
+using Plate.Web.Features.Localization;
 using Plate.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -10,17 +11,19 @@ namespace Plate.Web.Controllers;
 
 [Route("account")]
 public class AccountController(
-    SignInManager<AppUser> signIn, UserManager<AppUser> users, IPasswordHasher<AppUser> hasher, ILogger<AccountController> logger) : Controller
+    SignInManager<AppUser> signIn, UserManager<AppUser> users, IPasswordHasher<AppUser> hasher, TimeProvider time, ILogger<AccountController> logger) : Controller
 {
     // A real hash to check against when the email is unknown, so both paths cost one password hash.
     private static string? dummyHash;
 
     [AllowAnonymous]
+    [LanguageFromRequest]
     [HttpGet("login")]
     public IActionResult Login(string? returnUrl) =>
-        User.Identity?.IsAuthenticated == true ? LocalRedirect(Url.SafeReturnUrl(returnUrl)) : View(new LoginViewModel(null, returnUrl, null));
+        User.Identity?.IsAuthenticated == true ? LocalRedirect(Url.SafeReturnUrl(returnUrl)) : View(new LoginViewModel(null, returnUrl, null, Brand.ShowMoveNotice(time.GetUtcNow())));
 
     [AllowAnonymous]
+    [LanguageFromRequest]
     [HttpPost("login")]
     [EnableRateLimiting(RateLimits.Login)]
     public async Task<IActionResult> Login(string email, string password, string? returnUrl)
@@ -53,7 +56,7 @@ public class AccountController(
         var error = result.IsLockedOut
             ? "Too many failed attempts. Try again in 15 minutes."
             : "Email or password is wrong.";
-        return View(new LoginViewModel(email, returnUrl, error));
+        return View(new LoginViewModel(email, returnUrl, error, Brand.ShowMoveNotice(time.GetUtcNow())));
     }
 
     [HttpPost("logout")]
