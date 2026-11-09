@@ -47,7 +47,7 @@ public class InviteService(AppDbContext db, UserCreator creator, AdminAuditLog a
         await transaction.CommitAsync(ct);
 
         await audit.WriteAsync(AuditActions.InviteRedeem, user.Email, invite.Note, ct);
-        notifier.EnqueueText($"Repa: {name.Trim()} joined with the invite \"{invite.Note ?? "(no note)"}\".");
+        notifier.EnqueueText($"{Brand.Name}: {name.Trim()} joined with the invite \"{invite.Note ?? "(no note)"}\".");
         return new Redemption(RedemptionStatus.Redeemed, user, []);
     }
 

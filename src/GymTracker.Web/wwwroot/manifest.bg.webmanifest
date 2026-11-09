@@ -1,6 +1,6 @@
 {
-  "name": "Ряпа",
-  "short_name": "Ряпа",
+  "name": "Plate",
+  "short_name": "Plate",
   "description": "Тренировки и хранене",
   "start_url": "/today",
   "scope": "/",

@@ -1,6 +1,6 @@
 {
-  "name": "Repa",
-  "short_name": "Repa",
+  "name": "Plate",
+  "short_name": "Plate",
   "description": "Workouts and food log",
   "start_url": "/today",
   "scope": "/",

@@ -14,14 +14,14 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
     {
         await settings.SetKeyAsync(key, ct);
         await audit.WriteAsync(AuditActions.KeySet, null, null, ct);
-        notifier.EnqueueText($"Repa: the OpenRouter key was changed from {audit.Origin}.");
+        notifier.EnqueueText($"{Brand.Name}: the OpenRouter key was changed from {audit.Origin}.");
     }
 
     public async Task ClearKeyAsync(CancellationToken ct)
     {
         await settings.ClearKeyAsync(ct);
         await audit.WriteAsync(AuditActions.KeyRemove, null, null, ct);
-        notifier.EnqueueText($"Repa: the OpenRouter key was removed from {audit.Origin}.");
+        notifier.EnqueueText($"{Brand.Name}: the OpenRouter key was removed from {audit.Origin}.");
     }
 
     public async Task SetModelAsync(AiTask task, string id, CancellationToken ct)

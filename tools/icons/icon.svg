@@ -1,33 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffa04d"/>
-      <stop offset="1" stop-color="#ff561c"/>
-    </linearGradient>
-    <linearGradient id="bulb" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#94215f"/>
-      <stop offset=".38" stop-color="#d4609b"/>
-      <stop offset=".55" stop-color="#fbe6ee"/>
-      <stop offset="1" stop-color="#fff8f1"/>
-    </linearGradient>
-    <linearGradient id="leaf" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#2a8a44"/>
-      <stop offset="1" stop-color="#5fd07e"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#ground)"/>
-  <!-- Turnip (ряпа), scaled to stay inside the maskable safe zone (a circle of radius 205 around the centre). -->
-  <g transform="translate(256 262) scale(0.88) translate(-256 -262)">
-    <ellipse cx="256" cy="446" rx="118" ry="16" fill="#7a2300" opacity=".22"/>
-    <path d="M252 218 C196 206 150 168 132 110 C194 112 240 158 252 218 Z" fill="url(#leaf)"/>
-    <path d="M260 218 C316 206 362 168 380 110 C318 112 272 158 260 218 Z" fill="url(#leaf)"/>
-    <path d="M256 216 C230 166 224 108 248 52 C288 100 288 166 256 216 Z" fill="#4cc271"/>
-    <g fill="none" stroke="#1f6e35" stroke-width="5" stroke-linecap="round" opacity=".45">
-      <path d="M248 206 C214 186 182 158 160 128"/>
-      <path d="M264 206 C298 186 330 158 352 128"/>
-      <path d="M256 204 C250 160 250 116 252 76"/>
-    </g>
-    <path d="M256 200 C345 200 392 255 384 320 C376 385 318 410 278 438 C268 446 262 458 258 480 C254 458 246 446 234 438 C194 410 136 385 128 320 C120 255 167 200 256 200 Z" fill="url(#bulb)"/>
-    <ellipse cx="196" cy="300" rx="20" ry="44" transform="rotate(-18 196 300)" fill="#ffffff" opacity=".35"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Plate: a weight plate with a bite out of it. The plate (radius 33) stays inside the maskable safe zone
+       (a circle of radius 40 around the centre). The bite is part of the outline, not a mask, so NSImage draws it. -->
+  <rect width="100" height="100" fill="#ff6a2b"/>
+  <path d="M61.17 18.95A33 33 0 1 0 81.76 41.02A9.5 9.5 0 0 1 69.33 31.97A9.5 9.5 0 0 1 61.17 18.95Z" fill="#fff3e6"/>
+  <!-- Handle cut-outs near the rim at 100, 220 and 340 degrees, clear of the bite. -->
+  <g fill="none" stroke="#ff6a2b" stroke-width="6.5" stroke-linecap="round">
+    <path d="M37.75 28.78A24.5 24.5 0 0 1 54.25 25.87"/>
+    <path d="M37.75 71.22A24.5 24.5 0 0 1 26.98 58.38"/>
+    <path d="M74.5 50A24.5 24.5 0 0 1 68.77 65.75"/>
   </g>
+  <circle cx="50" cy="50" r="6" fill="#ff6a2b"/>
 </svg>

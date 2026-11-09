@@ -8,7 +8,7 @@
     }
     if ((c.match(/(?:^|; )gym\.lang=(\w+)/) || [])[1] === "bg") {
         document.documentElement.lang = "bg";
-        document.title = "Няма връзка · Ряпа";
+        document.title = "Няма връзка · Plate";
     }
     document.addEventListener("click", function (event) {
         if (event.target.closest("[data-reload]")) {

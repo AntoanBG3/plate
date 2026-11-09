@@ -1796,11 +1796,6 @@
   "Rep range must be between 1 and 100, with the minimum not above the maximum.": [
     "src/GymTracker.Web/Features/Training/TemplateService.cs"
   ],
-  "Repa": [
-    "src/GymTracker.Web/Views/Account/Login.cshtml",
-    "src/GymTracker.Web/Views/Join/Index.cshtml",
-    "src/GymTracker.Web/Views/Shared/_Layout.cshtml"
-  ],
   "Repeat new": [
     "src/GymTracker.Web/Views/Settings/Security.cshtml"
   ],

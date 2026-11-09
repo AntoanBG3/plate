@@ -54,7 +54,7 @@ public class HttpSecurityTests(PostgresFixture db) : IDisposable, IClassFixture<
         (await client.GetAsync("/lib/htmx/htmx.min.js")).StatusCode.Should().Be(HttpStatusCode.OK);
 
         // iOS fetches the manifest and icons without the login cookie when installing the app.
-        foreach (var (lang, name) in new[] { ("en", "Repa"), ("bg", "Ряпа") })
+        foreach (var (lang, name) in new[] { ("en", "Plate"), ("bg", "Plate") })
         {
             var manifest = await client.GetAsync($"/manifest.{lang}.webmanifest");
             manifest.StatusCode.Should().Be(HttpStatusCode.OK, lang);
