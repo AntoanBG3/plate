@@ -1,4 +1,4 @@
-# Repa (Ряпа)
+# Plate
 
 Self-hosted training and nutrition tracker (code name GymTracker), running on the home server "wizard" and used from iPhones as an installed web app at `https://gym.peychev.uk`. See `SPEC.md` for the full specification and build phases.
 

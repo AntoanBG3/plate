@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Self-hosted gym and nutrition tracker ("Repa", Bulgarian "Ряпа") used by Antoan, his father and friends he invites. The full specification is in `SPEC.md`; read it before starting any task and follow its build phases in order.
+Self-hosted gym and nutrition tracker ("Plate", the same Latin name in Bulgarian) used by Antoan, his father and friends he invites. The full specification is in `SPEC.md`; read it before starting any task and follow its build phases in order.
 
 ## Stack
 .NET 10, ASP.NET Core MVC + Razor + htmx 2.0.x, EF Core + PostgreSQL 18 (Npgsql), ASP.NET Core Identity, OpenRouter API, USDA FoodData Central subset, Open Food Facts API v3, xUnit + FluentAssertions + Testcontainers, Playwright for browser tests, docker-compose. Deployed on the home server "wizard" at `~/docker/gymtracker`, public at `https://gym.peychev.uk` through its Cloudflare Tunnel.
