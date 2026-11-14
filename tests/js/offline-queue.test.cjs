@@ -7,6 +7,8 @@ const vm = require("node:vm");
 const scripts = path.resolve(__dirname, "../../src/Plate.Web/wwwroot/js");
 const source = (name) => fs.readFileSync(path.join(scripts, name), "utf8");
 const settle = () => new Promise(setImmediate);
+// The pending banner waits 1.5 s before it shows while online (session.js); this is that time passing.
+const graceOver = (b) => b.timeouts.filter((timer) => timer.ms === 1500 && !timer.cleared).forEach((timer) => timer.fn());
 
 function browser(owner = "A", store = new Map()) {
     const events = {};
@@ -233,6 +235,8 @@ test("set logging still sends when storage is denied, and warns while the reques
     b.events.submit[0]({ target: { closest: () => form }, preventDefault() {} });
     assert.equal(b.requests.length, 1);
     assert.equal(b.requests[0].headers["X-Gym-User"], "A");
+    assert.equal(b.status.hidden, true, "a set on its way doesn't raise the banner");
+    graceOver(b);
     assert.equal(b.status.hidden, false);
     assert.match(b.status.textContent, /can't save pending changes/);
     finish({ ok: true, status: 200, text: async () => "" });
@@ -261,6 +265,7 @@ for (const status of [401, 409]) {
         b.events.submit[0]({ target: { closest: () => setForm() }, preventDefault() {} });
         await settle();
         assert.equal(b.context.window.location.href, undefined);
+        graceOver(b);
         assert.equal(b.status.hidden, false);
         b.context.fetch = async () => ({ ok: true, status: 200, text: async () => "" });
         b.intervals[0]();

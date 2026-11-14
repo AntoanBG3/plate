@@ -85,13 +85,30 @@
         form.querySelectorAll("input, button").forEach((el) => { el.disabled = true; });
     }
 
-    function updateStatus() {
+    // A set that is sent straight away is in the queue only for the round trip. The banner is for sets that are really
+    // waiting: it shows at once when offline, otherwise only if something is still unsent after a moment (as long as
+    // a row waits before it says "Waiting for signal"). Shown for every log, it pushed the page down and back up.
+    const STATUS_GRACE_MS = 1500;
+    let statusTimer = null;
+
+    function updateStatus(late) {
         const status = document.getElementById("queue-status");
         if (!status) {
             return;
         }
 
         const count = loadQueue().length;
+        if (count === 0 && statusTimer) {
+            clearTimeout(statusTimer);
+            statusTimer = null;
+        }
+        if (count > 0 && status.hidden && navigator.onLine && !queue.hasLegacy() && !late) {
+            statusTimer ??= setTimeout(() => {
+                statusTimer = null;
+                updateStatus(true);
+            }, STATUS_GRACE_MS);
+            return;
+        }
         status.hidden = count === 0 && !queue.hasLegacy();
         status.textContent = queue.hasLegacy() && count === 0
             ? t("Some older sets on this phone couldn't be sent from this account. They send when the account that logged them signs in.")
