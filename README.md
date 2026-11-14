@@ -311,12 +311,11 @@ ssh wizard docker exec plate-app dotnet Plate.Web.dll ai test label   # reads a 
 
 ### Updating base images
 
-The Dockerfile and compose file pin the .NET and Postgres images by digest, so a rebuild never pulls a different image by surprise. About once a month, look up the current digests and replace the `@sha256:...` parts:
+The Dockerfile pins the .NET images by digest, so a rebuild never pulls a different image by surprise. About once a month, look up the current digests and replace the `@sha256:...` parts. Postgres is not pinned: the compose file uses the floating `postgres:18` tag, and wizard's nightly `~/bin/container-update` pulls its patch releases.
 
 ```sh
 docker buildx imagetools inspect mcr.microsoft.com/dotnet/sdk:10.0 --format '{{json .Manifest.Digest}}'
 docker buildx imagetools inspect mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra --format '{{json .Manifest.Digest}}'
-docker buildx imagetools inspect postgres:18 --format '{{json .Manifest.Digest}}'
 ```
 
 The build also fails when a NuGet package has a known high or critical advisory; update that package when it does.
