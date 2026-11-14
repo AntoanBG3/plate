@@ -218,19 +218,21 @@
         });
     }
 
-    // Bars (.meter, app.css) fill only while their page has this class: on its first sight, not on every return.
-    function markFirstSight(main, first) {
-        main.classList.toggle("is-first-sight", first);
+    // Bars (.meter, app.css) fill only while the page has this class: on its first sight, not on every return. On a
+    // full load pages.js has already set it, before the first paint. It comes off once the bars are full, so a bar
+    // swapped in later doesn't fill again.
+    let firstSightTimer = null;
+    function markFirstSight(first) {
+        clearTimeout(firstSightTimer);
+        root.classList.toggle("is-first-sight", first);
         if (first) {
-            setTimeout(() => main.classList.remove("is-first-sight"), 1000);
+            firstSightTimer = setTimeout(() => root.classList.remove("is-first-sight"), 1000);
         }
     }
 
     const firstLoad = firstSight();
     reveal(document, firstLoad);
-    if (document.getElementById("main")) {
-        markFirstSight(document.getElementById("main"), firstLoad);
-    }
+    markFirstSight(firstLoad);
     if (firstLoad && document.getElementById("main")) {
         riseBelowFold(document.getElementById("main"));
     }
@@ -242,7 +244,7 @@
         const main = document.getElementById("main");
         const first = firstSight();
         reveal(main, first);
-        markFirstSight(main, first);
+        markFirstSight(first);
         if (first) {
             riseBelowFold(main);
         }

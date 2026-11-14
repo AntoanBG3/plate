@@ -4,6 +4,18 @@
 (function () {
     "use strict";
 
+    // Bars fill on a page's first sight in a session (app.css .is-first-sight). On a full load the class has to be
+    // there before the first paint, or full bars would show and then start over; motion.js, which is deferred,
+    // records the sight and takes the class from here.
+    try {
+        const seen = (window.sessionStorage.getItem("gym.seen") || "").split("|");
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches && !seen.includes("reveal:" + location.pathname)) {
+            document.documentElement.classList.add("is-first-sight");
+        }
+    } catch {
+        // No storage: motion.js decides.
+    }
+
     const modules = new Map();
     let cleanups = [];
 

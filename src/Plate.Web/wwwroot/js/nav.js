@@ -310,8 +310,9 @@
             }
             const doc = new DOMParser().parseFromString(text, "text/html");
             const samePage = finalUrl.href === location.href;
-            // A change that comes back to the same page keeps the user's place on it (Phase 11).
-            if (keepScroll && finalUrl.pathname === location.pathname && finalUrl.search === location.search) {
+            // A change that comes back to the same page keeps the user's place on it (Phase 11), also when the page
+            // comes back under a fuller address (a food deleted on /food returns to /food?date=...).
+            if (keepScroll && finalUrl.pathname === location.pathname) {
                 scrollY = window.scrollY;
             }
             const same = finalUrl.pathname === location.pathname && finalUrl.search === location.search;

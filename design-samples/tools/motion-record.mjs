@@ -3,7 +3,7 @@
 //   <out>/<name>.png          one frame strip per interaction, animations slowed 10× (Chromium only)
 //   <out>/timeline.json       every animation each interaction starts: target, delay, duration, easing, and when
 //                             the interaction settles (last frame with something still moving)
-//   node design-samples/tools/motion-record.mjs <outDir> [tour,strips,timeline] [chromium|webkit]
+//   node design-samples/tools/motion-record.mjs <outDir> [tour,strips,timeline] [chromium|webkit] [name pattern]
 // Needs playwright (NODE_PATH or a local install) and the local dev app with seed-demo.sql. Never run against wizard.
 // Logging a set and deleting a food entry change the demo data, so re-run seed-demo.sql between runs.
 import fs from "node:fs";
@@ -18,6 +18,7 @@ const BASE = appUrl();
 const out = process.argv[2] || "design-samples/screenshots/motion/before";
 const parts = (process.argv[3] || "tour,strips,timeline").split(",");
 const engine = process.argv[4] || "chromium";
+const only = new RegExp(process.argv[5] || ".");
 const SLOW = 10;
 fs.mkdirSync(out, { recursive: true });
 
@@ -186,12 +187,13 @@ async function makeStrip(name, shots, stepMs) {
 if (parts.includes("timeline")) {
     const { ctx, page } = await open();
     const timeline = {};
-    for (const s of scenarios) {
+    for (const s of scenarios.filter((x) => only.test(x.name))) {
         try {
             await prepare(page, s);
-            const trace = page.evaluate(() => window.__trace(4000));
+            // Listening before the gesture is sent: a bare touchscreen tap doesn't wait for anything.
+            await page.evaluate(() => { window.__tracing = window.__trace(4000); });
             await s.act(page);
-            timeline[s.name] = await trace;
+            timeline[s.name] = await page.evaluate(() => window.__tracing);
             const t = timeline[s.name];
             console.log(`${s.name.padEnd(14)} page ${String(t.pageAt).padStart(4)} ms  settled ${String(t.settledAt).padStart(4)} ms  ${t.animations.length} animations`);
         } catch (error) {
@@ -200,7 +202,9 @@ if (parts.includes("timeline")) {
         }
         await settle(page, 500);
     }
-    fs.writeFileSync(path.join(out, "timeline.json"), JSON.stringify(timeline, null, 1));
+    const file = path.join(out, "timeline.json");
+    const earlier = process.argv[5] && fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : {};
+    fs.writeFileSync(file, JSON.stringify(Object.assign(earlier, timeline), null, 1));
     await ctx.close();
 }
 
@@ -208,7 +212,7 @@ if (parts.includes("strips") && engine === "chromium") {
     const { ctx, page } = await open();
     const cdp = await ctx.newCDPSession(page);
     await cdp.send("Animation.enable");
-    for (const s of scenarios) {
+    for (const s of scenarios.filter((x) => only.test(x.name))) {
         try {
             await prepare(page, s);
             const frames = s.frames || 14;

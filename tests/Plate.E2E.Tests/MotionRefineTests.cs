@@ -115,12 +115,20 @@ public class MotionRefineTests(E2EFixture app) : IClassFixture<E2EFixture>
     {
         await using var phone = await app.SignedInPhoneAsync(browser);
         await phone.WithTargetsAsync(app);
+        // Counted from before the page's own scripts run, so a fill that starts with the first paint is seen.
+        await phone.Page.AddInitScriptAsync("""
+            window.__fills = 0;
+            document.addEventListener("animationstart", (e) => { if (e.animationName === "meter-in") { window.__fills++; } }, true);
+            """);
         await phone.GoAsync("/food");
         (await phone.Page.Locator(".meter i").CountAsync()).Should().BeGreaterThan(0, "the test needs the day's bars");
+        await phone.Page.WaitForFunctionAsync("() => window.__fills > 0");
+        (await phone.Page.EvaluateAsync<bool>("() => window.__fills === document.querySelectorAll('.meter i').length"))
+            .Should().BeTrue("each bar fills once, from the first paint, not full and then again");
 
         await phone.GoAsync("/food");
-        (await phone.Page.EvaluateAsync<int>("() => [...document.querySelectorAll('.meter i')].filter((i) => i.getAnimations().length > 0).length"))
-            .Should().Be(0, "on a return the bars are just there");
+        await phone.Page.WaitForTimeoutAsync(300);
+        (await phone.Page.EvaluateAsync<int>("window.__fills")).Should().Be(0, "on a return the bars are just there");
         phone.ShouldHaveNoErrors();
     }
 }
