@@ -100,9 +100,10 @@
     }
 
     // "forward" and "back" push and pop within a tab. "next" and "prev" slide sideways: to a tab further right or
-    // left in the tab bar, or to a sibling page (`side`, from a segmented control). "tab" crossfades when the
-    // direction is unknown.
-    function navType(fromTab, fromDepth, toTab, toDepth, isBack, side) {
+    // left in the tab bar, or to a sibling page (`side`, from a segmented control). "swap" is the same page with
+    // other contents (`swap`: a chart range, another day, a row deleted), which crossfades in place. "tab" fades the
+    // new page in when the direction is unknown.
+    function navType(fromTab, fromDepth, toTab, toDepth, isBack, side, swap) {
         if (reduce.matches) {
             return "tab";
         }
@@ -112,7 +113,7 @@
             return from < 0 || to < 0 ? "tab" : to > from ? "next" : "prev";
         }
         if (fromDepth === toDepth) {
-            return side || "tab";
+            return side || (swap ? "swap" : "tab");
         }
         return isBack || toDepth < fromDepth ? "back" : "forward";
     }
@@ -185,7 +186,7 @@
     }
     scrollToFocus();
 
-    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant, same, posted, isCurrent }) {
+    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant, same, swap, posted, isCurrent }) {
         if (!isCurrent()) {
             return;
         }
@@ -211,8 +212,8 @@
             return;
         }
 
-        // The same page shown again after a change on it ("same") isn't arriving anywhere: no entrance (motion.js).
-        const nav = same ? "same" : navType(root.dataset.tab, Number(root.dataset.depth || 0), next.dataset.tab, Number(next.dataset.depth || 0), isBack, side);
+        // The same page shown again after a change on it ("same") isn't arriving anywhere: it crossfades in place.
+        const nav = same ? "same" : navType(root.dataset.tab, Number(root.dataset.depth || 0), next.dataset.tab, Number(next.dataset.depth || 0), isBack, side, swap);
         const keepTabbar = !!shell.querySelector(".tabbar") && !!nextShell.querySelector(".tabbar");
 
         const apply = () => {
@@ -314,7 +315,8 @@
                 scrollY = window.scrollY;
             }
             const same = finalUrl.pathname === location.pathname && finalUrl.search === location.search;
-            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant, same, posted: init?.method === "POST", isCurrent });
+            const swap = finalUrl.pathname === location.pathname && !same;
+            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant, same, swap, posted: init?.method === "POST", isCurrent });
         } catch (error) {
             if (!isCurrent()) {
                 return;

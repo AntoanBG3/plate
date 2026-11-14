@@ -9,6 +9,12 @@
     const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
     const snappy = () => getComputedStyle(root).getPropertyValue("--ease-snappy").trim() || "ease-out";
     const gentle = () => getComputedStyle(root).getPropertyValue("--ease-gentle").trim() || "ease-out";
+    // A duration token from tokens.css in milliseconds, so a timer here can't drift from the CSS it waits for.
+    const tokenMs = (name, fallback) => {
+        const value = getComputedStyle(root).getPropertyValue(name).trim();
+        const n = parseFloat(value);
+        return Number.isFinite(n) ? Math.round(n * (/\d\s*s$/.test(value) && !value.endsWith("ms") ? 1000 : 1)) : fallback;
+    };
 
     function store(kind, key, value) {
         try {
@@ -146,7 +152,7 @@
             }
             el.dataset.from = el.dataset.from || "0";
             countTo(el, Number(el.dataset.from), 0);
-            window.gymWhenSeen(el, () => countTo(el, Number(el.dataset.count), 900));
+            window.gymWhenSeen(el, () => countTo(el, Number(el.dataset.count), 700));
         });
         $$("[data-progress]", scope).forEach((el) => {
             const value = Math.max(0, Math.min(1, Number(el.dataset.progress)));
@@ -164,7 +170,7 @@
             window.gymWhenSeen(el, () => {
                 el.style.strokeDashoffset = `${end}`;
                 el.animate([{ strokeDashoffset: len }, { strokeDashoffset: end }],
-                    { duration: 1100, delay: 120, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+                    { duration: 800, delay: 60, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
             });
         });
         $$("[data-draw]", scope).forEach((el) => {
@@ -177,7 +183,7 @@
             window.gymWhenSeen(el, () => {
                 el.style.strokeDashoffset = "0";
                 el.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
-                    { duration: 900, delay: 250, easing: "cubic-bezier(.3,.7,.2,1)", fill: "backwards" });
+                    { duration: 700, delay: 100, easing: "cubic-bezier(.3,.7,.2,1)", fill: "backwards" });
             });
         });
     }
@@ -212,30 +218,34 @@
         });
     }
 
+    // Bars (.meter, app.css) fill only while their page has this class: on its first sight, not on every return.
+    function markFirstSight(main, first) {
+        main.classList.toggle("is-first-sight", first);
+        if (first) {
+            setTimeout(() => main.classList.remove("is-first-sight"), 1000);
+        }
+    }
+
     const firstLoad = firstSight();
     reveal(document, firstLoad);
+    if (document.getElementById("main")) {
+        markFirstSight(document.getElementById("main"), firstLoad);
+    }
     if (firstLoad && document.getElementById("main")) {
         riseBelowFold(document.getElementById("main"));
     }
 
-    // After a soft navigation (nav.js) the new page needs its own title binding and first-sight animations.
-    document.addEventListener("gym:page", (event) => {
+    // After a soft navigation (nav.js) the new page needs its own title binding and first-sight animations. The page
+    // transition is the entrance; the blocks inside a page that slides or fades in don't move as well.
+    document.addEventListener("gym:page", () => {
         bindLargeTitle();
         const main = document.getElementById("main");
         const first = firstSight();
         reveal(main, first);
+        markFirstSight(main, first);
         if (first) {
             riseBelowFold(main);
         }
-
-        // New content rises in, first eight blocks staggered. Not on Back, which should feel like returning, nor on
-        // a sideways slide, which already moves the whole page.
-        if (reduce.matches || (event.detail.nav !== "forward" && event.detail.nav !== "tab")) {
-            return;
-        }
-        Array.from(main.children).slice(0, 8).forEach((el, i) => el.style.setProperty("--i", String(i)));
-        main.classList.add("is-entering");
-        setTimeout(() => main.classList.remove("is-entering"), 600);
     });
 
     // ---- things that appear or leave: htmx rows, list items ----
@@ -333,7 +343,7 @@
                 sheet.hidden = true;
             }
         };
-        reduce.matches ? done() : setTimeout(done, 440);
+        reduce.matches ? done() : setTimeout(done, tokenMs("--dur-sheet-out", 260));
         if (lastFocus && lastFocus.focus) {
             lastFocus.focus({ preventScroll: true });
         }
@@ -596,7 +606,7 @@
             done();
             return;
         }
-        toastEl.animate([{ opacity: 1 }, { opacity: 0, transform: "translateY(12px)" }], { duration: 220, easing: "ease-in" })
+        toastEl.animate([{ opacity: 1 }, { opacity: 0, transform: "translateY(12px)" }], { duration: 160, easing: "ease-in" })
             .finished.then(done, done);
     }
 
@@ -689,7 +699,7 @@
     // Give anything with data-spring a spring entrance the first time the page shows (used by sheets' contents).
     window.gymSpring = (el, from) => {
         if (!reduce.matches) {
-            el.animate([from, { transform: "none", opacity: 1 }], { duration: 440, easing: gentle() });
+            el.animate([from, { transform: "none", opacity: 1 }], { duration: tokenMs("--dur-sheet", 380), easing: gentle() });
         }
     };
 })();
