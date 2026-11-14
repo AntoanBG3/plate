@@ -13,5 +13,6 @@ Tools need `playwright-core` and Google Chrome:
 node design-samples/tools/build.mjs
 node design-samples/tools/sample-shots.mjs [--video]    # screenshots/ and screenshots/motion/*.webm
 node design-samples/tools/motion-frames.mjs             # screenshots/motion/*.png, animations slowed 10×
+node design-samples/tools/motion-record.mjs <outDir>    # the running app: tour video, slowed frame strips and animation timelines
 node design-samples/tools/check.mjs                     # clicks through each sample, reports script errors
 ```

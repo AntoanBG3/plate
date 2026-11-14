@@ -161,8 +161,11 @@ public class UntestedAreasTests(E2EFixture app) : IClassFixture<E2EFixture>
 
         await phone.LogSetAsync(phone.Page.Locator(".rows.working .set-row").First, "60", "10");
         await phone.Page.WaitForFunctionAsync("() => window.__setSaved === true");
+        // The banner waits 1.5 s while online, so a set that is sent straight away never shows it.
+        (await phone.Page.Locator("#queue-status").IsHiddenAsync()).Should().BeTrue();
+        await phone.Page.Clock.FastForwardAsync(1_500);
         (await phone.Page.Locator("#queue-status").InnerTextAsync()).Should().Contain("1 set is saved on this phone");
-        await phone.Page.Clock.FastForwardAsync(15_001);
+        await phone.Page.Clock.FastForwardAsync(13_501);
         await phone.Page.WaitForFunctionAsync("() => window.__setAborted === true");
         await phone.Page.EvaluateAsync("() => window.dispatchEvent(new Event('online'))");
         await phone.Page.Locator("#queue-status").WaitForAsync(new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden });

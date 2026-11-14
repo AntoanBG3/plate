@@ -232,9 +232,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .check-input { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; margin: 0; border-radius: 50%; flex: none;
     box-shadow: inset 0 0 0 1.75px var(--label-3); display: grid; place-items: center; cursor: pointer;
     transition: background-color var(--dur-small) var(--ease-out), box-shadow var(--dur-small) var(--ease-out); }
-.check-input::after { content: ""; width: 6px; height: 11px; border: solid var(--on-accent); border-width: 0 2.5px 2.5px 0; transform: translateY(-1px) rotate(45deg) scale(0); transition: transform 300ms var(--ease-snappy); }
+.check-input::after { content: ""; width: 6px; height: 11px; border: solid var(--on-accent); border-width: 0 2.5px 2.5px 0; transform: translateY(-1px) rotate(45deg) scale(0.6); opacity: 0; transition: transform 200ms var(--ease-snappy), opacity 100ms var(--ease-out); }
 .check-input:checked { background: var(--accent); box-shadow: none; }
-.check-input:checked::after { transform: translateY(-1px) rotate(45deg) scale(1); }
+.check-input:checked::after { transform: translateY(-1px) rotate(45deg) scale(1); opacity: 1; }
 
 /* Segmented control. The selected thumb morphs between pages with a view transition. */
 .segmented { display: flex; padding: 2px; border-radius: 9px; background: var(--fill); gap: 2px; }
@@ -249,7 +249,7 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 /* Reaches over the control's 2 px padding so each segment is 44 px tall to tap. */
 .segment::before { content: ""; position: absolute; inset: -2px -1px; }
 .segment:has(:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
-.segment { cursor: pointer; transition: background-color var(--dur-small) var(--ease-out), box-shadow var(--dur-small) var(--ease-out), transform 360ms var(--ease-snappy); }
+.segment { cursor: pointer; transition: background-color var(--dur-small) var(--ease-out), box-shadow var(--dur-small) var(--ease-out), transform var(--dur-page) var(--ease-snappy); }
 .segmented-wrap { padding: var(--s-1) 0 var(--s-4); }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px var(--s-2); border-radius: 999px; font-size: var(--text-caption); font-weight: var(--weight-semibold); white-space: nowrap; background: var(--fill); color: var(--label-2); }
@@ -338,7 +338,7 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .mini-macros > div { display: flex; flex-direction: column; justify-content: flex-end; }
 .switch-row { justify-content: space-between; min-height: 44px; cursor: pointer; }
 .switch { appearance: none; flex: none; width: 51px; height: 31px; border-radius: 16px; background: var(--fill-strong); position: relative; cursor: pointer; transition: background var(--dur-small) var(--ease-out); }
-.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2); transition: transform var(--dur-small) var(--ease-out); }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2); transition: transform 220ms var(--ease-snappy); }
 .field-row .switch { flex: none; width: 51px; min-width: 51px; height: 31px; min-height: 0; padding: 0; margin: 0; border: 0; text-align: initial; }
 .switch:checked { background: var(--success); }
 .switch:checked::after { transform: translateX(20px); }
@@ -398,7 +398,9 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .meter.small i { background: var(--label); }
 .meter.over i { background: var(--warning); }
 .meter b { position: absolute; top: 0; bottom: 0; left: calc(var(--at) * 100%); width: 2px; margin-left: -1px; background: var(--surface); }
-.meter i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transform-origin: left; transform: scaleX(var(--p)); animation: meter-in 900ms var(--ease-out) 120ms backwards; }
+.meter i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transform-origin: left; transform: scaleX(var(--p)); }
+/* Bars fill on a page's first sight in a session (motion.js), like the rings and counts; after that they are just there. */
+.is-first-sight .meter i { animation: meter-in 600ms var(--ease-out) 60ms backwards; }
 @keyframes meter-in { from { transform: scaleX(0); } }
 .macro-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
 .macro-value { font-size: var(--text-title-3); font-weight: var(--weight-semibold); }
@@ -597,7 +599,7 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
     position: relative; z-index: 1;
     display: grid; grid-template-columns: 1.6rem 1fr 1fr 44px; gap: var(--s-3); align-items: center;
     padding: var(--s-2) var(--s-3) var(--s-2) var(--s-4); background: var(--surface);
-    touch-action: pan-y; transition: transform 380ms var(--ease-snappy);
+    touch-action: pan-y; transition: transform var(--dur-page) var(--ease-snappy);
 }
 .rows > .set-row + .set-row .set-content::before { content: ""; position: absolute; top: 0; left: calc(var(--s-4) + 1.6rem + var(--s-3)); right: 0; border-top: 0.5px solid var(--separator); }
 .warmups:not(:empty) + .working > .set-row:first-child .set-content::before { content: ""; position: absolute; top: 0; left: calc(var(--s-4) + 1.6rem + var(--s-3)); right: 0; border-top: 0.5px solid var(--separator); }
@@ -623,14 +625,14 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
     transition: background-color var(--dur-small) var(--ease-out), box-shadow var(--dur-small) var(--ease-out);
 }
 .done-btn svg { width: 18px; height: 18px; fill: none; stroke: var(--on-accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.done-btn .check { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 260ms var(--ease-out) 40ms; }
+.done-btn .check { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 200ms var(--ease-out); }
 .set-row.done .disc, .set-row.pending .disc { background: var(--accent); box-shadow: none; }
 .set-row.done .check, .set-row.pending .check { stroke-dashoffset: 0; }
 .set-row.done .set-field { background: transparent; }
-.set-row.just-done .done-btn { animation: done-pop 420ms var(--ease-snappy); }
+.set-row.just-done .done-btn { animation: done-pop 300ms var(--ease-snappy); }
 .set-row.pending .set-content { transition: background-color var(--dur-small) var(--ease-out); }
 .htmx-added .set-content { opacity: 0; }
-.set-content { transition: transform 380ms var(--ease-snappy), opacity var(--dur-small) var(--ease-out); }
+.set-content { transition: transform var(--dur-page) var(--ease-snappy), opacity var(--dur-small) var(--ease-out); }
 .set-row.htmx-swapping .set-content { opacity: 0; transform: translateX(-100%); transition: transform 180ms var(--ease-in-out), opacity 180ms var(--ease-out); }
 .set-row.pending .set-field { background: transparent; }
 .set-row.pending .set-field input { opacity: 1; -webkit-text-fill-color: var(--label); }
@@ -677,7 +679,7 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
 .set-row.is-open .set-delete, .set-row.is-swiping .set-delete { visibility: visible; }
 /* Food rows swipe the same way; the button is a form so the day's totals and Undo come back with the page. */
 [data-swipe-row] { position: relative; overflow: hidden; }
-[data-swipe-row] .swipe-content { position: relative; z-index: 1; background: var(--surface); touch-action: pan-y; transition: transform 380ms var(--ease-snappy); -webkit-user-drag: none; user-select: none; }
+[data-swipe-row] .swipe-content { position: relative; z-index: 1; background: var(--surface); touch-action: pan-y; transition: transform var(--dur-page) var(--ease-snappy); -webkit-user-drag: none; user-select: none; }
 [data-swipe-row] .set-delete-form { position: absolute; inset: 0 0 0 auto; width: 88px; margin: 0; }
 [data-swipe-row] .set-delete-form .set-delete { position: static; width: 100%; height: 100%; }
 [data-swipe-row].is-open .set-delete, [data-swipe-row].is-swiping .set-delete { visibility: visible; }
@@ -686,36 +688,25 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
 .ex-actions button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--tap); color: var(--accent-text); font-size: var(--text-subhead); }
 .ex-actions > * + * { border-left: 0.5px solid var(--separator); }
 .ex-actions .icon { width: 18px; height: 18px; }
-@keyframes done-pop { from { transform: scale(0.84); } to { transform: scale(1); } }
+@keyframes done-pop { from { transform: scale(0.88); } to { transform: scale(1); } }
 
-/* Context menu: grows out of its trigger. */
+/* Context menu: grows a little out of its trigger and is there within 180 ms; it leaves faster than it came. Opened
+   many times a day, so no more than that: it starts near full size (never from nothing) and its items don't stagger. */
 .menu-wrap { position: relative; }
 .menu {
     position: absolute; right: 0; top: calc(100% + 4px); z-index: 25; min-width: 230px;
     background: var(--material); -webkit-backdrop-filter: saturate(180%) blur(30px); backdrop-filter: saturate(180%) blur(30px);
     border-radius: var(--r-md); box-shadow: var(--shadow-float); overflow: hidden;
-    transform-origin: top right; transform: scale(0.6); opacity: 0; pointer-events: none;
+    transform-origin: top right; transform: scale(0.94); opacity: 0; pointer-events: none;
     /* Hidden once the close animation ends, so a closed menu can't be tabbed to or read out (apple.com's nav does the
        same with visibility step-end); visible from the first frame when it opens. */
     visibility: hidden;
-    transition: transform 300ms var(--ease-snappy), opacity 160ms var(--ease-out), visibility 0s linear 300ms;
+    transition: transform var(--dur-menu-out) var(--ease-out), opacity var(--dur-menu-out) var(--ease-out), visibility 0s linear var(--dur-menu-out);
 }
 .menu.is-open {
     transform: none; opacity: 1; pointer-events: auto; visibility: visible;
-    transition: transform 300ms var(--ease-snappy), opacity 160ms var(--ease-out), visibility 0s;
+    transition: transform var(--dur-menu) var(--ease-out), opacity var(--dur-tap) var(--ease-out), visibility 0s;
 }
-/* Items follow the panel in, a little apart; closing has no stagger. Items past the sixth share the last step (the exercise card menu has seven). */
-.menu > * { opacity: 0; transform: translateY(-4px); transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out); }
-.menu.is-open > * {
-    opacity: 1; transform: none;
-    transition: opacity 200ms var(--ease-out) calc(40ms + var(--i, 0) * 18ms), transform 200ms var(--ease-out) calc(40ms + var(--i, 0) * 18ms);
-}
-.menu > :nth-child(2) { --i: 1; }
-.menu > :nth-child(3) { --i: 2; }
-.menu > :nth-child(4) { --i: 3; }
-.menu > :nth-child(5) { --i: 4; }
-.menu > :nth-child(6) { --i: 5; }
-.menu > :nth-child(n+7) { --i: 6; }
 .menu form + form, .menu > * + * { border-top: 0.5px solid var(--separator); }
 .menu button, .menu a { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: var(--s-4); min-height: var(--tap); padding: 0 var(--s-4); color: var(--label); text-align: left; }
 .menu .danger { color: var(--destructive); }
@@ -790,12 +781,14 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
 .sheet { position: fixed; inset: 0; z-index: 70; }
 /* "Are you sure" can open over another sheet (Delete saved meal in the food sheet); it must sit on top. */
 #confirm-sheet { z-index: 75; }
-.sheet-scrim { position: absolute; inset: 0; background: var(--scrim); opacity: 0; transition: opacity var(--dur-sheet) var(--ease-out); }
+/* Up in 380 ms, away in 260 ms, on a curve that never overshoots: a sheet that springs past its place shows the
+   page under its bottom edge. The transition on the closed state is the one that runs when closing. */
+.sheet-scrim { position: absolute; inset: 0; background: var(--scrim); opacity: 0; transition: opacity var(--dur-sheet-out) var(--ease-out); }
 .sheet-panel {
     position: absolute; left: 0; right: 0; bottom: 0; max-width: 640px; margin: 0 auto; max-height: calc(100dvh - env(safe-area-inset-top) - 24px); overflow: auto;
     background: var(--surface); border-radius: var(--r-sheet) var(--r-sheet) 0 0;
     padding: var(--s-2) var(--s-5) calc(env(safe-area-inset-bottom) + var(--s-6));
-    transform: translateY(100%); transition: transform var(--dur-sheet) var(--ease-gentle);
+    transform: translateY(100%); transition: transform var(--dur-sheet-out) var(--ease-out);
     overscroll-behavior: contain;
 }
 .sheet-panel.full { top: calc(env(safe-area-inset-top) + 12px); max-height: none; padding-left: 0; padding-right: 0; }
@@ -803,13 +796,15 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
 .sheet-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--tap); margin-bottom: var(--s-2); touch-action: none; }
 .sheet-head .sheet-title { font-weight: var(--weight-semibold); text-align: center; }
 .sheet-head .sheet-close { justify-self: end; min-height: var(--tap); padding: 0 var(--s-2); color: var(--accent-text); font-weight: var(--weight-semibold); }
-body.sheet-open .sheet-scrim { opacity: var(--sheet-progress, 1); }
-body.sheet-open .sheet-panel { transform: none; }
+body.sheet-open .sheet-scrim { opacity: var(--sheet-progress, 1); transition-duration: var(--dur-medium); }
+body.sheet-open .sheet-panel { transform: none; transition-duration: var(--dur-sheet); }
 body.sheet-open { overflow: hidden; }
-.app-scale { transform-origin: 50% 0; transition: transform var(--dur-sheet) var(--ease-gentle), border-radius var(--dur-sheet) var(--ease-gentle), filter var(--dur-sheet) var(--ease-out); }
+/* A sheet on its way out is still in the page until its animation ends; taps go to what is under it. */
+body:not(.sheet-open) .sheet { pointer-events: none; }
+.app-scale { transform-origin: 50% 0; transition: transform var(--dur-sheet-out) var(--ease-out), border-radius var(--dur-sheet-out) var(--ease-out); }
 body.sheet-open .app-scale {
     transform: translateY(calc(env(safe-area-inset-top) + 8px)) scale(calc(0.94 + 0.06 * (1 - var(--sheet-progress, 1))));
-    border-radius: var(--r-md); overflow: hidden;
+    border-radius: var(--r-md); overflow: hidden; transition-duration: var(--dur-sheet);
 }
 
 /* ---------- charts ---------- */
@@ -830,7 +825,7 @@ body.sheet-open .app-scale {
 
 /* Tap feedback: a quick press, released with the snappy spring. */
 .btn, .tap, .tab, .icon-btn, .done-btn, .segment, .rest-btn, .topbar-back, .topbar-action, .ex-actions button {
-    transition: transform 360ms var(--ease-snappy), background-color var(--dur-small) var(--ease-out), color var(--dur-small) var(--ease-out), opacity var(--dur-small) var(--ease-out);
+    transition: transform var(--dur-page) var(--ease-snappy), background-color var(--dur-small) var(--ease-out), color var(--dur-small) var(--ease-out), opacity var(--dur-small) var(--ease-out);
 }
 .is-pressed { transform: scale(0.97); transition-duration: var(--dur-tap); transition-timing-function: var(--ease-out); }
 .btn.is-pressed, .tap.is-pressed { filter: brightness(0.94); }
@@ -838,7 +833,8 @@ body.sheet-open .app-scale {
 
 /* Page transitions: tabs and sibling pages slide sideways, deeper pages push in from the right, going up pops back. */
 /* Page changes animate the content and the top bar; the tab bar and the rest of the shell stay still.
-   html[data-nav] is "next", "prev", "forward", "back" or "tab" (nav.js for soft navigation, motion.js for full loads). */
+   html[data-nav] is "next", "prev", "forward", "back", "tab", "swap" or "same" (nav.js for soft navigation,
+   motion.js for full loads). A page that slides in is its own entrance: nothing inside it moves as well. */
 @view-transition { navigation: auto; }
 /* Taps during a transition go to the new page underneath; the overlay used to swallow them for ~340 ms. */
 ::view-transition { pointer-events: none; }
@@ -846,7 +842,8 @@ body.sheet-open .app-scale {
 #main { view-transition-name: page; background: var(--bg); min-height: 100dvh; box-sizing: border-box; }
 .large-title { view-transition-name: large-title; }
 .topbar { view-transition-name: topbar; }
-::view-transition-group(*) { animation-duration: var(--dur-page); animation-timing-function: var(--ease-gentle); }
+/* The snappy spring: a full-width slide is within 4 px of its place after 160 ms and never visibly past it. */
+::view-transition-group(*) { animation-duration: var(--dur-page); animation-timing-function: var(--ease-snappy); }
 /* The shell swaps instantly; showing both root snapshots at once would add them into a washed-out frame. */
 ::view-transition-group(root), ::view-transition-new(root) { animation: none; }
 ::view-transition-old(root) { display: none; }
@@ -855,44 +852,46 @@ body.sheet-open .app-scale {
    control's thumb would fly across on its own while the page slides, so it moves with the page here. */
 html:is([data-nav="next"], [data-nav="prev"])::view-transition-group(page),
 html:is([data-nav="next"], [data-nav="prev"])::view-transition-group(large-title) { animation: none; }
-html[data-nav="next"]::view-transition-old(page), html[data-nav="next"]::view-transition-old(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-slide-out-left; }
-html[data-nav="next"]::view-transition-new(page), html[data-nav="next"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-push-in; }
-html[data-nav="prev"]::view-transition-old(page), html[data-nav="prev"]::view-transition-old(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-pop-out; }
-html[data-nav="prev"]::view-transition-new(page), html[data-nav="prev"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-slide-in-left; }
+html[data-nav="next"]::view-transition-old(page), html[data-nav="next"]::view-transition-old(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-slide-out-left; }
+html[data-nav="next"]::view-transition-new(page), html[data-nav="next"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-push-in; }
+html[data-nav="prev"]::view-transition-old(page), html[data-nav="prev"]::view-transition-old(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-pop-out; }
+html[data-nav="prev"]::view-transition-new(page), html[data-nav="prev"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-slide-in-left; }
 html:is([data-nav="next"], [data-nav="prev"]) .segmented[data-thumb] .segment:is(.is-active, :has(:checked)) { view-transition-name: none; }
 
-/* Tabs when the direction is unknown: quick out, springy in. */
+/* Another page when the direction is unknown: the new one fades in over the old, rising a little. */
 html[data-nav="tab"]::view-transition-group(page) { animation: none; }
-html[data-nav="tab"]::view-transition-old(page) { animation: var(--dur-tab-out) var(--ease-in-out) both vt-tab-out; }
-html[data-nav="tab"]::view-transition-new(page) { animation: var(--dur-tab-in) var(--ease-snappy) 40ms both vt-tab-in; }
+html[data-nav="tab"]::view-transition-old(page) { animation: var(--dur-swap) var(--ease-out) both vt-fade-out; }
+html[data-nav="tab"]::view-transition-new(page) { animation: var(--dur-medium) var(--ease-out) both vt-tab-in; }
+
+/* The same page again ("same": a change saved on it) or with other contents ("swap": a chart range, another day,
+   a deleted row): old and new crossfade in place, so what didn't change stays still and nothing blinks. The top bar
+   and title are the same ones and are left alone; a segmented control's thumb still slides at its own pace. */
+html:is([data-nav="same"], [data-nav="swap"])::view-transition-group(*) { animation-duration: var(--dur-swap); animation-timing-function: var(--ease-out); }
+html:is([data-nav="same"], [data-nav="swap"])::view-transition-group(segment-thumb) { animation-duration: var(--dur-page); animation-timing-function: var(--ease-snappy); }
 
 /* Push and pop: the page slides like a navigation stack; titles crossfade. */
 html[data-nav="forward"]::view-transition-group(page), html[data-nav="back"]::view-transition-group(page) { animation: none; }
-html[data-nav="forward"]::view-transition-old(page) { animation: var(--dur-page) var(--ease-gentle) both vt-push-out; }
-html[data-nav="forward"]::view-transition-new(page) { animation: var(--dur-page) var(--ease-gentle) both vt-push-in; }
-html[data-nav="back"]::view-transition-old(page) { animation: var(--dur-page) var(--ease-gentle) both vt-pop-out; z-index: 2; }
-html[data-nav="back"]::view-transition-new(page) { animation: var(--dur-page) var(--ease-gentle) both vt-pop-in; }
-html[data-nav]::view-transition-old(topbar) { animation: 120ms var(--ease-out) both vt-fade-out; }
-html[data-nav]::view-transition-new(topbar) { animation: 200ms var(--ease-out) 60ms both vt-fade-in; }
+html[data-nav="forward"]::view-transition-old(page) { animation: var(--dur-page) var(--ease-snappy) both vt-push-out; }
+html[data-nav="forward"]::view-transition-new(page) { animation: var(--dur-page) var(--ease-snappy) both vt-push-in; }
+html[data-nav="back"]::view-transition-old(page) { animation: var(--dur-page) var(--ease-snappy) both vt-pop-out; z-index: 2; }
+html[data-nav="back"]::view-transition-new(page) { animation: var(--dur-page) var(--ease-snappy) both vt-pop-in; }
+html:is([data-nav="forward"], [data-nav="back"], [data-nav="next"], [data-nav="prev"], [data-nav="tab"])::view-transition-old(topbar) { animation: 100ms var(--ease-out) both vt-fade-out; }
+html:is([data-nav="forward"], [data-nav="back"], [data-nav="next"], [data-nav="prev"], [data-nav="tab"])::view-transition-new(topbar) { animation: 160ms var(--ease-out) 40ms both vt-fade-in; }
 html[data-nav="forward"]::view-transition-group(large-title), html[data-nav="back"]::view-transition-group(large-title) { animation: none; }
-html[data-nav="forward"]::view-transition-old(large-title), html[data-nav="back"]::view-transition-old(large-title) { animation: 120ms var(--ease-out) both vt-fade-out; }
-html[data-nav="forward"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-push-in; }
+html[data-nav="forward"]::view-transition-old(large-title), html[data-nav="back"]::view-transition-old(large-title) { animation: 100ms var(--ease-out) both vt-fade-out; }
+html[data-nav="forward"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-push-in; }
 /* On Back the returning title travels with its page instead of appearing in place while the page slides in. */
-html[data-nav="back"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-gentle) both vt-pop-in; }
-@keyframes vt-tab-out { to { opacity: 0; transform: scale(0.985); } }
-@keyframes vt-tab-in { from { opacity: 0; transform: translateY(8px); } }
+html[data-nav="back"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-pop-in; }
+@keyframes vt-tab-in { from { opacity: 0; transform: translateY(6px); } }
 
 /* The tapped tab's icon gives a small spring the moment it becomes active. */
-.tab.is-active .icon { animation: tab-pop 360ms var(--ease-snappy); }
-@keyframes tab-pop { 0% { transform: scale(1); } 35% { transform: scale(0.86); } 100% { transform: scale(1); } }
-
-/* The first blocks of a newly shown page rise in, staggered; motion.js sets --i. */
-#main.is-entering > :not(.is-pending-rise, .is-rising) { animation: appear 320ms var(--ease-snappy) both; animation-delay: calc(var(--i, 0) * 24ms); }
+.tab.is-active .icon { animation: tab-pop 300ms var(--ease-snappy); }
+@keyframes tab-pop { 0% { transform: scale(1); } 35% { transform: scale(0.88); } 100% { transform: scale(1); } }
 
 /* Below-the-fold blocks on a page's first sight (motion.js): hidden until they come into view, then they rise in,
    staggered by --rise-delay. will-change only while waiting or moving, as apple.com does. */
 .is-pending-rise { opacity: 0; transform: translateY(16px); will-change: opacity, transform; }
-.is-rising { animation: rise-in 420ms var(--ease-gentle) var(--rise-delay, 0ms) both; will-change: opacity, transform; }
+.is-rising { animation: rise-in 320ms var(--ease-out) var(--rise-delay, 0ms) both; will-change: opacity, transform; }
 @keyframes rise-in { from { opacity: 0; transform: translateY(16px); } }
 @keyframes vt-fade-out { to { opacity: 0; } }
 @keyframes vt-fade-in { from { opacity: 0; } }
@@ -906,22 +905,21 @@ html[data-nav="back"]::view-transition-new(large-title) { animation: var(--dur-p
 /* Things that appear: rows, banners, toasts. Added by motion.js with the Web Animations API; this is the CSS fallback. */
 @keyframes appear { from { opacity: 0; transform: translateY(6px); } }
 @keyframes rise { from { transform: translateY(calc(100% + 24px)); opacity: 0; } }
-.toast:not([hidden]) { animation: rise var(--dur-sheet) var(--ease-gentle); }
+.toast:not([hidden]) { animation: rise 300ms var(--ease-gentle); }
 .banner { animation: appear var(--dur-medium) var(--ease-out) both; }
-.rest-timer:not([hidden]) { animation: rise var(--dur-sheet) var(--ease-gentle); }
+.rest-timer:not([hidden]) { animation: rise 300ms var(--ease-gentle); }
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0s !important; transition-duration: 1ms !important; }
     .sheet-scrim, .toast, .topbar, .topbar-title { transition: opacity 150ms linear !important; }
     .menu { transition: opacity 150ms linear, visibility 0s linear 150ms !important; }
     .menu.is-open { transition: opacity 150ms linear, visibility 0s !important; }
-    .menu, .menu > *, .topbar-title { transform: none !important; }
-    .menu > * { transition-delay: 0s !important; }
+    .menu, .topbar-title { transform: none !important; }
     .is-pressed { transform: none !important; }
     ::view-transition-group(*) { animation-duration: 1ms !important; }
     ::view-transition-old(*) { animation: 150ms linear both vt-fade-out !important; }
     ::view-transition-new(*) { animation: 150ms linear both vt-fade-in !important; }
-    .tab.is-active .icon, #main.is-entering > * { animation: none; }
+    .tab.is-active .icon { animation: none; }
 }
 
 /* Compact controls get a 44 px hit area without changing how they look. */
@@ -945,7 +943,7 @@ html.is-navigating #main { opacity: 0.72; transition: opacity 160ms var(--ease-o
 
 .rate-row { display: flex; align-items: center; justify-content: flex-end; gap: var(--s-1); margin-top: var(--s-2); color: var(--label-2); }
 .rate-row > .footnote { margin-right: var(--s-1); }
-.rate-btn { display: inline-grid; place-items: center; width: var(--tap); height: var(--tap); flex: none; border-radius: 50%; color: var(--label-2); transition: background-color var(--dur-small) var(--ease-out), color var(--dur-small) var(--ease-out), transform 360ms var(--ease-snappy); }
+.rate-btn { display: inline-grid; place-items: center; width: var(--tap); height: var(--tap); flex: none; border-radius: 50%; color: var(--label-2); transition: background-color var(--dur-small) var(--ease-out), color var(--dur-small) var(--ease-out), transform var(--dur-page) var(--ease-snappy); }
 .rate-btn .icon { width: 20px; height: 20px; }
 .rate-btn:active { transform: scale(0.9); }
 .rate-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); }
