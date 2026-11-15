@@ -75,9 +75,10 @@ public class ConfirmFoodsTests(E2EFixture app) : IClassFixture<E2EFixture>
 
         var row = phone.Page.Locator(".result").Nth(1);
         await row.Locator(".check-input").UncheckAsync();
-        await phone.Page.WaitForTimeoutAsync(400);
-        var opacity = await row.Locator(".result-amount").EvaluateAsync<string>("e => getComputedStyle(e).opacity");
-        double.Parse(opacity, System.Globalization.CultureInfo.InvariantCulture).Should().BeLessThan(0.6);
+        // Until the fade has run, however long the machine takes to start it: after a fixed 400 ms a GitHub runner
+        // was still at 0.83 (2026-11-15).
+        var amount = await row.Locator(".result-amount").ElementHandleAsync();
+        await phone.Page.WaitForFunctionAsync("e => Number(getComputedStyle(e).opacity) < 0.6", amount, new() { Timeout = 10_000 });
         phone.ShouldHaveNoErrors();
     }
 }
