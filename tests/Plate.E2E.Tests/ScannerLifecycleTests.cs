@@ -20,7 +20,9 @@ public class ScannerLifecycleTests(E2EFixture app) : IClassFixture<E2EFixture>
                 const stream = new MediaStream();
                 stream.getTracks = () => [1, 2].map(() => ({ stop() { probe.stops++; } }));
                 document.querySelector('#scanner video').play = async () => { probe.plays++; };
-                Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
+                // On the prototype: WebKit keeps the navigator.mediaDevices wrapper only while something listens for
+                // devicechange, so a stub set on the instance is lost with it at the next garbage collection.
+                Object.defineProperty(MediaDevices.prototype, 'getUserMedia', {
                     value: () => new Promise(resolve => { probe.grant = () => resolve(stream); })
                 });
             }
