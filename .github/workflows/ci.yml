@@ -10,7 +10,10 @@ permissions:
 jobs:
   test:
     name: ${{ matrix.name }}
-    runs-on: ubuntu-latest
+    # Pinned: when ubuntu-latest moved to 26.04 (between 2026-11-08 and 2026-11-14) WebKit began to drop taps and
+    # stall there, failing a different browser test on almost every run. 24.04 was the last image with green runs.
+    # Move to 26.04 when a Playwright release with a steadier WebKit for it passes several runs in a row.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

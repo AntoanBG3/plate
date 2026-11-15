@@ -24,10 +24,20 @@ public class ConfirmFoodsTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await row.Locator("[data-using]").TextContentAsync()).Should().Be($"Database: {matched}");
         (await row.Locator("[data-status]").TextContentAsync()).Should().Be("cooked");
 
-        await row.Locator("[data-change-food]").TapAsync();
+        // The sheet opens already searching for the row's name. Typing waits for that answer: the tap's click sets the
+        // field and starts that search, and text typed before the click has run would be replaced by it.
+        await phone.Page.RunAndWaitForResponseAsync(() => row.Locator("[data-change-food]").TapAsync(), r => r.Url.Contains("/food/candidates"));
         var search = phone.Page.Locator("#change-food-sheet [data-change-search]");
-        // The sheet opens already searching for the row's name; wait for the answer to this search, not that one.
-        await phone.Page.RunAndWaitForResponseAsync(() => search.FillAsync("brown rice"), r => r.Url.Contains("/food/candidates") && r.Url.Contains("brown"));
+        try
+        {
+            await phone.Page.RunAndWaitForResponseAsync(() => search.FillAsync("brown rice"), r => r.Url.Contains("/food/candidates") && r.Url.Contains("brown"));
+        }
+        catch (TimeoutException e)
+        {
+            // Seen on GitHub's runners in WebKit only (2026-11-15), never here: say what the page did instead.
+            var searches = string.Join(", ", phone.Requests.Where(r => r.Contains("/food/candidates")));
+            throw new TimeoutException($"No answer to the typed search. Field: \"{await search.InputValueAsync()}\". Searches sent: {searches}", e);
+        }
         await phone.Page.WaitForFunctionAsync("() => !document.querySelector('#change-food-results.htmx-settling, #change-food-results.htmx-swapping')");
         var first = phone.Page.Locator("#change-food-results [data-candidate]").First;
         await first.WaitForAsync(new() { Timeout = 5000 });
@@ -65,9 +75,10 @@ public class ConfirmFoodsTests(E2EFixture app) : IClassFixture<E2EFixture>
 
         var row = phone.Page.Locator(".result").Nth(1);
         await row.Locator(".check-input").UncheckAsync();
-        await phone.Page.WaitForTimeoutAsync(400);
-        var opacity = await row.Locator(".result-amount").EvaluateAsync<string>("e => getComputedStyle(e).opacity");
-        double.Parse(opacity, System.Globalization.CultureInfo.InvariantCulture).Should().BeLessThan(0.6);
+        // Until the fade has run, however long the machine takes to start it: after a fixed 400 ms a GitHub runner
+        // was still at 0.83 (2026-11-15).
+        var amount = await row.Locator(".result-amount").ElementHandleAsync();
+        await phone.Page.WaitForFunctionAsync("e => Number(getComputedStyle(e).opacity) < 0.6", amount, new() { Timeout = 10_000 });
         phone.ShouldHaveNoErrors();
     }
 }
