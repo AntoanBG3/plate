@@ -99,11 +99,11 @@
         return Array.from(document.querySelectorAll(".tabbar .tab")).findIndex((t) => t.getAttribute("href") === "/" + tab);
     }
 
-    // "forward" and "back" push and pop within a tab. "next" and "prev" slide sideways: to a tab further right or
-    // left in the tab bar, or to a sibling page (`side`, from a segmented control). "swap" is the same page with
-    // other contents (`swap`: a chart range, another day, a row deleted), which crossfades in place. "tab" fades the
-    // new page in when the direction is unknown.
-    function navType(fromTab, fromDepth, toTab, toDepth, isBack, side, swap) {
+    // "forward" and "back" push and pop within a tab. "next" and "prev" slide sideways to a tab further right or
+    // left in the tab bar. "swap" is the same page with other contents (`swap`: a chart range, another day, another
+    // way to add food, a row deleted), which crossfades in place. "tab" fades the new page in when the direction is
+    // unknown.
+    function navType(fromTab, fromDepth, toTab, toDepth, isBack, swap) {
         if (reduce.matches) {
             return "tab";
         }
@@ -112,23 +112,14 @@
             const to = tabIndex(toTab);
             return from < 0 || to < 0 ? "tab" : to > from ? "next" : "prev";
         }
+        // A swap is in place whatever the depths say: an error can show the same page at a deeper address.
+        if (swap) {
+            return "swap";
+        }
         if (fromDepth === toDepth) {
-            return side || (swap ? "swap" : "tab");
+            return "tab";
         }
         return isBack || toDepth < fromDepth ? "back" : "forward";
-    }
-
-    // In a segmented control that switches between sibling pages (data-slide), a segment to the right of the
-    // active one is the next page over. Null for any other link, including filters like a chart range.
-    function segmentSide(a) {
-        const control = a.closest(".segmented[data-slide]");
-        if (!control) {
-            return null;
-        }
-        const segments = Array.from(control.querySelectorAll("a.segment"));
-        const from = segments.findIndex((s) => s.classList.contains("is-active"));
-        const to = segments.indexOf(a);
-        return from < 0 || to < 0 || from === to ? null : to > from ? "next" : "prev";
     }
 
     function loadScript(src) {
@@ -186,7 +177,7 @@
     }
     scrollToFocus();
 
-    async function swapIn(doc, finalUrl, { push, isBack, scrollY, side, instant, same, swap, posted, isCurrent }) {
+    async function swapIn(doc, finalUrl, { push, isBack, scrollY, instant, same, swap, posted, isCurrent }) {
         if (!isCurrent()) {
             return;
         }
@@ -213,7 +204,7 @@
         }
 
         // The same page shown again after a change on it ("same") isn't arriving anywhere: it crossfades in place.
-        const nav = same ? "same" : navType(root.dataset.tab, Number(root.dataset.depth || 0), next.dataset.tab, Number(next.dataset.depth || 0), isBack, side, swap);
+        const nav = same ? "same" : navType(root.dataset.tab, Number(root.dataset.depth || 0), next.dataset.tab, Number(next.dataset.depth || 0), isBack, swap);
         const keepTabbar = !!shell.querySelector(".tabbar") && !!nextShell.querySelector(".tabbar");
 
         const apply = () => {
@@ -271,7 +262,7 @@
         await transition.updateCallbackDone;
     }
 
-    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, side = null, instant = false, keepScroll = false, fallback = () => { location.href = url.href; } } = {}) {
+    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, instant = false, keepScroll = false, inPlace = false, fallback = () => { location.href = url.href; } } = {}) {
         const generation = ++navigation;
         const isCurrent = () => generation === navigation;
         // Remember where we were, for Back.
@@ -316,8 +307,9 @@
                 scrollY = window.scrollY;
             }
             const same = finalUrl.pathname === location.pathname && finalUrl.search === location.search;
-            const swap = finalUrl.pathname === location.pathname && !same;
-            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, side, instant, same, swap, posted: init?.method === "POST", isCurrent });
+            // `inPlace`: the link says so itself (data-swap), for a page that is also shown at other addresses.
+            const swap = (inPlace || finalUrl.pathname === location.pathname) && !same;
+            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, instant, same, swap, posted: init?.method === "POST", isCurrent });
         } catch (error) {
             if (!isCurrent()) {
                 return;
@@ -347,7 +339,7 @@
         if (a.closest(".tabbar")) {
             markActiveTab(url.pathname.split("/")[1] || "today");
         }
-        go(url, { side: segmentSide(a) });
+        go(url, { inPlace: !!a.closest("[data-swap]") });
     });
 
     // Plain POST forms (no htmx): submit with fetch, follow the redirect, swap the result. The form's buttons stay

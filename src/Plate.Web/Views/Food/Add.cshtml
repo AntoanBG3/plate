@@ -7,7 +7,7 @@
     ViewData["BackUrl"] = $"/food?date={date}";
     ViewData["BackLabel"] = L["Food"];
     string TabUrl(string tab) => $"/food/add?date={date}&meal={Model.Meal}&tab={tab}";
-    string TabClass(string tab) => tab == Model.Tab ? "segment is-active" : "segment";
+    string TabClass(string tab) => tab == Model.Tab ? "mode-tab is-active" : "mode-tab";
     string? Current(string tab) => tab == Model.Tab ? "page" : null;
 }
 <header class="page-head">
@@ -15,12 +15,12 @@
     <h1 class="large-title">@title</h1>
 </header>
 
-<nav class="segmented tall" data-thumb data-slide aria-label="@L["How to add"]" style="margin-bottom: var(--s-5)">
-    <a class="@TabClass("text")" href="@TabUrl("text")" aria-current="@Current("text")">@L["Type"]</a>
-    <a class="@TabClass("barcode")" href="@TabUrl("barcode")" aria-current="@Current("barcode")">@L["Scan"]</a>
-    <a class="@TabClass("search")" href="@TabUrl("search")" aria-current="@Current("search")">@L["Search"]</a>
-    <a class="@TabClass("recent")" href="@TabUrl("recent")" aria-current="@Current("recent")">@L["Recent"]</a>
-    <a class="@TabClass("manual")" href="@TabUrl("manual")" aria-current="@Current("manual")">@L["Manual"]</a>
+@* data-swap: another mode is this page with other contents, also from the addresses an error is shown at. *@
+<nav class="mode-tabs" data-swap aria-label="@L["How to add"]">
+    @foreach (var (tab, label) in new[] { ("text", "Type"), ("barcode", "Scan"), ("search", "Search"), ("recent", "Recent"), ("manual", "Manual") })
+    {
+        <a class="@TabClass(tab)" href="@TabUrl(tab)" aria-current="@Current(tab)"><span>@L[label]@if (tab == Model.Tab) {<i class="mode-bar" aria-hidden="true"></i>}</span></a>
+    }
 </nav>
 
 @if (Model.Error is not null && Model.Tab != "barcode")
@@ -44,7 +44,7 @@
         </form>
         @if (Model.Error is not null)
         {
-            <a class="btn btn-secondary btn-block" style="margin-top: var(--s-5)" href="@TabUrl("manual")">@L["Enter it by hand instead"]</a>
+            <a class="btn btn-secondary btn-block" style="margin-top: var(--s-5)" href="@TabUrl("manual")" data-swap>@L["Enter it by hand instead"]</a>
         }
         break;
 

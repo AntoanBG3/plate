@@ -30,7 +30,7 @@
 
     // ---- tap feedback (iOS only applies :active with a touch listener, so drive a class) ----
 
-    const pressable = ".btn, .tap, .tab, .icon-btn, .done-btn, .segment, .rest-btn, .topbar-back, .topbar-action, .ex-actions button, .row-link";
+    const pressable = ".btn, .tap, .tab, .icon-btn, .done-btn, .segment, .mode-tab, .rest-btn, .topbar-back, .topbar-action, .ex-actions button, .row-link";
     document.addEventListener("pointerdown", (event) => {
         const el = event.target.closest(pressable);
         if (!el || el.disabled) {

@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Add food: picker options</title>
+<style>
+/* Dev-only mock-up of the add-food mode picker. Tokens copied from wwwroot/css/tokens.css (dark). */
+:root {
+    color-scheme: dark;
+    --bg: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e;
+    --fill: rgb(118 118 128 / 0.24); --fill-strong: rgb(118 118 128 / 0.36);
+    --label: #f5f5f7; --label-2: #98989d; --label-3: #636366; --separator: rgb(84 84 88 / 0.6);
+    --segment-thumb: #636366;
+    --accent: #ff6a2b; --accent-text: #ff7a42; --accent-soft: rgb(255 106 43 / 0.18); --on-accent: #000000;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, "Fira Sans", "Segoe UI", Roboto, sans-serif;
+    --font-num: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --dur-small: 180ms; --dur-page: 280ms; --dur-swap: 160ms;
+    --ease-snappy: linear(0, 0.0493, 0.1616, 0.2986, 0.437, 0.5636, 0.6725, 0.7619, 0.8324, 0.8863, 0.9262, 0.9548, 0.9746, 0.9877, 0.9961, 1.0011, 1.0037, 1.0048, 1.005, 1.0047, 1.004, 1.0034, 1.0027, 1.002, 1);
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+* { box-sizing: border-box; }
+html { font: 17px/1.35 var(--font); -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: #0a0a0b; color: var(--label); -webkit-font-smoothing: antialiased; }
+button, input, textarea { font: inherit; color: inherit; }
+button { border: 0; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+.board { display: flex; flex-wrap: wrap; justify-content: center; gap: 28px 24px; padding: 24px 0 48px; }
+.option { width: min(390px, 100vw); }
+.option-head { min-height: 62px; margin: 0; padding: 0 16px 10px; font: 13px/1.4 var(--font); color: var(--label-2); }
+.option-head b { display: block; font-size: 15px; color: var(--label); }
+.phone { position: relative; height: 620px; background: var(--bg); overflow: hidden; border-radius: 28px; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08); }
+@media (max-width: 420px) { .phone { border-radius: 0; box-shadow: none; } }
+
+.topbar { height: 44px; display: flex; align-items: center; padding: 0 8px; color: var(--accent-text); }
+.topbar .icon { width: 22px; height: 22px; }
+.icon { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.screen { position: absolute; inset: 44px 0 0; padding: 8px 16px 0; background: var(--bg); }
+.eyebrow { font-size: 0.882rem; color: var(--label-2); margin-bottom: 2px; }
+.large-title { margin: 0 0 20px; font-size: 2rem; line-height: 1.2; font-weight: 700; letter-spacing: 0.011em; }
+
+/* ---------- pickers ---------- */
+.picker { position: relative; display: flex; margin-bottom: 20px; }
+.picker button { position: relative; z-index: 1; }
+.thumb { position: absolute; left: 0; top: 0; pointer-events: none; transition: transform var(--dur-page) var(--ease-snappy), width var(--dur-page) var(--ease-snappy); }
+.picker.no-glide .thumb { transition: none; }
+
+/* Now: the app's segmented control as it is. */
+.p-now { padding: 2px; gap: 2px; border-radius: 9px; background: var(--fill); }
+.p-now button { flex: 1; min-width: 0; min-height: 40px; padding: 0 8px; border-radius: 7px; font-size: 0.765rem; font-weight: 600; line-height: 1.15; }
+.p-now .thumb { top: 2px; height: 40px; border-radius: 7px; background: var(--segment-thumb); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); }
+
+/* A: capsule. Segments as wide as their words, quiet thumb, selected label carries the weight. */
+.p-a { padding: 3px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 0.5px var(--separator); }
+.p-a button { flex: 1 1 auto; min-height: 38px; padding: 0 9px; border-radius: 999px; font-size: 0.765rem; font-weight: 500; color: var(--label-2); transition: color var(--dur-small) var(--ease-out); }
+.p-a button.is-active { color: var(--label); font-weight: 600; }
+.p-a button::before { content: ""; position: absolute; inset: -3px 0; }
+.p-a .thumb { top: 3px; height: 38px; border-radius: 999px; background: #3a3a3c; box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.1), 0 2px 6px rgb(0 0 0 / 0.3); }
+
+/* B: tiles. An icon over a small label; the selected tile takes the accent. */
+.p-b { gap: 6px; }
+.p-b button { flex: 1; min-width: 0; height: 62px; display: grid; place-content: center; justify-items: center; gap: 5px; border-radius: 14px; background: var(--surface); font-size: 0.647rem; font-weight: 500; color: var(--label-2); transition: color var(--dur-small) var(--ease-out); }
+.p-b button .icon { width: 22px; height: 22px; }
+.p-b button.is-active { color: var(--accent-text); font-weight: 600; }
+.p-b .thumb { height: 62px; border-radius: 14px; background: var(--accent-soft); box-shadow: inset 0 0 0 1px rgb(255 106 43 / 0.35); z-index: 2; }
+
+/* C: underline. Plain words at a readable size; an accent bar glides under the selected one. */
+.p-c { justify-content: space-between; box-shadow: inset 0 -0.5px 0 var(--separator); margin-left: -4px; margin-right: -4px; }
+.p-c button { min-height: 44px; padding: 0 4px; font-size: 0.882rem; font-weight: 600; color: var(--label-2); transition: color var(--dur-small) var(--ease-out); }
+.p-c button.is-active { color: var(--label); }
+.p-c .thumb { top: auto; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); }
+
+/* ---------- panes ---------- */
+.panes { position: relative; }
+.pane { display: none; }
+.pane.is-active { display: block; }
+.pane.is-leaving { display: block; position: absolute; inset: 0 0 auto; animation: fade-out var(--dur-swap) var(--ease-out) both; pointer-events: none; }
+.pane.is-arriving { animation: fade-in var(--dur-swap) var(--ease-out) both; }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* The app today: the whole page slides a full width. */
+.screen.slide-out-left { animation: out-left var(--dur-page) var(--ease-snappy) both; }
+.screen.slide-in-right { animation: in-right var(--dur-page) var(--ease-snappy) both; }
+.screen.slide-out-right { animation: out-right var(--dur-page) var(--ease-snappy) both; }
+.screen.slide-in-left { animation: in-left var(--dur-page) var(--ease-snappy) both; }
+@keyframes out-left { to { transform: translateX(-100%); } }
+@keyframes in-right { from { transform: translateX(100%); } }
+@keyframes out-right { to { transform: translateX(100%); } }
+@keyframes in-left { from { transform: translateX(-100%); } }
+
+.composer { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 16px; border-radius: 24px; background: var(--surface); box-shadow: inset 0 0 0 0.5px var(--separator); }
+.composer span { flex: 1; color: var(--label-3); }
+.send-btn { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
+.send-btn .icon { width: 20px; height: 20px; stroke-width: 2.4; }
+.footnote { font-size: 0.765rem; line-height: 1.38; color: var(--label-2); }
+.composer-hint { margin: 12px 16px 0; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 50px; border-radius: 12px; font-weight: 600; }
+.btn + .btn { margin-top: 8px; }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-secondary { background: var(--fill); color: var(--label); }
+.section-header { margin: 24px 16px 8px; font-size: 0.765rem; color: var(--label-2); font-weight: 400; }
+.list { background: var(--surface); border-radius: 16px; overflow: hidden; }
+.field-row { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 16px; }
+.field-row + .field-row { box-shadow: inset 0 0.5px 0 var(--separator); }
+.field-row .ph { flex: 1; color: var(--label-3); }
+.field-row .val { color: var(--label-3); }
+.field-row .plain { color: var(--accent-text); font-weight: 600; }
+.search { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 12px; background: var(--fill); color: var(--label-3); }
+.search .icon { width: 18px; height: 18px; color: var(--label-2); }
+.portion { padding: 12px 16px; }
+.portion + .portion { box-shadow: inset 0 0.5px 0 var(--separator); }
+.portion b { font-weight: 600; }
+.portion-line { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.grams { padding: 6px 12px; border-radius: 8px; background: var(--fill); font-family: var(--font-num); font-weight: 600; }
+.grams small { font: 400 0.765rem var(--font); color: var(--label-2); margin-left: 4px; }
+.portion-line .footnote { flex: 1; }
+.btn-tinted { min-height: 44px; padding: 0 16px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-text); font-weight: 600; font-size: 0.882rem; }
+
+@media (prefers-reduced-motion: reduce) { .thumb { transition: none; } .pane, .screen { animation: none !important; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+        <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 4.5L7.5 12l7.5 7.5"/></symbol>
+        <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5.5M6.5 11L12 5.5 17.5 11"/></symbol>
+        <symbol id="i-history" viewBox="0 0 24 24"><path d="M3.75 12a8.25 8.25 0 1 0 2.4-5.85M3.75 4.5v3.75H7.5"/><path d="M12 8v4.25l3 1.75"/></symbol>
+        <symbol id="i-barcode" viewBox="0 0 24 24"><path d="M3.5 8V5.5a2 2 0 0 1 2-2H8M16 3.5h2.5a2 2 0 0 1 2 2V8M20.5 16v2.5a2 2 0 0 1-2 2H16M8 20.5H5.5a2 2 0 0 1-2-2V16M7.5 8v8M10.5 8v8M13.5 8v8M16.5 8v8"/></symbol>
+        <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="9.75" r="1.6"/><path d="M20.5 15.5l-4.75-4.75L6.5 19.5"/></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.75" cy="10.75" r="6.75"/><path d="M15.75 15.75l4.5 4.5"/></symbol>
+        <symbol id="i-text" viewBox="0 0 24 24"><path d="M4.5 6.5h15M4.5 12h15M4.5 17.5h9"/></symbol>
+        <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M15.5 4.75l3.75 3.75L9 18.75l-4.75 1 1-4.75z"/><path d="M13.25 7l3.75 3.75"/></symbol>
+    </defs>
+</svg>
+
+<template id="panes">
+    <div class="panes">
+        <div class="pane" data-pane="text">
+            <div class="composer"><span>Какво хапна?</span><div class="send-btn"><svg class="icon"><use href="#i-send"/></svg></div></div>
+            <p class="composer-hint footnote">Например: 200 г пилешки гърди, 150 г варен ориз, един банан. На английски или български. Ще прегледаш всичко, преди да се запази.</p>
+        </div>
+        <div class="pane" data-pane="barcode">
+            <div class="btn btn-primary"><svg class="icon"><use href="#i-barcode"/></svg>Сканирай баркод</div>
+            <div class="btn btn-secondary"><svg class="icon"><use href="#i-photo"/></svg>Снимай етикет</div>
+            <h2 class="section-header">Или въведи цифрите</h2>
+            <div class="list"><div class="field-row"><span class="ph">Цифрите под баркода</span><span class="plain">Потърси</span></div></div>
+        </div>
+        <div class="pane" data-pane="search">
+            <div class="search"><svg class="icon"><use href="#i-search"/></svg>Овесени ядки, скир, кашкавал…</div>
+        </div>
+        <div class="pane" data-pane="recent">
+            <div class="list">
+                <div class="portion"><b>Овесени ядки с кисело мляко и боровинки</b><div class="portion-line"><span class="grams">320<small>г</small></span><span class="footnote">записано 10× за 30 дни</span><span class="btn-tinted" style="display:grid;place-items:center">Добави</span></div></div>
+                <div class="portion"><b>Яйца на очи с филия пълнозърнест хляб</b><div class="portion-line"><span class="grams">190<small>г</small></span><span class="footnote">записано 9× за 30 дни</span><span class="btn-tinted" style="display:grid;place-items:center">Добави</span></div></div>
+                <div class="portion"><b>Баница със сирене</b><div class="portion-line"><span class="grams">180<small>г</small></span><span class="footnote">записано 4× за 30 дни</span><span class="btn-tinted" style="display:grid;place-items:center">Добави</span></div></div>
+            </div>
+        </div>
+        <div class="pane" data-pane="manual">
+            <div class="btn btn-secondary"><svg class="icon"><use href="#i-photo"/></svg>Прочети етикета от снимка</div>
+            <div class="list" style="margin-top: 20px">
+                <div class="field-row"><span class="ph" style="color: var(--label)">Име</span><span class="val">Кисело мляко 2%</span></div>
+                <div class="field-row"><span class="ph" style="color: var(--label)">Калории</span><span class="val">0</span></div>
+                <div class="field-row"><span class="ph" style="color: var(--label)">Протеин</span><span class="val">0</span></div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<main class="board">
+    <section class="option" data-variant="now">
+        <p class="option-head"><b>Now</b>The whole page slides sideways; the thumb jumps.</p>
+        <div class="phone"></div>
+    </section>
+    <section class="option" data-variant="a">
+        <p class="option-head"><b>A · Capsule</b>Same control, refined. Segments sized to their words.</p>
+        <div class="phone"></div>
+    </section>
+    <section class="option" data-variant="b">
+        <p class="option-head"><b>B · Tiles</b>An icon over a small label; the selected tile takes the accent.</p>
+        <div class="phone"></div>
+    </section>
+    <section class="option" data-variant="c">
+        <p class="option-head"><b>C · Underline</b>Plain words at 15 px; an accent bar glides under the selected one.</p>
+        <div class="phone"></div>
+    </section>
+</main>
+
+<script>
+const MODES = [["text", "Текст", "i-text"], ["barcode", "Скенер", "i-barcode"], ["search", "Търсене", "i-search"], ["recent", "Скорошни", "i-history"], ["manual", "Ръчно", "i-pencil"]];
+
+function buildScreen(variant, active) {
+    const screen = document.createElement("div");
+    screen.className = "screen";
+    screen.innerHTML = `<p class="eyebrow">Сб 14 ное</p><h1 class="large-title">Добави към закуска</h1><nav class="picker p-${variant}"><i class="thumb"></i></nav>`;
+    const picker = screen.querySelector(".picker");
+    MODES.forEach(([id, label, icon], i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.dataset.index = i;
+        b.innerHTML = variant === "b" ? `<svg class="icon"><use href="#${icon}"/></svg><span>${label}</span>` : `<span>${label}</span>`;
+        b.classList.toggle("is-active", i === active);
+        picker.appendChild(b);
+    });
+    screen.appendChild(document.getElementById("panes").content.cloneNode(true));
+    screen.querySelectorAll(".pane")[active].classList.add("is-active");
+    return screen;
+}
+
+// The thumb sits under the selected button; under its word alone for the underline.
+function placeThumb(screen, variant, glide) {
+    const picker = screen.querySelector(".picker");
+    const active = picker.querySelector("button.is-active");
+    const box = variant === "c" ? active.querySelector("span") : active;
+    const from = picker.getBoundingClientRect();
+    const to = box.getBoundingClientRect();
+    const thumb = picker.querySelector(".thumb");
+    picker.classList.toggle("no-glide", !glide);
+    thumb.style.width = to.width + "px";
+    thumb.style.transform = `translateX(${to.left - from.left}px)`;
+}
+
+document.querySelectorAll(".option").forEach((option) => {
+    const variant = option.dataset.variant;
+    const phone = option.querySelector(".phone");
+    phone.innerHTML = `<div class="topbar"><svg class="icon"><use href="#i-back"/></svg>Храна</div>`;
+    let active = 0;
+    let screen = buildScreen(variant, active);
+    phone.appendChild(screen);
+    placeThumb(screen, variant, false);
+
+    phone.addEventListener("click", (event) => {
+        const button = event.target.closest(".picker button");
+        if (!button || Number(button.dataset.index) === active) {
+            return;
+        }
+        const to = Number(button.dataset.index);
+        if (variant === "now") {
+            // Two whole pages, side by side, as the app does it today.
+            const next = buildScreen(variant, to);
+            const forward = to > active;
+            phone.appendChild(next);
+            placeThumb(next, variant, false);
+            const old = screen;
+            old.classList.add(forward ? "slide-out-left" : "slide-out-right");
+            next.classList.add(forward ? "slide-in-right" : "slide-in-left");
+            next.addEventListener("animationend", () => { old.remove(); next.classList.remove("slide-in-right", "slide-in-left"); }, { once: true });
+            screen = next;
+        } else {
+            // In place: the header stays, the thumb glides, the contents crossfade.
+            const buttons = screen.querySelectorAll(".picker button");
+            const panes = screen.querySelectorAll(".pane");
+            screen.querySelectorAll(".pane.is-leaving").forEach((p) => p.classList.remove("is-leaving"));
+            buttons[active].classList.remove("is-active");
+            buttons[to].classList.add("is-active");
+            const leaving = panes[active];
+            const arriving = panes[to];
+            leaving.classList.remove("is-active", "is-arriving");
+            leaving.classList.add("is-leaving");
+            leaving.addEventListener("animationend", () => leaving.classList.remove("is-leaving"), { once: true });
+            arriving.classList.add("is-active", "is-arriving");
+            placeThumb(screen, variant, true);
+        }
+        active = to;
+    });
+});
+addEventListener("resize", () => document.querySelectorAll(".option").forEach((o) => placeThumb(o.querySelector(".screen:last-child"), o.dataset.variant, false)));
+</script>
+</body>
+</html>

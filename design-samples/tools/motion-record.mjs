@@ -159,7 +159,7 @@ const scenarios = [
     { name: "set-done", at: sessionPath, before: (p) => p.locator("form.set-row:not(.done) .done-btn").first().scrollIntoViewIfNeeded(), act: (p) => p.locator("form.set-row:not(.done) .done-btn").first().tap(), frames: 12, every: 400 },
     { name: "sheet-open", at: "/food", act: (p) => p.locator('#main [data-sheet-open="quick-sheet"]').first().tap(), frames: 12, every: 400 },
     { name: "sheet-close", at: "/food", before: async (p) => { await p.locator('#main [data-sheet-open="quick-sheet"]').first().tap(); await settle(p, 900); }, act: (p) => p.touchscreen.tap(195, 30), frames: 12, every: 400 },
-    { name: "segment-slide", at: addFoodPath, act: (p) => p.locator(".segmented[data-slide] a.segment:not(.is-active)").first().tap() },
+    { name: "mode-tab", at: addFoodPath, act: (p) => p.locator(".mode-tabs a.mode-tab:not(.is-active)").nth(2).tap() },
     { name: "segment-range", at: "/progress", act: (p) => p.locator(".segmented a.segment:not(.is-active)").first().tap() },
     { name: "switch", at: "/settings/general", before: (p) => p.locator(".switch").first().scrollIntoViewIfNeeded(), act: (p) => p.locator(".switch").first().tap(), frames: 8, every: 350 },
     { name: "swipe-delete", at: "/food", before: async (p) => { await swipeOpen(p); await settle(p); }, act: (p) => p.locator("[data-swipe-row].is-open .set-delete, [data-swipe-row].is-open .set-delete-form button").first().tap(), frames: 12, every: 400 },
@@ -276,7 +276,7 @@ if (parts.includes("tour")) {
     await step("sheet away", () => page.touchscreen.tap(195, 30));
     await step("add food", () => page.locator('#main a[href^="/food/add"]').first().tap());
     for (let i = 0; i < 3; i++) {
-        await step("segment", () => page.locator(".segmented[data-slide] a.segment.is-active + a.segment").tap());
+        await step("mode", () => page.locator(".mode-tabs a.mode-tab.is-active + a.mode-tab").tap());
     }
     await step("back", () => page.tap(".topbar-back"));
     await step("entry", () => page.locator('#main a[href^="/food/entries/"]').first().tap());
