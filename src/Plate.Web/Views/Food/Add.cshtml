@@ -15,10 +15,11 @@
     <h1 class="large-title">@title</h1>
 </header>
 
-<nav class="mode-tabs" aria-label="@L["How to add"]">
+@* data-swap: another mode is this page with other contents, also from the addresses an error is shown at. *@
+<nav class="mode-tabs" data-swap aria-label="@L["How to add"]">
     @foreach (var (tab, label) in new[] { ("text", "Type"), ("barcode", "Scan"), ("search", "Search"), ("recent", "Recent"), ("manual", "Manual") })
     {
-        <a class="@TabClass(tab)" href="@TabUrl(tab)" aria-current="@Current(tab)"><span>@L[label]</span>@if (tab == Model.Tab) {<i class="mode-bar" aria-hidden="true"></i>}</a>
+        <a class="@TabClass(tab)" href="@TabUrl(tab)" aria-current="@Current(tab)"><span>@L[label]@if (tab == Model.Tab) {<i class="mode-bar" aria-hidden="true"></i>}</span></a>
     }
 </nav>
 
@@ -43,7 +44,7 @@
         </form>
         @if (Model.Error is not null)
         {
-            <a class="btn btn-secondary btn-block" style="margin-top: var(--s-5)" href="@TabUrl("manual")">@L["Enter it by hand instead"]</a>
+            <a class="btn btn-secondary btn-block" style="margin-top: var(--s-5)" href="@TabUrl("manual")" data-swap>@L["Enter it by hand instead"]</a>
         }
         break;
 

@@ -253,18 +253,23 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .segmented-wrap { padding: var(--s-1) 0 var(--s-4); }
 
 /* Mode tabs (add food): words with a bar under the selected one. The size follows the screen and never grows with
-   Dynamic Type, so five Bulgarian words always fit on one line. */
-.mode-tabs { position: relative; display: flex; justify-content: space-between; margin: 0 -4px var(--s-5); }
-.mode-tabs::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: 0; border-bottom: 0.5px solid var(--separator); }
+   Dynamic Type, so five Bulgarian words always fit on one line. The tabs share the row's spare width so that the
+   words are evenly spaced, the first and last on the gutters, and no tap lands between two tabs. */
+.mode-tabs { position: relative; display: flex; margin-bottom: var(--s-5); }
+.mode-tabs::after { content: ""; position: absolute; inset: auto 0 0; border-bottom: 0.5px solid var(--separator); pointer-events: none; }
 .mode-tab {
-    position: relative; min-height: var(--tap); display: grid; place-items: center; padding: 0 4px; cursor: pointer;
-    color: var(--label-2); font-size: min(var(--text-subhead), 3.85vw); font-weight: var(--weight-semibold); line-height: 1.2; white-space: nowrap;
+    position: relative; flex: 2 0 auto; display: flex; justify-content: center; cursor: pointer;
+    color: var(--label-2); font-size: min(var(--text-subhead), 3.85vw); font-weight: var(--weight-semibold); line-height: var(--tap); white-space: nowrap;
 }
+.mode-tab:first-child { flex-grow: 1; justify-content: flex-start; }
+.mode-tab:last-child { flex-grow: 1; justify-content: flex-end; }
+/* The outer tabs are the narrowest; their tap area runs on through the page gutter. */
+.mode-tab:first-child::before, .mode-tab:last-child::before { content: ""; position: absolute; inset: 0 0 0 calc(-1 * var(--gutter)); }
+.mode-tab:last-child::before { inset: 0 calc(-1 * var(--gutter)) 0 0; }
 .mode-tab.is-active { color: var(--label); }
-/* Reaches into the gaps between the words. */
-.mode-tab::before { content: ""; position: absolute; inset: 0 -2px; }
 .mode-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--r-xs); }
-.mode-bar { position: absolute; z-index: 1; left: 4px; right: 4px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); }
+.mode-tab span { position: relative; display: block; }
+.mode-bar { position: absolute; z-index: 1; inset: auto 0 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px var(--s-2); border-radius: 999px; font-size: var(--text-caption); font-weight: var(--weight-semibold); white-space: nowrap; background: var(--fill); color: var(--label-2); }
 .chip.good { background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--success); }

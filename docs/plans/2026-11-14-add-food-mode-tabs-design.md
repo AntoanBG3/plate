@@ -27,11 +27,11 @@ Mocked side by side in `design-samples/add-picker.html`.
 
 ## Design
 
-**Markup.** `Add.cshtml` replaces the `nav.segmented` with `nav.mode-tabs` (same `aria-label`). Each mode is `a.mode-tab` with the same `href` and `aria-current="page"` on the selected one, which also has `is-active`. The selected tab contains one `i.mode-bar` (`aria-hidden`), rendered only there.
+**Markup.** `Add.cshtml` replaces the `nav.segmented` with `nav.mode-tabs` (same `aria-label`). Each mode is `a.mode-tab` with the same `href` and `aria-current="page"` on the selected one, which also has `is-active`. The selected tab's label contains one `i.mode-bar` (`aria-hidden`), rendered only there. The nav and the "Enter it by hand instead" link carry `data-swap`.
 
-**Look.** A row with `justify-content: space-between`, a 0.5 px separator along its bottom, and the first and last words aligned with the page gutters. Labels are semibold, `--label-2`, and `--label` when selected. The font size is `min(var(--text-subhead), 3.85vw)`: 15 px at 390 px, 12.3 px at 320 px, and never larger with Dynamic Type, so five Bulgarian words always fit on one line. Each tab is 44 px tall and its hit area reaches halfway into the gaps on either side. The bar is 3 px of `--accent` with rounded top corners, as wide as the word, sitting on the separator. Focus shows the app's usual accent outline. Both themes use the same tokens.
+**Look.** A row with a 0.5 px separator along its bottom. The words are evenly spaced, the first and last on the page gutters. Labels are semibold, `--label-2`, and `--label` when selected. The font size is `min(var(--text-subhead), 3.85vw)`: 15 px at 390 px, 12.3 px at 320 px, and never larger with Dynamic Type, so five Bulgarian words always fit on one line. Each tab is 44 px tall. The tabs share the row's spare width (the outer two take half a share, on their inner side), so there is no gap between them to miss, and the outer two also take taps in the page gutter. The bar is 3 px of `--accent` with rounded top corners, as wide as the word, sitting on the separator. Focus shows the app's usual accent outline. Both themes use the same tokens.
 
-**Motion.** `data-slide` is removed, so nav.js classes a mode switch as `swap` (same path, other query), the kind the Progress range already uses: old and new content crossfade in place over `--dur-swap` and the title and top bar are left alone. The bar gets `view-transition-name: mode-bar` only while `html[data-nav]` is `swap` or `same`, and its group runs for `--dur-page` on `--ease-snappy`, so it glides and resizes to the new word. On every other kind of navigation (pushing into the page, Back, a tab bar change) the bar is unnamed and travels with its page. Reduced motion already maps to the plain fade with no glide.
+**Motion.** `data-slide` is removed, so nav.js classes a mode switch as `swap` (same path, other query), the kind the Progress range already uses. The add page is also shown at `/food/parse` and `/food/barcode` when a read or a lookup fails, so a link inside `data-swap` is a swap whatever the two addresses and depths are. Old and new content crossfade in place over `--dur-swap` and the title and top bar are left alone. The bar gets `view-transition-name: mode-bar` only while `html[data-nav]` is `swap` or `same`, and its group runs for `--dur-page` on `--ease-snappy`, so it glides and resizes to the new word. On every other kind of navigation (pushing into the page, Back, a tab bar change) the bar is unnamed and travels with its page. Reduced motion already maps to the plain fade with no glide.
 
 **Clean-up.** Nothing else uses `data-slide`, so `segmentSide` and the `side` option go from nav.js, and the comments in app.css and nav.js that describe the sideways slide for segmented controls are corrected. The next/prev slide itself stays for the tab bar.
 
@@ -39,11 +39,11 @@ Mocked side by side in `design-samples/add-picker.html`.
 
 ## Tests
 
-- E2E, Chromium and WebKit, 320 and 390 px, English and Bulgarian: no mode tab's label is wider than its tab or wraps, the row doesn't scroll sideways, and every tab's hit area is at least 44 px tall.
-- E2E: tapping a mode sets `data-nav="swap"`, the URL and selected tab change, and the title's position is the same before and after; the bar is named `mode-bar` during the swap and unnamed when the page is pushed.
+- E2E, Chromium and WebKit, 320 and 390 px, English and Bulgarian: no mode tab's label is wider than its tab or wraps, the row doesn't scroll sideways, there is no gap between tabs, and every tab takes a tap 21 px from the middle of its word in each direction. Chromium's rows run at the 17 px root an iPhone has; headless WebKit's root is 13 px.
+- E2E: tapping a mode sets `data-nav="swap"`, the URL and selected tab change, and the title's position is the same before and after; the bar is named `mode-bar` during the swap and unnamed when the page is pushed. A mode chosen from the Scan tab shown at `/food/barcode` after bad digits is a swap too.
 - The label-fit test in `LayoutTests` keeps covering `.segmented` on the other pages.
 - `design-samples/tools/motion-record.mjs`: the `segment-slide` scenario and tour step point at the new tabs.
 
 ## Left to the builder
 
-Exact gap and padding values, the separator's inset, and whether the hit-area extension is a pseudo-element or padding.
+Exact spacing values and the separator's inset.

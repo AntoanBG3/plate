@@ -112,8 +112,12 @@
             const to = tabIndex(toTab);
             return from < 0 || to < 0 ? "tab" : to > from ? "next" : "prev";
         }
+        // A swap is in place whatever the depths say: an error can show the same page at a deeper address.
+        if (swap) {
+            return "swap";
+        }
         if (fromDepth === toDepth) {
-            return swap ? "swap" : "tab";
+            return "tab";
         }
         return isBack || toDepth < fromDepth ? "back" : "forward";
     }
@@ -258,7 +262,7 @@
         await transition.updateCallbackDone;
     }
 
-    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, instant = false, keepScroll = false, fallback = () => { location.href = url.href; } } = {}) {
+    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, instant = false, keepScroll = false, inPlace = false, fallback = () => { location.href = url.href; } } = {}) {
         const generation = ++navigation;
         const isCurrent = () => generation === navigation;
         // Remember where we were, for Back.
@@ -303,7 +307,8 @@
                 scrollY = window.scrollY;
             }
             const same = finalUrl.pathname === location.pathname && finalUrl.search === location.search;
-            const swap = finalUrl.pathname === location.pathname && !same;
+            // `inPlace`: the link says so itself (data-swap), for a page that is also shown at other addresses.
+            const swap = (inPlace || finalUrl.pathname === location.pathname) && !same;
             await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, instant, same, swap, posted: init?.method === "POST", isCurrent });
         } catch (error) {
             if (!isCurrent()) {
@@ -334,7 +339,7 @@
         if (a.closest(".tabbar")) {
             markActiveTab(url.pathname.split("/")[1] || "today");
         }
-        go(url);
+        go(url, { inPlace: !!a.closest("[data-swap]") });
     });
 
     // Plain POST forms (no htmx): submit with fetch, follow the redirect, swap the result. The form's buttons stay
