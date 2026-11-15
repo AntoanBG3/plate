@@ -3,14 +3,17 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# CI puts the two slower suites on separate runners. Without arguments, run the entire deployment gate.
+# CI puts the two slower suites on separate runners. Without arguments, run the entire deployment gate: every test
+# project, one after another. Through the solution, the Web and browser suites ran at once, and their per-class
+# databases together filled Docker Desktop's disk ("No space left on device", 2026-11-14 and 2026-11-15).
 run_js=true
 install_browser_deps=false
+all="tests/Plate.Core.Tests tests/Plate.Web.Tests tests/Plate.E2E.Tests"
 case "${1:-}" in
-    "") set -- Plate.slnx ;;
+    "") set -- $all ;;
     --browser-deps)
         install_browser_deps=true
-        set -- Plate.slnx
+        set -- $all
         ;;
     --ci-core-web) set -- tests/Plate.Core.Tests tests/Plate.Web.Tests ;;
     --ci-browser)
@@ -30,7 +33,7 @@ fi
 for project in "$@"; do
     dotnet restore "$project"
     dotnet build "$project" --configuration Release --no-restore
-    if [ "$install_browser_deps" = true ]; then
+    if [ "$install_browser_deps" = true ] && [ "$project" = tests/Plate.E2E.Tests ]; then
         pwsh tests/Plate.E2E.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium webkit
     fi
     dotnet test "$project" --configuration Release --no-build --no-restore
