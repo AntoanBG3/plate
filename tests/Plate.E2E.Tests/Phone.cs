@@ -81,8 +81,10 @@ public sealed class Phone : IAsyncDisposable
     {
         var before = await Page.EvaluateAsync<double[]>("() => [performance.timeOrigin, window.__gymPages || 0]");
         await action();
+        // Playwright's usual 30 s. GitHub's two-core runners now and then take 30 to 50 s over a test that takes 3 s
+        // here, and at 10 s this wait failed a different WebKit test on two of four runs (2026-11-15).
         await Page.WaitForFunctionAsync(
-            "b => performance.timeOrigin !== b[0] || (window.__gymPages || 0) > b[1]", before, new() { Timeout = 10_000 });
+            "b => performance.timeOrigin !== b[0] || (window.__gymPages || 0) > b[1]", before, new() { Timeout = 30_000 });
         await SettledAsync();
     }
 
