@@ -252,6 +252,20 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .segment { cursor: pointer; transition: background-color var(--dur-small) var(--ease-out), box-shadow var(--dur-small) var(--ease-out), transform var(--dur-page) var(--ease-snappy); }
 .segmented-wrap { padding: var(--s-1) 0 var(--s-4); }
 
+/* Mode tabs (add food): words with a bar under the selected one. The size follows the screen and never grows with
+   Dynamic Type, so five Bulgarian words always fit on one line. */
+.mode-tabs { position: relative; display: flex; justify-content: space-between; margin: 0 -4px var(--s-5); }
+.mode-tabs::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: 0; border-bottom: 0.5px solid var(--separator); }
+.mode-tab {
+    position: relative; min-height: var(--tap); display: grid; place-items: center; padding: 0 4px; cursor: pointer;
+    color: var(--label-2); font-size: min(var(--text-subhead), 3.85vw); font-weight: var(--weight-semibold); line-height: 1.2; white-space: nowrap;
+}
+.mode-tab.is-active { color: var(--label); }
+/* Reaches into the gaps between the words. */
+.mode-tab::before { content: ""; position: absolute; inset: 0 -2px; }
+.mode-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--r-xs); }
+.mode-bar { position: absolute; z-index: 1; left: 4px; right: 4px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); }
+
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px var(--s-2); border-radius: 999px; font-size: var(--text-caption); font-weight: var(--weight-semibold); white-space: nowrap; background: var(--fill); color: var(--label-2); }
 .chip.good { background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--success); }
 .chip.check { background: color-mix(in srgb, var(--warning) 18%, transparent); color: var(--warning); }
@@ -824,14 +838,14 @@ body.sheet-open .app-scale {
 /* ---------- motion ---------- */
 
 /* Tap feedback: a quick press, released with the snappy spring. */
-.btn, .tap, .tab, .icon-btn, .done-btn, .segment, .rest-btn, .topbar-back, .topbar-action, .ex-actions button {
+.btn, .tap, .tab, .icon-btn, .done-btn, .segment, .mode-tab, .rest-btn, .topbar-back, .topbar-action, .ex-actions button {
     transition: transform var(--dur-page) var(--ease-snappy), background-color var(--dur-small) var(--ease-out), color var(--dur-small) var(--ease-out), opacity var(--dur-small) var(--ease-out);
 }
 .is-pressed { transform: scale(0.97); transition-duration: var(--dur-tap); transition-timing-function: var(--ease-out); }
 .btn.is-pressed, .tap.is-pressed { filter: brightness(0.94); }
 .done-btn.is-pressed, .icon-btn.is-pressed, .tab.is-pressed { transform: scale(0.88); }
 
-/* Page transitions: tabs and sibling pages slide sideways, deeper pages push in from the right, going up pops back. */
+/* Page transitions: tabs slide sideways, deeper pages push in from the right, going up pops back. */
 /* Page changes animate the content and the top bar; the tab bar and the rest of the shell stay still.
    html[data-nav] is "next", "prev", "forward", "back", "tab", "swap" or "same" (nav.js for soft navigation,
    motion.js for full loads). A page that slides in is its own entrance: nothing inside it moves as well. */
@@ -848,8 +862,9 @@ body.sheet-open .app-scale {
 ::view-transition-group(root), ::view-transition-new(root) { animation: none; }
 ::view-transition-old(root) { display: none; }
 
-/* Next and prev: both pages slide a full width, like a pager; the title travels with its page. The segmented
-   control's thumb would fly across on its own while the page slides, so it moves with the page here. */
+/* Next and prev (a tab further along the tab bar): both pages slide a full width, like a pager; the title travels
+   with its page. A segmented control's thumb would fly across on its own while the page slides, so it moves with
+   the page here. */
 html:is([data-nav="next"], [data-nav="prev"])::view-transition-group(page),
 html:is([data-nav="next"], [data-nav="prev"])::view-transition-group(large-title) { animation: none; }
 html[data-nav="next"]::view-transition-old(page), html[data-nav="next"]::view-transition-old(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-slide-out-left; }
@@ -867,7 +882,10 @@ html[data-nav="tab"]::view-transition-new(page) { animation: var(--dur-medium) v
    a deleted row): old and new crossfade in place, so what didn't change stays still and nothing blinks. The top bar
    and title are the same ones and are left alone; a segmented control's thumb still slides at its own pace. */
 html:is([data-nav="same"], [data-nav="swap"])::view-transition-group(*) { animation-duration: var(--dur-swap); animation-timing-function: var(--ease-out); }
-html:is([data-nav="same"], [data-nav="swap"])::view-transition-group(segment-thumb) { animation-duration: var(--dur-page); animation-timing-function: var(--ease-snappy); }
+html:is([data-nav="same"], [data-nav="swap"])::view-transition-group(segment-thumb),
+html:is([data-nav="same"], [data-nav="swap"])::view-transition-group(mode-bar) { animation-duration: var(--dur-page); animation-timing-function: var(--ease-snappy); }
+/* The add-food mode bar glides to the new word only on such a change; on any other it travels with its page. */
+html:is([data-nav="same"], [data-nav="swap"]) .mode-bar { view-transition-name: mode-bar; }
 
 /* Push and pop: the page slides like a navigation stack; titles crossfade. */
 html[data-nav="forward"]::view-transition-group(page), html[data-nav="back"]::view-transition-group(page) { animation: none; }
