@@ -32,7 +32,9 @@ if [ "$name $1" = "$FAIL_STAGE" ]; then exit 1; fi
     try {
         const result = spawnSync("/bin/bash", [path.join(root, "tools/deploy.sh"), ...(dryRun ? ["--dry-run"] : [])], {
             env: { ...process.env, PATH: bin + path.delimiter + process.env.PATH, TRACE: trace, FAIL_STAGE: fail, CHANGE_CHECKOUT: changeCheckout ? "1" : "0" },
-            encoding: "utf8", timeout: 5000,
+            // Only a guard against a hang. macOS checks each freshly written stub on its first run, which took
+            // up to 5 s for a whole script on a busy Mac and failed the gate on 2026-11-15.
+            encoding: "utf8", timeout: 30000,
         });
         assert.ifError(result.error);
         return { status: result.status, calls: fs.readFileSync(trace, "utf8").trim().split("\n") };
