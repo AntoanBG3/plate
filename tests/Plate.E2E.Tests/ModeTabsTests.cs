@@ -114,6 +114,111 @@ public class ModeTabsTests(E2EFixture app) : IClassFixture<E2EFixture>
         phone.ShouldHaveNoErrors();
     }
 
+    private const string WatchNav = "() => document.addEventListener('gym:page', (e) => { window.__nav = e.detail.nav; }, { once: true })";
+
+    private static string Today() =>
+        Plate.Core.Time.UserClock.Today(DateTimeOffset.UtcNow, Plate.Core.Domain.UserProfile.DefaultTimeZoneId).ToString("yyyy-MM-dd");
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_read_that_fails_comes_back_in_place_at_the_same_address(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync($"/food/add?date={Today()}&meal=Lunch");
+        var address = phone.Page.Url;
+        var titleBefore = await Phone.BoxAsync(phone.Page.Locator(".large-title"));
+        var entries = await phone.Page.EvaluateAsync<int>("history.length");
+        // Longer than the server accepts; the field's own limit only stops typing.
+        await phone.Page.EvaluateAsync("() => { document.getElementById('text').value = 'a'.repeat(1001); }");
+        await phone.Page.EvaluateAsync(WatchNav);
+
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").TapAsync());
+
+        (await phone.Page.EvaluateAsync<string>("window.__nav")).Should().Be("same", "the page it was sent from is shown again, with the error");
+        (await phone.Page.Locator(".banner.is-error").IsVisibleAsync()).Should().BeTrue();
+        phone.Page.Url.Should().Be(address, "the form's own address answers a POST only");
+        (await phone.Page.EvaluateAsync<int>("history.length")).Should().Be(entries);
+        (await phone.Page.InputValueAsync("#text")).Should().HaveLength(1001, "nothing typed is lost");
+        (await Phone.BoxAsync(phone.Page.Locator(".large-title"))).Y.Should().Be(titleBefore.Y);
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_read_that_works_goes_on_to_the_next_page(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync($"/food/add?date={Today()}&meal=Lunch");
+        await phone.Page.FillAsync("#text", "a banana");
+        await phone.Page.EvaluateAsync(WatchNav);
+
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").TapAsync());
+
+        (await phone.Page.Locator(".result").CountAsync()).Should().BeGreaterThan(0);
+        (await phone.Page.EvaluateAsync<string>("window.__nav")).Should().NotBe("same").And.NotBe("swap", "the list to confirm is another page");
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food/parse");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Back_after_trying_other_modes_leaves_the_page(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync("/food");
+        await phone.NavigateByAsync(() => phone.TapAsync("#main a[href^='/food/add']"));
+        await phone.NavigateByAsync(() => phone.TapAsync(".mode-tabs a[href*='tab=search']"));
+        await phone.NavigateByAsync(() => phone.TapAsync(".mode-tabs a[href*='tab=recent']"));
+        phone.Page.Url.Should().Contain("tab=recent");
+
+        await phone.NavigateByAsync(() => phone.Page.GoBackAsync());
+
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food", "a mode is a choice on the page, not a step to go back through");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Wrong_digits_come_back_in_place_after_a_full_load(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        // Every kind of page change each document is given, from its first moment.
+        await phone.Context.AddInitScriptAsync("""
+            window.__navs = [];
+            new MutationObserver(() => {
+                const nav = document.documentElement && document.documentElement.dataset.nav;
+                const bar = document.querySelector(".mode-bar");
+                if (nav) { window.__navs.push(nav + (bar ? " bar=" + getComputedStyle(bar).viewTransitionName : "")); }
+            }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-nav"] });
+            """);
+        await phone.GoAsync($"/food/add?date={Today()}&meal=Lunch&tab=barcode");
+        await phone.Page.FillAsync("#code", "12345678");
+
+        await phone.NavigateByAsync(() => phone.Page.Locator("#barcode-form button[type=submit]").TapAsync());
+
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food/barcode");
+        (await phone.Page.Locator(".field-error").IsVisibleAsync()).Should().BeTrue();
+        // Browsers without transitions between documents show the page at once, which is in place too.
+        var navs = await phone.Page.EvaluateAsync<string[]>("window.__navs");
+        navs.Should().NotContain(n => n != "swap bar=none", "the Scan tab shown again is not a new place, and its bar has no partner in the page that was left");
+        // A browser may show the new document without a transition, so the choice itself is checked as well: the
+        // page that was left is still on record, and the reveal is replayed with a transition that never ends.
+        var replay = await phone.Page.EvaluateAsync<string>("""
+            () => {
+                const reveal = new Event("pagereveal");
+                reveal.viewTransition = { ready: Promise.resolve(), finished: new Promise(() => {}) };
+                window.dispatchEvent(reveal);
+                return document.documentElement.dataset.nav + " bar=" + getComputedStyle(document.querySelector(".mode-bar")).viewTransitionName;
+            }
+            """);
+        replay.Should().Be("swap bar=none");
+        phone.ShouldHaveNoErrors();
+    }
+
     // Playwright fills this from the page's object, so it needs settable properties and no constructor.
     [Theory]
     [InlineData(E2EFixture.Chromium)]

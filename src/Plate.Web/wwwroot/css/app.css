@@ -889,8 +889,9 @@ html[data-nav="tab"]::view-transition-new(page) { animation: var(--dur-medium) v
 html:is([data-nav="same"], [data-nav="swap"])::view-transition-group(*) { animation-duration: var(--dur-swap); animation-timing-function: var(--ease-out); }
 html:is([data-nav="same"], [data-nav="swap"])::view-transition-group(segment-thumb),
 html:is([data-nav="same"], [data-nav="swap"])::view-transition-group(mode-bar) { animation-duration: var(--dur-page); animation-timing-function: var(--ease-snappy); }
-/* The add-food mode bar glides to the new word only on such a change; on any other it travels with its page. */
-html:is([data-nav="same"], [data-nav="swap"]) .mode-bar { view-transition-name: mode-bar; }
+/* The add-food mode bar glides to the new word only on such a change; on any other it travels with its page, as it
+   does after a full load, where the page that was left had no name on its bar to match. */
+html:is([data-nav="same"], [data-nav="swap"]):not(.is-full-load) .mode-bar { view-transition-name: mode-bar; }
 
 /* Push and pop: the page slides like a navigation stack; titles crossfade. */
 html[data-nav="forward"]::view-transition-group(page), html[data-nav="back"]::view-transition-group(page) { animation: none; }

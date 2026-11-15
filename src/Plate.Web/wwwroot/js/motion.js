@@ -51,7 +51,7 @@
     // ---- page transitions: tabs slide sideways in tab-bar order, deeper pages push, shallower pages pop ----
 
     function remember() {
-        store("sessionStorage", "gym.nav", JSON.stringify({ depth: root.dataset.depth, tab: root.dataset.tab }));
+        store("sessionStorage", "gym.nav", JSON.stringify({ depth: root.dataset.depth, tab: root.dataset.tab, page: root.dataset.page }));
     }
     window.addEventListener("pageswap", remember);
     window.addEventListener("pagehide", remember);
@@ -67,7 +67,10 @@
         }
         const to = { depth: Number(root.dataset.depth || 0), tab: root.dataset.tab };
         let nav = "tab";
-        if (from && from.tab === to.tab && Number(from.depth) !== to.depth) {
+        if (from && from.page && from.page === root.dataset.page) {
+            // The same page at another address (the Scan tab back with wrong digits): it changes in place.
+            nav = "swap";
+        } else if (from && from.tab === to.tab && Number(from.depth) !== to.depth) {
             nav = to.depth > Number(from.depth) ? "forward" : "back";
         } else if (from && from.tab !== to.tab) {
             const tabs = Array.from(document.querySelectorAll(".tabbar .tab"), (t) => t.getAttribute("href"));
@@ -78,8 +81,13 @@
             }
         }
         root.dataset.nav = reduce.matches ? "tab" : nav;
+        // The page that was left couldn't name its parts for this change, so nothing is matched across the load.
+        root.classList.add("is-full-load");
         event.viewTransition.ready.catch(() => {});
-        event.viewTransition.finished.catch(() => {}).finally(() => { delete root.dataset.nav; });
+        event.viewTransition.finished.catch(() => {}).finally(() => {
+            delete root.dataset.nav;
+            root.classList.remove("is-full-load");
+        });
     });
 
     // ---- large title collapses into the compact bar ----
