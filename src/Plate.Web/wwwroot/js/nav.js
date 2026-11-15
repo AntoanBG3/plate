@@ -101,8 +101,8 @@
 
     // "forward" and "back" push and pop within a tab. "next" and "prev" slide sideways to a tab further right or
     // left in the tab bar. "swap" is the same page with other contents (`swap`: a chart range, another day, another
-    // way to add food, a row deleted), which crossfades in place. "tab" fades the new page in when the direction is
-    // unknown.
+    // way to add food, a row deleted), which crossfades in place wherever it is shown. "tab" fades the new page in
+    // when the direction is unknown.
     function navType(fromTab, fromDepth, toTab, toDepth, isBack, swap) {
         if (reduce.matches) {
             return "tab";
@@ -112,7 +112,6 @@
             const to = tabIndex(toTab);
             return from < 0 || to < 0 ? "tab" : to > from ? "next" : "prev";
         }
-        // A swap is in place whatever the depths say: an error can show the same page at a deeper address.
         if (swap) {
             return "swap";
         }
@@ -262,7 +261,7 @@
         await transition.updateCallbackDone;
     }
 
-    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, instant = false, keepScroll = false, inPlace = false, fallback = () => { location.href = url.href; } } = {}) {
+    async function go(url, { push = true, init = null, isBack = false, scrollY = 0, instant = false, keepScroll = false, fallback = () => { location.href = url.href; } } = {}) {
         const generation = ++navigation;
         const isCurrent = () => generation === navigation;
         // Remember where we were, for Back.
@@ -300,16 +299,23 @@
                 return;
             }
             const doc = new DOMParser().parseFromString(text, "text/html");
-            const samePage = finalUrl.href === location.href;
+            const posted = init?.method === "POST";
+            // The same page: at the same path, or a view that names itself (data-page) because it is shown at several.
+            const page = doc.documentElement.dataset.page;
+            const samePlace = finalUrl.pathname === location.pathname || (!!page && page === root.dataset.page);
+            // A form that comes back as the page it was sent from (an error) is that page again: it keeps its
+            // address, since the form's own answers a POST only and would break on reload or Back.
+            const stay = posted && samePlace && finalUrl.pathname !== location.pathname;
+            const shown = stay ? new URL(location.href) : finalUrl;
+            const samePage = shown.href === location.href;
             // A change that comes back to the same page keeps the user's place on it (Phase 11), also when the page
             // comes back under a fuller address (a food deleted on /food returns to /food?date=...).
-            if (keepScroll && finalUrl.pathname === location.pathname) {
+            if (keepScroll && samePlace) {
                 scrollY = window.scrollY;
             }
-            const same = finalUrl.pathname === location.pathname && finalUrl.search === location.search;
-            // `inPlace`: the link says so itself (data-swap), for a page that is also shown at other addresses.
-            const swap = (inPlace || finalUrl.pathname === location.pathname) && !same;
-            await swapIn(doc, finalUrl.href, { push: push && !samePage, isBack, scrollY, instant, same, swap, posted: init?.method === "POST", isCurrent });
+            const same = shown.pathname === location.pathname && shown.search === location.search;
+            const swap = samePlace && !same;
+            await swapIn(doc, shown.href, { push: push && !samePage, isBack, scrollY, instant, same, swap, posted, isCurrent });
         } catch (error) {
             if (!isCurrent()) {
                 return;
@@ -339,7 +345,8 @@
         if (a.closest(".tabbar")) {
             markActiveTab(url.pathname.split("/")[1] || "today");
         }
-        go(url, { inPlace: !!a.closest("[data-swap]") });
+        // data-replace: a choice on the page (a mode tab), not somewhere to go back to.
+        go(url, { push: !a.closest("[data-replace]") });
     });
 
     // Plain POST forms (no htmx): submit with fetch, follow the redirect, swap the result. The form's buttons stay

@@ -8,6 +8,9 @@
     var tab = segments.Length > 0 ? segments[0].ToLowerInvariant() : "today";
     // Tab roots are depth 0; anything deeper pushes in from the right (motion.js).
     var depth = ViewData["Depth"] as int? ?? Math.Max(0, segments.Length - 1);
+    // A view that is shown at more than one address names itself, so going from one to another is known to be the
+    // same page with other contents (nav.js, motion.js).
+    var pageKey = ViewData["Page"] as string;
     var title = ViewData["Title"] as string;
     var backUrl = ViewData["BackUrl"] as string;
     var backLabel = ViewData["BackLabel"] as string;
@@ -20,7 +23,7 @@
     var focus = Notices.ReadFocus(TempData);
 }
 <!DOCTYPE html>
-<html lang="@prefs.LangAttribute" data-user-id="@Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" data-version="@Plate.Web.Features.Diagnostics.AppVersion.Current" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth" data-shell="@prefs.LangAttribute-@(Context.User.Identity?.IsAuthenticated == true ? "in" : "out")">
+<html lang="@prefs.LangAttribute" data-user-id="@Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" data-version="@Plate.Web.Features.Diagnostics.AppVersion.Current" data-theme="@prefs.ThemeAttribute" data-tab="@tab" data-depth="@depth" data-page="@pageKey" data-shell="@prefs.LangAttribute-@(Context.User.Identity?.IsAuthenticated == true ? "in" : "out")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />

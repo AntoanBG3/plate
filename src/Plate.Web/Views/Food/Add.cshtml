@@ -6,6 +6,8 @@
     ViewData["Title"] = title;
     ViewData["BackUrl"] = $"/food?date={date}";
     ViewData["BackLabel"] = L["Food"];
+    // Also shown at /food/parse and /food/barcode when a read or a lookup fails.
+    ViewData["Page"] = "food-add";
     string TabUrl(string tab) => $"/food/add?date={date}&meal={Model.Meal}&tab={tab}";
     string TabClass(string tab) => tab == Model.Tab ? "mode-tab is-active" : "mode-tab";
     string? Current(string tab) => tab == Model.Tab ? "page" : null;
@@ -15,8 +17,8 @@
     <h1 class="large-title">@title</h1>
 </header>
 
-@* data-swap: another mode is this page with other contents, also from the addresses an error is shown at. *@
-<nav class="mode-tabs" data-swap aria-label="@L["How to add"]">
+@* data-replace: choosing another mode is not a step to go back through; Back leaves the page. *@
+<nav class="mode-tabs" data-replace aria-label="@L["How to add"]">
     @foreach (var (tab, label) in new[] { ("text", "Type"), ("barcode", "Scan"), ("search", "Search"), ("recent", "Recent"), ("manual", "Manual") })
     {
         <a class="@TabClass(tab)" href="@TabUrl(tab)" aria-current="@Current(tab)"><span>@L[label]@if (tab == Model.Tab) {<i class="mode-bar" aria-hidden="true"></i>}</span></a>
@@ -44,7 +46,7 @@
         </form>
         @if (Model.Error is not null)
         {
-            <a class="btn btn-secondary btn-block" style="margin-top: var(--s-5)" href="@TabUrl("manual")" data-swap>@L["Enter it by hand instead"]</a>
+            <a class="btn btn-secondary btn-block" style="margin-top: var(--s-5)" href="@TabUrl("manual")" data-replace>@L["Enter it by hand instead"]</a>
         }
         break;
 
