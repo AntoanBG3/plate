@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 # databases together filled Docker Desktop's disk ("No space left on device", 2026-11-14 and 2026-11-15).
 run_js=true
 install_browser_deps=false
+test_settings=""
 all="tests/Plate.Core.Tests tests/Plate.Web.Tests tests/Plate.E2E.Tests"
 case "${1:-}" in
     "") set -- $all ;;
@@ -19,6 +20,9 @@ case "${1:-}" in
     --ci-browser)
         run_js=false
         install_browser_deps=true
+        # GitHub's runners have fewer cores than the three browser test classes that xunit.runner.json runs at once;
+        # starved, WebKit dropped taps and ran tests ten times slower, failing a different one on most runs.
+        test_settings="xUnit.MaxParallelThreads=2"
         set -- tests/Plate.E2E.Tests
         ;;
     *) echo "Usage: $0 [--browser-deps | --ci-core-web | --ci-browser]" >&2; exit 2 ;;
@@ -36,5 +40,5 @@ for project in "$@"; do
     if [ "$install_browser_deps" = true ] && [ "$project" = tests/Plate.E2E.Tests ]; then
         pwsh tests/Plate.E2E.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium webkit
     fi
-    dotnet test "$project" --configuration Release --no-build --no-restore
+    dotnet test "$project" --configuration Release --no-build --no-restore ${test_settings:+-- $test_settings}
 done
