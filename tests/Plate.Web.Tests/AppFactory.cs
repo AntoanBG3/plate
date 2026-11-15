@@ -14,6 +14,12 @@ namespace Plate.Web.Tests;
 public sealed class AppFactory(PostgresFixture db, int loginLimit = 1000, IDictionary<string, string?>? settings = null, Action<IServiceCollection>? services = null)
     : WebApplicationFactory<Program>
 {
+    // Every test class runs its own host, and each host watches its content and web roots for changes (the Razor
+    // file version provider asks for it). On Linux each watch is an inotify instance, and the default limit is 128
+    // per user: on GitHub's runners about 90 Web tests failed with "the configured user limit (128) on the number of
+    // inotify instances has been reached". Polling makes no instances, and nothing in a test changes those files.
+    static AppFactory() => Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
