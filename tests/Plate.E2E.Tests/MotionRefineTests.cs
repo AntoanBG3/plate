@@ -120,6 +120,12 @@ public class MotionRefineTests(E2EFixture app) : IClassFixture<E2EFixture>
             window.__fills = 0;
             document.addEventListener("animationstart", (e) => { if (e.animationName === "meter-in") { window.__fills++; } }, true);
             """);
+        // The page gives its bars one second to start filling (motion.js) and then shows them full. A slow machine
+        // can take longer than that to paint the first frame, and then nothing fills: with the page's timers held,
+        // the test doesn't depend on how fast the browser is.
+        var now = DateTime.UtcNow;
+        await phone.Page.Clock.InstallAsync(new() { TimeDate = now.AddMinutes(-1) });
+        await phone.Page.Clock.PauseAtAsync(now);
         await phone.GoAsync("/food");
         (await phone.Page.Locator(".meter i").CountAsync()).Should().BeGreaterThan(0, "the test needs the day's bars");
         await phone.Page.WaitForFunctionAsync("() => window.__fills > 0");
