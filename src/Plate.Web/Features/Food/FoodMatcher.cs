@@ -44,8 +44,9 @@ public record TraceCandidate(int Id, string Name, double Score, bool Own);
 
 /// <summary>
 /// Turns parsed foods into database foods: the model reads the text, the database supplies the numbers (SPEC 6.1).
-/// A decider (Jev) chooses from a trigram shortlist when one is set up; its "none" counts only when it is sure.
-/// Anything it doesn't decide falls back to Rank's top pick. Without <paramref name="repeat"/> (the evaluation), no usual
+/// A decider (Jev) chooses from a trigram shortlist when one is set up; its "none" counts only when it is sure or
+/// Rank's top pick is weak, and a pick it is barely sure of counts as no match. Anything it doesn't decide falls back
+/// to Rank's top pick. Without <paramref name="repeat"/> (the evaluation), no usual
 /// foods or last amounts are used, so the parser and matcher are measured alone.
 /// </summary>
 public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, RepeatLoggingService? repeat = null)
@@ -61,6 +62,18 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
 
     /// <summary>The lowest Jev confidence at which every food pick in both evaluation rounds was correct.</summary>
     internal const decimal JevHighConfidence = 0.95m;
+
+    /// <summary>
+    /// A pick below this is a guess: the item gets the AI estimate instead (feedback #7-#10: Lidl pastries matched a
+    /// breakfast pizza and tea biscuits at 0.22 and 0.23; the lowest pick users kept was 0.34).
+    /// </summary>
+    internal const decimal PickFloor = 0.3m;
+
+    /// <summary>
+    /// After an unsure "none", Rank's top pick stands only from this score; below it the AI estimate is the honest answer
+    /// (feedback #7: a SUBWAY steak sandwich at 0.52 for a Lidl pastry; the lowest fallback users kept was 1.2).
+    /// </summary>
+    internal const double NoneFallbackFloor = 0.8;
 
     private static readonly string[] CookedWords = ["cooked", "boiled", "roasted", "grilled", "baked", "fried", "broiled", "steamed", "stewed", "braised"];
 
@@ -130,12 +143,16 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
                 continue;
             }
 
-            if (decision is { FoodItemId: { } id } && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
+            if (decision is { FoodItemId: not null } && decision.Confidence < PickFloor)
+            {
+                result.Add(Estimate(item, notes, decisions!.Model));
+            }
+            else if (decision is { FoodItemId: { } id } && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
             {
                 var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
                 result.Add(Matched(item, pick, Portion(item, pick, notes), confidence, notes, decisions!.Model));
             }
-            else if (decision is { FoodItemId: null } && decision.Confidence >= NoneGate)
+            else if (decision is { FoodItemId: null } && (decision.Confidence >= NoneGate || ranked[n] is not { Score: >= NoneFallbackFloor }))
             {
                 result.Add(Estimate(item, notes, decisions!.Model));
             }

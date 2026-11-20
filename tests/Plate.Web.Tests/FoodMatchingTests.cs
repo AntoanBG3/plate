@@ -97,6 +97,50 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
     }
 
     [Fact]
+    public async Task A_pick_below_the_floor_uses_the_ai_estimate()
+    {
+        // Feedback #8 and #9: Lidl pastries became a breakfast pizza and tea biscuits on picks at 0.22 and 0.23.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var (rankPick, _) = await ChickenAsync(s);
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, rankPick, 0.22m);
+
+        var item = (await s.Matcher.ResolveAsync("chicken", [new ParsedFoodItem("chicken breast", "chicken breast", 200, FoodState.Raw, null, null, new Per100g(120, 22, 0, 3))], default)).Single();
+
+        item.FoodItemId.Should().BeNull();
+        item.Confidence.Should().Be(Confidence.Low);
+        item.Per100.Should().Be(new Per100g(120, 22, 0, 3));
+        item.MatchModel.Should().Be(StubMatchDecider.Model);
+    }
+
+    [Fact]
+    public async Task A_pick_at_the_floor_is_the_match()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var (rankPick, _) = await ChickenAsync(s);
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, rankPick, FoodMatcher.PickFloor);
+
+        (await s.Matcher.ResolveAsync("chicken", [Parsed("chicken breast", 200, FoodState.Raw)], default)).Single().FoodItemId.Should().Be(rankPick);
+    }
+
+    [Fact]
+    public async Task An_unsure_none_with_a_weak_ranking_uses_the_ai_estimate()
+    {
+        // Feedback #7: a Lidl pastry became a SUBWAY steak sandwich, Rank's top pick at 0.52, after an unsure "none".
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var lidl = new ParsedFoodItem("bread with lyutenitsa and white cheese", "закуска с лютеница и сирене от лидл", 150, FoodState.NotApplicable, null, null, new Per100g(280, 9, 39, 9));
+        var trace = new List<MatchTrace>();
+        await s.Matcher.ResolveAsync("Закуска с лютеница и сирене от лидл", [lidl], default, trace);
+        trace.Single().Top.Should().NotBeEmpty().And.Subject.First().Score.Should().BeLessThan(FoodMatcher.NoneFallbackFloor, "precondition: Rank has only a weak candidate");
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, null, 0.3m);
+
+        var item = (await s.Matcher.ResolveAsync("Закуска с лютеница и сирене от лидл", [lidl], default)).Single();
+
+        item.FoodItemId.Should().BeNull();
+        item.Confidence.Should().Be(Confidence.Low);
+        item.MatchModel.Should().Be(StubMatchDecider.Model);
+    }
+
+    [Fact]
     public async Task A_food_named_only_in_what_a_product_is_for_is_not_that_product()
     {
         // Feedback #4: "голям дюнер" became the BIM "Пилешко месо за дюнер" as Database after Jev's unsure "none".
