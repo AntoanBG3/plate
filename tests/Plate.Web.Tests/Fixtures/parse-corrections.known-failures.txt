@@ -1,2 +1,3 @@
 # run:item of parse regression cases that fail today; remove a line once it passes.
 0:0  # intended since Phase 11: "chicken breast raw" now gets the meat without skin; this sample run accepted "meat and skin"
+20:3  # ranking alone gives plain "Кефир" for "кефир"; in production the decider picks "Кефир 2%" from the parser's "2.2% fat"
