@@ -13,7 +13,9 @@ public record EvalRequest(DateTimeOffset Since, bool FlaggedOnly, int Limit, str
 
 public record EvalFresh(string Description, decimal Grams, int? FoodItemId, string? MatchedName);
 
-public record EvalCaseResult(int RunId, string Text, AgreementResult Score, int RepeatedWrongFoods, string? Error, IReadOnlyList<EvalFresh> Fresh);
+/// <param name="Saved">What the user saved, item by item (rejected foods left out), to set beside <paramref name="Fresh"/>.</param>
+public record EvalCaseResult(int RunId, string Text, AgreementResult Score, int RepeatedWrongFoods, string? Error, IReadOnlyList<EvalFresh> Fresh,
+    IReadOnlyList<EvalFresh>? Saved = null);
 
 public record EvalReport(string ParserModel, string MatcherModel, AgreementResult Total, int RepeatedWrongFoods, IReadOnlyList<EvalCaseResult> Cases)
 {
@@ -71,7 +73,10 @@ public class ParseEvaluator(
             repeats += repeated;
             total += score;
             var result = new EvalCaseResult(c.RunId, c.Text, score, repeated, parsed.Error?.ToString(),
-                fresh.Select(f => new EvalFresh(f.Description, f.Grams, f.FoodItemId, f.MatchedName)).ToList());
+                fresh.Select(f => new EvalFresh(f.Description, f.Grams, f.FoodItemId, f.MatchedName)).ToList(),
+                c.Items.Where(i => i.Verdict != EvalVerdict.WrongFood)
+                    .Select(i => new EvalFresh((i.Verdict == EvalVerdict.Removed ? "(unticked) " : "") + i.Parsed.NameOriginal, i.SavedGrams ?? i.Parsed.Grams, i.FoodItemId, i.FoodName))
+                    .ToList());
             results.Add(result);
             onCase?.Invoke(result, results.Count, cases.Count);
         }
@@ -94,8 +99,36 @@ public class ParseEvaluator(
 /// <summary><c>feedback eval</c>: the evaluation with text or JSON output.</summary>
 public static class ParseEvaluation
 {
+    public const string Usage = "Usage: feedback eval [--since 365d] [--flagged] [--limit 20] [--parser <model>] [--matcher off|jev|<decision model id>] [--json]";
+
+    private static readonly string[] Valued = ["--since", "--limit", "--parser", "--matcher"];
+    private static readonly string[] Flags = ["--flagged", "--json"];
+
+    /// <param name="args">The command's arguments, starting with "eval".</param>
     public static async Task<int> RunAsync(IServiceProvider services, string[] args, TextWriter o, bool json, CancellationToken ct)
     {
+        // Every run spends OpenRouter credit, so a misspelt option or a request for help must not start one.
+        for (var n = 1; n < args.Length; n++)
+        {
+            if (args[n] is "--help" or "-h" or "help")
+            {
+                o.WriteLine(Usage);
+                o.WriteLine("Re-runs the live parser and matcher on saved parses and scores agreement with what users saved. Each run spends OpenRouter credit.");
+                return 0;
+            }
+
+            if (Valued.Contains(args[n]) && n + 1 < args.Length)
+            {
+                n++;
+            }
+            else if (!Flags.Contains(args[n]))
+            {
+                Console.Error.WriteLine(Valued.Contains(args[n]) ? $"{args[n]} needs a value; nothing was run." : $"Unknown option \"{args[n]}\" for eval; nothing was run.");
+                Console.Error.WriteLine(Usage);
+                return 2;
+            }
+        }
+
         var request = new EvalRequest(
             TimeWindow.Since(Option(args, "--since"), TimeSpan.FromDays(365), DateTimeOffset.UtcNow)!.Value,
             args.Contains("--flagged"),
@@ -122,7 +155,7 @@ public static class ParseEvaluation
                 o.WriteLine($"Evaluating {total} parses.");
             }
 
-            o.WriteLine(CaseLine(c));
+            o.WriteLine(CaseText(c));
         }, ct);
 
         if (json)
@@ -145,6 +178,28 @@ public static class ParseEvaluation
 
     public static string TotalLine(EvalReport r) =>
         $"Total: food {r.Total.FoodAgreed}/{r.Total.Expected} ({EvalReport.Percent(r.Total.FoodAgreed, r.Total.Expected)}), grams {r.Total.GramsAgreed}/{r.Total.Expected} ({EvalReport.Percent(r.Total.GramsAgreed, r.Total.Expected)}), extra items {r.Total.Extra}, rejected foods picked again {r.RepeatedWrongFoods}.";
+
+    /// <summary>
+    /// The case line, and for a case that didn't fully agree, what the user saved beside what the parser and matcher
+    /// give now, item by item.
+    /// </summary>
+    public static string CaseText(EvalCaseResult c)
+    {
+        var s = c.Score;
+        if (s.FoodAgreed == s.Expected && s.GramsAgreed == s.Expected && s.Extra == 0 && c.RepeatedWrongFoods == 0)
+        {
+            return CaseLine(c);
+        }
+
+        var lines = new List<string> { CaseLine(c) };
+        lines.AddRange((c.Saved ?? []).Select(i => "    saved " + ItemText(i)));
+        lines.AddRange(c.Fresh.Select(i => "    now   " + ItemText(i)));
+        return string.Join('\n', lines);
+    }
+
+    private static string ItemText(EvalFresh i) =>
+        $"{i.Grams.ToString("0.#", CultureInfo.InvariantCulture)} g {i.Description} → "
+        + (i.FoodItemId is { } id ? $"{i.MatchedName} #{id}" : "AI estimate");
 
     private static string Clip(string text) => text.Length > 60 ? text[..60] + "…" : text;
 

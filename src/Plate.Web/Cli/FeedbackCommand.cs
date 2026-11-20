@@ -26,6 +26,7 @@ public static class FeedbackCommand
                                           statuses: New Seen Planned Fixed WontFix NeedsInfo
           parses [--since 30d] [--flagged] [--limit 50] [--export-eval]
           eval [--since 365d] [--flagged] [--limit 20] [--parser <model>] [--matcher off|jev|<decision model id>]
+                                          spends OpenRouter credit; unknown options are refused
           labels [--since 30d] [--edited] [--failed] [--limit 50]
           label <id>                      what the label model read, the values offered and what was saved
           label-photo <id> [n]            the nth photo's raw bytes (1 by default) to stdout, while kept (30 days); audited

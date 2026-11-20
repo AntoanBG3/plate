@@ -22,7 +22,7 @@
         </div>
         @if (Model.Report is { Cases.Count: > 0 } report)
         {
-            <pre class="admin-pre">@string.Join("\n", report.Cases.Select(ParseEvaluation.CaseLine))</pre>
+            <pre class="admin-pre">@string.Join("\n", report.Cases.Select(ParseEvaluation.CaseText))</pre>
             <p class="section-footer">Cost is not reported here; check the OpenRouter activity page.</p>
         }
     }

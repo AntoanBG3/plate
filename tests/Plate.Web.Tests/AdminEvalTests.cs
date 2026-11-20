@@ -2,6 +2,7 @@ using System.Net;
 using System.Reflection;
 using FluentAssertions;
 using Plate.Core.Nutrition;
+using Plate.Web.Cli;
 using Plate.Web.Controllers;
 using Plate.Web.Features.Admin;
 using Plate.Web.Features.Feedback;
@@ -30,6 +31,61 @@ public class AdminEvalTests(PostgresFixture fixture) : IClassFixture<PostgresFix
             await Release.Task.WaitAsync(ct);
             return new EvalReport("openai/test", "off", new AgreementResult(2, 2, 1, 0), 0, [first]);
         }
+    }
+
+    /// <summary>Counts runs and reports one case.</summary>
+    private sealed class CountingEvaluator(EvalCaseResult result) : IParseEvaluator
+    {
+        public int Runs { get; private set; }
+
+        public Task<EvalReport> RunAsync(EvalRequest request, Action<EvalCaseResult, int, int>? onCase, CancellationToken ct)
+        {
+            Runs++;
+            onCase?.Invoke(result, 1, 1);
+            return Task.FromResult(new EvalReport("openai/test", "off", result.Score, result.RepeatedWrongFoods, [result]));
+        }
+    }
+
+    private static readonly EvalCaseResult CottageCheese = new(19, "200g cottage cheese", new AgreementResult(1, 0, 1, 0), 0, null,
+        [new EvalFresh("cottage cheese", 200, 5, "Извара")],
+        [new EvalFresh("cottage cheese", 200, 2591, "Котидж сирене, 2% масленост")]);
+
+    private AppFactory EvalApp(IParseEvaluator evaluator) => new(fixture,
+        settings: new Dictionary<string, string?> { ["OpenRouter:ApiKey"] = "sk-or-v1-test-0123456789abcdef" },
+        services: s => s.AddScoped(_ => evaluator));
+
+    // "feedback eval --help" once ran a full evaluation, which spends OpenRouter credit.
+    [Theory]
+    [InlineData(new[] { "--help" }, 0)]
+    [InlineData(new[] { "--limt", "5" }, 2)]
+    [InlineData(new[] { "--limit" }, 2)]
+    public async Task Eval_runs_nothing_for_help_or_an_option_it_does_not_know(string[] options, int exit)
+    {
+        var evaluator = new CountingEvaluator(CottageCheese);
+        using var app = EvalApp(evaluator);
+        var output = new StringWriter();
+
+        (await FeedbackCommand.RunAsync(app.Services, ["feedback", "eval", .. options], output)).Should().Be(exit);
+
+        evaluator.Runs.Should().Be(0);
+        if (exit == 0)
+        {
+            output.ToString().Should().Contain("spends OpenRouter credit");
+        }
+    }
+
+    [Fact]
+    public async Task Eval_shows_what_was_saved_beside_what_it_gives_now_for_a_case_that_disagrees()
+    {
+        var evaluator = new CountingEvaluator(CottageCheese);
+        using var app = EvalApp(evaluator);
+        var output = new StringWriter();
+
+        (await FeedbackCommand.RunAsync(app.Services, ["feedback", "eval", "--limit", "1", "--flagged"], output)).Should().Be(0);
+
+        evaluator.Runs.Should().Be(1);
+        output.ToString().Should().Contain("    saved 200 g cottage cheese → Котидж сирене, 2% масленост #2591")
+            .And.Contain("    now   200 g cottage cheese → Извара #5");
     }
 
     [Fact]
