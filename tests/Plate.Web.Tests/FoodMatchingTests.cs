@@ -127,13 +127,13 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
     {
         // Feedback #7: a Lidl pastry became a SUBWAY steak sandwich, Rank's top pick at 0.52, after an unsure "none".
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
-        var lidl = new ParsedFoodItem("bread with lyutenitsa and white cheese", "закуска с лютеница и сирене от лидл", 150, FoodState.NotApplicable, null, null, new Per100g(280, 9, 39, 9));
+        var kiosk = new ParsedFoodItem("cheese pastry from the kiosk", "закуска от будката", 150, FoodState.NotApplicable, null, null, new Per100g(280, 9, 39, 9));
         var trace = new List<MatchTrace>();
-        await s.Matcher.ResolveAsync("Закуска с лютеница и сирене от лидл", [lidl], default, trace);
+        await s.Matcher.ResolveAsync("закуска от будката", [kiosk], default, trace);
         trace.Single().Top.Should().NotBeEmpty().And.Subject.First().Score.Should().BeLessThan(FoodMatcher.NoneFallbackFloor, "precondition: Rank has only a weak candidate");
         s.MatchDecider.Answer = q => StubMatchDecider.First(q, null, 0.3m);
 
-        var item = (await s.Matcher.ResolveAsync("Закуска с лютеница и сирене от лидл", [lidl], default)).Single();
+        var item = (await s.Matcher.ResolveAsync("закуска от будката", [kiosk], default)).Single();
 
         item.FoodItemId.Should().BeNull();
         item.Confidence.Should().Be(Confidence.Low);
