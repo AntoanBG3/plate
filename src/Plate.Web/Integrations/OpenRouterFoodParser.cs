@@ -31,6 +31,10 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
     private const string Instructions = """
         You turn a short food diary entry into a list of foods with portion sizes.
         The text is in English or Bulgarian. Return one item per distinct food.
+        A baked good, pastry or ready-made product named by its filling or topping is one food, not its ingredients:
+        "закуска с лютеница и сирене", "баница със сирене", "кроасан с шоколад", "pizza with ham". Keep the shop or brand
+        the user named in nameOriginal ("закуска с лютеница и сирене от Lidl"). Foods the user put together themselves
+        ("хляб с масло и сирене", "rice with chicken") are still one item per food.
         - nameEn: a plain English name as a nutrition database would list it, e.g. "chicken breast, skinless", "white rice", "banana".
           Include what changes the nutrition: skinless for poultry unless the text mentions skin, fat level for dairy.
         - nameOriginal: the food's name as the user wrote it, in their language, without the amount or unit
