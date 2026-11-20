@@ -17,7 +17,7 @@ Projects: `src/Plate.Core` (domain and pure calculations), `src/Plate.Web` (MVC 
 - Run locally: `docker compose -f docker/docker-compose.dev.yml up -d db`, then `dotnet run --project src/Plate.Web`
 - Full stack (on wizard): `docker compose -f docker/docker-compose.yml up -d --build`
 - Deploy: `tools/deploy.sh` from a clean `main` (it dumps the database, copies the checkout and waits for the new version). `tools/deploy.sh --dry-run` shows what would change.
-- Feedback from the app (reports, parse ratings, errors): `ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback digest`; `.agents/skills/feedback/SKILL.md` has the commands and the triage workflow.
+- Feedback from the app (reports, parse ratings, errors): `ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback digest`; `docs/feedback-triage.md` has the commands and the triage workflow (Codex reads it through `.agents/skills/feedback`, an untracked symlink: `ln -s ../../.agent/skills/feedback .agents/skills/feedback`).
 - Admin over SSH (SPEC 12): `role grant|revoke|list`, `ai show|set-model|set-key|clear-key|test`, `admin audit` as further `dotnet Plate.Web.dll` commands. The web admin area at `/admin` is for Antoan's phone; agents use the CLI.
 
 Test environment:
