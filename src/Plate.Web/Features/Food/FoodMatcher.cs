@@ -45,8 +45,8 @@ public record TraceCandidate(int Id, string Name, double Score, bool Own);
 /// <summary>
 /// Turns parsed foods into database foods: the model reads the text, the database supplies the numbers (SPEC 6.1).
 /// A decider (Jev) chooses from a trigram shortlist when one is set up; its "none" counts only when it is sure or
-/// Rank's top pick is weak, and a pick it is barely sure of counts as no match. Anything it doesn't decide falls back
-/// to Rank's top pick. Without <paramref name="repeat"/> (the evaluation), no usual
+/// Rank's top pick is weak, and a pick it is barely sure of leaves a strong top pick of Rank's standing and is no
+/// match otherwise. Anything it doesn't decide falls back to Rank's top pick. Without <paramref name="repeat"/> (the evaluation), no usual
 /// foods or last amounts are used, so the parser and matcher are measured alone.
 /// </summary>
 public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, RepeatLoggingService? repeat = null)
@@ -74,6 +74,13 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     /// (feedback #7: a SUBWAY steak sandwich at 0.52 for a Lidl pastry; the lowest fallback users kept was 1.2).
     /// </summary>
     internal const double NoneFallbackFloor = 0.8;
+
+    /// <summary>
+    /// After a pick below <see cref="PickFloor"/>, Rank's top pick stands only from this score. The decider spreads its
+    /// confidence over near-identical rows (five "Лютеница" rows ranked at 1.70 drew a pick at 0.14), while the Lidl
+    /// misses ranked at 0.52 to 0.86; the lowest fallback users kept was 1.2.
+    /// </summary>
+    internal const double UnsurePickFallbackFloor = 1.2;
 
     private static readonly string[] CookedWords = ["cooked", "boiled", "roasted", "grilled", "baked", "fried", "broiled", "steamed", "stewed", "braised"];
 
@@ -143,11 +150,11 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
                 continue;
             }
 
-            if (decision is { FoodItemId: not null } && decision.Confidence < PickFloor)
+            if (decision is { FoodItemId: not null } && decision.Confidence < PickFloor && ranked[n] is not { Score: >= UnsurePickFallbackFloor })
             {
                 result.Add(Estimate(item, notes, decisions!.Model));
             }
-            else if (decision is { FoodItemId: { } id } && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
+            else if (decision is { FoodItemId: { } id } && decision.Confidence >= PickFloor && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
             {
                 var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
                 result.Add(Matched(item, pick, Portion(item, pick, notes), confidence, notes, decisions!.Model));

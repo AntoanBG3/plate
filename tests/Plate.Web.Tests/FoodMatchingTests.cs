@@ -97,19 +97,42 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
     }
 
     [Fact]
-    public async Task A_pick_below_the_floor_uses_the_ai_estimate()
+    public async Task A_pick_below_the_floor_with_a_weak_ranking_uses_the_ai_estimate()
     {
         // Feedback #8 and #9: Lidl pastries became a breakfast pizza and tea biscuits on picks at 0.22 and 0.23.
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
-        var (rankPick, _) = await ChickenAsync(s);
-        s.MatchDecider.Answer = q => StubMatchDecider.First(q, rankPick, 0.22m);
+        var kiosk = new ParsedFoodItem("cheese pastry from the kiosk", "закуска от будката", 150, FoodState.NotApplicable, null, null, new Per100g(280, 9, 39, 9));
+        var trace = new List<MatchTrace>();
+        await s.Matcher.ResolveAsync("закуска от будката", [kiosk], default, trace);
+        var top = trace.Single().Top.Should().NotBeEmpty().And.Subject.First();
+        top.Score.Should().BeLessThan(FoodMatcher.UnsurePickFallbackFloor, "precondition: Rank has only a weak candidate");
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, top.Id, 0.22m);
 
-        var item = (await s.Matcher.ResolveAsync("chicken", [new ParsedFoodItem("chicken breast", "chicken breast", 200, FoodState.Raw, null, null, new Per100g(120, 22, 0, 3))], default)).Single();
+        var item = (await s.Matcher.ResolveAsync("закуска от будката", [kiosk], default)).Single();
 
         item.FoodItemId.Should().BeNull();
         item.Confidence.Should().Be(Confidence.Low);
-        item.Per100.Should().Be(new Per100g(120, 22, 0, 3));
+        item.Per100.Should().Be(new Per100g(280, 9, 39, 9));
         item.MatchModel.Should().Be(StubMatchDecider.Model);
+    }
+
+    [Fact]
+    public async Task A_pick_below_the_floor_leaves_a_strong_ranking_standing()
+    {
+        // Parse run 22: "лютеница" ranked five identical "Лютеница" rows at 1.70, and the decider, torn between them,
+        // picked one at 0.14. An exact name match is not a guess.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var (rankPick, shortlist) = await ChickenAsync(s);
+        var trace = new List<MatchTrace>();
+        await s.Matcher.ResolveAsync("200g chicken breast", [Parsed("chicken breast", 200, FoodState.Raw)], default, trace);
+        trace.Single().Top.First().Score.Should().BeGreaterThanOrEqualTo(FoodMatcher.UnsurePickFallbackFloor, "precondition: Rank is sure");
+        var other = shortlist.First(c => c.Id != rankPick);
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, other.Id, 0.14m);
+
+        var item = (await s.Matcher.ResolveAsync("200g chicken breast", [Parsed("chicken breast", 200, FoodState.Raw)], default)).Single();
+
+        item.FoodItemId.Should().Be(rankPick);
+        item.MatchModel.Should().BeNull("Rank decided");
     }
 
     [Fact]
