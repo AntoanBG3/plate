@@ -103,7 +103,8 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         var shortlists = new List<List<FoodMatch>>();
         foreach (var item in items)
         {
-            var all = await RankAsync(item, ct);
+            var typed = item.NameOriginal + " " + item.NameEn;
+            var all = Collapse(await RankAsync(item, ct), x => x.Food, (x, food) => (food, x.Score), typed);
             ranked.Add(all.Count == 0 ? null : all[0]);
             tops.Add(all.Take(TraceSize).ToList());
             var found = await foods.SearchAsync(item.NameEn, ShortlistSize, ShortlistThreshold, ct);
@@ -112,7 +113,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
                 found.AddRange(await foods.SearchAsync(item.NameOriginal, ShortlistSize, ShortlistThreshold, ct));
             }
 
-            shortlists.Add(Shortlist(found));
+            shortlists.Add(Shortlist(found, typed));
         }
 
         // A usual food, or a food the user saved at the top of the ranking, stands: saving it is how they say "this is what I eat".
@@ -222,14 +223,79 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     /// The decider's options: the plain trigram matches of the English and the original name, merged by food with
     /// the better similarity, best first. This order is the one measured in the evaluation; Jev leans to the first.
     /// </summary>
-    internal static List<FoodMatch> Shortlist(IEnumerable<FoodMatch> found) =>
-        found
-            .GroupBy(c => c.Id)
-            .Select(g => g.MaxBy(c => c.Score)!)
-            .OrderByDescending(c => c.Score)
-            .ThenBy(c => c.Name.Length)
+    /// <param name="typed">What the user wrote for the item; a brand in it keeps that brand's products apart (see <see cref="Collapse{T}"/>).</param>
+    internal static List<FoodMatch> Shortlist(IEnumerable<FoodMatch> found, string typed = "") =>
+        Collapse(found
+                .GroupBy(c => c.Id)
+                .Select(g => g.MaxBy(c => c.Score)!)
+                .OrderByDescending(c => c.Score)
+                .ThenBy(c => c.Name.Length)
+                .ToList(), c => c, (_, food) => food, typed)
             .Take(ShortlistSize)
             .ToList();
+
+    /// <summary>
+    /// Same-named foods as one option. Products from many makers share a plain name (six "Лютеница" rows), and offered
+    /// side by side they split the decider's confidence (parse run 22: a pick at 0.14) and leave Rank's pick to whichever
+    /// brand sorts first. Unless the user named one of their brands, products without an English name of their own that
+    /// share a Bulgarian name go in as one food: the generic food of that name when there is exactly one, otherwise the
+    /// product with the middle energy. Foods with English names of their own stay apart (two USDA foods can share a
+    /// translation), and so do the account's own foods and shared ones. Nothing is deleted, and a barcode still finds its
+    /// product. Each group takes its best member's place; a food listed twice keeps its first place.
+    /// </summary>
+    internal static List<T> Collapse<T>(IReadOnlyList<T> items, Func<T, FoodMatch> food, Func<T, FoodMatch, T> replace, string typed)
+    {
+        var seen = new HashSet<int>();
+        var unique = items.Where(i => seen.Add(food(i).Id)).ToList();
+        var words = " " + Key(typed) + " ";
+        var groups = unique.Select(food)
+            .Where(Mergeable)
+            .GroupBy(f => Key(f.NameBg!))
+            .Where(g =>
+            {
+                var products = g.Count(IsProduct);
+                return (products > 1 || (products == 1 && g.Count() == 2))
+                    && !g.Any(f => f.Brand is { } brand && Key(brand) is { Length: >= 2 } b && words.Contains(" " + b + " ", StringComparison.Ordinal));
+            })
+            .ToDictionary(g => g.Key, g => Representative(g.ToList()));
+
+        var result = new List<T>();
+        var placed = new HashSet<string>();
+        foreach (var i in unique)
+        {
+            var f = food(i);
+            if (!Mergeable(f) || !groups.TryGetValue(Key(f.NameBg!), out var representative) || (!IsProduct(f) && f.Id != representative.Id))
+            {
+                result.Add(i);
+            }
+            else if (placed.Add(Key(f.NameBg!)))
+            {
+                result.Add(f.Id == representative.Id ? i : replace(i, representative));
+            }
+        }
+
+        return result;
+
+        static bool Mergeable(FoodMatch f) => !f.Own && !f.ByOther && !string.IsNullOrWhiteSpace(f.NameBg);
+
+        // A product's name is its Bulgarian name; a generic or USDA food has an English one besides.
+        static bool IsProduct(FoodMatch f) => string.Equals(f.Name, f.NameBg, StringComparison.OrdinalIgnoreCase);
+
+        static FoodMatch Representative(List<FoodMatch> group)
+        {
+            var named = group.Where(f => !IsProduct(f)).ToList();
+            if (named.Count == 1)
+            {
+                return named[0];
+            }
+
+            var products = group.Where(IsProduct).OrderBy(f => f.KcalPer100g).ThenBy(f => f.Id).ToList();
+            return products[(products.Count - 1) / 2];
+        }
+
+        static string Key(string s) =>
+            string.Join(' ', s.ToLowerInvariant().Split(s.Where(c => !char.IsLetterOrDigit(c)).Distinct().ToArray(), StringSplitOptions.RemoveEmptyEntries));
+    }
 
     private static MatchCandidate Candidate(FoodMatch f) => new(f.Id, f.Name, f.NameBg, f.Brand, f.Per100);
 

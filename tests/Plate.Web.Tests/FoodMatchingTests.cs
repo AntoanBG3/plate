@@ -163,6 +163,72 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
         item.MatchModel.Should().Be(StubMatchDecider.Model);
     }
 
+    private static FoodMatch Food(int id, string name, string? nameBg, string? brand, decimal kcal, bool own = false) =>
+        new(id, name, nameBg, brand, kcal, 2, 15, 8, null, null, null, own, false, 0.9);
+
+    private static readonly FoodMatch[] Lyutenitsas =
+    [
+        Food(1, "Лютеница", "Лютеница", "Deroni", 150),
+        Food(2, "Lyutenitsa, roasted pepper and tomato relish", "Лютеница", null, 164),
+        Food(3, "Лютеница", "Лютеница", "Брей!", 131),
+        Food(4, "Лютеница", "лютеница", "Freshona", 145),
+        Food(5, "Едросмляна лютеница", "Едросмляна лютеница", "Хоро", 140),
+    ];
+
+    [Fact]
+    public void Same_named_products_go_to_the_decider_as_their_generic_food()
+    {
+        // Parse run 22: six "Лютеница" rows split the decider's confidence and it picked one at 0.14.
+        FoodMatcher.Shortlist(Lyutenitsas, "лютеница lyutenitsa").Select(f => f.Id).Should().Equal(2, 5);
+    }
+
+    [Fact]
+    public void Same_named_products_without_a_generic_go_as_the_one_with_the_middle_energy()
+    {
+        FoodMatcher.Shortlist(Lyutenitsas.Where(f => f.Id != 2), "лютеница").Select(f => f.Id).Should().Equal(4, 5);
+    }
+
+    [Theory]
+    [InlineData("лютеница брей")]
+    [InlineData("лютеница Deroni")]
+    public void A_brand_the_user_named_keeps_its_group_apart(string typed)
+    {
+        FoodMatcher.Shortlist(Lyutenitsas, typed).Select(f => f.Id).Should().BeEquivalentTo([1, 2, 3, 4, 5]);
+    }
+
+    [Fact]
+    public void Foods_with_their_own_english_names_and_the_users_own_foods_stay_apart()
+    {
+        FoodMatch[] foods =
+        [
+            Food(1, "Cheese, cottage, lowfat, 2% milkfat", "Извара", null, 84),
+            Food(2, "Cheese, cottage, creamed", "Извара", null, 98),
+            Food(3, "Извара", "Извара", "Мандра", 154),
+            Food(4, "Извара", "Извара", null, 120, own: true),
+        ];
+
+        FoodMatcher.Shortlist(foods, "извара").Select(f => f.Id).Should().BeEquivalentTo([1, 2, 3, 4]);
+    }
+
+    [Fact]
+    public async Task The_seed_offers_one_plain_lyutenitsa_and_keeps_the_lidl_bakery_foods()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var trace = new List<MatchTrace>();
+
+        await s.Matcher.ResolveAsync("лютеница\nкроасан с масло от лидл",
+        [
+            new ParsedFoodItem("lyutenitsa", "лютеница", 30, FoodState.NotApplicable, null, null, new Per100g(150, 2, 15, 8)),
+            new ParsedFoodItem("butter croissant", "кроасан с масло от лидл", 57, FoodState.NotApplicable, null, null, new Per100g(410, 7, 45, 22)),
+        ], default, trace);
+
+        var questions = s.MatchDecider.Calls.Single();
+        questions[0].Candidates.Count(c => c.NameBg == "Лютеница").Should().Be(1);
+        trace[0].Top.Select(t => t.Name).Should().OnlyHaveUniqueItems();
+        questions[1].Candidates.Should().Contain(c => c.NameBg == "Кроасан с масло, Пекарна Лидл");
+        questions[1].Candidates.Should().Contain(c => c.NameBg == "Мини кроасан с масло, Пекарна Лидл");
+    }
+
     [Fact]
     public async Task A_food_named_only_in_what_a_product_is_for_is_not_that_product()
     {
