@@ -10,6 +10,8 @@ public sealed class Phone : IAsyncDisposable
     private const string InitScript = """
         window.__gymPages = 0;
         document.addEventListener("gym:page", () => { window.__gymPages++; });
+        // SettledAsync waits for this rather than Playwright's own DOMContentLoaded state (see there).
+        document.addEventListener("DOMContentLoaded", () => { window.__gymLoaded = true; });
         // The app asks in its own sheet (SPEC 7); a native dialog would also block the test.
         window.confirm = () => { console.error("window.confirm was called"); return false; };
         """;
@@ -34,6 +36,13 @@ public sealed class Phone : IAsyncDisposable
         page.Request += (_, request) => Requests.Add($"{request.Method} {new Uri(request.Url).PathAndQuery}");
         page.Response += (_, response) => Responses.Add($"{response.Status} {new Uri(response.Url).PathAndQuery}");
         page.RequestFailed += (_, request) => Responses.Add($"FAILED {request.Failure} {new Uri(request.Url).PathAndQuery}");
+        page.FrameNavigated += (_, frame) =>
+        {
+            if (frame == page.MainFrame)
+            {
+                Navigations.Add(frame.Url);
+            }
+        };
     }
 
     public string Browser { get; }
@@ -49,6 +58,9 @@ public sealed class Phone : IAsyncDisposable
     public List<string> Requests { get; } = [];
 
     public List<string> Responses { get; } = [];
+
+    /// <summary>Every URL the main frame navigated to, in order: full loads and the soft navigations' pushState alike.</summary>
+    public List<string> Navigations { get; } = [];
 
     public async Task SignInAsync(string email, string password)
     {
@@ -89,10 +101,39 @@ public sealed class Phone : IAsyncDisposable
     }
 
     /// <summary>Waits until the page is loaded and no view transition is running.</summary>
+    /// <remarks>
+    /// The page's own DOMContentLoaded flag (InitScript), not Page.WaitForLoadStateAsync. On a GitHub runner
+    /// (2026-11-15) that wait ran out in WebKit right after GotoAsync had returned on "load": Playwright did not have
+    /// DOMContentLoaded recorded for the page when the wait began, and only network idle arrived in the 30 s after.
+    /// Why is not known (WebKit's first load in a fresh context swaps processes, which Playwright tracks separately). The flag asks the document itself, so lost bookkeeping can't stall the wait, and a page
+    /// that really never finishes parsing still times out, now with what the page and network were doing.
+    /// </remarks>
     public async Task SettledAsync()
     {
-        await Page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
-        await Page.WaitForFunctionAsync("() => !document.documentElement.dataset.nav && !document.documentElement.classList.contains('is-navigating')");
+        try
+        {
+            await Page.WaitForFunctionAsync(
+                "() => window.__gymLoaded === true && !document.documentElement.dataset.nav && !document.documentElement.classList.contains('is-navigating')");
+        }
+        catch (TimeoutException ex)
+        {
+            string state;
+            try
+            {
+                // Bounded: a page wedged enough to fail the wait may not answer this either.
+                state = await Page.EvaluateAsync<string>(
+                    "() => JSON.stringify({ readyState: document.readyState, loaded: window.__gymLoaded === true, nav: document.documentElement.dataset.nav || null, navigating: document.documentElement.classList.contains('is-navigating'), timeOrigin: performance.timeOrigin })")
+                    .WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            catch (Exception stateError) when (stateError is PlaywrightException or TimeoutException)
+            {
+                state = $"unreadable: {stateError.Message}";
+            }
+
+            throw new TimeoutException(
+                $"{ex.Message}\nURL: {Page.Url}\nPage: {state}\nNavigations:\n{string.Join("\n", Navigations)}" +
+                $"\nRequests:\n{string.Join("\n", Requests)}\nResponses:\n{string.Join("\n", Responses)}", ex);
+        }
     }
 
     public Task TapAsync(string selector) => Page.Locator(selector).First.TapAsync();
