@@ -11,7 +11,7 @@ namespace Plate.Web.Controllers;
 
 [Route("account")]
 public class AccountController(
-    SignInManager<AppUser> signIn, UserManager<AppUser> users, IPasswordHasher<AppUser> hasher, TimeProvider time, ILogger<AccountController> logger) : Controller
+    SignInManager<AppUser> signIn, UserManager<AppUser> users, IPasswordHasher<AppUser> hasher, ILogger<AccountController> logger) : Controller
 {
     // A real hash to check against when the email is unknown, so both paths cost one password hash.
     private static string? dummyHash;
@@ -20,7 +20,7 @@ public class AccountController(
     [LanguageFromRequest]
     [HttpGet("login")]
     public IActionResult Login(string? returnUrl) =>
-        User.Identity?.IsAuthenticated == true ? LocalRedirect(Url.SafeReturnUrl(returnUrl)) : View(new LoginViewModel(null, returnUrl, null, Brand.ShowMoveNotice(time.GetUtcNow())));
+        User.Identity?.IsAuthenticated == true ? LocalRedirect(Url.SafeReturnUrl(returnUrl)) : View(new LoginViewModel(null, returnUrl, null));
 
     [AllowAnonymous]
     [LanguageFromRequest]
@@ -56,7 +56,7 @@ public class AccountController(
         var error = result.IsLockedOut
             ? "Too many failed attempts. Try again in 15 minutes."
             : "Email or password is wrong.";
-        return View(new LoginViewModel(email, returnUrl, error, Brand.ShowMoveNotice(time.GetUtcNow())));
+        return View(new LoginViewModel(email, returnUrl, error));
     }
 
     [HttpPost("logout")]
