@@ -89,14 +89,31 @@ public sealed class Phone : IAsyncDisposable
     }
 
     /// <summary>Runs <paramref name="action"/> and waits for the soft navigation or full load it causes to finish.</summary>
-    public async Task NavigateByAsync(Func<Task> action)
+    /// <param name="path">
+    /// Where the action leads, when known: the wait then also holds until the address has that path, so a navigation
+    /// already under way when the action ran can't end it early. A WebKit run of the whole BarcodeFieldTests class
+    /// (2026-11-21) once ended this wait on /food/add after tapping a link to /food/barcode; 23 runs of the class and
+    /// 40 of the test alone didn't repeat it.
+    /// </param>
+    public async Task NavigateByAsync(Func<Task> action, string? path = null)
     {
         var before = await Page.EvaluateAsync<double[]>("() => [performance.timeOrigin, window.__gymPages || 0]");
+        var requests = Requests.Count;
         await action();
         // Playwright's usual 30 s. GitHub's two-core runners now and then take 30 to 50 s over a test that takes 3 s
         // here, and at 10 s this wait failed a different WebKit test on two of four runs (2026-11-15).
-        await Page.WaitForFunctionAsync(
-            "b => performance.timeOrigin !== b[0] || (window.__gymPages || 0) > b[1]", before, new() { Timeout = 30_000 });
+        try
+        {
+            await Page.WaitForFunctionAsync(
+                "([b, path]) => (performance.timeOrigin !== b[0] || (window.__gymPages || 0) > b[1]) && (path === null || location.pathname === path)",
+                new object?[] { before, path }, new() { Timeout = 30_000 });
+        }
+        catch (TimeoutException ex)
+        {
+            // A WebKit run on the Mac (2026-11-20) ran out here after tapping a form's submit with nothing to say why.
+            throw await StuckAsync(ex, $"Before: timeOrigin {before[0]}, {before[1]} soft navigations. Requests since the action: {string.Join(", ", Requests.Skip(requests))}");
+        }
+
         await SettledAsync();
     }
 
@@ -117,23 +134,29 @@ public sealed class Phone : IAsyncDisposable
         }
         catch (TimeoutException ex)
         {
-            string state;
-            try
-            {
-                // Bounded: a page wedged enough to fail the wait may not answer this either.
-                state = await Page.EvaluateAsync<string>(
-                    "() => JSON.stringify({ readyState: document.readyState, loaded: window.__gymLoaded === true, nav: document.documentElement.dataset.nav || null, navigating: document.documentElement.classList.contains('is-navigating'), timeOrigin: performance.timeOrigin })")
-                    .WaitAsync(TimeSpan.FromSeconds(5));
-            }
-            catch (Exception stateError) when (stateError is PlaywrightException or TimeoutException)
-            {
-                state = $"unreadable: {stateError.Message}";
-            }
-
-            throw new TimeoutException(
-                $"{ex.Message}\nURL: {Page.Url}\nPage: {state}\nNavigations:\n{string.Join("\n", Navigations)}" +
-                $"\nRequests:\n{string.Join("\n", Requests)}\nResponses:\n{string.Join("\n", Responses)}", ex);
+            throw await StuckAsync(ex, null);
         }
+    }
+
+    /// <summary>A timeout with what the page and the network were doing, so a hang can be traced.</summary>
+    private async Task<TimeoutException> StuckAsync(TimeoutException ex, string? detail)
+    {
+        string state;
+        try
+        {
+            // Bounded: a page wedged enough to fail the wait may not answer this either.
+            state = await Page.EvaluateAsync<string>(
+                "() => JSON.stringify({ readyState: document.readyState, loaded: window.__gymLoaded === true, nav: document.documentElement.dataset.nav || null, navigating: document.documentElement.classList.contains('is-navigating'), timeOrigin: performance.timeOrigin, pages: window.__gymPages || 0, invalid: [...document.querySelectorAll(':invalid')].map(e => e.name || e.id).filter(Boolean) })")
+                .WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        catch (Exception stateError) when (stateError is PlaywrightException or TimeoutException)
+        {
+            state = $"unreadable: {stateError.Message}";
+        }
+
+        return new TimeoutException(
+            $"{ex.Message}{(detail is null ? "" : "\n" + detail)}\nURL: {Page.Url}\nPage: {state}\nConsole errors:\n{string.Join("\n", Errors)}\nNavigations:\n{string.Join("\n", Navigations)}" +
+            $"\nRequests:\n{string.Join("\n", Requests)}\nResponses:\n{string.Join("\n", Responses)}", ex);
     }
 
     public Task TapAsync(string selector) => Page.Locator(selector).First.TapAsync();

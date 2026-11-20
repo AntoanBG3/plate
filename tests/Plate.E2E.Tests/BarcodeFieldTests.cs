@@ -100,7 +100,7 @@ public class BarcodeFieldTests(E2EFixture app) : IClassFixture<E2EFixture>
         await card.WaitForAsync();
         (await card.InnerTextAsync()).Should().Contain("Known kefir e2e").And.Contain("Is this the same food?");
 
-        await phone.NavigateByAsync(() => card.Locator("a", new() { HasText = "Yes, use it" }).TapAsync());
+        await phone.NavigateByAsync(() => card.Locator("a", new() { HasText = "Yes, use it" }).TapAsync(), "/food/barcode");
         new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food/barcode");
         (await phone.Page.Locator("main").InnerTextAsync()).Should().Contain("Known kefir e2e");
     }
@@ -130,7 +130,7 @@ public class BarcodeFieldTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await phone.Page.InputValueAsync("#m-barcode")).Should().Be(code);
         (await phone.Page.Locator("[data-known]").InnerTextAsync()).Should().Contain("kept for you only");
         await FillNumbersAsync(phone);
-        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/items'] button[type=submit]").TapAsync());
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/items'] button[type=submit]").TapAsync(), "/food");
         new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food");
         phone.ShouldHaveNoErrors();
     }
