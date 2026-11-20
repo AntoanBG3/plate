@@ -8,10 +8,11 @@
 // the USDA foods and other Bulgarian rows sharing words with its English name. USDA wins over a duplicate (lab data),
 // except over Bulgarian dishes, which are kept for their Bulgarian names;
 // among Bulgarian sources the row backed by more sources wins. Branded products (with barcodes) are only
-// de-duplicated by barcode.
+// de-duplicated by barcode. Hand-curated rows (lidl-bakery.csv, see lidl-bakery.md) are appended unchanged, so a
+// re-run keeps them.
 import fs from "node:fs";
 import path from "node:path";
-import { raw, repo, llm, readCsv, writeCsv, pool } from "./lib.mjs";
+import { here, raw, repo, llm, readCsv, writeCsv, pool } from "./lib.mjs";
 
 const seedDir = path.join(repo, "src/Plate.Web/Data/Seed");
 const usda = readCsv(path.join(seedDir, "usda-foods.csv")).map((r) => ({ ...r, id: "u" + r.fdc_id }));
@@ -135,6 +136,11 @@ for (const g of keptGeneric) {
 for (const p of off) {
     out.push({ kind: "product", barcode: p.barcode, name_bg: clean(p.name_bg), name_en: "", brand: p.brand, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, serving_g: p.serving_g, source: "https://world.openfoodfacts.org/product/" + p.barcode, fiber: p.fiber ?? "", satfat: p.satfat ?? "" });
 }
+// Hand-curated foods with their own sources, kept as they are.
+for (const curated of ["lidl-bakery.csv"]) {
+    out.push(...readCsv(path.join(here, curated)));
+}
+
 // A Latin letter that looks Cyrillic inside a Cyrillic word ("чипc"), or the reverse, takes the alphabet of the rest
 // of its word; the same rule as Plate.Core MixedScript, which the app also applies when seeding.
 const LATIN = "aeopcxyAEOPCXBKMHT", CYRILLIC = "аеорсхуАЕОРСХВКМНТ";
