@@ -19,9 +19,9 @@
 
 @* data-replace: choosing another mode is not a step to go back through; Back leaves the page. *@
 <nav class="mode-tabs" data-replace aria-label="@L["How to add"]">
-    @foreach (var (tab, label) in new[] { ("text", "Type"), ("barcode", "Scan"), ("search", "Search"), ("recent", "Recent"), ("manual", "Manual") })
+    @foreach (var (tab, label) in new[] { ("text", L["Type"]), ("barcode", L["Scan"]), ("search", L["Search"]), ("recent", L["Recent"]), ("manual", L["Manual"]) })
     {
-        <a class="@TabClass(tab)" href="@TabUrl(tab)" aria-current="@Current(tab)"><span>@L[label]@if (tab == Model.Tab) {<i class="mode-bar" aria-hidden="true"></i>}</span></a>
+        <a class="@TabClass(tab)" href="@TabUrl(tab)" aria-current="@Current(tab)"><span>@label@if (tab == Model.Tab) {<i class="mode-bar" aria-hidden="true"></i>}</span></a>
     }
 </nav>
 
