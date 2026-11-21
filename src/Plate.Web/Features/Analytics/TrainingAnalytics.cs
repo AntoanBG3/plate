@@ -6,35 +6,38 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Plate.Web.Features.Analytics;
 
-public record PersonalRecord(string ExerciseName, decimal E1rmKg, decimal? PreviousBestKg);
+public record PersonalRecord(string ExerciseName, decimal E1rmKg, decimal? PreviousBestKg, bool IsCustom = false);
 
 public record E1rmPoint(DateOnly Date, decimal E1rmKg);
 
-public record ExerciseOption(int Id, string Name);
+public record ExerciseOption(int Id, string Name, bool IsCustom = false);
 
 public record VolumeComparison(IsoWeek ThisWeek, IReadOnlyList<(Muscle Muscle, decimal ThisWeek, decimal LastWeek)> Muscles);
 
 /// <summary>Reads training history for progression suggestions, records and charts. The math lives in Core.</summary>
 public class TrainingAnalytics(AppDbContext db, TimeProvider time)
 {
-    /// <summary>A suggestion per exercise in the session, keyed by session exercise id; null where there is no history.</summary>
-    public async Task<Dictionary<int, ProgressionSuggestion?>> SuggestionsAsync(WorkoutSession session, CancellationToken ct)
+    public async Task<(Dictionary<int, ProgressionSuggestion?> Suggestions, Dictionary<int, IReadOnlyList<LoggedSet>> LastTime)>
+        GuidanceAsync(WorkoutSession session, CancellationToken ct)
     {
-        var result = new Dictionary<int, ProgressionSuggestion?>();
+        var histories = await RecentHistoryAsync(session.Exercises.Select(e => e.ExerciseId).Distinct().ToArray(), session, ct);
+        var suggestions = new Dictionary<int, ProgressionSuggestion?>();
+        var lastTime = new Dictionary<int, IReadOnlyList<LoggedSet>>();
         foreach (var exercise in session.Exercises)
         {
-            var history = await RecentSessionSetsAsync(exercise.ExerciseId, session, 2, ct);
-            var rules = new ProgressionRules(
-                exercise.RepMin,
-                exercise.RepMax,
-                exercise.WorkingSets,
-                exercise.WeightIncrementKg,
-                exercise.Exercise.Equipment == Equipment.Bodyweight);
-            result[exercise.Id] = Progression.Suggest(rules, history);
+            var history = histories.GetValueOrDefault(exercise.ExerciseId) ?? [];
+            suggestions[exercise.Id] = Progression.Suggest(Rules(exercise), history);
+            if (history.Count > 0)
+            {
+                lastTime[exercise.Id] = history[0].Where(s => !s.IsWarmup).ToList();
+            }
         }
-
-        return result;
+        return (suggestions, lastTime);
     }
+
+    private static ProgressionRules Rules(SessionExercise exercise) =>
+        new(exercise.RepMin, exercise.RepMax, exercise.WorkingSets, exercise.WeightIncrementKg,
+            exercise.Exercise.Equipment == Equipment.Bodyweight);
 
     /// <summary>
     /// The inputs the progression rules received for one session exercise, and what they suggested; a feedback
@@ -47,9 +50,9 @@ public class TrainingAnalytics(AppDbContext db, TimeProvider time)
             .Include(e => e.Session)
             .Include(e => e.Exercise)
             .FirstOrDefaultAsync(e => e.Id == sessionExerciseId, ct) ?? throw new NotFoundException("Exercise not found.");
-        var history = await RecentSessionSetsAsync(exercise.ExerciseId, exercise.Session, 2, ct);
-        var rules = new ProgressionRules(exercise.RepMin, exercise.RepMax, exercise.WorkingSets, exercise.WeightIncrementKg,
-            exercise.Exercise.Equipment == Equipment.Bodyweight);
+        var histories = await RecentHistoryAsync([exercise.ExerciseId], exercise.Session, ct);
+        var history = histories.GetValueOrDefault(exercise.ExerciseId) ?? [];
+        var rules = Rules(exercise);
         return (exercise, rules, history, Progression.Suggest(rules, history));
     }
 
@@ -82,7 +85,7 @@ public class TrainingAnalytics(AppDbContext db, TimeProvider time)
             // The first time an exercise is done is not a record, just a baseline.
             if (previous is not null && best > previous)
             {
-                records.Add(new PersonalRecord(group.First().Exercise.Name, Round(best.Value), Round(previous.Value)));
+                records.Add(new PersonalRecord(group.First().Exercise.Name, Round(best.Value), Round(previous.Value), group.First().Exercise.OwnerUserId is not null));
             }
         }
 
@@ -109,39 +112,18 @@ public class TrainingAnalytics(AppDbContext db, TimeProvider time)
             .Where(g => !done.Contains(g.Key))
             .Select(g => (Exercise: g.First().Exercise, Best: OneRepMax.Best(g.SelectMany(e => e.Sets).Select(ToLogged))))
             .Where(x => x.Best is not null)
-            .Select(x => new PersonalRecord(x.Exercise.Name, Round(x.Best!.Value), null))
+            .Select(x => new PersonalRecord(x.Exercise.Name, Round(x.Best!.Value), null, x.Exercise.OwnerUserId is not null))
             .ToList();
-    }
-
-    /// <summary>
-    /// The working sets of the last earlier session that had any for each exercise, keyed by session exercise id
-    /// (SPEC 7, the "Last time" line). Exercises never logged before are left out.
-    /// </summary>
-    public async Task<Dictionary<int, IReadOnlyList<LoggedSet>>> LastTimeAsync(WorkoutSession session, CancellationToken ct)
-    {
-        var result = new Dictionary<int, IReadOnlyList<LoggedSet>>();
-        foreach (var exercise in session.Exercises)
-        {
-            var last = (await RecentSessionSetsAsync(exercise.ExerciseId, session, 1, ct))
-                .Select(sets => sets.Where(x => !x.IsWarmup).ToList())
-                .FirstOrDefault(sets => sets.Count > 0);
-            if (last is not null)
-            {
-                result[exercise.Id] = last;
-            }
-        }
-
-        return result;
     }
 
     public async Task<List<ExerciseOption>> ExercisesWithHistoryAsync(CancellationToken ct) =>
         (await db.Sets
             .Where(s => !s.IsWarmup)
-            .Select(s => new { s.SessionExercise.ExerciseId, s.SessionExercise.Exercise.Name })
+            .Select(s => new { s.SessionExercise.ExerciseId, s.SessionExercise.Exercise.Name, IsCustom = s.SessionExercise.Exercise.OwnerUserId != null })
             .Distinct()
             .ToListAsync(ct))
         .OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase)
-        .Select(e => new ExerciseOption(e.ExerciseId, e.Name))
+        .Select(e => new ExerciseOption(e.ExerciseId, e.Name, e.IsCustom))
         .ToList();
 
     /// <summary>Best e1RM per session for one exercise, oldest first.</summary>
@@ -189,30 +171,21 @@ public class TrainingAnalytics(AppDbContext db, TimeProvider time)
         return new VolumeComparison(thisWeek, muscles);
     }
 
-    /// <summary>Working sets from the most recent earlier sessions that included this exercise, newest first.</summary>
-    private async Task<List<IReadOnlyList<LoggedSet>>> RecentSessionSetsAsync(int exerciseId, WorkoutSession current, int sessions, CancellationToken ct)
+    private async Task<Dictionary<int, List<IReadOnlyList<LoggedSet>>>> RecentHistoryAsync(int[] exerciseIds, WorkoutSession current, CancellationToken ct)
     {
-        // Sessions with only warmups for this exercise are skipped by Core, so fetch a few extra.
-        var sessionIds = await db.SessionExercises
-            .Where(e => e.ExerciseId == exerciseId && e.SessionId != current.Id && e.Session.StartedAt < current.StartedAt)
-            .OrderByDescending(e => e.Session.StartedAt)
-            .Select(e => e.SessionId)
-            .Take(sessions * 3)
-            .ToListAsync(ct);
-        var recent = sessionIds.Distinct().Take(sessions + 2).ToList();
+        var rows = await (
+            from exercise in db.Exercises.Where(e => exerciseIds.Contains(e.Id))
+            from previous in db.Sessions.Where(s => s.StartedAt < current.StartedAt &&
+                s.Exercises.Any(e => e.ExerciseId == exercise.Id && e.Sets.Any(set => !set.IsWarmup)))
+                .OrderByDescending(s => s.StartedAt).ThenByDescending(s => s.Id).Take(2)
+            from set in db.Sets.Where(s => s.SessionExercise.SessionId == previous.Id && s.SessionExercise.ExerciseId == exercise.Id)
+            orderby previous.StartedAt descending, previous.Id descending, set.CompletedAt, set.SetNumber, set.Id
+            select new { ExerciseId = exercise.Id, SessionId = previous.Id, set.WeightKg, set.Reps, set.IsWarmup }
+        ).ToListAsync(ct);
 
-        var sets = await db.Sets
-            .Where(s => s.SessionExercise.ExerciseId == exerciseId && recent.Contains(s.SessionExercise.SessionId))
-            .Select(s => new { s.SessionExercise.SessionId, s.SetNumber, s.CompletedAt, s.WeightKg, s.Reps, s.IsWarmup })
-            .ToListAsync(ct);
-
-        return recent
-            .Select(id => (IReadOnlyList<LoggedSet>)sets
-                .Where(s => s.SessionId == id)
-                .OrderBy(s => s.CompletedAt).ThenBy(s => s.SetNumber)
-                .Select(s => new LoggedSet(s.WeightKg, s.Reps, s.IsWarmup))
-                .ToList())
-            .ToList();
+        return rows.GroupBy(r => r.ExerciseId).ToDictionary(g => g.Key, g => g.GroupBy(r => r.SessionId)
+            .Select(session => (IReadOnlyList<LoggedSet>)session.Select(r => new LoggedSet(r.WeightKg, r.Reps, r.IsWarmup)).ToList())
+            .ToList());
     }
 
     private async Task<TimeZoneInfo> ZoneAsync(CancellationToken ct) =>

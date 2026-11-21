@@ -116,8 +116,7 @@ public record ProgressViewModel(
     VolumeComparison Volume,
     Plate.Web.Features.Body.WeightChart Weight,
     IReadOnlyList<Plate.Web.Features.Body.CalorieDay> Calories,
-    Plate.Web.Features.Food.WeekCard? Week,
-    int? ProteinMinG);
+    Plate.Web.Features.Food.WeekCard? Week);
 
 public record PlatesViewModel(int SessionExerciseId, decimal BarKg, decimal? TargetKg, PlateLoad? Load);
 
@@ -188,9 +187,10 @@ public record FoodAddViewModel(
     IReadOnlyList<Plate.Web.Features.Food.RecentFood> Recents,
     IReadOnlyList<SavedMeal> SavedMeals,
     bool LabelAvailable = false,
-    IReadOnlyDictionary<int, decimal>? LastGrams = null);
+    IReadOnlyDictionary<int, decimal>? LastGrams = null,
+    ManualFoodFormModel? Manual = null);
 
-public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<Plate.Web.Features.Food.ConfirmItem> Items, Plate.Core.Text.LocalText? Warning, int? ParseRunId = null);
+public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<Plate.Web.Features.Food.ConfirmItem> Items, Plate.Core.Text.LocalText? Warning, int? ParseRunId = null, Guid RequestId = default);
 
 /// <param name="AddedByAnother">The food is a shared manual one another account added (SPEC 7).</param>
 /// <param name="LastGrams">This account's last amount for the product (SPEC 5.10), or null.</param>
@@ -215,7 +215,9 @@ public record ManualFoodFormModel(
     string? BarcodeValue = null,
     bool Share = true,
     decimal? TypedGrams = null,
-    decimal? TypedServing = null);
+    decimal? TypedServing = null,
+    string? InvalidField = null,
+    bool Submitted = false);
 
 /// <summary>A food the app already has for a barcode in the manual form, offered instead of a new one (SPEC 7).</summary>
 /// <param name="Own">The user's own private food; rejecting it clears the barcode, since one account can't have two foods with it.</param>

@@ -1,4 +1,8 @@
 using System.Diagnostics;
+using Microsoft.Extensions.Caching.Memory;
+using System.Text.Json.Serialization;
+using Plate.Core.Text;
+using Plate.Web.ViewModels;
 using Plate.Core.Domain;
 using Plate.Core.Nutrition;
 using Plate.Web.Data;
@@ -10,10 +14,20 @@ namespace Plate.Web.Features.Feedback;
 /// <summary>The result of parsing typed food: the rows to confirm and the run they are recorded under.</summary>
 public record ParseOutcome(FoodParseResult Result, IReadOnlyList<ConfirmItem> Items, int? RunId);
 
+public record ReviewDestination(
+    [property: JsonPropertyName("id")] Guid Id,
+    [property: JsonPropertyName("date")] DateOnly Date,
+    [property: JsonPropertyName("meal")] Meal Meal,
+    [property: JsonPropertyName("warning")] LocalText? Warning = null);
+
 /// <summary>One suggested row as stored in <see cref="ParseRun.Resolved"/>.</summary>
 /// <param name="Proposed">The namer's answer as it came back, kept even when it was rejected.</param>
 public record ResolvedRow(string Description, decimal Grams, Per100g Per100, int? FoodItemId, string? MatchedName, Confidence Confidence,
-    IReadOnlyList<string> Notes, string? MatchModel, MatchTrace? Match, FoodName? Proposed = null, string? Status = null, bool Usual = false);
+    IReadOnlyList<string> Notes, string? MatchModel, MatchTrace? Match, FoodName? Proposed = null, string? Status = null, bool Usual = false,
+    [property: JsonPropertyName("typed")] string? Typed = null,
+    [property: JsonPropertyName("state")] FoodState State = FoodState.NotApplicable,
+    [property: JsonPropertyName("reviewNotes")] IReadOnlyList<LocalText>? ReviewNotes = null,
+    [property: JsonPropertyName("review")] ReviewDestination? Review = null);
 
 /// <summary>One submitted row as stored in <see cref="ParseRun.Saved"/>.</summary>
 public record SavedRow(bool Included, string Description, decimal Grams, Per100g Per100, int? FoodItemId, ParseCorrection Corrections);
@@ -23,9 +37,20 @@ public record SavedRow(bool Included, string Description, decimal Grams, Per100g
 /// saved and how it differs (SPEC 11). Recording never gets in the way of logging food.
 /// </summary>
 public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodParser parser, FoodMatcher matcher, IFoodNamer namer, TimeProvider time, ILogger<ParseRunService> log,
-    RepeatLoggingService? repeat = null)
+    IMemoryCache cache, RepeatLoggingService? repeat = null)
 {
-    public async Task<ParseOutcome> ParseAsync(string text, CancellationToken ct)
+    public async Task<ConfirmViewModel> CreateReviewAsync(DateOnly date, Meal meal, string text, CancellationToken ct)
+    {
+        var id = Guid.NewGuid();
+        var (result, items, runId) = await ParseAsync(text, ct, new ReviewDestination(id, date, meal));
+        var draft = new ConfirmViewModel(date, meal, text, result.Model, items, result.Error, runId, id);
+        // If best-effort recording failed, the user can still open and save the review.
+        if (runId is null && items.Count > 0)
+            cache.Set((currentUser.UserId, id), draft, TimeSpan.FromHours(12));
+        return draft;
+    }
+
+    public async Task<ParseOutcome> ParseAsync(string text, CancellationToken ct, ReviewDestination? review = null)
     {
         var clock = Stopwatch.StartNew();
         var result = await parser.ParseAsync(text, ct);
@@ -61,7 +86,8 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             ParserError = result.Error is { } error ? Trim(error.ToString(), 500) : null,
             Parsed = FeedbackJson.Write(result.Items),
             Resolved = FeedbackJson.Write(items.Select((item, n) => new ResolvedRow(item.Description, item.Grams, item.Per100, item.FoodItemId,
-                item.MatchedName, item.Confidence, item.Notes.Select(n => n.ToString()).ToList(), item.MatchModel, trace.ElementAtOrDefault(n), proposed[n], item.Status, item.Usual)).ToList()),
+                item.MatchedName, item.Confidence, item.Notes.Select(n => n.ToString()).ToList(), item.MatchModel, trace.ElementAtOrDefault(n), proposed[n], item.Status, item.Usual,
+                item.Typed, item.State, item.Notes, n == 0 && review is not null ? review with { Warning = result.Error } : null)).ToList()),
         };
 
         try
@@ -78,6 +104,22 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
         }
 
         return new ParseOutcome(result, items, run.Id);
+    }
+
+    public Task<string?> SavedLocationAsync(Guid id, CancellationToken ct) =>
+        db.FoodLogRequests.Where(r => r.RequestId == id).Select(r => r.Location).SingleOrDefaultAsync(ct);
+
+    public async Task<ConfirmViewModel?> ReviewAsync(int? runId, Guid id, CancellationToken ct)
+    {
+        if (runId is null) return cache.Get<ConfirmViewModel>((currentUser.UserId, id));
+        var run = await db.ParseRuns.Where(r => r.Id == runId)
+            .Select(r => new { r.Text, r.AiModel, r.Resolved }).SingleOrDefaultAsync(ct);
+        var rows = FeedbackJson.Read<List<ResolvedRow>>(run?.Resolved);
+        if (rows?.FirstOrDefault()?.Review is not { } destination || destination.Id != id) return null;
+        var items = rows.Select(r => new ConfirmItem(r.Description, r.Grams, r.Per100, r.FoodItemId,
+            r.MatchedName, r.Confidence, r.ReviewNotes ?? [], r.MatchModel, r.Typed ?? "", r.State,
+            Status: r.Status, Usual: r.Usual)).ToList();
+        return new(destination.Date, destination.Meal, run!.Text, run.AiModel, items, destination.Warning, runId, id);
     }
 
     /// <summary>

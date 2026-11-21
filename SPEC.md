@@ -405,7 +405,7 @@ Display: a food entry reads "Chicken breast · 200 g" with its status as a chip 
 
 Usual foods: confirming a parse writes, for each saved item that has a food, its `NameOriginal` key (5.10) and that food as a `UsualFood`: a new row, or the existing row moved to this food, with `LastUsedAt` set. The latest save wins, so picking another food once moves the words to it. Unticked items, estimates and names without a key write nothing. No model is involved, so this works the same without a key, and an item with a usual food is not a matcher question, so it costs nothing.
 
-Results are never saved directly. The user always sees an editable confirmation list first. Saved entries record `AiModel`.
+Results are never saved directly. The user always sees an editable confirmation list first. Each successful parse has its own account-scoped review address. Reload or Back restores the review without a second model call. The browser keeps edits to recent unsaved reviews in the same tab and clears the draft when the save is confirmed. Opening or submitting a saved review returns to the original food log with an already-saved notice. Saved entries record `AiModel`.
 
 Also provide `FakeFoodParser` for tests and local development without a key (selected when no OpenRouter key is set). It sets `AmountGiven` when it read a weight or a count other than "a", "an", "един", "една" or "едно".
 
@@ -566,7 +566,7 @@ Settings is a short hub, not one long page (progressive disclosure: NN/g, and th
 - General page: theme and language; the time zone, picked from a list; the weekly AI summary on or off (6.5), with the line "Last week's numbers are sent to an AI model through OpenRouter."
 - Sign-in & security page: passkeys (add, remove), change password, log out everywhere.
 - Settings shows nothing about the AI models or the key. Only the developer manages them, in the admin area (section 12).
-- Export all of the user's data as CSV files in a zip.
+- Export all of the user's data as CSV files in a zip. Include private foods, saved meals and their ordered items, per-exercise notes and bar overrides, and profile preferences. Export their IDs so related rows can be joined.
 - Feedback: Send feedback and Your feedback (section 11).
 
 ---

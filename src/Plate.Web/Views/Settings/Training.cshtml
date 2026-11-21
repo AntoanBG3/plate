@@ -15,7 +15,7 @@
     <section class="section">
         <h2 class="section-title">@L["Progression"]</h2>
         <div class="list">
-            <div class="field-row"><label for="increment">@L["Weight jump"]</label><input id="increment" class="num" type="text" name="defaultWeightIncrementKg" value="@Model.DefaultWeightIncrementKg.Kg()" min="@ProfileLimits.MinWeightIncrementKg.Kg()" max="@ProfileLimits.MaxWeightIncrementKg.Kg()" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /><span class="unit">@L["kg"]</span></div>
+            <div class="field-row"><label for="increment">@L["Weight jump"]</label><input id="increment" class="num" type="text" name="defaultWeightIncrementKg" value="@Model.DefaultWeightIncrementKg.Kg()" min="@ProfileLimits.MinWeightIncrementKg.Kg()" max="@ProfileLimits.MaxWeightIncrementKg.Kg()" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /><span class="unit">@L["kg"]</span></div>
         </div>
         <p class="section-footer">@L["The weight jump is how much is added when every set reaches the top of its range."]</p>
     </section>
@@ -23,7 +23,7 @@
     <section class="section">
         <h2 class="section-title">@L["Bar and plates"]</h2>
         <div class="list">
-            <div class="field-row"><label for="bar">@L["Bar weight"]</label><input id="bar" class="num" type="text" name="barWeightKg" value="@Model.BarWeightKg.Kg()" min="@ProfileLimits.MinBarWeightKg.Kg()" max="@ProfileLimits.MaxBarWeightKg.Kg()" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /><span class="unit">@L["kg"]</span></div>
+            <div class="field-row"><label for="bar">@L["Bar weight"]</label><input id="bar" class="num" type="text" name="barWeightKg" value="@Model.BarWeightKg.Kg()" min="@ProfileLimits.MinBarWeightKg.Kg()" max="@ProfileLimits.MaxBarWeightKg.Kg()" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /><span class="unit">@L["kg"]</span></div>
             <fieldset class="field-row stacked" style="border: 0; margin: 0">
                 <legend class="sr-only">@L["Plates you have"]</legend>
                 <span aria-hidden="true">@L["Plates you have"]</span>

@@ -1,4 +1,5 @@
 using Plate.Web.Data;
+using Plate.Web.Features.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
@@ -6,12 +7,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Plate.Web.Features.Food;
 
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class IdempotentFoodPostAttribute() : TypeFilterAttribute(typeof(IdempotentFoodPostFilter))
+public sealed class IdempotentFoodPostAttribute : TypeFilterAttribute
 {
+    public IdempotentFoodPostAttribute(bool review = false) : base(typeof(IdempotentFoodPostFilter)) =>
+        Arguments = [review];
 }
 
 /// <summary>Claims a rendered food form and commits its receipt and food writes together.</summary>
-public sealed class IdempotentFoodPostFilter(AppDbContext db, ICurrentUser currentUser, TimeProvider time) : IAsyncActionFilter
+public sealed class IdempotentFoodPostFilter(bool review, AppDbContext db, ICurrentUser currentUser, TimeProvider time) : IAsyncActionFilter
 {
     public const string FieldName = "requestId";
 
@@ -41,6 +44,7 @@ public sealed class IdempotentFoodPostFilter(AppDbContext db, ICurrentUser curre
         if (claimed == 0)
         {
             var previous = await db.FoodLogRequests.AsNoTracking().SingleAsync(x => x.RequestId == requestId, ct);
+            if (review) ((Controller)context.Controller).TempData.SavedReview(requestId, alreadySaved: true);
             context.Result = new RedirectResult(previous.Location);
             return;
         }
@@ -51,6 +55,7 @@ public sealed class IdempotentFoodPostFilter(AppDbContext db, ICurrentUser curre
             await db.FoodLogRequests.Where(x => x.RequestId == requestId)
                 .ExecuteUpdateAsync(s => s.SetProperty(x => x.Location, redirect.Url), ct);
             await transaction.CommitAsync(ct);
+            if (review) ((Controller)context.Controller).TempData.SavedReview(requestId, alreadySaved: false);
         }
         // Validation/other failures roll back the claim and all writes, so the form can be corrected and retried.
     }

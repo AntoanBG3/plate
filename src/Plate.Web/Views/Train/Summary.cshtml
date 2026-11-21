@@ -28,7 +28,7 @@
                 <div class="row">
                     <span class="row-icon">@Ui.Icon("medal")</span>
                     <span class="row-main">
-                        <span class="row-title headline" style="display: block">@L[record.ExerciseName]</span>
+                        <span class="row-title headline" style="display: block">@L.Exercise(record.ExerciseName, record.IsCustom)</span>
                         <span class="row-sub" style="display: block">@(record.PreviousBestKg is { } was ? L["Estimated 1RM, was {0} kg", was.Kg()] : L["Estimated 1RM, first time"])</span>
                     </span>
                     <span class="num headline" style="font-size: var(--text-title-3)">@record.E1rmKg.Kg()<span class="muted" style="font-size: var(--text-subhead)"> @L["kg"]</span></span>
@@ -48,7 +48,7 @@
                 <div class="row">
                     <span class="row-icon neutral">@Ui.Icon("trend")</span>
                     <span class="row-main">
-                        <span class="row-title headline" style="display: block">@L[first.ExerciseName]</span>
+                        <span class="row-title headline" style="display: block">@L.Exercise(first.ExerciseName, first.IsCustom)</span>
                         <span class="row-sub" style="display: block">@L["Estimated 1RM, first time"]</span>
                     </span>
                     <span class="num headline" style="font-size: var(--text-title-3)">@first.E1rmKg.Kg()<span class="muted" style="font-size: var(--text-subhead)"> @L["kg"]</span></span>

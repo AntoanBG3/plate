@@ -85,7 +85,9 @@ public class Localizer
         Status(entry.Status, entry.FoodItem is { } food ? Plate.Core.Nutrition.FoodStates.FromName(food.Name, food.NameBg) : default);
 
     public string Exercise(Plate.Core.Domain.Exercise exercise) =>
-        exercise.OwnerUserId is null ? this[exercise.Name] : exercise.Name;
+        Exercise(exercise.Name, exercise.OwnerUserId is not null);
+
+    public string Exercise(string name, bool isCustom) => isCustom ? name : this[name];
 
     /// <summary>"45 min" or "1 h 5 min" in the user's language.</summary>
     public string Duration(TimeSpan span) => span.TotalHours >= 1

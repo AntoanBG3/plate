@@ -77,10 +77,16 @@ public class FoodRequestTests(PostgresFixture fixture) : IClassFixture<PostgresF
         }
 
         var first = await AppFactory.PostAsync(client, path, token, fields);
+        if (kind == "confirm") fields["items[0].Grams"] = "250";
         var second = await AppFactory.PostAsync(client, path, token, fields);
         first.StatusCode.Should().Be(HttpStatusCode.Redirect);
         second.StatusCode.Should().Be(first.StatusCode);
         second.Headers.Location.Should().Be(first.Headers.Location);
+        if (kind == "confirm")
+        {
+            var page = await client.GetStringAsync(second.Headers.Location!);
+            page.Should().Contain("This review was already saved.");
+        }
         var meal = Enum.Parse<Meal>(fields["meal"]);
         (await db.FoodLog.IgnoreQueryFilters().CountAsync(x => x.UserId == userId && x.Date == Today && x.Meal == meal))
             .Should().Be(1, "one rendered form is one intent even if its response is lost");
@@ -239,10 +245,26 @@ public class FoodRequestTests(PostgresFixture fixture) : IClassFixture<PostgresF
         (await db.FoodLog.IgnoreQueryFilters().AnyAsync(x => x.UserId == userId)).Should().BeFalse();
         (await db.FoodLogRequests.IgnoreQueryFilters().AnyAsync(x => x.UserId == userId)).Should().BeFalse();
         fields["items[1].Grams"] = "100";
+        fields["items[1].Fat"] = "";
         (await AppFactory.PostAsync(client, "/food/confirm", token, fields)).StatusCode.Should().Be(HttpStatusCode.Redirect);
         (await AppFactory.PostAsync(client, "/food/confirm", token, fields)).StatusCode.Should().Be(HttpStatusCode.Redirect);
         (await db.FoodLog.IgnoreQueryFilters().Where(x => x.UserId == userId).Select(x => x.Kcal).ToListAsync())
             .Should().Equal(100, 100);
+    }
+
+    [Theory]
+    [InlineData("date")]
+    [InlineData("labelScanId")]
+    public async Task A_malformed_hidden_manual_field_asks_to_reload(string field)
+    {
+        var (client, _) = await app.SignedInClientAsync();
+        var fields = QuickFields();
+        fields["name"] = "Rice";
+        fields["grams"] = "100";
+        fields[field] = "oops";
+        var response = await AppFactory.PostAsync(client, "/food/items", await AppFactory.TokenAsync(client, "/food"), fields);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("reload").And.NotContain("valid number");
     }
 
     private static Dictionary<string, string> QuickFields() => new()

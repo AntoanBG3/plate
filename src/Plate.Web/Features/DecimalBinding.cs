@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Plate.Web.Features;
@@ -9,6 +10,8 @@ namespace Plate.Web.Features;
 /// </summary>
 public sealed class DecimalModelBinder : IModelBinder
 {
+    public const string InvalidNumber = "Enter a valid number.";
+
     public Task BindModelAsync(ModelBindingContext context)
     {
         var value = context.ValueProvider.GetValue(context.ModelName);
@@ -25,6 +28,10 @@ public sealed class DecimalModelBinder : IModelBinder
             {
                 context.Result = ModelBindingResult.Success(null);
             }
+            else
+            {
+                context.ModelState.TryAddModelError(context.ModelName, InvalidNumber);
+            }
 
             return Task.CompletedTask;
         }
@@ -35,11 +42,32 @@ public sealed class DecimalModelBinder : IModelBinder
         }
         else
         {
-            context.ModelState.TryAddModelError(context.ModelName, $"'{text}' is not a number.");
+            context.ModelState.TryAddModelError(context.ModelName, InvalidNumber);
         }
 
         return Task.CompletedTask;
     }
+}
+
+/// <summary>
+/// The action reads the binder's "Enter a valid number." errors itself: it shows them on the form, or treats an
+/// unreadable value as missing. Without it, <see cref="ValidateDecimalInputs"/> rejects the request.
+/// </summary>
+[AttributeUsage(AttributeTargets.Method)]
+public sealed class HandlesInvalidNumbersAttribute : Attribute;
+
+public sealed class ValidateDecimalInputs : IActionFilter
+{
+    public void OnActionExecuting(ActionExecutingContext context)
+    {
+        if (!context.ActionDescriptor.EndpointMetadata.OfType<HandlesInvalidNumbersAttribute>().Any()
+            && context.ModelState.Values.Any(field => field.Errors.Any(e => e.ErrorMessage == DecimalModelBinder.InvalidNumber)))
+        {
+            throw new ValidationException("Enter a valid number.");
+        }
+    }
+
+    public void OnActionExecuted(ActionExecutedContext context) { }
 }
 
 public sealed class DecimalModelBinderProvider : IModelBinderProvider

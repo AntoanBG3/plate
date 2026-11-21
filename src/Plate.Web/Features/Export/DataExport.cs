@@ -28,6 +28,10 @@ public class DataExport(AppDbContext db)
             ["weekly_summaries.csv"] = await WeeklySummariesAsync(ct),
             ["feedback.csv"] = await FeedbackAsync(ct),
             ["label_scans.csv"] = await LabelScansAsync(ct),
+            ["private_foods.csv"] = await PrivateFoodsAsync(ct),
+            ["saved_meals.csv"] = await SavedMealsAsync(ct),
+            ["saved_meal_items.csv"] = await SavedMealItemsAsync(ct),
+            ["exercise_settings.csv"] = await ExerciseSettingsAsync(ct),
             ["usual_foods.csv"] = await UsualFoodsAsync(ct),
         };
 
@@ -48,11 +52,16 @@ public class DataExport(AppDbContext db)
     private async Task<Csv> ProfileAsync(CancellationToken ct)
     {
         var csv = new Csv("display_name", "time_zone", "sex", "height_cm", "birth_year", "initial_maintenance_kcal",
-            "goal", "target_rate_percent_per_week", "protein_g_per_kg", "default_weight_increment_kg");
+            "goal", "target_rate_percent_per_week", "protein_g_per_kg", "default_weight_increment_kg",
+            "activity_level", "language", "theme", "weekly_summary_enabled", "cut_started_on", "diet_break_until",
+            "cut_check_dismissed_until", "bar_weight_kg", "plates_kg", "changelog_seen_at_utc", "onboarded_at_utc");
         foreach (var p in await db.Profiles.AsNoTracking().ToListAsync(ct))
         {
             csv.Row(p.DisplayName, p.TimeZoneId, p.Sex?.ToString(), p.HeightCm, p.BirthYear, p.InitialMaintenanceKcal,
-                p.Goal.ToString(), p.TargetRatePercentPerWeek, p.ProteinGramsPerKg, p.DefaultWeightIncrementKg);
+                p.Goal.ToString(), p.TargetRatePercentPerWeek, p.ProteinGramsPerKg, p.DefaultWeightIncrementKg,
+                p.ActivityLevel, p.Language, p.Theme, p.WeeklySummaryEnabled, p.CutStartedOn, p.DietBreakUntil,
+                p.CutCheckDismissedUntil, p.BarWeightKg, string.Join(";", p.PlatesKg.Select(kg => kg.ToString("G29", System.Globalization.CultureInfo.InvariantCulture))),
+                p.ChangelogSeenAt, p.OnboardedAt);
         }
 
         return csv;
@@ -140,13 +149,56 @@ public class DataExport(AppDbContext db)
 
     private async Task<Csv> CustomExercisesAsync(CancellationToken ct)
     {
-        var csv = new Csv("name", "primary_muscle", "secondary_muscles", "equipment", "archived");
+        var csv = new Csv("name", "primary_muscle", "secondary_muscles", "equipment", "archived", "exercise_id");
         var custom = await db.Exercises.AsNoTracking().Where(e => e.OwnerUserId != null).OrderBy(e => e.Name).ToListAsync(ct);
         foreach (var e in custom)
         {
-            csv.Row(e.Name, e.PrimaryMuscle.ToString(), string.Join(';', e.SecondaryMuscles), e.Equipment.ToString(), e.IsArchived);
+            csv.Row(e.Name, e.PrimaryMuscle.ToString(), string.Join(';', e.SecondaryMuscles), e.Equipment.ToString(), e.IsArchived, e.Id);
         }
 
+        return csv;
+    }
+
+    private async Task<Csv> PrivateFoodsAsync(CancellationToken ct)
+    {
+        var csv = new Csv("food_item_id", "name", "name_bg", "brand", "barcode", "kcal_per_100g", "protein_per_100g",
+            "carbs_per_100g", "fat_per_100g", "fiber_per_100g", "saturated_fat_per_100g", "default_serving_g", "source");
+        foreach (var f in await db.FoodItems.AsNoTracking().Where(f => f.OwnerUserId != null).OrderBy(f => f.Id).ToListAsync(ct))
+        {
+            csv.Row(f.Id, f.Name, f.NameBg, f.Brand, f.Barcode, f.KcalPer100g, f.ProteinPer100g, f.CarbsPer100g,
+                f.FatPer100g, f.FiberPer100g, f.SaturatedFatPer100g, f.DefaultServingGrams, f.Source);
+        }
+        return csv;
+    }
+
+    private async Task<Csv> SavedMealsAsync(CancellationToken ct)
+    {
+        var csv = new Csv("saved_meal_id", "name", "created_at_utc");
+        foreach (var m in await db.SavedMeals.AsNoTracking().OrderBy(m => m.Id).ToListAsync(ct))
+            csv.Row(m.Id, m.Name, m.CreatedAt);
+        return csv;
+    }
+
+    private async Task<Csv> SavedMealItemsAsync(CancellationToken ct)
+    {
+        var csv = new Csv("saved_meal_id", "position", "food_item_id", "description", "grams", "kcal", "protein_g",
+            "carbs_g", "fat_g", "fiber_g", "saturated_fat_g", "source");
+        var items = await db.SavedMealItems.AsNoTracking().OrderBy(i => i.SavedMealId).ThenBy(i => i.SortOrder).ThenBy(i => i.Id).ToListAsync(ct);
+        foreach (var i in items)
+        {
+            csv.Row(i.SavedMealId, i.SortOrder, i.FoodItemId, i.Description, i.Grams, i.Kcal, i.ProteinG, i.CarbsG,
+                i.FatG, i.FiberG, i.SaturatedFatG, i.Source);
+        }
+        return csv;
+    }
+
+    private async Task<Csv> ExerciseSettingsAsync(CancellationToken ct)
+    {
+        var csv = new Csv("exercise_id", "exercise", "note", "bar_weight_kg");
+        var settings = await (from s in db.ExerciseSettings join e in db.Exercises on s.ExerciseId equals e.Id
+                              orderby s.ExerciseId select new { s.ExerciseId, e.Name, s.Note, s.BarWeightKg }).ToListAsync(ct);
+        foreach (var s in settings)
+            csv.Row(s.ExerciseId, s.Name, s.Note, s.BarWeightKg);
         return csv;
     }
 

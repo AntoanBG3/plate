@@ -21,6 +21,14 @@ public static class Notices
     /// <summary>A neutral note on the next page: nothing went wrong, but nothing happened either ("Nothing was logged…").</summary>
     public static void Info(this ITempDataDictionary temp, LocalText text) => temp[InfoKey] = Pack(text);
 
+    public const string SavedReviewKey = "SavedReview";
+
+    public static void SavedReview(this ITempDataDictionary temp, Guid id, bool alreadySaved)
+    {
+        temp[SavedReviewKey] = id.ToString();
+        if (alreadySaved) temp.Info(new LocalText("This review was already saved."));
+    }
+
     public const string FocusKey = "Focus";
 
     /// <summary>The element (by id) the next page scrolls to, so a change made far down the page stays in view.</summary>

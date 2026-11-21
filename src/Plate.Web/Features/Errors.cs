@@ -6,8 +6,9 @@ namespace Plate.Web.Features;
 public class NotFoundException(string message = "Not found.") : Exception(message);
 
 /// <summary>Invalid input from the user. Mapped to 400 with the message shown in the user's language.</summary>
-public class ValidationException(LocalText text) : Exception(text.ToString())
+public class ValidationException(LocalText text, string? field = null) : Exception(text.ToString())
 {
+    public string? Field { get; } = field;
     public LocalText Text { get; } = text;
 
     public ValidationException(string message) : this(new LocalText(message))

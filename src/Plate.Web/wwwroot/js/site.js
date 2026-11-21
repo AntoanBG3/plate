@@ -99,7 +99,7 @@
             form.dataset.confirmed = "true";
             form.requestSubmit(submitter && submitter.form === form ? submitter : undefined);
         };
-        window.gymSheet.show(sheet);
+        window.gymSheet.show(sheet, submitter || document.activeElement);
     }, true);
 
     // ---- forms that save on change (SPEC 7: logged sets, template exercises, Settings) ----
@@ -351,7 +351,7 @@
             const search = sheet.querySelector("[data-change-search]");
             search.value = open.dataset.query || "";
             sheet.querySelector("#change-food-results").replaceChildren();
-            window.gymSheet.show(sheet);
+            window.gymSheet.show(sheet, open);
             if (search.value && window.htmx) {
                 window.htmx.trigger(search, "search");
             }
@@ -379,17 +379,7 @@
         // The row is named after the food it now is, with that food's raw or cooked state.
         set("Description", pick.dataset.name);
         set("Status", pick.dataset.status);
-        const status = changeRow.querySelector("[data-status]");
-        status.textContent = pick.dataset.status || "";
-        status.hidden = !pick.dataset.status;
-        changeRow.dataset.per100 = `${pick.dataset.kcal},${pick.dataset.protein}`;
-        const using = changeRow.querySelector("[data-using]");
-        using.textContent = t("Database: {0}", pick.dataset.name);
-        using.hidden = false;
-        changeRow.querySelectorAll("[data-note]").forEach((note) => note.remove());
-        const chip = changeRow.querySelector("[data-chip]");
-        chip.className = "chip good";
-        chip.textContent = t("Database");
+        showChosenFood(changeRow, { name: pick.dataset.name, status: pick.dataset.status, kcal: pick.dataset.kcal, protein: pick.dataset.protein });
         // The live totals beside the grams follow (the input handler above).
         changeRow.querySelector('input[name$="Grams"]').dispatchEvent(new Event("input", { bubbles: true }));
         window.gymSheet.hide();
@@ -473,6 +463,15 @@
         }
     });
 
+    // Text inputs accept both decimal separators. Browsers apply min and max only to number inputs.
+    document.addEventListener("input", event => {
+        const field = event.target;
+        if (!field.matches('[data-label-form] input[name="grams"], [data-label-form] input[name="servingGrams"]')) return;
+        const grams = Number(field.value.trim().replace(",", "."));
+        field.setCustomValidity(field.value && Number.isFinite(grams) && (grams <= 0 || grams > Number(field.max))
+            ? t("Grams must be above 0 and at most {0}.", field.max) : "");
+    });
+
     // Live per-row totals on the food confirmation list and portion forms.
     document.addEventListener("input", (event) => {
         const row = event.target.closest("[data-per100]");
@@ -481,12 +480,88 @@
         }
         // A decimal field may hold a comma (the Bulgarian keypad).
         const grams = parseFloat(((row.querySelector('input[name$="Grams"], input[name="grams"]') || {}).value || "").replace(",", ".")) || 0;
-        const per = row.dataset.per100.split(",").map(Number);
+        const per = row.matches("[data-row]")
+            ? ["Kcal", "Protein"].map(name => Number(row.querySelector(`[name$=".${name}"]`).value.replace(",", ".")) || 0)
+            : row.dataset.per100.split(",").map(Number);
         const out = row.querySelector("[data-totals]");
         if (out) {
             const f = grams / 100;
             out.textContent = t("{0} kcal · {1} g protein", Math.round(per[0] * f), (per[1] * f).toFixed(1));
         }
+    });
+
+    function showChosenFood(row, match) {
+        row.dataset.chosenFood = JSON.stringify(match);
+        const status = row.querySelector("[data-status]");
+        status.textContent = match.status || "";
+        status.hidden = !match.status;
+        row.dataset.per100 = `${match.kcal},${match.protein}`;
+        const using = row.querySelector("[data-using]");
+        using.textContent = t("Database: {0}", match.name);
+        using.hidden = false;
+        row.querySelectorAll("[data-note]").forEach((note) => note.remove());
+        const chip = row.querySelector("[data-chip]");
+        chip.className = "chip good";
+        chip.textContent = t("Database");
+    }
+
+    // Keep edits to the last few reviews in this tab. Only the signed-in owner can load the
+    // corresponding form, and each review has its own server-generated request id.
+    function reviewStorageKey() {
+        return "plate.food-reviews." + document.documentElement.dataset.userId;
+    }
+
+    window.gymModule("food-review-saved", root => {
+        const id = root.dataset.savedReview;
+        if (!id) return;
+        try {
+            const key = reviewStorageKey();
+            const drafts = JSON.parse(sessionStorage.getItem(key));
+            if (!drafts || !(id in drafts)) return;
+            delete drafts[id];
+            if (Object.keys(drafts).length) sessionStorage.setItem(key, JSON.stringify(drafts));
+            else sessionStorage.removeItem(key);
+        } catch {}
+    });
+
+    // Native Back can restore an old document without asking the server whether this review was saved.
+    window.addEventListener("pageshow", event => {
+        if (event.persisted && document.querySelector('[data-module="food-review"]')) location.reload();
+    });
+
+    window.gymModule("food-review", (root) => {
+        const form = root.querySelector("form");
+        const id = form.elements.requestId.value;
+        const key = reviewStorageKey();
+        const rows = Array.from(form.querySelectorAll("[data-row]"));
+        const fields = row => Array.from(row.querySelectorAll("[name]"));
+        function readDrafts() {
+            try { return JSON.parse(sessionStorage.getItem(key)) || {}; } catch { return {}; }
+        }
+        const saved = readDrafts()[id];
+        if (Array.isArray(saved) && saved.length === rows.length) {
+            rows.forEach((row, index) => {
+                const draft = saved[index];
+                for (const field of fields(row)) {
+                    if (!(field.name in draft.fields)) continue;
+                    if (field.type === "checkbox") field.checked = draft.fields[field.name];
+                    else field.value = draft.fields[field.name];
+                }
+                if (draft.match) showChosenFood(row, draft.match);
+                row.querySelector('[name$=".Grams"]').dispatchEvent(new Event("input", { bubbles: true }));
+            });
+        }
+        function save() {
+            const drafts = readDrafts();
+            delete drafts[id];
+            drafts[id] = rows.map(row => ({
+                fields: Object.fromEntries(fields(row).map(f => [f.name, f.type === "checkbox" ? f.checked : f.value])),
+                match: row.dataset.chosenFood ? JSON.parse(row.dataset.chosenFood) : null,
+            }));
+            try { sessionStorage.setItem(key, JSON.stringify(Object.fromEntries(Object.entries(drafts).slice(-8)))); } catch {}
+        }
+        form.addEventListener("input", save);
+        form.addEventListener("change", save);
     });
 
     // A new invite link in the admin area (English only): copy it, or hand it to the phone's share sheet.

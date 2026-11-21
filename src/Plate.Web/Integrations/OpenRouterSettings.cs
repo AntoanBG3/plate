@@ -181,6 +181,9 @@ public class SwitchingFoodNamer(OpenRouterSettings settings, IServiceProvider se
 /// <summary>Asks the matcher model picked in Settings when there is a key; otherwise no decision, so the ranking decides.</summary>
 public class SwitchingMatchDecider(OpenRouterSettings settings, IServiceProvider services) : Plate.Core.Nutrition.IFoodMatchDecider
 {
+    public async Task<bool> IsEnabledAsync(CancellationToken ct) =>
+        await settings.GetModelAsync(AiTask.Matcher, ct) != AiTasks.Off;
+
     public async Task<Plate.Core.Nutrition.MatchDecisions?> DecideAsync(string text, IReadOnlyList<Plate.Core.Nutrition.MatchQuestion> questions, CancellationToken ct)
     {
         var model = await settings.GetModelAsync(AiTask.Matcher, ct);

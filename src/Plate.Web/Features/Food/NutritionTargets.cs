@@ -144,11 +144,17 @@ public class NutritionTargets(AppDbContext db, ICurrentUser currentUser, Profile
         }
 
         var userId = currentUser.UserId ?? throw new InvalidOperationException("No signed-in user.");
+        var trends = TrendWeight.Series(weighIns, today.AddDays(-1));
+        var estimateIndex = 0;
         var rows = new List<NutritionTargetDay>();
         for (var day = estimates[0].CalculatedOn; day < today; day = day.AddDays(1))
         {
-            var estimate = estimates.Last(e => e.CalculatedOn <= day);
-            var values = TargetDayValues.Legacy(estimate, profile, TrendWeight.On(weighIns, day), day);
+            if (estimateIndex + 1 < estimates.Count && estimates[estimateIndex + 1].CalculatedOn == day)
+            {
+                estimateIndex++;
+            }
+            decimal? trend = trends.Count == 0 || day < trends[0].Date ? null : trends[day.DayNumber - trends[0].Date.DayNumber].TrendKg;
+            var values = TargetDayValues.Legacy(estimates[estimateIndex], profile, trend, day);
             rows.Add(new NutritionTargetDay { UserId = userId, Date = day, Values = values.ToJson() });
         }
 

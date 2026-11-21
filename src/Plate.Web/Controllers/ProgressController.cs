@@ -25,7 +25,6 @@ public class ProgressController(TrainingAnalytics analytics, BodyAnalytics body,
             await analytics.VolumeAsync(ct),
             await body.WeightAsync(range, today, ct),
             await body.CaloriesAsync(today, ct),
-            await food.WeekCardAsync(today, daily, ct),
-            daily.Macros?.ProteinMinG));
+            await food.WeekCardAsync(today, daily, ct)));
     }
 }

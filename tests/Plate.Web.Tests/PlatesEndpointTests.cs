@@ -71,13 +71,16 @@ public class PlatesEndpointTests(PostgresFixture fixture) : IClassFixture<Postgr
         (await client.GetStringAsync($"/train/session-exercises/{id}/plates")).Should().Contain("data-total=\"80\"");
     }
 
-    [Fact]
-    public async Task Clearing_the_field_asks_for_a_weight_instead_of_falling_back()
+    [Theory]
+    [InlineData("")]
+    [InlineData(",")]
+    [InlineData("1.2.")]
+    public async Task An_incomplete_field_asks_for_a_weight_instead_of_falling_back(string weight)
     {
         await using var app = new AppFactory(fixture);
         var (client, id) = await SessionWithAsync(app, "Bench press", loggedKg: 80);
 
-        var html = await client.GetStringAsync($"/train/session-exercises/{id}/plates?typed=true&weight=");
+        var html = await client.GetStringAsync($"/train/session-exercises/{id}/plates?typed=true&weight={weight}");
 
         html.Should().Contain("data-plates-empty").And.NotContain("data-total");
     }
