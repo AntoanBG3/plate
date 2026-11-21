@@ -357,7 +357,16 @@
 
     function hideSheet(expected = openSheet) {
         const sheet = openSheet;
-        if (!sheet || expected !== sheet) {
+        if (!sheet || !expected) return;
+        if (expected !== sheet) {
+            const index = backgroundSheets.findIndex(entry => entry.sheet === expected);
+            if (index < 0) return;
+            const [removed] = backgroundSheets.splice(index, 1);
+            const child = backgroundSheets[index];
+            if (child && expected.contains(child.opener)) child.opener = removed.opener;
+            if (!child && expected.contains(lastFocus)) lastFocus = removed.opener;
+            expected.hidden = true;
+            expected.dispatchEvent(new CustomEvent("sheet:close"));
             return;
         }
         const opener = lastFocus;
