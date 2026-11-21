@@ -116,8 +116,7 @@ public record ProgressViewModel(
     VolumeComparison Volume,
     Plate.Web.Features.Body.WeightChart Weight,
     IReadOnlyList<Plate.Web.Features.Body.CalorieDay> Calories,
-    Plate.Web.Features.Food.WeekCard? Week,
-    int? ProteinMinG);
+    Plate.Web.Features.Food.WeekCard? Week);
 
 public record PlatesViewModel(int SessionExerciseId, decimal BarKg, decimal? TargetKg, PlateLoad? Load);
 
