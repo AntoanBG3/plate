@@ -136,6 +136,16 @@ for (const g of keptGeneric) {
 for (const p of off) {
     out.push({ kind: "product", barcode: p.barcode, name_bg: clean(p.name_bg), name_en: "", brand: p.brand, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, serving_g: p.serving_g, source: "https://world.openfoodfacts.org/product/" + p.barcode, fiber: p.fiber ?? "", satfat: p.satfat ?? "", piece_g: "", basis: "" });
 }
+// Corrections from the reference audit (reports/reference-foods-audit.md), by Bulgarian name; the app applies the same
+// file to databases seeded before it (DataFixups).
+for (const fix of readCsv(path.join(seedDir, "reference-fixes.csv"))) {
+    const row = out.find((r) => r.kind === "generic" && r.name_bg === fix.name_bg);
+    if (!row) continue;
+    const relinked = fix.name_en !== row.name_en;
+    Object.assign(row, { name_en: fix.name_en, kcal: fix.kcal, protein: fix.protein, carbs: fix.carbs, fat: fix.fat, fiber: fix.fiber, satfat: fix.satfat });
+    row.source += relinked || fix.kcal !== fix.old_kcal ? " (corrected in the 2026-11-21 audit, see reports/reference-foods-audit.md)" : "";
+}
+
 // Hand-curated foods with their own sources, kept as they are.
 for (const curated of ["lidl-bakery.csv"]) {
     out.push(...readCsv(path.join(here, curated)));

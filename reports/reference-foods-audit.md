@@ -4,8 +4,7 @@ The Bulgarian reference foods in `src/Plate.Web/Data/Seed/bg-foods.csv` (375 gen
 
 Two kinds of error are mixed here. Some values are wrong for the food (strawberries at 79 kcal, spinach at 7). Some English names are wrong for the values (cooked lentils linked to "Lentils, raw", which also gives them the wrong state for the cooked-or-dry question). Plate now refuses a raw-or-cooked state when a staple's name and energy disagree, so the second kind no longer drives that question, but both still put wrong numbers in front of users.
 
-`node tools/foods/audit-reference.mjs` prints the current list; `tests/js/reference-foods.test.cjs` fails on a new conflict and on a fixed one still listed in `tools/foods/reference-conflicts.known.txt`. The proposals below need a decision before the data changes: each one changes what users get for that food from now on (logged entries keep their stored totals).
-
+`node tools/foods/audit-reference.mjs` prints the current list; `tests/js/reference-foods.test.cjs` fails on a new conflict and on a fixed one still listed in `tools/foods/reference-conflicts.known.txt`. 
 | Bulgarian name | English link | kcal | USDA kcal | Source | Proposal |
 |-|-|-|-|-|-|
 | Гъби консерва | Mushrooms, canned, drained solids | 80 | 25 | www.spidersport.com | Values implausible for the named raw food; take the USDA twin's values, or drop the row (the USDA food has a Bulgarian name). |
@@ -48,3 +47,51 @@ Two kinds of error are mixed here. Some values are wrong for the food (strawberr
 | Калкан | Fish, turbot, European, raw | 70 | 95 | macroscope.top | Fish or seafood values off from USDA; check against the Bulgarian composition table. |
 
 A better long-term source for Bulgarian generic foods is the national composition table (ncpha.government.bg), after checking its terms of reuse, as the food-logging research suggested.
+
+## Resolution, 2026-11-21
+
+All 38 rows and one more without a USDA twin ("Грозде - бяло" at 38 kcal) were corrected, by these rules: values clearly wrong for a well-defined food take the USDA twin's values; values that fit another variant or state of the food are linked to that USDA food and take its values (so cooked lentils say cooked); products with their own label values lose the English link; local species that differ from the USDA food (European farmed sea bass, rapa whelk) get their own English name. `src/Plate.Web/Data/Seed/bg-foods.csv` carries the new values, `reference-fixes.csv` lists each change with the energy it replaced, `DataFixups` applies it at startup to rows still at that energy (a row corrected by hand since is left alone), and `merge.mjs` applies it when the seed is regenerated. Logged entries keep the totals they were saved with. The audit now finds no conflicts.
+
+| Bulgarian name | kcal per 100 g | Change |
+|-|-|-|
+| Цедено кисело мляко | 138 → 94.5 | values from the USDA twin |
+| Свински бут | 269 → 245 | linked to the matching USDA food and its values: Pork, fresh, leg (ham), whole, separable lean only, raw → Pork, fresh, leg (ham), whole, separable lean and fat, raw |
+| Аншоа консерва | 280 → 210 | values from the USDA twin |
+| Черни миди | 48 → 86 | values from the USDA twin |
+| Грейпфрут | 20 → 42 | values from the USDA twin |
+| Гъби консерва | 80 → 25 | values from the USDA twin |
+| Замразени зеленчуци | 42 → 72 | values from the USDA twin |
+| Кайсии | 31 → 48 | values from the USDA twin |
+| Круши | 40 → 57 | values from the USDA twin |
+| Малини | 25 → 51.4 | values from the USDA twin |
+| Мандарини | 35 → 53 | values from the USDA twin |
+| Праз | 22 → 61 | values from the USDA twin |
+| Спанак | 7 → 23 | values from the USDA twin |
+| Зрял боб | 113 → 139 | linked to the matching USDA food and its values: Beans, white, mature seeds, raw → Beans, white, mature seeds, cooked, boiled, without salt |
+| Леща | 105 → 116 | linked to the matching USDA food and its values: Lentils, raw → Lentils, mature seeds, cooked, boiled, without salt |
+| Гъше | 370 → 371 | linked to the matching USDA food and its values: Goose, domesticated, meat only, raw → Goose, domesticated, meat and skin, raw |
+| Кокоше | 261 → 258 | linked to the matching USDA food and its values: Chicken, stewing, meat only, raw → Chicken, stewing, meat and skin, raw |
+| Цяло пиле (пилешко) | 165 → 215 | linked to the matching USDA food and its values: Chicken, broilers or fryers, meat only, raw → Chicken, broilers or fryers, meat and skin, raw |
+| Пилешки бут | 117 → 120 | linked to the matching USDA food and its values: Chicken, broilers or fryers, leg, meat and skin, raw → Chicken, broilers or fryers, leg, meat only, raw |
+| Пилешки плешка (горен бут) | 133 → 121 | linked to the matching USDA food and its values: Chicken, broilers or fryers, thigh, meat and skin, raw → Chicken, broilers or fryers, dark meat, thigh, meat only, raw |
+| Цяло пуйка (пуешко) | 165 → 144 | linked to the matching USDA food and its values: Turkey, whole, meat only, raw → Turkey, whole, meat and skin, raw |
+| Рапани (Задушени) | 90 → 90 | own English name, values kept (a different species from the USDA food): Mollusks, whelk, unspecified, cooked, moist heat → Rapa whelk, stewed |
+| Рапани (Сурови) | 90 → 90 | own English name, values kept (a different species from the USDA food): Mollusks, whelk, unspecified, raw → Rapa whelk, raw |
+| Калкан | 70 → 95 | values from the USDA twin: Fish, turbot, European, raw → Fish, turbot, european, raw |
+| Лаврак | 128 → 128 | own English name, values kept (a different species from the USDA food): Fish, sea bass, mixed species, raw → European sea bass, farmed, raw |
+| Скумрия | 128 → 205 | values from the USDA twin |
+| Сметана | 428 → 340 | linked to the matching USDA food and its values: Cream, sour, cultured → Cream, fluid, heavy whipping |
+| Овесени трици | 403 → 246 | values from the USDA twin |
+| Пшенични трици | 368 → 216 | values from the USDA twin |
+| Соя | 277 → 446 | values from the USDA twin |
+| Грозде - бяло | 38 → 69 | linked to the matching USDA food and its values: Grapes, green (European type, such as Thompson seedless), raw → Grapes, red or green (European type, such as Thompson seedless), raw |
+| Грозде - розово | 48 → 69 | values from the USDA twin |
+| Ленено семе | 380 → 534 | values from the USDA twin |
+| Манго | 86 → 60 | values from the USDA twin |
+| Сливи сини | 81 → 46 | values from the USDA twin |
+| Ягоди | 79 → 31 | values from the USDA twin |
+| Ретро Горчица - Deroni | 148 → 148 | English link removed (a product with its own label values): Mustard, prepared, yellow → (none) |
+| Кълнове от пшеница | 216 → 198 | linked to the matching USDA food and its values: Wheat germ, crude → Wheat, sprouted |
+| BBQ Sauce - OstroVit | 7 → 7 | English link removed (a product with its own label values): Sauce, barbecue → (none) |
+
+Unverified: the rapa whelk values (90 kcal raw and stewed) have no second source, and stewed should be higher than raw; Сметана now uses heavy whipping cream (36% fat), the commonest Bulgarian cream, though shops also sell 20% and 32%.

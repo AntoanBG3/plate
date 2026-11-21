@@ -101,6 +101,36 @@ public class FoodSeedTests(PostgresFixture fixture) : IClassFixture<PostgresFixt
     }
 
     [Fact]
+    public async Task Reference_foods_still_at_their_old_values_are_corrected_and_others_left_alone()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..8];
+        await using (var db = fixture.CreateContext(null))
+        {
+            db.FoodItems.AddRange(
+                new FoodItem { Name = "Strawberries, raw", NameBg = $"Ягоди {tag}", Source = FoodSource.Reference, KcalPer100g = 79, ProteinPer100g = 0.9m, CarbsPer100g = 17.4m, FatPer100g = 0.5m },
+                new FoodItem { Name = "Mustard, prepared, yellow", NameBg = $"Горчица {tag}", Source = FoodSource.Reference, KcalPer100g = 148, ProteinPer100g = 6.8m, CarbsPer100g = 11.7m, FatPer100g = 8.2m },
+                new FoodItem { Name = "Hand fixed", NameBg = $"Ягоди {tag}", Source = FoodSource.Reference, KcalPer100g = 33, ProteinPer100g = 0.7m, CarbsPer100g = 7.7m, FatPer100g = 0.3m });
+            await db.SaveChangesAsync();
+        }
+
+        var fixes = TempCsv(
+            "name_bg,old_kcal,name_en,kcal,protein,carbs,fat,fiber,satfat",
+            $"Ягоди {tag},79,\"Strawberries, raw\",31,0.64,7.63,0.22,1.8,0.0",
+            $"Горчица {tag},148,,148,6.8,11.7,8.2,,");
+        await using (var db = fixture.CreateContext(null))
+        {
+            await DataFixups.RunAsync(db, default, fixes);
+            await DataFixups.RunAsync(db, default, fixes); // a second start finds nothing to change
+        }
+
+        await using var check = fixture.CreateContext(null);
+        var rows = await check.FoodItems.IgnoreQueryFilters().Where(f => f.NameBg!.EndsWith(tag)).ToListAsync();
+        rows.Should().ContainSingle(f => f.Name == "Strawberries, raw").Which.Should().Match<FoodItem>(f => f.KcalPer100g == 31 && f.FiberPer100g == 1.8m && f.CarbsPer100g == 7.63m);
+        rows.Should().ContainSingle(f => f.Name == "Hand fixed" && f.KcalPer100g == 33, "a food corrected since is not at its old energy");
+        rows.Single(f => f.NameBg == $"Горчица {tag}").Name.Should().Be($"Горчица {tag}", "a product goes by its Bulgarian name once unlinked");
+    }
+
+    [Fact]
     public async Task USDA_foods_seeded_earlier_get_their_Bulgarian_names_once()
     {
         var tag = Guid.NewGuid().ToString("N")[..8];
