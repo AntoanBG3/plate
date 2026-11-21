@@ -49,14 +49,18 @@ public sealed class DecimalModelBinder : IModelBinder
     }
 }
 
+/// <summary>
+/// The action reads the binder's "Enter a valid number." errors itself: it shows them on the form, or treats an
+/// unreadable value as missing. Without it, <see cref="ValidateDecimalInputs"/> rejects the request.
+/// </summary>
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class RedisplayInvalidNumbersAttribute : Attribute;
+public sealed class HandlesInvalidNumbersAttribute : Attribute;
 
 public sealed class ValidateDecimalInputs : IActionFilter
 {
     public void OnActionExecuting(ActionExecutingContext context)
     {
-        if (!context.ActionDescriptor.EndpointMetadata.OfType<RedisplayInvalidNumbersAttribute>().Any()
+        if (!context.ActionDescriptor.EndpointMetadata.OfType<HandlesInvalidNumbersAttribute>().Any()
             && context.ModelState.Values.Any(field => field.Errors.Any(e => e.ErrorMessage == DecimalModelBinder.InvalidNumber)))
         {
             throw new ValidationException("Enter a valid number.");

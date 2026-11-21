@@ -159,7 +159,7 @@ public class TrainController(
     /// once the sheet's own field sends (typed), only what is in the field counts, so clearing it asks for a weight.
     /// </summary>
     [HttpGet("session-exercises/{id:int}/plates")]
-    [RedisplayInvalidNumbers]
+    [HandlesInvalidNumbers]
     public async Task<IActionResult> Plates(int id, decimal? weight, decimal? suggested, bool typed, CancellationToken ct)
     {
         var exercise = await sessions.GetExerciseAsync(id, ct);

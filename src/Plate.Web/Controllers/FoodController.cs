@@ -206,7 +206,7 @@ public class FoodController(
 
     [HttpPost("items")]
     [IdempotentFoodPost]
-    [RedisplayInvalidNumbers]
+    [HandlesInvalidNumbers]
     public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string? name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, bool barcodeField, CancellationToken ct)
     {
         // Hidden routing and scan fields cannot be corrected in the form. Never reuse their binding defaults.
