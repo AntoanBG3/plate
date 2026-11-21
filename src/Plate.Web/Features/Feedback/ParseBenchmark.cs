@@ -80,6 +80,12 @@ public static class ParseBenchmark
 
     private const string BenchUser = "parsebench";
 
+    /// <summary>A parse slower than this counts as slow; the app's parser gives up at 15 s and retries once.</summary>
+    private const long SlowMs = 10_000;
+
+    /// <summary>A model with this many slow or failed calls, more than half of its calls so far, is dropped.</summary>
+    private const int GiveUpAfter = 5;
+
     public static async Task<int> RunAsync(IServiceProvider services, string[] args, TextWriter o, TextReader input, bool json, CancellationToken ct)
     {
         if (args.Contains("--help") || Option(args, "--models") is not { } list)
@@ -102,6 +108,7 @@ public static class ParseBenchmark
         var evaluator = services.GetRequiredService<ParseEvaluator>();
         var catalog = services.GetRequiredService<OpenRouterModels>();
         var outcomes = new ConcurrentBag<ParseBenchOutcome>();
+        var dropped = new ConcurrentDictionary<string, string>();
         await Task.WhenAll(specs.Select(spec => Task.Run(async () =>
         {
             var (model, effort) = spec.Split('@') is [var m, var e] ? (m, e) : (spec, AiTasks.LowestEffort);
@@ -109,17 +116,29 @@ public static class ParseBenchmark
             var replay = scope.ServiceProvider.GetRequiredService<ParseEvaluator>();
             var models = await replay.ModelsAsync(model, Option(args, "--matcher"), ct);
             var info = await catalog.FindAsync(model, ct);
+            var mine = new List<ParseBenchOutcome>();
             for (var rep = 1; rep <= repeats; rep++)
             {
                 foreach (var c in cases)
                 {
                     var clock = Stopwatch.StartNew();
                     var (parsed, rows) = await replay.ReplayAsync(BenchUser, c.Text, DateTimeOffset.UtcNow, false, models, ct, effort: effort);
-                    outcomes.Add(Score(spec, rep, c, parsed, rows, clock.ElapsedMilliseconds, info));
+                    var outcome = Score(spec, rep, c, parsed, rows, clock.ElapsedMilliseconds, info);
+                    outcomes.Add(outcome);
+                    mine.Add(outcome);
+                    // A parse slower than this falls back to manual entry in the app; a model that keeps doing it is no candidate.
+                    var slow = mine.Count(x => x.Ms > SlowMs || x.Failed);
+                    if (slow >= GiveUpAfter && slow * 2 > mine.Count)
+                    {
+                        dropped[spec] = $"dropped after {mine.Count} calls: {slow} slower than {SlowMs / 1000} s or failed";
+                        Console.Error.WriteLine($"{spec}: {dropped[spec]}.");
+                        return;
+                    }
                 }
             }
 
-            Console.Error.WriteLine($"{spec}: done.");
+            // Printed as each model finishes, so a run stopped early keeps what it has.
+            Console.Error.WriteLine("done " + SummaryRow(spec, mine, repeats));
         }, ct)));
 
         var all = outcomes.ToList();
@@ -131,6 +150,11 @@ public static class ParseBenchmark
         }
 
         Write(o, specs, cases, all, repeats);
+        foreach (var (spec, why) in dropped)
+        {
+            o.WriteLine($"{spec}: {why}; its row above covers only those calls.");
+        }
+
         return 0;
     }
 
@@ -189,15 +213,7 @@ public static class ParseBenchmark
         foreach (var spec in specs)
         {
             var xs = all.Where(x => x.Model == spec).ToList();
-            if (xs.Count == 0) continue;
-            var errors = xs.Where(x => x.ReferenceKcal > 0 || x.PlateKcal > 0).Select(x => x.PlateKcal - x.ReferenceKcal).ToList();
-            var abs = errors.Select(Math.Abs).OrderBy(x => x).ToList();
-            var ms = xs.Select(x => (double)x.Ms).OrderBy(x => x).ToList();
-            o.WriteLine($"{spec,-44} {Pct(xs.Count(x => x.AllRight), xs.Count),6} {Pct(xs.Sum(x => x.Found), xs.Sum(x => x.Expected)),6} {(double)xs.Sum(x => x.Extra) / repeats,6:0.#} "
-                + $"{Pct(xs.Sum(x => x.GramsRight), xs.Sum(x => x.GramsChecks)),6} {Pct(xs.Sum(x => x.ChecksRight), xs.Sum(x => x.Checks)),6} "
-                + $"{(abs.Count == 0 ? 0 : abs.Average()),6:0} {(abs.Count == 0 ? 0 : abs[abs.Count / 2]),5:0} {(errors.Count == 0 ? 0 : errors.Average()),6:+0;-0;0} "
-                + $"{ms[ms.Count / 2],6:0} {ms[(int)Math.Min(ms.Count - 1, ms.Count * 0.95)],6:0} {xs.Count(x => x.Failed),4} "
-                + $"{(xs.Any(x => x.Cost is not null) ? xs.Where(x => x.Cost is not null).Average(x => x.Cost!.Value) : 0),9:0.000000} {xs.Where(x => x.Usage is not null).Select(x => (double)x.Usage!.OutputTokens).DefaultIfEmpty(0).Average(),7:0}");
+            if (xs.Count > 0) o.WriteLine(SummaryRow(spec, xs, repeats));
         }
 
         o.WriteLine();
@@ -230,6 +246,20 @@ public static class ParseBenchmark
                 o.WriteLine($"      {x.Model}: {string.Join("; ", x.Problems)}");
             }
         }
+    }
+
+    /// <summary>One model's row of the summary table.</summary>
+    private static string SummaryRow(string spec, List<ParseBenchOutcome> xs, int repeats)
+    {
+        var errors = xs.Where(x => x.ReferenceKcal > 0 || x.PlateKcal > 0).Select(x => x.PlateKcal - x.ReferenceKcal).ToList();
+        var abs = errors.Select(Math.Abs).OrderBy(x => x).ToList();
+        var ms = xs.Select(x => (double)x.Ms).OrderBy(x => x).ToList();
+        var runs = Math.Max(1, xs.Select(x => x.Repeat).Distinct().Count());
+        return $"{spec,-44} {Pct(xs.Count(x => x.AllRight), xs.Count),6} {Pct(xs.Sum(x => x.Found), xs.Sum(x => x.Expected)),6} {(double)xs.Sum(x => x.Extra) / runs,6:0.#} "
+            + $"{Pct(xs.Sum(x => x.GramsRight), xs.Sum(x => x.GramsChecks)),6} {Pct(xs.Sum(x => x.ChecksRight), xs.Sum(x => x.Checks)),6} "
+            + $"{(abs.Count == 0 ? 0 : abs.Average()),6:0} {(abs.Count == 0 ? 0 : abs[abs.Count / 2]),5:0} {(errors.Count == 0 ? 0 : errors.Average()),6:+0;-0;0} "
+            + $"{(ms.Count == 0 ? 0 : ms[ms.Count / 2]),6:0} {(ms.Count == 0 ? 0 : ms[(int)Math.Min(ms.Count - 1, ms.Count * 0.95)]),6:0} {xs.Count(x => x.Failed),4} "
+            + $"{(xs.Any(x => x.Cost is not null) ? xs.Where(x => x.Cost is not null).Average(x => x.Cost!.Value) : 0),9:0.000000} {xs.Where(x => x.Usage is not null).Select(x => (double)x.Usage!.OutputTokens).DefaultIfEmpty(0).Average(),7:0}";
     }
 
     private static string Pct(int n, int of) => of == 0 ? "-" : (100.0 * n / of).ToString("0.0", CultureInfo.InvariantCulture);
