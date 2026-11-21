@@ -236,15 +236,18 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .check-input:checked { background: var(--accent); box-shadow: none; }
 .check-input:checked::after { transform: translateY(-1px) rotate(45deg) scale(1); opacity: 1; }
 
-/* Segmented control. The selected thumb morphs between pages with a view transition. */
+/* Segmented control. When the same page comes back with another segment selected, the thumb glides to it. */
 .segmented { display: flex; padding: 2px; border-radius: 9px; background: var(--fill); gap: 2px; }
 .segment {
     position: relative; flex: 1; min-height: 40px; display: grid; place-items: center; padding: 0 var(--s-2);
     border-radius: 7px; color: var(--label); font-size: var(--text-footnote); font-weight: var(--weight-semibold); text-align: center; line-height: 1.15;
 }
 .segment.is-active, .segment:has(:checked) { background: var(--segment-thumb); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 3px 1px rgb(0 0 0 / 0.04); }
-/* One sliding thumb per page: a view-transition-name must be unique, or the whole transition is skipped. */
-.segmented[data-thumb] .segment.is-active, .segmented[data-thumb] .segment:has(:checked) { view-transition-name: segment-thumb; }
+/* One sliding thumb per page: a view-transition-name must be unique, or the whole transition is skipped. It is named
+   only for a change in place ("same", "swap"). On any other page change it travels with its page: named, it had no
+   partner on the page that was left, so it faded in at its final spot over the page while the page was still
+   sliding in. After a full load the page that was left couldn't name it either. */
+html:is([data-nav="same"], [data-nav="swap"]):not(.is-full-load) .segmented[data-thumb] .segment:is(.is-active, :has(:checked)) { view-transition-name: segment-thumb; }
 .segment input { position: absolute; opacity: 0; pointer-events: none; }
 /* Reaches over the control's 2 px padding so each segment is 44 px tall to tap. */
 .segment::before { content: ""; position: absolute; inset: -2px -1px; }
@@ -871,15 +874,13 @@ body.sheet-open .app-scale {
 ::view-transition-old(root) { display: none; }
 
 /* Next and prev (a tab further along the tab bar): both pages slide a full width, like a pager; the title travels
-   with its page. A segmented control's thumb would fly across on its own while the page slides, so it moves with
-   the page here. */
+   with its page. */
 html:is([data-nav="next"], [data-nav="prev"])::view-transition-group(page),
 html:is([data-nav="next"], [data-nav="prev"])::view-transition-group(large-title) { animation: none; }
 html[data-nav="next"]::view-transition-old(page), html[data-nav="next"]::view-transition-old(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-slide-out-left; }
 html[data-nav="next"]::view-transition-new(page), html[data-nav="next"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-push-in; }
 html[data-nav="prev"]::view-transition-old(page), html[data-nav="prev"]::view-transition-old(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-pop-out; }
 html[data-nav="prev"]::view-transition-new(page), html[data-nav="prev"]::view-transition-new(large-title) { animation: var(--dur-page) var(--ease-snappy) both vt-slide-in-left; }
-html:is([data-nav="next"], [data-nav="prev"]) .segmented[data-thumb] .segment:is(.is-active, :has(:checked)) { view-transition-name: none; }
 
 /* Another page when the direction is unknown: the new one fades in over the old, rising a little. */
 html[data-nav="tab"]::view-transition-group(page) { animation: none; }
