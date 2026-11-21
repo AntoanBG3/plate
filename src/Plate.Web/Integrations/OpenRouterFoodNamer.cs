@@ -26,7 +26,8 @@ public class OpenRouterFoodNamer(HttpClient http, OpenRouterModels catalog, ILog
           "broiler or fryers", "meat only", "boneless", "enriched", "regular", USDA codes.
         - status: how the food is, in one or two lowercase words, as the database name says: raw, cooked, boiled, grilled,
           fried, baked, roasted, steamed, dried, canned, frozen, smoked, pickled, processed. Null when the database name
-          says none of these.
+          says none of these. In Bulgarian the status agrees with the name in gender and number: "Ориз": варен,
+          "Паста": варена, "Пилешко филе": варено, "Пилешки гърди": сурови.
         - Never add anything the database name doesn't say. The user's text is only context: if it says "grilled" but
           the database name says "braised", the status is braised.
         - No amounts or weights.

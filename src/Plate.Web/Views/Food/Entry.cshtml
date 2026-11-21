@@ -10,7 +10,7 @@
     <h1 class="large-title" style="font-size: var(--text-title-1)">@L.Entry(Model.Description)</h1>
     @if (Model.Source != EntrySource.Quick)
     {
-        <p class="subhead entry-title"><span class="num">@L["{0} g", Model.Grams.Kg()]</span>@if (L.Status(Model.Status, ViewData["FoodState"] as Plate.Core.Nutrition.FoodState? ?? default) is { } status)
+        <p class="subhead entry-title"><span class="num">@L["{0} g", Model.Grams.Kg()]</span>@if (L.Status(Model.Status, ViewData["FoodState"] as Plate.Core.Nutrition.FoodState? ?? default, L.Entry(Model.Description)) is { } status)
             {<span class="chip status-chip" data-status>@status</span>}</p>
     }
 </header>

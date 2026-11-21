@@ -81,6 +81,30 @@ public class EntryNameTests(PostgresFixture fixture) : IClassFixture<PostgresFix
         System.Net.WebUtility.HtmlDecode(await client.GetStringAsync("/today")).Should().Contain("Бързо добавяне").And.NotContain("Quick add");
     }
 
+    // The neuter "сготвено" was the fallback for every food, and the AI's status didn't always match its name either.
+    // Rows saved that way read right too: the status agrees with the name when it is shown.
+    [Fact]
+    public async Task A_Bulgarian_status_agrees_with_the_name_beside_it()
+    {
+        await using var app = new AppFactory(fixture);
+        var (client, email) = await app.SignedInClientAsync();
+        await using var system = fixture.CreateContext(null);
+        var userId = await system.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync();
+        await using var s = new UserScope(fixture, userId);
+        await s.Db.Profiles.ExecuteUpdateAsync(p => p.SetProperty(x => x.Language, Language.Bulgarian));
+        var today = Plate.Core.Time.UserClock.Today(DateTimeOffset.UtcNow, UserProfile.DefaultTimeZoneId);
+        var rice = new Per100g(130, 2.7m, 28, 0.3m);
+        await s.FoodLog.AddAsync([
+            new NewEntry(today, Meal.Lunch, "Ориз басмати", 150, rice, null, EntrySource.Ai, Status: "сготвено"),
+            new NewEntry(today, Meal.Lunch, "Пилешки гърди", 200, new Per100g(120, 22.5m, 0, 2.6m), null, EntrySource.Ai, Status: "варена"),
+        ], default);
+        var riceId = await s.Db.FoodLog.Where(e => e.Description == "Ориз басмати").Select(e => e.Id).SingleAsync();
+
+        var log = System.Net.WebUtility.HtmlDecode(await client.GetStringAsync("/food"));
+        log.Should().Contain(">сготвен</span>").And.Contain(">варени</span>").And.NotContain(">сготвено<").And.NotContain(">варена<");
+        System.Net.WebUtility.HtmlDecode(await client.GetStringAsync($"/food/entries/{riceId}")).Should().Contain("data-status>сготвен</span>");
+    }
+
     [Fact]
     public async Task The_quick_add_sheet_names_its_meal_and_marks_every_macro_optional()
     {

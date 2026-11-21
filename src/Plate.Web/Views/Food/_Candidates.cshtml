@@ -10,7 +10,7 @@ else
         @foreach (var f in Model)
         {
             @* site.js puts this food on the row the sheet was opened for. *@
-            var state = L.State(Plate.Core.Nutrition.FoodStates.FromName(f.Name, f.NameBg));
+            var state = L.State(Plate.Core.Nutrition.FoodStates.FromName(f.Name, f.NameBg), f.DisplayName);
             <button type="button" class="row row-link" style="width: 100%; text-align: left" data-candidate="@f.Id" data-name="@f.DisplayName" data-status="@state"
                     data-kcal="@f.KcalPer100g.ToString(inv)" data-protein="@f.ProteinPer100g.ToString(inv)" data-carbs="@f.CarbsPer100g.ToString(inv)"
                     data-fat="@f.FatPer100g.ToString(inv)" data-fiber="@f.FiberPer100g?.ToString(inv)" data-satfat="@f.SaturatedFatPer100g?.ToString(inv)"
