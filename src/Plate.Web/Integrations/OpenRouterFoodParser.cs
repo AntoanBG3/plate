@@ -84,7 +84,7 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                   "amountGiven": { "type": "boolean" },
                   "gramsStated": { "type": "boolean" },
                   "count": { "type": ["number", "null"] },
-                  "countUnit": { "type": ["string", "null"], "enum": ["piece", "pack", "serving", null] },
+                  "countUnit": { "anyOf": [{ "type": "string", "enum": ["piece", "pack", "serving"] }, { "type": "null" }] },
                   "state": { "type": "string", "enum": ["raw", "cooked", "na"] },
                   "preparation": { "type": ["string", "null"] },
                   "assumption": { "type": ["string", "null"] },

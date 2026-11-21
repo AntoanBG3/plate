@@ -76,12 +76,12 @@ public class OpenRouterOnboardingAssistant(HttpClient http, OpenRouterModels cat
               "type": "object",
               "properties": {
                 "name": { "type": ["string", "null"] },
-                "sex": { "type": ["string", "null"], "enum": ["male", "female", null] },
+                "sex": { "anyOf": [{ "type": "string", "enum": ["male", "female"] }, { "type": "null" }] },
                 "birthYear": { "type": ["integer", "null"] },
                 "heightCm": { "type": ["number", "null"] },
                 "weightKg": { "type": ["number", "null"] },
-                "activityLevel": { "type": ["string", "null"], "enum": ["inactive", "low_active", "active", "very_active", null] },
-                "goal": { "type": ["string", "null"], "enum": ["cut", "maintain", "bulk", null] },
+                "activityLevel": { "anyOf": [{ "type": "string", "enum": ["inactive", "low_active", "active", "very_active"] }, { "type": "null" }] },
+                "goal": { "anyOf": [{ "type": "string", "enum": ["cut", "maintain", "bulk"] }, { "type": "null" }] },
                 "ratePercentPerWeek": { "type": ["number", "null"] },
                 "proteinGramsPerKg": { "type": ["number", "null"] },
                 "startingMaintenanceKcal": { "type": ["integer", "null"] }

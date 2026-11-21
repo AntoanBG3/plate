@@ -541,6 +541,29 @@ public class OpenRouterParserTests
     }
 
     [Fact]
+    public async Task The_schema_gives_a_nullable_enum_as_anyOf_which_every_provider_accepts()
+    {
+        // A type list with an enum ({"type": ["string", "null"], "enum": [..., null]}) made one provider reject every parse.
+        var stub = new StubOpenRouter();
+        await stub.Parser().TestAsync("sk-or-v1-key", "openai/gpt-x", default);
+
+        static IEnumerable<JsonObject> Nodes(JsonNode? node) => node switch
+        {
+            JsonObject o => new[] { o }.Concat(o.SelectMany(p => Nodes(p.Value))),
+            JsonArray a => a.SelectMany(Nodes),
+            _ => [],
+        };
+
+        var schema = stub.SentBody!["response_format"]!["json_schema"]!["schema"];
+        Nodes(schema).Where(o => o["enum"] is not null && o["type"] is JsonArray).Should().BeEmpty();
+        schema!["properties"]!["items"]!["items"]!["properties"]!["countUnit"]!["anyOf"].Should().NotBeNull();
+
+        // The setup chat had the same shape for sex, activity level and goal.
+        await stub.Onboarding().TestAsync("sk-or-v1-key", "openai/gpt-x", default);
+        Nodes(stub.SentBody!["response_format"]!["json_schema"]!["schema"]).Where(o => o["enum"] is not null && o["type"] is JsonArray).Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Sends_a_strict_schema_and_only_the_parameters_the_model_supports()
     {
         var stub = new StubOpenRouter();
