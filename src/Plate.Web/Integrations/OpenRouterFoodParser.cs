@@ -266,8 +266,17 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
             return FoodParseResult.Failed(error ?? "No food found in that text.");
         }
 
-        return new FoodParseResult(items, error, model);
+        return new FoodParseResult(items, error, model, Usage(response));
     }
+
+    /// <summary>OpenRouter's usage block: tokens in and out (reasoning included in out) and the cost, when present.</summary>
+    internal static ParseUsage? Usage(JsonNode? response) =>
+        response?["usage"] is JsonObject u
+            ? new ParseUsage(Int(u["prompt_tokens"]), Int(u["completion_tokens"]), Int(u["completion_tokens_details"]?["reasoning_tokens"]),
+                u["cost"] is JsonValue c && c.TryGetValue<decimal>(out var cost) ? cost : null)
+            : null;
+
+    private static int Int(JsonNode? node) => node is JsonValue v && v.TryGetValue<int>(out var i) ? i : 0;
 
     /// <summary>
     /// The model's per-100 g values. Fiber and saturated fat are optional: an impossible one is dropped as unknown

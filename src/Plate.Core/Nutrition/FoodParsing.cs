@@ -44,10 +44,14 @@ public record ParsedFoodItem(
     CountUnit? CountOf = null,
     bool GramsStated = false);
 
-public record FoodParseResult(IReadOnlyList<ParsedFoodItem> Items, LocalText? Error, string? Model)
+/// <param name="Usage">What OpenRouter counted and charged for the call, when it says.</param>
+public record FoodParseResult(IReadOnlyList<ParsedFoodItem> Items, LocalText? Error, string? Model, ParseUsage? Usage = null)
 {
     public static FoodParseResult Failed(LocalText error) => new([], error, null);
 }
+
+/// <param name="Cost">US dollars, as OpenRouter reports it; null when it doesn't.</param>
+public record ParseUsage(int InputTokens, int OutputTokens, int ReasoningTokens, decimal? Cost);
 
 public interface IFoodParser
 {

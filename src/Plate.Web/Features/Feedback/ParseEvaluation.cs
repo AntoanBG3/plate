@@ -71,8 +71,10 @@ public class ParseEvaluator(
     /// </summary>
     /// <param name="stored">Items to match instead of parsing <paramref name="text"/> again.</param>
     /// <param name="trace">When given, receives the matcher's trace per item.</param>
+    /// <param name="effort">The parser's reasoning effort, when given ("lowest" for the model's lowest); otherwise the one picked in the admin area.</param>
     public async Task<(FoodParseResult Parsed, IReadOnlyList<ConfirmItem> Items)> ReplayAsync(string userId, string text, DateTimeOffset asOf, bool history,
-        (string Key, string Parser, string Matcher) models, CancellationToken ct, IReadOnlyList<ParsedFoodItem>? stored = null, List<MatchTrace>? trace = null)
+        (string Key, string Parser, string Matcher) models, CancellationToken ct, IReadOnlyList<ParsedFoodItem>? stored = null, List<MatchTrace>? trace = null,
+        string? effort = null)
     {
         var user = new FixedCurrentUser(userId);
         await using var db = new AppDbContext(options, user);
@@ -80,7 +82,8 @@ public class ParseEvaluator(
         IFoodMatchDecider decider = models.Matcher == AiTasks.Off ? new NoDecider() : new KeyedDecider(jev, models.Key, models.Matcher);
         // As the app would have matched it then: the account's usual foods and last amounts from before the parse.
         var matcher = new FoodMatcher(foods, decider, history ? new HistoryAsOf(db, user, asOf) : null);
-        var parsed = stored is null ? await parser.ParseAsync(text, models.Key, models.Parser, ct, await settings.GetEffortAsync(AiTask.Parser, ct)) : new FoodParseResult(stored, null, "stored");
+        var parserEffort = effort is null ? await settings.GetEffortAsync(AiTask.Parser, ct) : effort == AiTasks.LowestEffort ? null : effort;
+        var parsed = stored is null ? await parser.ParseAsync(text, models.Key, models.Parser, ct, parserEffort) : new FoodParseResult(stored, null, "stored");
         return (parsed, parsed.Items.Count == 0 ? [] : await matcher.ResolveAsync(text, parsed.Items, ct, trace));
     }
 
