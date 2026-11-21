@@ -44,7 +44,7 @@
                 Confidence.Medium => ("check", L["Check match"]),
                 _ => ("ai", L["AI estimate"]),
             };
-            var status = L.Status(item.Status, item.State);
+            var status = L.Status(item.Status, item.State, item.Description);
             @* A counted amount ("две закуски") goes with the row, so its grams follow when another food is picked (site.js). *@
             <div class="result portion" data-row="@i" data-per100="@item.Per100.Kcal.Kg(),@item.Per100.Protein.Kg()" style="animation-delay: @(i * 70)ms"
                  data-amount-count="@item.Count?.Units.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-amount-of="@item.Count?.Of.ToString().ToLowerInvariant()" data-amount-grams="@(item.Count is null ? null : item.Grams.ToString(System.Globalization.CultureInfo.InvariantCulture))">
@@ -76,7 +76,7 @@
                             {
                                 var on = o.State == choice.Current;
                                 <button type="button" class="segment@(on ? " is-active" : "")" aria-pressed="@(on ? "true" : "false")" data-choice-food="@o.Id" data-state="@o.State.ToString().ToLowerInvariant()"
-                                        data-name="@o.Name" data-status="@L.State(o.State)" data-kcal="@o.Per100.Kcal.ToString(inv)" data-protein="@o.Per100.Protein.ToString(inv)"
+                                        data-name="@o.Name" data-status="@L.State(o.State, item.Description)" data-kcal="@o.Per100.Kcal.ToString(inv)" data-protein="@o.Per100.Protein.ToString(inv)"
                                         data-carbs="@o.Per100.Carbs.ToString(inv)" data-fat="@o.Per100.Fat.ToString(inv)" data-fiber="@o.Per100.Fiber?.ToString(inv)" data-satfat="@o.Per100.SaturatedFat?.ToString(inv)">@(o.State == Plate.Core.Nutrition.FoodState.Raw ? L["Before cooking"] : L["After cooking"])</button>
                             }
                         </div>

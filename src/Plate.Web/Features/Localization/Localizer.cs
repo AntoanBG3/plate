@@ -67,22 +67,23 @@ public class Localizer
 
     /// <summary>
     /// The status shown beside an entry's name: the one saved with it ("boiled", in the language it was logged in), or
-    /// raw or cooked as the food's database name says; null when neither says.
+    /// raw or cooked as the food's database name says; null when neither says. A Bulgarian status agrees with the name
+    /// it sits beside ("Ориз · варен", "Паста · варена"), also one saved before it did.
     /// </summary>
-    public string? Status(string? saved, Plate.Core.Nutrition.FoodState fromFood) =>
-        !string.IsNullOrWhiteSpace(saved) ? saved : State(fromFood);
+    public string? Status(string? saved, Plate.Core.Nutrition.FoodState fromFood, string? name) =>
+        !string.IsNullOrWhiteSpace(saved) ? BulgarianAgreement.Agree(saved, name) : State(fromFood, name);
 
-    /// <summary>"raw" or "cooked" in the user's language; null for a food that is neither.</summary>
-    public string? State(Plate.Core.Nutrition.FoodState state) => state switch
+    /// <summary>"raw" or "cooked" in the user's language, agreeing with <paramref name="name"/>; null for a food that is neither.</summary>
+    public string? State(Plate.Core.Nutrition.FoodState state, string? name) => state switch
     {
-        Plate.Core.Nutrition.FoodState.Raw => this["raw"],
-        Plate.Core.Nutrition.FoodState.Cooked => this["cooked"],
+        Plate.Core.Nutrition.FoodState.Raw => BulgarianAgreement.Agree(this["raw"], name),
+        Plate.Core.Nutrition.FoodState.Cooked => BulgarianAgreement.Agree(this["cooked"], name),
         _ => null,
     };
 
     /// <summary>An entry's status: its own, or from the linked food when the query loaded it.</summary>
     public string? Status(Plate.Core.Domain.FoodLogEntry entry) =>
-        Status(entry.Status, entry.FoodItem is { } food ? Plate.Core.Nutrition.FoodStates.FromName(food.Name, food.NameBg) : default);
+        Status(entry.Status, entry.FoodItem is { } food ? Plate.Core.Nutrition.FoodStates.FromName(food.Name, food.NameBg) : default, Entry(entry.Description));
 
     public string Exercise(Plate.Core.Domain.Exercise exercise) =>
         Exercise(exercise.Name, exercise.OwnerUserId is not null);

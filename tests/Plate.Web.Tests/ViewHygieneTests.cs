@@ -32,6 +32,12 @@ public class ViewHygieneTests
             .Select(Path.GetFileName)
             .Should().BeEmpty();
 
+    // .list resets its margin and comes after .section in app.css, so one element with both loses the section's space
+    // and sits flush against the card above it (the entry page's Food row did).
+    [Fact]
+    public void Lists_and_sections_are_separate_elements() =>
+        Offenders(@"class=""(?=[^""]*(?<![\w-])list(?![\w-]))(?=[^""]*(?<![\w-])section(?![\w-]))").Should().BeEmpty();
+
     // The admin area shows what users typed and what the parser made of it; all of it must go through Razor's encoding.
     [Fact]
     public void Admin_views_never_write_raw_html() =>
