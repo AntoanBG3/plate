@@ -4,6 +4,23 @@
 
 **Scope** — A sampled review of training, food entry, nutrition history, settings and export, Bulgarian localisation, and the associated Core, Web, browser and JavaScript tests. Browser reproductions used disposable accounts at 390 px. Performance figures below are local measurements or counts derived from the queries. Production latency and physical iPhone behaviour were outside this audit.
 
+## Resolution on `changes/resolve-project-audit`
+
+All 15 findings from the reviewed revision are addressed on this branch.
+
+| Findings | Change | Verification |
+|---|---|---|
+| 1, 5 | Manual entry rejects malformed numbers and out-of-range portions. A rejected save keeps the submitted fields, barcode, sharing choice and label scan reference. | Browser tests submit a bare separator and a 3,001 g portion, bypass client validation, and check the returned form. Web tests verify rollback and retry. |
+| 2 | Check foods has an account-scoped GET address backed by the original parse and a stable save ID. The tab retains edits to its eight most recent reviews. | Reload and Back restore an edited row in Chromium and WebKit. The Web test verifies that another account receives a 404. |
+| 3, 9, 10 | The protein chart takes its minimum from each day's snapshot. Both chart history queries fetch the 28-day range and at most one preceding row. The initial backfill builds the weight trend once. | Yesterday's saved 95 g minimum survives today's 130 g target. For 1,095 weigh-ins, managed allocations for the trend calculation fell from 105,213,160 to 212,008 bytes with the same sum of daily estimates. |
+| 4, 8 | Suggestions and “Last time” share the two most recent workouts with working sets per exercise. The pickers validate a whole selection before saving it. | A PostgreSQL command counter observed one history query for six exercise slots. Four intervening warm-up-only workouts preserved the last working sets. An archived pick leaves the original template intact. |
+| 6 | The ZIP includes private foods, saved meals and their ordered items, exercise notes and bar settings, plus profile preferences. IDs link related rows. | An export test seeds two accounts and checks the contents and ownership of the new CSV files. |
+| 7, 12 | Rest timer expiry dismisses only the rest sheet. Keyboard focus stays in the active dialog, including during async loads and nested confirmations. | Browser tests cover expiry with Plates open, Tab in both directions, and focus returning to the opener. |
+| 11 | Each parsed food keeps its ranking, shortlist and decision together. Usual foods and private top matches skip the model shortlist. Switching the matcher off skips shortlist searches for every item. | Food matching and evaluation tests cover ranking, model questions, multi-item context and traces. |
+| 13, 14, 15 | Bulgarian nutrition labels use the correct caption and units. Training screens preserve custom exercise names. The profile test suite keeps the time-zone case and the dedicated height and protein boundary theories. | Catalogue, Bulgarian browser and profile tests cover these cases. |
+
+The local release gate on `4159a78` passed all 1,431 checks (55 JavaScript, 470 Core, 592 Web and 314 browser), with zero build warnings. Browser verification used Playwright Chromium and WebKit. The allocation benchmark excludes EF and JSON.
+
 ## Executive Summary
 
 Food entry has two different failure modes. A mistyped nutrient can become a valid database value, while a rejected portion can erase the other fields the user entered. The food review URL also fails on reload in both browser engines. These are the first fixes I would ship.
