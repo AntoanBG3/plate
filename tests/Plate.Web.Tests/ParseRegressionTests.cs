@@ -10,7 +10,8 @@ namespace Plate.Web.Tests;
 /// <summary>
 /// Real parses replayed against the database ranking (SPEC 11). The cases come from
 /// <c>feedback parses --export-eval</c> on wizard, reviewed before committing, in Fixtures/parse-corrections*.jsonl.
-/// An item the user accepted must still get the same food; an item rated "wrong food" must not get it again.
+/// An item must still get the food the user saved for it (older cases record that only for accepted items), and an
+/// item rated "wrong food" must not get the rejected food again.
 /// Failures that are known and not yet fixed are listed in Fixtures/parse-corrections.known-failures.txt
 /// (GYM_WRITE_KNOWN=1 rewrites it), so only new regressions fail the test. Only shared seed foods are checked,
 /// found by name, since ids differ between databases and the users' own foods aren't here.
@@ -41,12 +42,16 @@ public class ParseRegressionTests(PostgresFixture fixture, ITestOutputHelper out
         foreach (var c in cases)
         {
             var fresh = await s.Matcher.ResolveAsync(c.Text, c.Items.Select(i => i.Parsed).ToList(), default);
-            foreach (var item in c.Items.Where(i => i.Verdict is EvalVerdict.Accepted or EvalVerdict.WrongFood))
+            foreach (var item in c.Items)
             {
-                var food = item.FoodName is null || item.FoodSource is not { } source || !SeedSources.Contains(source)
-                    ? null
-                    : await s.Db.FoodItems.Where(f => f.OwnerUserId == null && f.Name == item.FoodName && f.Source == source).Select(f => (int?)f.Id).FirstOrDefaultAsync();
-                if (food is null)
+                var rejected = item.RejectedFoodItemId is null ? null : await SeedFoodAsync(s, item.FoodName, item.FoodSource);
+                var savedFood = item.SavedFood is { } sf ? await SeedFoodAsync(s, sf.Name, sf.Source) : null;
+                if (savedFood == rejected)
+                {
+                    savedFood = null; // kept after rating it wrong: no reference
+                }
+
+                if (rejected is null && savedFood is null)
                 {
                     skipped++;
                     continue;
@@ -54,11 +59,21 @@ public class ParseRegressionTests(PostgresFixture fixture, ITestOutputHelper out
 
                 checkedItems++;
                 var got = fresh[item.Index];
-                var ok = item.Verdict == EvalVerdict.Accepted ? got.FoodItemId == food : got.FoodItemId != food;
-                if (!ok)
+                var problems = new List<string>();
+                if (savedFood is not null && got.FoodItemId != savedFood)
+                {
+                    problems.Add($"expected {item.SavedFood!.Value.Name}");
+                }
+
+                if (rejected is not null && got.FoodItemId == rejected)
+                {
+                    problems.Add($"expected not {item.FoodName}");
+                }
+
+                if (problems.Count > 0)
                 {
                     failures.Add($"{c.RunId}:{item.Index}");
-                    output.WriteLine($"{c.RunId}:{item.Index} {item.Verdict} \"{item.Parsed.NameOriginal}\" expected {(item.Verdict == EvalVerdict.Accepted ? "" : "not ")}{item.FoodName}, got {got.MatchedName ?? "an AI estimate"}");
+                    output.WriteLine($"{c.RunId}:{item.Index} {item.Verdict} \"{item.Parsed.NameOriginal}\" {string.Join(" and ", problems)}, got {got.MatchedName ?? "an AI estimate"}");
                 }
             }
         }
@@ -77,4 +92,10 @@ public class ParseRegressionTests(PostgresFixture fixture, ITestOutputHelper out
 
         failures.Where(f => !known.Contains(f)).Should().BeEmpty("these parse cases regressed; see the test output");
     }
+
+    /// <summary>A shared seed food by name and source, or null for any other food.</summary>
+    private static async Task<int?> SeedFoodAsync(UserScope s, string? name, FoodSource? source) =>
+        name is null || source is not { } src || !SeedSources.Contains(src)
+            ? null
+            : await s.Db.FoodItems.Where(f => f.OwnerUserId == null && f.Name == name && f.Source == src).Select(f => (int?)f.Id).FirstOrDefaultAsync();
 }

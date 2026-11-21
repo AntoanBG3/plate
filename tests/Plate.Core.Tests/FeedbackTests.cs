@@ -162,7 +162,93 @@ public class ParseAgreementTests
 
     [Fact]
     public void Results_add_up() =>
-        (new AgreementResult(2, 1, 1, 0) + new AgreementResult(3, 3, 2, 1)).Should().Be(new AgreementResult(5, 4, 3, 1));
+        (new AgreementResult(2, 1, 1, 0) + new AgreementResult(3, 3, 2, 1, 2)).Should().Be(new AgreementResult(5, 4, 3, 1, 2));
+
+    // A suggested (food 1), B saved (food 2).
+    private static ReplayExpectation Corrected(int? rejected = null) => new(true, true, 2, "B", 150, new Per100g(200, 20, 10, 8), rejected);
+
+    [Fact]
+    public void A_corrected_item_expects_the_saved_food_not_the_suggested_one()
+    {
+        ParseAgreement.Replay([Corrected()], [Fresh(2, 150)]).Agreement.Should().Be(new AgreementResult(1, 1, 1, 0));
+        ParseAgreement.Replay([Corrected()], [Fresh(1, 150)]).Agreement.Should().Be(new AgreementResult(1, 0, 0, 1));
+    }
+
+    [Fact]
+    public void A_rejected_suggestion_picked_again_is_counted_as_a_repeat()
+    {
+        var again = ParseAgreement.Replay([Corrected(rejected: 1)], [Fresh(1, 150)]);
+        again.Agreement.FoodAgreed.Should().Be(0);
+        again.RepeatedRejections.Should().Be(1);
+
+        var fixedNow = ParseAgreement.Replay([Corrected(rejected: 1)], [Fresh(2, 150)]);
+        fixedNow.Agreement.FoodAgreed.Should().Be(1);
+        fixedNow.RepeatedRejections.Should().Be(0);
+    }
+
+    [Fact]
+    public void A_rejected_food_that_was_kept_anyway_is_no_reference()
+    {
+        var kept = new ReplayExpectation(true, true, 1, "A", 150, Values, RejectedFoodItemId: 1);
+
+        var score = ParseAgreement.Replay([kept], [Fresh(1, 150)]);
+
+        score.Agreement.Should().Be(new AgreementResult(0, 0, 0, 0, 1));
+        score.RepeatedRejections.Should().Be(1);
+    }
+
+    [Fact]
+    public void A_removed_item_is_not_expected_and_finding_it_again_is_extra()
+    {
+        var removed = new ReplayExpectation(false, true, 3, "C", 50, Values);
+
+        ParseAgreement.Replay([Corrected(), removed], [Fresh(2, 150), Fresh(3, 50)]).Agreement.Should().Be(new AgreementResult(1, 1, 1, 1));
+    }
+
+    [Fact]
+    public void A_saved_AI_estimate_pairs_by_its_saved_name()
+    {
+        var estimate = new ReplayExpectation(true, true, null, "Закуска с лютеница", 90, new Per100g(233, 7, 30, 9));
+
+        ParseAgreement.Replay([estimate], [Fresh(null, 90, name: "закуска с  лютеница")]).Agreement.Should().Be(new AgreementResult(1, 1, 1, 0));
+        ParseAgreement.Replay([estimate], [Fresh(7, 90)]).Agreement.Should().Be(new AgreementResult(1, 0, 0, 1));
+    }
+
+    [Fact]
+    public void An_unrecorded_food_is_unknown_and_accounts_for_one_unpaired_item()
+    {
+        var unrecorded = new ReplayExpectation(true, false, null, "", 100, null);
+
+        var score = ParseAgreement.Replay([Corrected(), unrecorded], [Fresh(2, 150), Fresh(5, 100), Fresh(6, 20)]);
+
+        score.Agreement.Should().Be(new AgreementResult(1, 1, 1, 1, 1));
+        score.Saved.Should().BeNull("one saved item has no recorded values");
+    }
+
+    [Fact]
+    public void Nutrients_compare_the_saved_grams_and_values_with_the_replay()
+    {
+        var removed = new ReplayExpectation(false, true, 3, "C", 500, Values);
+
+        var score = ParseAgreement.Replay([Corrected(), removed], [new SuggestedItem("B", 100, new Per100g(200, 20, 10, 8), 2)]);
+
+        score.Saved.Should().Be(new MealNutrients(300, 30, 15, 12), "150 g at 200 kcal, 20 g protein, 10 g carbs and 8 g fat per 100 g; unticked items don't count");
+        score.Fresh.Should().Be(new MealNutrients(200, 20, 10, 8));
+    }
+
+    [Fact]
+    public void Nutrient_differences_are_summarized_over_meals_with_known_values()
+    {
+        var summary = NutrientAgreement.Summarize([
+            (new MealNutrients(300, 30, 15, 12), new MealNutrients(200, 20, 10, 8)),
+            (new MealNutrients(500, 40, 50, 10), new MealNutrients(560, 40, 60, 10)),
+            (new MealNutrients(400, 10, 10, 10), new MealNutrients(400, 10, 10, 10)),
+            (null, new MealNutrients(999, 9, 9, 9)),
+        ]);
+
+        summary.Should().Be(new NutrientAgreement(3, 53.3m, 60, -13.3m, 3.3m, 5, 1.3m));
+        NutrientAgreement.Summarize([]).Meals.Should().Be(0);
+    }
 }
 
 public class ModelAccuracyTests

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Plate.Core.Domain;
 using Plate.Core.Nutrition;
 using Plate.Web.Data;
@@ -33,11 +34,69 @@ public static class EvalVerdict
     public const string Removed = "removed";
 }
 
-/// <param name="FoodName">The suggested (and, unless removed, saved) food's English name, stable across databases unlike its id.</param>
-public record EvalItem(int Index, ParsedFoodItem Parsed, string Verdict, int? FoodItemId, string? FoodName, FoodSource? FoodSource, decimal? SavedGrams, ParseReason Reasons);
+/// <summary>
+/// One parsed item of an exported case. Exported cases are committed as fixtures (tests/Plate.Web.Tests/Fixtures), so the
+/// JSON names are fixed here and pinned by EvalCaseJsonTests; cases exported before <see cref="Saved"/> existed still read.
+/// </summary>
+/// <param name="FoodItemId">The suggested food; with <see cref="ParseReason.WrongFood"/> in <paramref name="Reasons"/>, the rejected one.</param>
+/// <param name="FoodName">The suggested food's English name, stable across databases unlike its id.</param>
+/// <param name="Saved">What the user saved for the item, even when unticked; null in cases exported before it was kept.</param>
+public record EvalItem(
+    [property: JsonPropertyName("index")] int Index,
+    [property: JsonPropertyName("parsed")] ParsedFoodItem Parsed,
+    [property: JsonPropertyName("verdict")] string Verdict,
+    [property: JsonPropertyName("foodItemId")] int? FoodItemId,
+    [property: JsonPropertyName("foodName")] string? FoodName,
+    [property: JsonPropertyName("foodSource")] FoodSource? FoodSource,
+    [property: JsonPropertyName("savedGrams")] decimal? SavedGrams,
+    [property: JsonPropertyName("reasons")] ParseReason Reasons,
+    [property: JsonPropertyName("saved")] EvalSaved? Saved = null)
+{
+    /// <summary>The suggested food when the user rated it as the wrong one.</summary>
+    public int? RejectedFoodItemId => Reasons.HasFlag(ParseReason.WrongFood) ? FoodItemId : null;
+
+    /// <summary>
+    /// The saved food by name and source, or null when the record doesn't say which it was (or it is an AI estimate).
+    /// An older case doesn't record the saved food, but an accepted item was saved as suggested.
+    /// </summary>
+    public (string Name, FoodSource Source)? SavedFood =>
+        Saved is { } s ? (s.Included && s.FoodName is { } n && s.FoodSource is { } src ? (n, src) : null)
+        : Verdict == EvalVerdict.Accepted && FoodName is { } name && FoodSource is { } source ? (name, source) : null;
+
+    /// <summary>What the saved log says about this item, for scoring a replay.</summary>
+    public ReplayExpectation Expectation()
+    {
+        if (Saved is { } s)
+        {
+            return new ReplayExpectation(s.Included, true, s.FoodItemId, s.Description, s.Grams, s.Per100, RejectedFoodItemId);
+        }
+
+        // An older case: an unticked item is known from its verdict, an accepted one was saved as suggested, and for
+        // the rest the saved food was not recorded. The saved per-100 g values never were.
+        var included = Verdict != EvalVerdict.Removed && (Verdict != EvalVerdict.WrongFood || SavedGrams is not null);
+        var known = Verdict == EvalVerdict.Accepted && FoodItemId is not null;
+        return new ReplayExpectation(included, known, known ? FoodItemId : null, "", SavedGrams ?? Parsed.Grams, null, RejectedFoodItemId);
+    }
+}
+
+/// <summary>One saved row of an exported case, with the food it was saved as.</summary>
+/// <param name="FoodItemId">Null for an AI estimate.</param>
+public record EvalSaved(
+    [property: JsonPropertyName("included")] bool Included,
+    [property: JsonPropertyName("description")] string Description,
+    [property: JsonPropertyName("grams")] decimal Grams,
+    [property: JsonPropertyName("per100")] Per100g Per100,
+    [property: JsonPropertyName("foodItemId")] int? FoodItemId,
+    [property: JsonPropertyName("foodName")] string? FoodName,
+    [property: JsonPropertyName("foodSource")] FoodSource? FoodSource);
 
 /// <summary>One confirmed parse as a regression case.</summary>
-public record EvalCase(int RunId, string Text, string? AiModel, string? MatchModel, IReadOnlyList<EvalItem> Items);
+public record EvalCase(
+    [property: JsonPropertyName("runId")] int RunId,
+    [property: JsonPropertyName("text")] string Text,
+    [property: JsonPropertyName("aiModel")] string? AiModel,
+    [property: JsonPropertyName("matchModel")] string? MatchModel,
+    [property: JsonPropertyName("items")] IReadOnlyList<EvalItem> Items);
 
 public record Digest(DateTimeOffset Since, IReadOnlyList<FeedbackRow> Reports, IReadOnlyList<ErrorEvent> Errors, int Parses, int Confirmed, int Corrected,
     int RatedUp, int RatedDown);
@@ -177,8 +236,8 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
     }
 
     /// <summary>
-    /// Confirmed parses as regression cases, oldest first: per item what the parser read, the food that was suggested
-    /// and saved, and the user's verdict. With <paramref name="flaggedOnly"/>, only cases with something not accepted.
+    /// Confirmed parses as regression cases, oldest first: per item what the parser read, the food that was suggested,
+    /// what was saved (which may be another food), and the user's verdict. With <paramref name="flaggedOnly"/>, only cases with something not accepted.
     /// </summary>
     public async Task<List<EvalCase>> EvalCasesAsync(DateTimeOffset since, bool flaggedOnly, CancellationToken ct)
     {
@@ -198,7 +257,7 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
             var parsed = FeedbackJson.Read<List<ParsedFoodItem>>(run.Parsed) ?? [];
             var resolved = FeedbackJson.Read<List<ResolvedRow>>(run.Resolved) ?? [];
             var saved = FeedbackJson.Read<List<SavedRow>>(run.Saved) ?? [];
-            var ids = resolved.Where(r => r.FoodItemId is not null).Select(r => r.FoodItemId!.Value).ToList();
+            var ids = resolved.Select(r => r.FoodItemId).Concat(saved.Select(r => r.FoodItemId)).OfType<int>().Distinct().ToList();
             var foods = await db.FoodItems.IgnoreQueryFilters().Where(f => ids.Contains(f.Id)).ToDictionaryAsync(f => f.Id, f => new { f.Name, f.Source }, ct);
 
             var items = new List<EvalItem>();
@@ -212,7 +271,9 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
                     : row.Corrections != ParseCorrection.None || rated ? EvalVerdict.Corrected
                     : EvalVerdict.Accepted;
                 var food = resolved[n].FoodItemId is { } id && foods.TryGetValue(id, out var f) ? f : null;
-                items.Add(new EvalItem(n, parsed[n], verdict, resolved[n].FoodItemId, food?.Name, food?.Source, row?.Included == true ? row.Grams : null, down));
+                var savedFood = row?.FoodItemId is { } savedId && foods.TryGetValue(savedId, out var sf) ? sf : null;
+                items.Add(new EvalItem(n, parsed[n], verdict, resolved[n].FoodItemId, food?.Name, food?.Source, row?.Included == true ? row.Grams : null, down,
+                    row is null ? null : new EvalSaved(row.Included, row.Description, row.Grams, row.Per100, row.FoodItemId, savedFood?.Name, savedFood?.Source)));
             }
 
             if (!flaggedOnly || items.Any(i => i.Verdict != EvalVerdict.Accepted))

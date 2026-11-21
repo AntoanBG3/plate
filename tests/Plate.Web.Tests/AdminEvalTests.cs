@@ -118,7 +118,7 @@ public class AdminEvalTests(PostgresFixture fixture) : IClassFixture<PostgresFix
 
         evaluator.Release.SetResult();
         var done = await StatusAsync(admin, s => !s.Contains("Running"));
-        done.Should().Contain("Total: food 2/2 (100%)").And.Contain("run 7").And.NotContain("hx-trigger", "polling stops when the run ends");
+        done.Should().Contain("Agreement with the saved log: food 2/2 (100%)").And.Contain("run 7").And.NotContain("hx-trigger", "polling stops when the run ends");
     }
 
     private static async Task<string> StatusAsync(HttpClient admin, Func<string, bool> until)
