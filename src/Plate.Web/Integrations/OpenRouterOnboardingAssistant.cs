@@ -98,14 +98,14 @@ public class OpenRouterOnboardingAssistant(HttpClient http, OpenRouterModels cat
     private static readonly string[] ActivitySlugs = ["inactive", "low_active", "active", "very_active"];
 
     /// <summary>Opens a chat for a made-up new user: null when the model answers, otherwise what went wrong.</summary>
-    public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct)
+    public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct, string? effort = null)
     {
         var draft = new OnboardingDraft { Name = "Test" };
-        var turn = await NextAsync(new OnboardingContext(draft, draft.Missing(), [], [], false, DateTime.UtcNow.Year), apiKey, model, ct);
+        var turn = await NextAsync(new OnboardingContext(draft, draft.Missing(), [], [], false, DateTime.UtcNow.Year), apiKey, model, ct, effort);
         return turn.Error;
     }
 
-    public async Task<OnboardingTurn> NextAsync(OnboardingContext context, string apiKey, string model, CancellationToken ct)
+    public async Task<OnboardingTurn> NextAsync(OnboardingContext context, string apiKey, string model, CancellationToken ct, string? effort = null)
     {
         JsonObject? body = null;
         for (var attempt = 1; attempt <= 2; attempt++)
@@ -114,7 +114,7 @@ public class OpenRouterOnboardingAssistant(HttpClient http, OpenRouterModels cat
             timeout.CancelAfter(AttemptTimeout);
             try
             {
-                body ??= await BodyAsync(context, model, timeout.Token);
+                body ??= await BodyAsync(context, model, effort, timeout.Token);
                 using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(body) };
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
@@ -159,7 +159,7 @@ public class OpenRouterOnboardingAssistant(HttpClient http, OpenRouterModels cat
     }
 
     /// <summary>Same parameter rules as the food parser: temperature and effort only when the model takes them.</summary>
-    private async Task<JsonObject> BodyAsync(OnboardingContext context, string model, CancellationToken ct)
+    private async Task<JsonObject> BodyAsync(OnboardingContext context, string model, string? effort, CancellationToken ct)
     {
         var info = await catalog.FindAsync(model, ct);
         var messages = new JsonArray(new JsonObject { ["role"] = "system", ["content"] = SystemPrompt(context) });
@@ -189,9 +189,9 @@ public class OpenRouterOnboardingAssistant(HttpClient http, OpenRouterModels cat
             body["temperature"] = 0.5;
         }
 
-        if (info?.LowestEffort is { } effort)
+        if (info?.EffortFor(effort) is { } chosen)
         {
-            body["reasoning"] = new JsonObject { ["effort"] = effort };
+            body["reasoning"] = new JsonObject { ["effort"] = chosen };
         }
 
         return body;
@@ -323,6 +323,6 @@ public class SwitchingOnboardingAssistant(OpenRouterSettings settings, IServiceP
             return OnboardingTurn.Failed("The assistant isn't available right now. Use the form instead.");
         }
 
-        return await services.GetRequiredService<OpenRouterOnboardingAssistant>().NextAsync(context, key, model, ct);
+        return await services.GetRequiredService<OpenRouterOnboardingAssistant>().NextAsync(context, key, model, ct, await settings.GetEffortAsync(AiTask.Onboarding, ct));
     }
 }

@@ -106,13 +106,13 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
         """)!.AsObject();
 
     /// <summary>Checks a key and model with a one-line request. Returns null when it works, otherwise what went wrong.</summary>
-    public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct)
+    public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct, string? effort = null)
     {
-        var result = await ParseAsync("1 banana", apiKey, model, ct);
+        var result = await ParseAsync("1 banana", apiKey, model, ct, effort);
         return result.Items.Count > 0 ? null : result.Error ?? new LocalText("The model returned no food for \"1 banana\".");
     }
 
-    public async Task<FoodParseResult> ParseAsync(string text, string apiKey, string model, CancellationToken ct)
+    public async Task<FoodParseResult> ParseAsync(string text, string apiKey, string model, CancellationToken ct, string? effort = null)
     {
         JsonObject? body = null;
         for (var attempt = 1; attempt <= 2; attempt++)
@@ -121,7 +121,7 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
             timeout.CancelAfter(AttemptTimeout);
             try
             {
-                body ??= await BodyAsync(text, model, timeout.Token);
+                body ??= await BodyAsync(text, model, effort, timeout.Token);
                 using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(body) };
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
@@ -172,7 +172,7 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
     /// require_parameters makes OpenRouter use only providers that honour every parameter sent, so temperature and
     /// reasoning effort are sent only when the catalog says the model takes them.
     /// </summary>
-    private async Task<JsonObject> BodyAsync(string text, string model, CancellationToken ct)
+    private async Task<JsonObject> BodyAsync(string text, string model, string? effort, CancellationToken ct)
     {
         var info = await catalog.FindAsync(model, ct);
         var body = new JsonObject
@@ -193,9 +193,9 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
             body["temperature"] = 0.2;
         }
 
-        if (info?.LowestEffort is { } effort)
+        if (info?.EffortFor(effort) is { } chosen)
         {
-            body["reasoning"] = new JsonObject { ["effort"] = effort };
+            body["reasoning"] = new JsonObject { ["effort"] = chosen };
         }
 
         return body;

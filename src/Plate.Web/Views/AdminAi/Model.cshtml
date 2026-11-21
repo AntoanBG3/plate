@@ -16,6 +16,38 @@
 }
 else
 {
+    @if (AiTasks.HasEffort(Model.Task) && Model.Current != AiTasks.Off)
+    {
+        <section class="section" id="effort">
+            <h2 class="section-title">Reasoning effort</h2>
+            @if (Model.CurrentInfo is { Efforts.Count: > 0 } info)
+            {
+                var sent = info.EffortFor(Model.Effort);
+                <div class="list">
+                    @foreach (var effort in new[] { AiTasks.LowestEffort }.Concat(info.Efforts))
+                    {
+                        var picked = effort == AiTasks.LowestEffort ? Model.Effort is null : Model.Effort == effort;
+                        <form method="post" asp-antiforgery="true" action="/admin/ai/effort/@AiTasks.Slug(Model.Task)" class="row row-link">
+                            <input type="hidden" name="effort" value="@effort" />
+                            <button type="submit" class="row-main" style="text-align: left; display: flex; justify-content: space-between; gap: var(--s-3); align-items: center; min-height: 22px" aria-current="@(picked ? "true" : null)">
+                                <span class="row-title">@(effort == AiTasks.LowestEffort ? $"Lowest ({info.LowestEffort}), the default" : effort)</span>
+                                @if (picked)
+                                {
+                                    <span style="color: var(--accent); flex: none">@Ui.Icon("check")</span>
+                                }
+                            </button>
+                        </form>
+                    }
+                </div>
+                <p class="section-footer">Sent as reasoning.effort with every call for this task@(Model.Task == AiTask.Parser ? ", and for the short food names on Check foods, which use the parser's model" : ""). Now sending: @sent. A higher effort reasons more, which costs output tokens and time; for some models no reasoning is priced above a little. Saving runs the task's check with the new effort.@(Model.Effort is { } kept && !info.Efforts.Contains(kept) ? $" The effort picked before ({kept}) isn't one this model takes, so its lowest is sent." : "")</p>
+            }
+            else
+            {
+                <p class="section-footer">@(Model.CurrentInfo is null ? "The model list can't be loaded, so the efforts aren't known; the model's lowest is sent." : "This model has no effort setting.")</p>
+            }
+        </section>
+    }
+
     <div class="search-field">
         @Ui.Icon("search")
         <input type="search" class="input" placeholder="@L["Search models"]" aria-label="@L["Search models"]" data-filter="#model-groups" autocomplete="off" />

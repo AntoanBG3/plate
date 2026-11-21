@@ -80,7 +80,7 @@ public class ParseEvaluator(
         IFoodMatchDecider decider = models.Matcher == AiTasks.Off ? new NoDecider() : new KeyedDecider(jev, models.Key, models.Matcher);
         // As the app would have matched it then: the account's usual foods and last amounts from before the parse.
         var matcher = new FoodMatcher(foods, decider, history ? new HistoryAsOf(db, user, asOf) : null);
-        var parsed = stored is null ? await parser.ParseAsync(text, models.Key, models.Parser, ct) : new FoodParseResult(stored, null, "stored");
+        var parsed = stored is null ? await parser.ParseAsync(text, models.Key, models.Parser, ct, await settings.GetEffortAsync(AiTask.Parser, ct)) : new FoodParseResult(stored, null, "stored");
         return (parsed, parsed.Items.Count == 0 ? [] : await matcher.ResolveAsync(text, parsed.Items, ct, trace));
     }
 

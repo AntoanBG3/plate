@@ -31,6 +31,23 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
         await audit.WriteAsync(AuditActions.ModelSet, AiTasks.Slug(task), $"{before} -> {id}", ct);
     }
 
+    public async Task SetEffortAsync(AiTask task, string effort, CancellationToken ct)
+    {
+        var before = await settings.GetEffortAsync(task, ct) ?? AiTasks.LowestEffort;
+        await settings.SetEffortAsync(task, effort, ct);
+        await audit.WriteAsync(AuditActions.EffortSet, AiTasks.Slug(task), $"{before} -> {await settings.GetEffortAsync(task, ct) ?? AiTasks.LowestEffort}", ct);
+    }
+
+    /// <summary>Runs the task's own check (the same as after picking its model): null when it works or the task is off.</summary>
+    public Task<LocalText?> TestAsync(AiTask task, CancellationToken ct) => task switch
+    {
+        AiTask.Parser => TestParserAsync(ct),
+        AiTask.Matcher => TestMatcherAsync(ct),
+        AiTask.Onboarding => TestOnboardingAsync(ct),
+        AiTask.Weekly => TestWeeklyAsync(ct),
+        _ => TestLabelAsync(ct),
+    };
+
     /// <summary>Parses "1 banana" with the current key and parser model: null when it works, otherwise why not.</summary>
     public async Task<LocalText?> TestParserAsync(CancellationToken ct)
     {
@@ -39,7 +56,7 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
             return new LocalText("No OpenRouter key is set.");
         }
 
-        var error = await parser.TestAsync(key, await settings.GetModelAsync(AiTask.Parser, ct), ct);
+        var error = await parser.TestAsync(key, await settings.GetModelAsync(AiTask.Parser, ct), ct, await settings.GetEffortAsync(AiTask.Parser, ct));
         await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Parser), error is null ? "works" : "fails", ct);
         return error;
     }
@@ -77,7 +94,7 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
             return new LocalText("No OpenRouter key is set.");
         }
 
-        var error = await onboarding.TestAsync(key, model, ct);
+        var error = await onboarding.TestAsync(key, model, ct, await settings.GetEffortAsync(AiTask.Onboarding, ct));
         await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Onboarding), error is null ? "works" : "fails", ct);
         return error;
     }
@@ -96,7 +113,7 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
             return new LocalText("No OpenRouter key is set.");
         }
 
-        var error = await weekly.TestAsync(key, model, ct);
+        var error = await weekly.TestAsync(key, model, ct, await settings.GetEffortAsync(AiTask.Weekly, ct));
         await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Weekly), error is null ? "works" : "fails", ct);
         return error;
     }
@@ -115,7 +132,7 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
             return new LocalText("No OpenRouter key is set.");
         }
 
-        var error = await label.TestAsync(key, model, ct);
+        var error = await label.TestAsync(key, model, ct, await settings.GetEffortAsync(AiTask.Label, ct));
         await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Label), error is null ? "works" : "fails", ct);
         return error;
     }

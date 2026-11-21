@@ -25,7 +25,7 @@ public class AdminAiController(OpenRouterSettings openRouter, AiAdmin ai, ModelA
         foreach (var task in Enum.GetValues<AiTask>())
         {
             var model = await openRouter.GetModelAsync(task, ct);
-            tasks.Add(new AiTaskStatus(task, model, await openRouter.FindModelAsync(task, model, ct)));
+            tasks.Add(new AiTaskStatus(task, model, await openRouter.FindModelAsync(task, model, ct), await openRouter.GetEffortAsync(task, ct)));
         }
 
         return View(new OpenRouterStatus(await openRouter.KeyStatusAsync(ct), tasks));
@@ -60,8 +60,32 @@ public class AdminAiController(OpenRouterSettings openRouter, AiAdmin ai, ModelA
     [HttpGet("model/{task}")]
     public async Task<IActionResult> Model(string task, CancellationToken ct) =>
         AiTasks.FromSlug(task) is { } t
-            ? View(new ModelPickerViewModel(t, await openRouter.PickerModelsAsync(t, ct), await openRouter.GetModelAsync(t, ct), await accuracy.ForAsync(t, ct)))
+            ? View(new ModelPickerViewModel(t, await openRouter.PickerModelsAsync(t, ct), await openRouter.GetModelAsync(t, ct), await accuracy.ForAsync(t, ct),
+                await openRouter.GetEffortAsync(t, ct), await openRouter.FindModelAsync(t, await openRouter.GetModelAsync(t, ct), ct)))
             : NotFound();
+
+    /// <summary>Sets the reasoning effort for a chat task's model, then runs that task's check with it.</summary>
+    [HttpPost("effort/{task}")]
+    [EnableRateLimiting(RateLimits.Admin)]
+    public async Task<IActionResult> SetEffort(string task, string? effort, CancellationToken ct)
+    {
+        if (AiTasks.FromSlug(task) is not { } t || !AiTasks.HasEffort(t))
+        {
+            return NotFound();
+        }
+
+        await ai.SetEffortAsync(t, effort ?? AiTasks.LowestEffort, ct);
+        if (await openRouter.GetKeyAsync(ct) is null || await openRouter.GetModelAsync(t, ct) == AiTasks.Off)
+        {
+            TempData.Notice("Effort saved.");
+        }
+        else
+        {
+            Report(await ai.TestAsync(t, ct), "Effort saved: the model answers with it.", "Effort saved, but the model doesn't answer with it yet: {0}");
+        }
+
+        return Redirect($"/admin/ai/model/{AiTasks.Slug(t)}");
+    }
 
     [HttpPost("model/{task}")]
     [EnableRateLimiting(RateLimits.Admin)]

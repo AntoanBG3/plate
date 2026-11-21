@@ -226,13 +226,16 @@ public record KnownBarcodeModel(DateOnly Date, Meal Meal, string Code, FoodItem 
 
 /// <param name="ModelInfo">The current model's catalog entry, or null when the catalog can't be loaded or no longer lists it.</param>
 /// <param name="ModelInfo">Null when the model isn't in the task's list (e.g. OpenRouter's list can't be loaded).</param>
-public record AiTaskStatus(Plate.Web.Integrations.AiTask Task, string Model, Plate.Web.Integrations.OpenRouterModel? ModelInfo);
+/// <param name="Effort">The reasoning effort picked for the task, or null for the model's lowest.</param>
+public record AiTaskStatus(Plate.Web.Integrations.AiTask Task, string Model, Plate.Web.Integrations.OpenRouterModel? ModelInfo, string? Effort = null);
 
 public record OpenRouterStatus(Plate.Web.Integrations.OpenRouterKeyStatus Key, IReadOnlyList<AiTaskStatus> Tasks);
 
 /// <param name="Models">Null when OpenRouter's model list can't be loaded.</param>
+/// <param name="Effort">The reasoning effort picked for the task, or null for the model's lowest.</param>
+/// <param name="CurrentInfo">The current model's catalog entry, with the efforts it takes; null when unknown.</param>
 public record ModelPickerViewModel(Plate.Web.Integrations.AiTask Task, IReadOnlyList<Plate.Web.Integrations.OpenRouterModel>? Models, string Current,
-    IReadOnlyDictionary<string, Plate.Core.Nutrition.ModelStats>? Accuracy = null);
+    IReadOnlyDictionary<string, Plate.Core.Nutrition.ModelStats>? Accuracy = null, string? Effort = null, Plate.Web.Integrations.OpenRouterModel? CurrentInfo = null);
 
 public record FeedbackFormViewModel(Plate.Web.Features.Feedback.ReportDraft Draft, Guid ClientId, string? TraceId, string? Page);
 

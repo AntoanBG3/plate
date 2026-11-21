@@ -497,6 +497,8 @@
   "That food isn't in this list.": "Тази храна не е в списъка.",
   "That isn't a valid EAN or UPC barcode.": "Това не е валиден EAN или UPC баркод.",
   "That model can't match food.": "Този модел не може да разпознава храни.",
+  "That model doesn't take that effort.": "Този модел не приема това усилие.",
+  "The food matcher has no effort setting.": "Съпоставянето на храни няма настройка за усилие.",
   "That model can't parse food.": "Този модел не може да разчита храна.",
   "That model can't run the setup chat.": "Този модел не може да води чата за настройка.",
   "That page doesn't exist, or it isn't yours.": "Тази страница не съществува или не е твоя.",

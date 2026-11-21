@@ -73,6 +73,42 @@ public class OpenRouterSettings(
             _ => AiTasks.Off,
         };
 
+    /// <summary>
+    /// The reasoning effort picked for a chat task, or null for the model's lowest, the default (SPEC 12). The food
+    /// namer uses the parser's model, so it takes the parser's effort too.
+    /// </summary>
+    public async Task<string?> GetEffortAsync(AiTask task, CancellationToken ct) =>
+        AiTasks.HasEffort(task) ? await StoredAsync(AiTasks.EffortSettingName(task), ct) : null;
+
+    /// <summary>
+    /// Picks the effort for a task's current model: one of the efforts the model lists, or "lowest" for the default.
+    /// Changing the model later keeps the pick, which is sent only while the model accepts it.
+    /// </summary>
+    public async Task SetEffortAsync(AiTask task, string effort, CancellationToken ct)
+    {
+        effort = effort.Trim().ToLowerInvariant();
+        if (!AiTasks.HasEffort(task))
+        {
+            throw new Features.ValidationException("The food matcher has no effort setting.");
+        }
+
+        if (effort is "" or AiTasks.LowestEffort)
+        {
+            await db.AppSettings.Where(s => s.Name == AiTasks.EffortSettingName(task)).ExecuteDeleteAsync(ct);
+            values = null;
+            return;
+        }
+
+        var model = await FindModelAsync(task, await GetModelAsync(task, ct), ct)
+            ?? throw new Features.ValidationException("OpenRouter's model list can't be loaded right now. Try again later.");
+        if (!(model.Efforts ?? []).Contains(effort))
+        {
+            throw new Features.ValidationException("That model doesn't take that effort.");
+        }
+
+        await SaveAsync(AiTasks.EffortSettingName(task), effort, ct);
+    }
+
     /// <summary>The models a task can use; null when OpenRouter's list can't be loaded.</summary>
     public async Task<IReadOnlyList<OpenRouterModel>?> ListModelsAsync(AiTask task, CancellationToken ct) => task switch
     {
@@ -165,7 +201,7 @@ public class SwitchingFoodParser(OpenRouterSettings settings, IServiceProvider s
 {
     public async Task<Plate.Core.Nutrition.FoodParseResult> ParseAsync(string text, CancellationToken ct) =>
         await settings.GetKeyAsync(ct) is { } key
-            ? await services.GetRequiredService<OpenRouterFoodParser>().ParseAsync(text, key, await settings.GetModelAsync(AiTask.Parser, ct), ct)
+            ? await services.GetRequiredService<OpenRouterFoodParser>().ParseAsync(text, key, await settings.GetModelAsync(AiTask.Parser, ct), ct, await settings.GetEffortAsync(AiTask.Parser, ct))
             : await new FakeFoodParser().ParseAsync(text, ct);
 }
 
@@ -174,7 +210,7 @@ public class SwitchingFoodNamer(OpenRouterSettings settings, IServiceProvider se
 {
     public async Task<IReadOnlyList<Plate.Core.Nutrition.FoodName?>?> NameAsync(IReadOnlyList<Plate.Core.Nutrition.NameRequest> items, CancellationToken ct) =>
         await settings.GetKeyAsync(ct) is { } key
-            ? await services.GetRequiredService<OpenRouterFoodNamer>().NameAsync(items, key, await settings.GetModelAsync(AiTask.Parser, ct), ct)
+            ? await services.GetRequiredService<OpenRouterFoodNamer>().NameAsync(items, key, await settings.GetModelAsync(AiTask.Parser, ct), ct, await settings.GetEffortAsync(AiTask.Parser, ct))
             : null;
 }
 

@@ -46,14 +46,14 @@ public class OpenRouterWeeklySummaryWriter(HttpClient http, OpenRouterModels cat
         """)!.AsObject();
 
     /// <summary>Writes a summary for a made-up week: null when the model answers, otherwise what went wrong.</summary>
-    public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct)
+    public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct, string? effort = null)
     {
         var monday = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-7);
         var facts = new WeekFacts(monday, Goal.Maintain, 0, false, null, null, (80m, 79.8m), 5, 3, 48, ["Bench press: 102.5 kg (was 100)"], ["Chest", "Quads"]);
-        return (await WriteAsync(facts, false, apiKey, model, ct)).Error;
+        return (await WriteAsync(facts, false, apiKey, model, ct, effort)).Error;
     }
 
-    public async Task<WeeklySummaryResult> WriteAsync(WeekFacts facts, bool bulgarian, string apiKey, string model, CancellationToken ct)
+    public async Task<WeeklySummaryResult> WriteAsync(WeekFacts facts, bool bulgarian, string apiKey, string model, CancellationToken ct, string? effort = null)
     {
         JsonObject? body = null;
         for (var attempt = 1; attempt <= 2; attempt++)
@@ -62,7 +62,7 @@ public class OpenRouterWeeklySummaryWriter(HttpClient http, OpenRouterModels cat
             timeout.CancelAfter(AttemptTimeout);
             try
             {
-                body ??= await BodyAsync(facts, bulgarian, model, timeout.Token);
+                body ??= await BodyAsync(facts, bulgarian, model, effort, timeout.Token);
                 using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(body) };
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
@@ -101,7 +101,7 @@ public class OpenRouterWeeklySummaryWriter(HttpClient http, OpenRouterModels cat
         return WeeklySummaryResult.Failed("The weekly summary isn't available right now.");
     }
 
-    private async Task<JsonObject> BodyAsync(WeekFacts facts, bool bulgarian, string model, CancellationToken ct)
+    private async Task<JsonObject> BodyAsync(WeekFacts facts, bool bulgarian, string model, string? effort, CancellationToken ct)
     {
         var info = await catalog.FindAsync(model, ct);
         var language = bulgarian ? "Write in natural, friendly Bulgarian, using the informal \"ти\"." : "Write in English.";
@@ -123,9 +123,9 @@ public class OpenRouterWeeklySummaryWriter(HttpClient http, OpenRouterModels cat
             body["temperature"] = 0.6;
         }
 
-        if (info?.LowestEffort is { } effort)
+        if (info?.EffortFor(effort) is { } chosen)
         {
-            body["reasoning"] = new JsonObject { ["effort"] = effort };
+            body["reasoning"] = new JsonObject { ["effort"] = chosen };
         }
 
         return body;
@@ -221,6 +221,6 @@ public class SwitchingWeeklySummaryWriter(OpenRouterSettings settings, IServiceP
             return WeeklySummaryResult.Failed("The weekly summary isn't available right now.");
         }
 
-        return await services.GetRequiredService<OpenRouterWeeklySummaryWriter>().WriteAsync(facts, bulgarian, key, model, ct);
+        return await services.GetRequiredService<OpenRouterWeeklySummaryWriter>().WriteAsync(facts, bulgarian, key, model, ct, await settings.GetEffortAsync(AiTask.Weekly, ct));
     }
 }

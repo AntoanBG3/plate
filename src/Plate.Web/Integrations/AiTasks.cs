@@ -21,6 +21,15 @@ public enum AiTask
 
 public static class AiTasks
 {
+    /// <summary>The effort setting's value for "the model's lowest", the default; stored as no setting.</summary>
+    public const string LowestEffort = "lowest";
+
+    /// <summary>The tasks with an effort setting: the chat models. The matcher's decision models have none.</summary>
+    public static bool HasEffort(AiTask task) => task != AiTask.Matcher;
+
+    /// <summary>Where a task's reasoning effort is stored in AppSettings.</summary>
+    public static string EffortSettingName(AiTask task) => $"OpenRouter:Effort:{Slug(task)}";
+
     /// <summary>The matcher's "model" for no model: the database ranking alone.</summary>
     public const string Off = "off";
 

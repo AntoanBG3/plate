@@ -63,13 +63,13 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
     public const decimal SampleKcal = 250;
 
     /// <summary>Reads the bundled sample label: null when the model reads its energy right, otherwise what went wrong.</summary>
-    public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct)
+    public async Task<LocalText?> TestAsync(string apiKey, string model, CancellationToken ct, string? effort = null)
     {
         await using var stream = typeof(OpenRouterLabelReader).Assembly.GetManifestResourceStream("Plate.Web.Integrations.Assets.sample-label.jpg")
             ?? throw new InvalidOperationException("The sample label isn't embedded.");
         using var buffer = new MemoryStream();
         await stream.CopyToAsync(buffer, ct);
-        var result = await ReadAsync([new LabelImage(buffer.ToArray(), "image/jpeg")], apiKey, model, ct);
+        var result = await ReadAsync([new LabelImage(buffer.ToArray(), "image/jpeg")], apiKey, model, ct, effort);
         if (result.Reading is not { } reading)
         {
             return result.Error;
@@ -81,7 +81,7 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
             : new LocalText("The model misread the sample label (read {0} kcal, expected {1}).", kcal?.ToString(CultureInfo.InvariantCulture) ?? "nothing", SampleKcal);
     }
 
-    public async Task<LabelReadResult> ReadAsync(IReadOnlyList<LabelImage> images, string apiKey, string model, CancellationToken ct)
+    public async Task<LabelReadResult> ReadAsync(IReadOnlyList<LabelImage> images, string apiKey, string model, CancellationToken ct, string? effort = null)
     {
         JsonObject? body = null;
         for (var attempt = 1; attempt <= 2; attempt++)
@@ -90,7 +90,7 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
             timeout.CancelAfter(AttemptTimeout);
             try
             {
-                body ??= await BodyAsync(images, model, timeout.Token);
+                body ??= await BodyAsync(images, model, effort, timeout.Token);
                 using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(body) };
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
                 using var response = await http.SendAsync(request, timeout.Token);
@@ -125,7 +125,7 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
         return LabelReadResult.Failed(Unreadable, model);
     }
 
-    private async Task<JsonObject> BodyAsync(IReadOnlyList<LabelImage> images, string model, CancellationToken ct)
+    private async Task<JsonObject> BodyAsync(IReadOnlyList<LabelImage> images, string model, string? effort, CancellationToken ct)
     {
         var info = await catalog.FindAsync(model, ct);
         var content = new JsonArray(new JsonObject
@@ -162,9 +162,9 @@ public class OpenRouterLabelReader(HttpClient http, OpenRouterModels catalog, IL
             body["temperature"] = 0;
         }
 
-        if (info?.LowestEffort is { } effort)
+        if (info?.EffortFor(effort) is { } chosen)
         {
-            body["reasoning"] = new JsonObject { ["effort"] = effort };
+            body["reasoning"] = new JsonObject { ["effort"] = chosen };
         }
 
         return body;
@@ -220,6 +220,6 @@ public class SwitchingLabelReader(OpenRouterSettings settings, IServiceProvider 
             return LabelReadResult.Failed("Couldn't read the label. Enter the values by hand.", model);
         }
 
-        return await services.GetRequiredService<OpenRouterLabelReader>().ReadAsync(images, key, model, ct);
+        return await services.GetRequiredService<OpenRouterLabelReader>().ReadAsync(images, key, model, ct, await settings.GetEffortAsync(AiTask.Label, ct));
     }
 }

@@ -2270,6 +2270,9 @@
   "That model can't write the weekly summary.": [
     "src/Plate.Web/Integrations/OpenRouterSettings.cs"
   ],
+  "That model doesn't take that effort.": [
+    "src/Plate.Web/Integrations/OpenRouterSettings.cs"
+  ],
   "That page doesn't exist, or it isn't yours.": [
     "src/Plate.Web/Views/Home/Error.cshtml"
   ],
@@ -2360,6 +2363,9 @@
   ],
   "The food matcher can't be reached right now ({0}).": [
     "src/Plate.Web/Integrations/JevFoodMatchDecider.cs"
+  ],
+  "The food matcher has no effort setting.": [
+    "src/Plate.Web/Integrations/OpenRouterSettings.cs"
   ],
   "The food matcher returned something unreadable.": [
     "src/Plate.Web/Integrations/JevFoodMatchDecider.cs"

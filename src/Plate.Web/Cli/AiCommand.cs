@@ -18,6 +18,7 @@ public static class AiCommand
         Usage: ai <command>
           show
           set-model parser|matcher|onboarding|weekly|label <model id>
+          set-effort parser|onboarding|weekly|label <effort>|lowest
           set-key                         reads the key from standard input
           clear-key
           test [label]
@@ -46,7 +47,12 @@ public static class AiCommand
                     });
                     foreach (var task in Enum.GetValues<AiTask>())
                     {
-                        o.WriteLine($"{task}: {await settings.GetModelAsync(task, ct)}");
+                        var model = await settings.GetModelAsync(task, ct);
+                        var info = AiTasks.HasEffort(task) && model != AiTasks.Off ? await settings.FindModelAsync(task, model, ct) : null;
+                        var picked = await settings.GetEffortAsync(task, ct);
+                        o.WriteLine($"{task}: {model}" + (info is { Efforts.Count: > 0 }
+                            ? $", effort {info.EffortFor(picked)}{(picked is null ? " (lowest)" : "")} of {string.Join("/", info.Efforts)}"
+                            : ""));
                     }
 
                     return 0;
@@ -61,6 +67,19 @@ public static class AiCommand
                     await ai.SetModelAsync(t, model, ct);
                     o.WriteLine($"{t} model is now {model}.");
                     return await TestAsync(ai, localizer, o, ct);
+
+                case ["set-effort", var effortSlug, var effort, ..]:
+                    if (AiTasks.FromSlug(effortSlug) is not { } et)
+                    {
+                        Console.Error.WriteLine(Usage);
+                        return 2;
+                    }
+
+                    await ai.SetEffortAsync(et, effort, ct);
+                    o.WriteLine($"{et} effort is now {await settings.GetEffortAsync(et, ct) ?? AiTasks.LowestEffort}.");
+                    var effortError = await ai.TestAsync(et, ct);
+                    o.WriteLine(effortError is null ? $"{et}: works." : $"{et}: {localizer[effortError]}");
+                    return effortError is null ? 0 : 1;
 
                 case ["set-key", ..]:
                     var newKey = input is not null ? await input.ReadLineAsync(ct) ?? "" : CreateUserCommand.ReadPassword("OpenRouter key: ");

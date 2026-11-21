@@ -53,7 +53,7 @@
             <a class="row row-link" href="/admin/ai/model/@AiTasks.Slug(task.Task)">
                 <span class="row-main">
                     <span class="row-title">@AiTasks.Title(task.Task)</span>
-                    <span class="row-sub admin-text" style="display: block">@(task.Model == AiTasks.Off ? AiTasks.OffLabel(task.Task) : task.ModelInfo?.Name ?? task.Model)@(task.ModelInfo is { } info && task.Model != AiTasks.Off ? " · " + L[info.Price] : "")</span>
+                    <span class="row-sub admin-text" style="display: block">@(task.Model == AiTasks.Off ? AiTasks.OffLabel(task.Task) : task.ModelInfo?.Name ?? task.Model)@(task.ModelInfo is { } info && task.Model != AiTasks.Off ? " · " + L[info.Price] : "")@(AiTasks.HasEffort(task.Task) && task.Model != AiTasks.Off && task.ModelInfo is { Efforts.Count: > 0 } withEffort ? " · effort " + withEffort.EffortFor(task.Effort) + (task.Effort is null ? " (lowest)" : "") : "")</span>
                 </span>
                 @Ui.Icon("chevron", "row-chevron")
             </a>

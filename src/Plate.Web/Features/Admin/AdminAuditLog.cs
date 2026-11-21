@@ -43,6 +43,7 @@ public static class AuditActions
     public const string KeyTest = "key-test";
     public const string KeyRemove = "key-remove";
     public const string ModelSet = "model-set";
+    public const string EffortSet = "effort-set";
     public const string Status = "status";
     public const string ChangelogAdd = "changelog-add";
     public const string ChangelogRemove = "changelog-remove";

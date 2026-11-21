@@ -13,6 +13,7 @@ namespace Plate.Web.Integrations;
 /// <param name="Rank">Place in OpenRouter's list by tokens processed last week, most used first; null when unknown.</param>
 /// <param name="Created">When OpenRouter added the model; null when unknown.</param>
 /// <param name="Expires">The day OpenRouter retires the model, when one is announced.</param>
+/// <param name="Efforts">The reasoning efforts the model accepts, highest first ("none" left out when reasoning is mandatory); empty without an effort setting.</param>
 public record OpenRouterModel(
     string Id,
     string Provider,
@@ -24,8 +25,16 @@ public record OpenRouterModel(
     bool AcceptsImages = false,
     int? Rank = null,
     DateTimeOffset? Created = null,
-    DateOnly? Expires = null)
+    DateOnly? Expires = null,
+    IReadOnlyList<string>? Efforts = null)
 {
+    /// <summary>
+    /// The effort to send: the one picked for the task when this model accepts it, else the model's lowest (SPEC 6.1).
+    /// A pick another model doesn't take is not sent, since OpenRouter would then skip every provider for the request.
+    /// </summary>
+    public string? EffortFor(string? picked) =>
+        picked is not null && (Efforts ?? []).Contains(picked) ? picked : LowestEffort;
+
     public LocalText Price => PromptPerMillion == 0 && CompletionPerMillion == 0
         ? new LocalText("Free")
         : new LocalText("${0} in, ${1} out per million tokens", Money(PromptPerMillion), Money(CompletionPerMillion));
@@ -122,7 +131,8 @@ public class OpenRouterModels(HttpClient http, IMemoryCache cache, ILogger<OpenR
                 input.Contains("image"),
                 rank,
                 Created(m),
-                Expires(m)));
+                Expires(m),
+                parameters.Contains("reasoning") ? EffortsOf(m?["reasoning"]) : []));
         }
 
         return models.OrderBy(m => m.Provider, StringComparer.OrdinalIgnoreCase).ThenBy(m => m.PromptPerMillion + m.CompletionPerMillion).ThenBy(m => m.Name).ToList();
@@ -170,7 +180,10 @@ public class OpenRouterModels(HttpClient http, IMemoryCache cache, ILogger<OpenR
         DateOnly.TryParseExact(Str(m?["expiration_date"]), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;
 
     /// <summary>The efforts are listed highest first; "none" is not allowed when reasoning is mandatory.</summary>
-    private static string? LowestEffort(JsonNode? reasoning)
+    private static string? LowestEffort(JsonNode? reasoning) => EffortsOf(reasoning) is { Count: > 0 } efforts ? efforts[^1] : null;
+
+    /// <summary>The supported efforts as OpenRouter lists them, highest first, without "none" when reasoning is mandatory.</summary>
+    private static List<string> EffortsOf(JsonNode? reasoning)
     {
         var efforts = Strings(reasoning?["supported_efforts"]);
         if (reasoning?["mandatory"] is JsonValue v && v.TryGetValue<bool>(out var mandatory) && mandatory)
@@ -178,7 +191,7 @@ public class OpenRouterModels(HttpClient http, IMemoryCache cache, ILogger<OpenR
             efforts.Remove("none");
         }
 
-        return efforts.Count > 0 ? efforts[^1] : null;
+        return efforts;
     }
 
     private static decimal Price(JsonNode? perToken) =>

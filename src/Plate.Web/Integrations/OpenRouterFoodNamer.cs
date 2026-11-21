@@ -59,7 +59,7 @@ public class OpenRouterFoodNamer(HttpClient http, OpenRouterModels catalog, ILog
     // Cyrillic as itself, not \u escapes: fewer tokens and easier for the model to read.
     private static readonly JsonSerializerOptions Readable = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
-    public async Task<IReadOnlyList<FoodName?>?> NameAsync(IReadOnlyList<NameRequest> items, string apiKey, string model, CancellationToken ct)
+    public async Task<IReadOnlyList<FoodName?>?> NameAsync(IReadOnlyList<NameRequest> items, string apiKey, string model, CancellationToken ct, string? effort = null)
     {
         if (items.Count == 0)
         {
@@ -71,7 +71,7 @@ public class OpenRouterFoodNamer(HttpClient http, OpenRouterModels catalog, ILog
         timeout.CancelAfter(Timeout);
         try
         {
-            var body = await BodyAsync(items, model, timeout.Token);
+            var body = await BodyAsync(items, model, effort, timeout.Token);
             using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions") { Content = JsonContent.Create(body) };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             using var response = await http.SendAsync(request, timeout.Token);
@@ -99,7 +99,7 @@ public class OpenRouterFoodNamer(HttpClient http, OpenRouterModels catalog, ILog
         }
     }
 
-    private async Task<JsonObject> BodyAsync(IReadOnlyList<NameRequest> items, string model, CancellationToken ct)
+    private async Task<JsonObject> BodyAsync(IReadOnlyList<NameRequest> items, string model, string? effort, CancellationToken ct)
     {
         var language = Features.Localization.Localizer.IsBulgarian ? "Bulgarian" : "English";
         var list = new JsonArray(items.Select((item, n) => (JsonNode)new JsonObject
@@ -128,9 +128,9 @@ public class OpenRouterFoodNamer(HttpClient http, OpenRouterModels catalog, ILog
             body["temperature"] = 0.2;
         }
 
-        if (info?.LowestEffort is { } effort)
+        if (info?.EffortFor(effort) is { } chosen)
         {
-            body["reasoning"] = new JsonObject { ["effort"] = effort };
+            body["reasoning"] = new JsonObject { ["effort"] = chosen };
         }
 
         return body;
