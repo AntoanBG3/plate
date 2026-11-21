@@ -23,7 +23,7 @@
 </div>
 
 @* Where the numbers come from: the database food it was matched to, or that there is none (Phase 11). *@
-<div class="list section">
+<div class="section"><div class="list">
     <div class="row">
         <span class="row-main">@L["Food"]</span>
         <span class="row-value" data-matched>@(ViewData["MatchedName"] as string ?? (Model.Source == EntrySource.Quick ? L["Quick add, typed in"] : L["An estimate, no database food"]))</span>
@@ -34,7 +34,7 @@
             <span class="row-main">@L["Added by another user"]</span>
         </div>
     }
-</div>
+</div></div>
 
 @if (Model.Source != EntrySource.Quick)
 {
