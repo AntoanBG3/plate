@@ -40,8 +40,10 @@ public record ConfirmItem(
     bool Usual = false,
     CountedAmount? Count = null);
 
-/// <summary>A count the text gave ("две", "half a"), of pieces, packs or servings.</summary>
-public record CountedAmount(decimal Units, CountUnit Of);
+/// <summary>A count the text gave ("две", "half a"), of pieces, packs or servings. Stored with the run's rows (ResolvedRow), so the names are fixed.</summary>
+public record CountedAmount(
+    [property: System.Text.Json.Serialization.JsonPropertyName("units")] decimal Units,
+    [property: System.Text.Json.Serialization.JsonPropertyName("of")] CountUnit Of);
 
 /// <summary>How one item was matched, kept with the parse run for feedback (SPEC 11): the ranking's top candidates and the decider's answer.</summary>
 /// <param name="DeciderModel">The decision model that answered for this parse, even where its answer was not used.</param>

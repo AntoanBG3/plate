@@ -136,6 +136,18 @@ public class PortionTests(PostgresFixture fixture) : IClassFixture<PostgresFixtu
     }
 
     [Fact]
+    public async Task The_count_is_kept_with_the_stored_review_rows()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var outcome = await s.ParseRuns.ParseAsync("две закуски със сирене с лютеница от лидл", default);
+        var run = await s.Db.ParseRuns.SingleAsync(r => r.Id == outcome.RunId);
+
+        run.Resolved.Should().Contain("\"count\":{\"units\":2,\"of\":\"Piece\"}", "the review page is drawn again from these rows");
+        Plate.Web.Features.Feedback.FeedbackJson.Read<List<Plate.Web.Features.Feedback.ResolvedRow>>(run.Resolved)!.Single().Count
+            .Should().Be(new CountedAmount(2, CountUnit.Piece));
+    }
+
+    [Fact]
     public async Task The_fallback_parser_counts_pieces_too()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
