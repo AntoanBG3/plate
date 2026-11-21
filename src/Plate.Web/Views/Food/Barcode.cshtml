@@ -4,6 +4,7 @@
     var date = Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
     var item = Model.Result.Item;
     var amount = Model.LastGrams ?? item?.DefaultServingGrams ?? 100;
+    ViewData["Page"] = "food-barcode";
     ViewData["Title"] = item?.DisplayName() ?? L["Barcode"];
     ViewData["BackUrl"] = $"/food/add?date={date}&meal={Model.Meal}&tab=barcode";
     ViewData["BackLabel"] = L["Scan"];

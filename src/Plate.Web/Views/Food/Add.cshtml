@@ -7,7 +7,7 @@
     ViewData["BackUrl"] = $"/food?date={date}";
     ViewData["BackLabel"] = L["Food"];
     // Also shown at /food/parse and /food/barcode when a read or a lookup fails.
-    ViewData["Page"] = "food-add";
+    ViewData["Page"] ??= "food-add";
     string TabUrl(string tab) => $"/food/add?date={date}&meal={Model.Meal}&tab={tab}";
     string TabClass(string tab) => tab == Model.Tab ? "mode-tab is-active" : "mode-tab";
     string? Current(string tab) => tab == Model.Tab ? "page" : null;

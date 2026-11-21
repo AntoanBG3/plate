@@ -233,6 +233,7 @@ public class FoodController(
         if (photo.Count == 0 || photo.Any(p => p.Length == 0))
         {
             throw new ValidationException("Attach a photo (JPEG, PNG or WebP).");
+            if (!barcodeField && barcode is not null) ViewData["Page"] = "food-barcode";
         }
 
         if (photo.Count > LabelScanPhoto.MaxPerScan)
