@@ -213,26 +213,24 @@ public class FoodController(
     [HttpPost("items")]
     [IdempotentFoodPost]
     [RedisplayInvalidNumbers]
-    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, bool barcodeField, CancellationToken ct)
+    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string? name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, bool barcodeField, CancellationToken ct)
     {
-        var invalidField = ModelState.FirstOrDefault(pair => pair.Value?.Errors.Count > 0).Key;
+        // Hidden routing and scan fields cannot be corrected in the form. Never reuse their binding defaults.
+        if (ModelState.Values.Any(field => field.Errors.Any(e => e.ErrorMessage != DecimalModelBinder.InvalidNumber)))
+            throw new ValidationException("This food form is out of date. Check whether it was saved, then reload before trying again.");
         try
         {
-            if (invalidField is not null)
-            {
-                throw new ValidationException(invalidField == "name" ? "Name must be 1 to 200 characters." : "Enter a valid number.");
-            }
+            if (ModelState.FirstOrDefault(pair => pair.Value?.Errors.Count > 0).Key is { } field)
+                throw new ValidationException(DecimalModelBinder.InvalidNumber, field);
 
             await manualFoods.SaveAndLogAsync(date, meal, name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, grams, share, labelScanId, ct);
         }
         catch (ValidationException ex) when (!Request.Headers.ContainsKey("HX-Request"))
         {
             var available = await labels.IsAvailableAsync(ct);
-            if (grams is <= 0 or > FoodMath.MaxGrams) invalidField ??= "grams";
-            if (servingGrams is <= 0 or > FoodMath.MaxGrams) invalidField ??= "servingGrams";
             var manual = new ManualFoodFormModel(date, meal, barcodeField ? null : barcode, name, barcodeField,
                 LabelScanId: labelScanId, LabelAvailable: available, BarcodeValue: barcode, Share: share,
-                InvalidField: invalidField, Submitted: true);
+                InvalidField: ex.Field, Submitted: true);
             if (!barcodeField && barcode is not null) ViewData["Page"] = "food-barcode";
             return View("Add", new FoodAddViewModel(date, meal, "manual", null, ex.Text, null, [], null, [], [],
                 available, Manual: manual));

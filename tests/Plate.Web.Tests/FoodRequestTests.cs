@@ -246,6 +246,21 @@ public class FoodRequestTests(PostgresFixture fixture) : IClassFixture<PostgresF
             .Should().Equal(100, 100);
     }
 
+    [Theory]
+    [InlineData("date")]
+    [InlineData("labelScanId")]
+    public async Task A_malformed_hidden_manual_field_asks_to_reload(string field)
+    {
+        var (client, _) = await app.SignedInClientAsync();
+        var fields = QuickFields();
+        fields["name"] = "Rice";
+        fields["grams"] = "100";
+        fields[field] = "oops";
+        var response = await AppFactory.PostAsync(client, "/food/items", await AppFactory.TokenAsync(client, "/food"), fields);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("reload").And.NotContain("valid number");
+    }
+
     private static Dictionary<string, string> QuickFields() => new()
     {
         ["date"] = Today.ToString("yyyy-MM-dd"), ["meal"] = "Dinner", ["description"] = "Request intent",

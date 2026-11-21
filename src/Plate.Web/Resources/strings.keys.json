@@ -756,7 +756,6 @@
     "src/Plate.Web/Features/Users/UserCreator.cs"
   ],
   "Enter a valid number.": [
-    "src/Plate.Web/Controllers/FoodController.cs",
     "src/Plate.Web/Features/DecimalBinding.cs"
   ],
   "Enter a weekly rate for a cut or bulk.": [
@@ -1299,7 +1298,6 @@
     "src/Plate.Web/Features/Users/UserCreator.cs"
   ],
   "Name must be 1 to 200 characters.": [
-    "src/Plate.Web/Controllers/FoodController.cs",
     "src/Plate.Web/Features/Food/FoodItemService.cs"
   ],
   "Name must be 1 to 60 characters.": [
@@ -2439,6 +2437,7 @@
     "wwwroot/js"
   ],
   "This food form is out of date. Check whether it was saved, then reload before trying again.": [
+    "src/Plate.Web/Controllers/FoodController.cs",
     "src/Plate.Web/Features/Food/IdempotentFoodPostAttribute.cs"
   ],
   "This invite is no longer valid. Ask Antoan for a new one.": [

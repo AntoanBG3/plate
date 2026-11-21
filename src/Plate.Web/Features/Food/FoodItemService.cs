@@ -238,12 +238,12 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     /// A food typed in by hand. With a barcode and <paramref name="share"/> it is shared, so others who scan the same
     /// product get it; otherwise it belongs to this user only (SPEC 4).
     /// </summary>
-    public async Task<FoodItem> CreateManualAsync(string name, string? barcode, Per100g per100, decimal? servingGrams, bool share, CancellationToken ct)
+    public async Task<FoodItem> CreateManualAsync(string? name, string? barcode, Per100g per100, decimal? servingGrams, bool share, CancellationToken ct)
     {
         name = name?.Trim() ?? "";
         if (name.Length is 0 or > 200)
         {
-            throw new ValidationException("Name must be 1 to 200 characters.");
+            throw new ValidationException("Name must be 1 to 200 characters.", nameof(name));
         }
 
         if (FoodMath.Validate(servingGrams ?? 100, per100) is { } error)

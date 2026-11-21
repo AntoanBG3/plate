@@ -45,13 +45,15 @@ public static class FoodMath
         return Math.Abs(per100.Kcal - fromMacros) > 0.15m * per100.Kcal;
     }
 
+    public static LocalText? ValidateGrams(decimal grams) =>
+        grams is <= 0 or > MaxGrams
+            ? new LocalText("Grams must be above 0 and at most {0}.", MaxGrams.ToString("0", System.Globalization.CultureInfo.InvariantCulture))
+            : null;
+
     /// <summary>Returns an error message, or null when the values are acceptable.</summary>
     public static LocalText? Validate(decimal grams, Per100g per100)
     {
-        if (grams <= 0 || grams > MaxGrams)
-        {
-            return new LocalText("Grams must be above 0 and at most {0}.", MaxGrams.ToString("0", System.Globalization.CultureInfo.InvariantCulture));
-        }
+        if (ValidateGrams(grams) is { } portionError) return portionError;
 
         if (per100.Kcal < 0 || per100.Protein < 0 || per100.Carbs < 0 || per100.Fat < 0 || per100.Fiber < 0 || per100.SaturatedFat < 0)
         {
