@@ -99,5 +99,12 @@ public class ConfirmFoodsTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.NavigateByAsync(() => phone.Page.Locator(".tabbar a[href='/train']").TapAsync());
         await phone.NavigateByAsync(() => phone.Page.EvaluateAsync("history.back()"));
         (await name.InputValueAsync()).Should().Be("My rice");
+
+        var id = await phone.Page.Locator("form[action='/food/confirm'] [name=requestId]").InputValueAsync();
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/confirm'] button[type=submit]").TapAsync());
+        (await phone.Page.EvaluateAsync<bool>("id => !!JSON.parse(sessionStorage.getItem('plate.food-reviews.' + document.documentElement.dataset.userId) || '{}')[id]", id)).Should().BeFalse();
+        await phone.NavigateByAsync(() => phone.Page.EvaluateAsync("history.back()"));
+        (await phone.Page.Locator("form[action='/food/confirm']").CountAsync()).Should().Be(0);
+        (await phone.Page.ContentAsync()).Should().Contain("This review was already saved.");
     }
 }

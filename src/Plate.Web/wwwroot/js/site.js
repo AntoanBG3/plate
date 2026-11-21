@@ -507,10 +507,32 @@
 
     // Keep edits to the last few reviews in this tab. Only the signed-in owner can load the
     // corresponding form, and each review has its own server-generated request id.
+    function reviewStorageKey() {
+        return "plate.food-reviews." + document.documentElement.dataset.userId;
+    }
+
+    window.gymModule("food-review-saved", root => {
+        const id = root.dataset.savedReview;
+        if (!id) return;
+        try {
+            const key = reviewStorageKey();
+            const drafts = JSON.parse(sessionStorage.getItem(key));
+            if (!drafts || !(id in drafts)) return;
+            delete drafts[id];
+            if (Object.keys(drafts).length) sessionStorage.setItem(key, JSON.stringify(drafts));
+            else sessionStorage.removeItem(key);
+        } catch {}
+    });
+
+    // Native Back can restore an old document without asking the server whether this review was saved.
+    window.addEventListener("pageshow", event => {
+        if (event.persisted && document.querySelector('[data-module="food-review"]')) location.reload();
+    });
+
     window.gymModule("food-review", (root) => {
         const form = root.querySelector("form");
         const id = form.elements.requestId.value;
-        const key = "plate.food-reviews." + document.documentElement.dataset.userId;
+        const key = reviewStorageKey();
         const rows = Array.from(form.querySelectorAll("[data-row]"));
         const fields = row => Array.from(row.querySelectorAll("[name]"));
         function readDrafts() {

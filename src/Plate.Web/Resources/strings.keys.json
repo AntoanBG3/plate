@@ -2452,6 +2452,9 @@
   "This report is waiting to send. Its contents are locked. Keep this page open and press Send to retry.": [
     "wwwroot/js"
   ],
+  "This review was already saved.": [
+    "src/Plate.Web/Features/Localization/Notices.cs"
+  ],
   "This session expired. Sign in again in another tab, then return here to send pending changes.": [
     "wwwroot/js"
   ],

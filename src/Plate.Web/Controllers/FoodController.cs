@@ -1,5 +1,4 @@
 using Plate.Core.Text;
-using Microsoft.Extensions.Caching.Memory;
 using Plate.Web.Features.Localization;
 using Plate.Core.Domain;
 using Plate.Core.Nutrition;
@@ -26,7 +25,6 @@ public class FoodController(
     ProfileService profiles,
     UserTime userTime,
     Plate.Web.Data.ICurrentUser currentUser,
-    IMemoryCache cache,
     TimeProvider time) : Controller
 {
     private static readonly string[] Tabs = ["text", "barcode", "search", "recent", "manual"];
@@ -90,21 +88,13 @@ public class FoodController(
             return View("Add", new FoodAddViewModel(date, meal, "text", text, "Write what you ate, up to 1000 characters.", null, [], null, [], []));
         }
 
-        var destination = new ReviewDestination(Guid.NewGuid(), date, meal);
-        var (result, items, runId) = await parseRuns.ParseAsync(text, ct, destination);
-        if (items.Count == 0)
+        var draft = await parseRuns.CreateReviewAsync(date, meal, text, ct);
+        if (draft.Items.Count == 0)
         {
-            // Keep the text so nothing typed is lost, and offer manual entry.
-            return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? new LocalText("Couldn't read that."), null, [], null, [], []));
+            return View("Add", new FoodAddViewModel(date, meal, "text", text, draft.Warning ?? new LocalText("Couldn't read that."), null, [], null, [], []));
         }
 
-        var draft = new ConfirmViewModel(date, meal, text, result.Model, items, result.Error, runId, destination.Id);
-        if (runId is null)
-        {
-            // Feedback recording is best-effort. Keep a usable review even during a recording failure.
-            cache.Set((currentUser.UserId, destination.Id), draft, TimeSpan.FromHours(12));
-        }
-        var url = Url.Action(nameof(Review), new { id = destination.Id, run = runId })!;
+        var url = Url.Action(nameof(Review), new { id = draft.RequestId, run = draft.ParseRunId })!;
         if (Request.Headers["HX-Request"] == "true")
         {
             Response.Headers["HX-Push-Url"] = url;
@@ -116,13 +106,17 @@ public class FoodController(
     [HttpGet("review/{id:guid}")]
     public async Task<IActionResult> Review(Guid id, int? run, CancellationToken ct)
     {
-        var draft = run is { } runId ? await parseRuns.ReviewAsync(runId, id, ct)
-            : cache.Get<ConfirmViewModel>((currentUser.UserId, id));
+        if (await parseRuns.SavedLocationAsync(id, ct) is { } saved)
+        {
+            TempData.SavedReview(id, alreadySaved: true);
+            return LocalRedirect(saved);
+        }
+        var draft = await parseRuns.ReviewAsync(run, id, ct);
         return draft is null ? NotFound() : View("Confirm", draft);
     }
 
     [HttpPost("confirm")]
-    [IdempotentFoodPost]
+    [IdempotentFoodPost(review: true)]
     public async Task<IActionResult> Confirm(DateOnly date, Meal meal, string? aiModel, int? parseRunId, List<ConfirmRow> items, CancellationToken ct)
     {
         if (!items.Any(i => i.Include))

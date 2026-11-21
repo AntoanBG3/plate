@@ -77,10 +77,16 @@ public class FoodRequestTests(PostgresFixture fixture) : IClassFixture<PostgresF
         }
 
         var first = await AppFactory.PostAsync(client, path, token, fields);
+        if (kind == "confirm") fields["items[0].Grams"] = "250";
         var second = await AppFactory.PostAsync(client, path, token, fields);
         first.StatusCode.Should().Be(HttpStatusCode.Redirect);
         second.StatusCode.Should().Be(first.StatusCode);
         second.Headers.Location.Should().Be(first.Headers.Location);
+        if (kind == "confirm")
+        {
+            var page = await client.GetStringAsync(second.Headers.Location!);
+            page.Should().Contain("This review was already saved.");
+        }
         var meal = Enum.Parse<Meal>(fields["meal"]);
         (await db.FoodLog.IgnoreQueryFilters().CountAsync(x => x.UserId == userId && x.Date == Today && x.Meal == meal))
             .Should().Be(1, "one rendered form is one intent even if its response is lost");

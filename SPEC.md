@@ -404,7 +404,7 @@ Display: a food entry reads "Chicken breast · 200 g" with its status as a chip 
 
 Usual foods: confirming a parse writes, for each saved item that has a food, its `NameOriginal` key (5.10) and that food as a `UsualFood`: a new row, or the existing row moved to this food, with `LastUsedAt` set. The latest save wins, so picking another food once moves the words to it. Unticked items, estimates and names without a key write nothing. No model is involved, so this works the same without a key, and an item with a usual food is not a matcher question, so it costs nothing.
 
-Results are never saved directly. The user always sees an editable confirmation list first. Each successful parse has its own account-scoped review address. Reload or Back restores the review without a second model call. The browser keeps edits to recent reviews in the same tab. Re-submitting a review logs it only once. Saved entries record `AiModel`.
+Results are never saved directly. The user always sees an editable confirmation list first. Each successful parse has its own account-scoped review address. Reload or Back restores the review without a second model call. The browser keeps edits to recent unsaved reviews in the same tab and clears the draft when the save is confirmed. Opening or submitting a saved review returns to the original food log with an already-saved notice. Saved entries record `AiModel`.
 
 Also provide `FakeFoodParser` for tests and local development without a key (selected when no OpenRouter key is set). It sets `AmountGiven` when it read a weight or a count other than "a", "an", "един", "една" or "едно".
 

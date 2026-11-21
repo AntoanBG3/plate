@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json.Serialization;
 using Plate.Core.Text;
 using Plate.Web.ViewModels;
@@ -36,8 +37,19 @@ public record SavedRow(bool Included, string Description, decimal Grams, Per100g
 /// saved and how it differs (SPEC 11). Recording never gets in the way of logging food.
 /// </summary>
 public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodParser parser, FoodMatcher matcher, IFoodNamer namer, TimeProvider time, ILogger<ParseRunService> log,
-    RepeatLoggingService? repeat = null)
+    IMemoryCache cache, RepeatLoggingService? repeat = null)
 {
+    public async Task<ConfirmViewModel> CreateReviewAsync(DateOnly date, Meal meal, string text, CancellationToken ct)
+    {
+        var id = Guid.NewGuid();
+        var (result, items, runId) = await ParseAsync(text, ct, new ReviewDestination(id, date, meal));
+        var draft = new ConfirmViewModel(date, meal, text, result.Model, items, result.Error, runId, id);
+        // If best-effort recording failed, the user can still open and save the review.
+        if (runId is null && items.Count > 0)
+            cache.Set((currentUser.UserId, id), draft, TimeSpan.FromHours(12));
+        return draft;
+    }
+
     public async Task<ParseOutcome> ParseAsync(string text, CancellationToken ct, ReviewDestination? review = null)
     {
         var clock = Stopwatch.StartNew();
@@ -94,8 +106,12 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
         return new ParseOutcome(result, items, run.Id);
     }
 
-    public async Task<ConfirmViewModel?> ReviewAsync(int runId, Guid id, CancellationToken ct)
+    public Task<string?> SavedLocationAsync(Guid id, CancellationToken ct) =>
+        db.FoodLogRequests.Where(r => r.RequestId == id).Select(r => r.Location).SingleOrDefaultAsync(ct);
+
+    public async Task<ConfirmViewModel?> ReviewAsync(int? runId, Guid id, CancellationToken ct)
     {
+        if (runId is null) return cache.Get<ConfirmViewModel>((currentUser.UserId, id));
         var run = await db.ParseRuns.Where(r => r.Id == runId)
             .Select(r => new { r.Text, r.AiModel, r.Resolved }).SingleOrDefaultAsync(ct);
         var rows = FeedbackJson.Read<List<ResolvedRow>>(run?.Resolved);
