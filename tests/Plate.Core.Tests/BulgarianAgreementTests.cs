@@ -35,6 +35,16 @@ public class BulgarianAgreementTests
     [InlineData("Захар", BulgarianForm.Feminine)]
     [InlineData("Киви", BulgarianForm.Neuter)]
     [InlineData("Галета", BulgarianForm.Feminine)]
+    [InlineData("Панчета", BulgarianForm.Feminine)]
+    [InlineData("Пилешки бедра", BulgarianForm.Plural)]
+    [InlineData("Свински ребра", BulgarianForm.Plural)]
+    [InlineData("Пилешки крила", BulgarianForm.Plural)]
+    [InlineData("Пилешки сърца", BulgarianForm.Plural)]
+    // Other adjectives that read the same for a masculine noun and a plural.
+    [InlineData("Говежди стек", BulgarianForm.Masculine)]
+    [InlineData("Говежди кюфтета", BulgarianForm.Plural)]
+    [InlineData("Овчи кашкавал", BulgarianForm.Masculine)]
+    [InlineData("Пачи гърди", BulgarianForm.Plural)]
     public void The_form_comes_from_the_name(string name, BulgarianForm form) =>
         BulgarianAgreement.FormOf(name).Should().Be(form);
 
@@ -63,6 +73,9 @@ public class BulgarianAgreementTests
     [InlineData("замразено", "Грах", "замразен")]
     [InlineData("сушено", "Сини сливи", "сушени")]
     [InlineData("варено и осолено", "Ориз", "варен и осолен")]
+    [InlineData("грилована", "Пилешко филе", "гриловано")]
+    [InlineData("опушено", "Свински врат", "опушен")]
+    [InlineData("панирован", "Пилешки крила", "панировани")]
     public void A_state_word_agrees_with_the_name(string status, string name, string agreed) =>
         BulgarianAgreement.Agree(status, name).Should().Be(agreed);
 

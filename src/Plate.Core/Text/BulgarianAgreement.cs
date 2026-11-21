@@ -17,19 +17,26 @@ public static partial class BulgarianAgreement
     [
         "суров", "сух", "готвен", "сготвен", "варен", "сварен", "неварен", "печен", "изпечен", "запечен", "препечен",
         "опечен", "пържен", "изпържен", "задушен", "пушен", "сушен", "изсушен", "замразен", "размразен", "осолен",
-        "маринован", "консервиран", "бланширан", "пасиран", "обработен", "преработен",
+        "маринован", "грилован", "опушен", "изпушен", "панирован", "консервиран", "бланширан", "пасиран", "обработен", "преработен",
     ];
 
     // Nouns whose ending says the wrong thing.
     private static readonly Dictionary<string, BulgarianForm> Exceptions = new()
     {
         ["яйца"] = BulgarianForm.Plural, ["крилца"] = BulgarianForm.Plural, ["зърна"] = BulgarianForm.Plural,
-        ["семена"] = BulgarianForm.Plural,
+        ["семена"] = BulgarianForm.Plural, ["бедра"] = BulgarianForm.Plural, ["ребра"] = BulgarianForm.Plural,
+        ["ребърца"] = BulgarianForm.Plural, ["крила"] = BulgarianForm.Plural, ["сърца"] = BulgarianForm.Plural,
         ["сол"] = BulgarianForm.Feminine, ["мас"] = BulgarianForm.Feminine, ["захар"] = BulgarianForm.Feminine,
-        ["галета"] = BulgarianForm.Feminine, ["крокета"] = BulgarianForm.Feminine,
+        ["галета"] = BulgarianForm.Feminine, ["крокета"] = BulgarianForm.Feminine, ["панчета"] = BulgarianForm.Feminine,
+        ["брускета"] = BulgarianForm.Feminine,
         ["киви"] = BulgarianForm.Neuter, ["уиски"] = BulgarianForm.Neuter, ["суши"] = BulgarianForm.Neuter,
         ["чили"] = BulgarianForm.Neuter,
     };
+
+    // Adjectives that read the same for a masculine noun and a plural: "пилешки дроб", "пилешки гърди", "говежди стек".
+    private static readonly string[] SharedFormEndings = ["ски", "шки", "жки", "чки", "цки", "жди"];
+
+    private static readonly HashSet<string> SharedFormWords = ["овчи", "кози", "пачи", "гъши"];
 
     [GeneratedRegex(@"\p{L}+")]
     private static partial Regex Word();
@@ -37,8 +44,8 @@ public static partial class BulgarianAgreement
     private static bool IsCyrillic(string word) => word.All(c => c is >= 'Ѐ' and <= 'ӿ');
 
     /// <summary>
-    /// The form of a food name from its head noun: the first word, or the word after a leading adjective in -ски, which
-    /// is the same for a masculine noun and a plural ("пилешки дроб", "пилешки гърди"). Null when the name doesn't
+    /// The form of a food name from its head noun: the first word, or the word after a leading adjective that is the same
+    /// for a masculine noun and a plural ("пилешки дроб", "пилешки гърди"). Null when the name doesn't
     /// start with a Bulgarian word.
     /// </summary>
     public static BulgarianForm? FormOf(string? name)
@@ -55,7 +62,7 @@ public static partial class BulgarianAgreement
         }
 
         var head = words[0];
-        if (words.Count > 1 && IsCyrillic(words[1]) && (head.EndsWith("ски") || head.EndsWith("шки") || head.EndsWith("жки") || head.EndsWith("чки") || head.EndsWith("цки")))
+        if (words.Count > 1 && IsCyrillic(words[1]) && (SharedFormWords.Contains(head) || SharedFormEndings.Any(head.EndsWith)))
         {
             head = words[1];
         }
