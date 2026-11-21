@@ -1,4 +1,5 @@
 using Plate.Core.Text;
+using Microsoft.Extensions.Caching.Memory;
 using Plate.Web.Features.Localization;
 using Plate.Core.Domain;
 using Plate.Core.Nutrition;
@@ -25,6 +26,7 @@ public class FoodController(
     ProfileService profiles,
     UserTime userTime,
     Plate.Web.Data.ICurrentUser currentUser,
+    IMemoryCache cache,
     TimeProvider time) : Controller
 {
     private static readonly string[] Tabs = ["text", "barcode", "search", "recent", "manual"];
@@ -88,14 +90,35 @@ public class FoodController(
             return View("Add", new FoodAddViewModel(date, meal, "text", text, "Write what you ate, up to 1000 characters.", null, [], null, [], []));
         }
 
-        var (result, items, runId) = await parseRuns.ParseAsync(text, ct);
+        var destination = new ReviewDestination(Guid.NewGuid(), date, meal);
+        var (result, items, runId) = await parseRuns.ParseAsync(text, ct, destination);
         if (items.Count == 0)
         {
             // Keep the text so nothing typed is lost, and offer manual entry.
             return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? new LocalText("Couldn't read that."), null, [], null, [], []));
         }
 
-        return View("Confirm", new ConfirmViewModel(date, meal, text, result.Model, items, result.Error, runId));
+        var draft = new ConfirmViewModel(date, meal, text, result.Model, items, result.Error, runId, destination.Id);
+        if (runId is null)
+        {
+            // Feedback recording is best-effort. Keep a usable review even during a recording failure.
+            cache.Set((currentUser.UserId, destination.Id), draft, TimeSpan.FromHours(12));
+        }
+        var url = Url.Action(nameof(Review), new { id = destination.Id, run = runId })!;
+        if (Request.Headers["HX-Request"] == "true")
+        {
+            Response.Headers["HX-Push-Url"] = url;
+            return View("Confirm", draft);
+        }
+        return Redirect(url);
+    }
+
+    [HttpGet("review/{id:guid}")]
+    public async Task<IActionResult> Review(Guid id, int? run, CancellationToken ct)
+    {
+        var draft = run is { } runId ? await parseRuns.ReviewAsync(runId, id, ct)
+            : cache.Get<ConfirmViewModel>((currentUser.UserId, id));
+        return draft is null ? NotFound() : View("Confirm", draft);
     }
 
     [HttpPost("confirm")]
@@ -210,6 +233,7 @@ public class FoodController(
             var manual = new ManualFoodFormModel(date, meal, barcodeField ? null : barcode, name, barcodeField,
                 LabelScanId: labelScanId, LabelAvailable: available, BarcodeValue: barcode, Share: share,
                 InvalidField: invalidField, Submitted: true);
+            if (!barcodeField && barcode is not null) ViewData["Page"] = "food-barcode";
             return View("Add", new FoodAddViewModel(date, meal, "manual", null, ex.Text, null, [], null, [], [],
                 available, Manual: manual));
         }
@@ -233,7 +257,6 @@ public class FoodController(
         if (photo.Count == 0 || photo.Any(p => p.Length == 0))
         {
             throw new ValidationException("Attach a photo (JPEG, PNG or WebP).");
-            if (!barcodeField && barcode is not null) ViewData["Page"] = "food-barcode";
         }
 
         if (photo.Count > LabelScanPhoto.MaxPerScan)

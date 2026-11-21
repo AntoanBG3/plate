@@ -81,4 +81,23 @@ public class ConfirmFoodsTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.Page.WaitForFunctionAsync("e => Number(getComputedStyle(e).opacity) < 0.6", amount, new() { Timeout = 10_000 });
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Review_survives_reload_and_back(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync("/food/add?meal=Lunch&tab=text");
+        await phone.Page.Locator("#text").FillAsync("150 g cooked rice");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").First.TapAsync());
+        (await phone.Page.Locator("form[action='/food/confirm']").CountAsync()).Should().Be(1);
+        var name = phone.Page.Locator(".name-input").First;
+        await name.FillAsync("My rice");
+        (await phone.Page.ReloadAsync())!.Status.Should().Be(200);
+        (await name.InputValueAsync()).Should().Be("My rice");
+        await phone.NavigateByAsync(() => phone.Page.Locator(".tabbar a[href='/train']").TapAsync());
+        await phone.NavigateByAsync(() => phone.Page.EvaluateAsync("history.back()"));
+        (await name.InputValueAsync()).Should().Be("My rice");
+    }
 }

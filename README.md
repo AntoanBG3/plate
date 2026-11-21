@@ -246,6 +246,8 @@ Deleted food entries, sets and exercises are kept for 24 hours so Undo can bring
 
 ### Feedback
 
+You can reload Check foods or return with Back to continue editing a recent food review in the same tab. Plate reopens the original parse, and saving the same review twice logs it once.
+
 Every account can report problems and ideas in Settings → Send feedback (with a screenshot), rate how typed food was read on the Check foods screen, and use the "Report" links on barcode results, weight suggestions, the maintenance estimate and AI food entries. Errors in the app and the browser are recorded on their own. Everything stays in the database; the CLI reads it and answers it (SPEC section 11):
 
 ```sh

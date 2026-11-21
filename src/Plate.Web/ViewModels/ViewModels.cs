@@ -190,7 +190,7 @@ public record FoodAddViewModel(
     IReadOnlyDictionary<int, decimal>? LastGrams = null,
     ManualFoodFormModel? Manual = null);
 
-public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<Plate.Web.Features.Food.ConfirmItem> Items, Plate.Core.Text.LocalText? Warning, int? ParseRunId = null);
+public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<Plate.Web.Features.Food.ConfirmItem> Items, Plate.Core.Text.LocalText? Warning, int? ParseRunId = null, Guid RequestId = default);
 
 /// <param name="AddedByAnother">The food is a shared manual one another account added (SPEC 7).</param>
 /// <param name="LastGrams">This account's last amount for the product (SPEC 5.10), or null.</param>
