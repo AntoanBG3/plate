@@ -237,6 +237,47 @@ public class ParseAgreementTests
     }
 
     [Fact]
+    public void Another_database_row_of_the_same_food_agrees()
+    {
+        var banana = new Per100g(89, 1.1m, 22.8m, 0.3m);
+        var saved = new ReplayExpectation(true, true, 474, "banana", 120, banana, FoodName: "Bananas, raw");
+
+        ParseAgreement.Replay([saved], [new SuggestedItem("Bananas, raw", 120, new Per100g(88, 1.1m, 22.5m, 0.3m), 8256, "Bananas, raw")])
+            .Agreement.Should().Be(new AgreementResult(1, 1, 1, 0));
+        ParseAgreement.Replay([saved], [new SuggestedItem("Banana chips", 120, new Per100g(519, 2.3m, 58, 34), 9000, "Banana chips")])
+            .Agreement.FoodAgreed.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("Bananas, raw", "Banana", true)]
+    [InlineData("Grapes, green, seedless, raw", "Grapes, green (European type, such as Thompson seedless), raw", true)]
+    [InlineData("Cherries, sweet", "Cherry", true)]
+    [InlineData("Tomatoes, red", "Tomato", true)]
+    [InlineData("Cheese, cottage, lowfat, 2% milkfat", "Cottage cheese, full fat", false)]
+    public void Equivalence_needs_the_same_main_word(string a, string b, bool same) =>
+        FoodEquivalence.Same(a, Values, b, Values).Should().Be(same);
+
+    [Fact]
+    public void Lowfat_and_full_fat_are_different_foods() =>
+        FoodEquivalence.Same("Cheese, cottage, lowfat, 2% milkfat", new Per100g(84, 11, 4.3m, 2.3m), "Cheese, cottage, full fat", new Per100g(98, 11, 3.4m, 4.3m))
+            .Should().BeFalse();
+
+    [Fact]
+    public void An_entry_logged_after_the_confirm_backs_up_a_new_item_and_counts_in_the_saved_meal()
+    {
+        // The user unticked a wrong row and logged the pastry by hand; the replay finds the pastry.
+        var wrong = new ReplayExpectation(false, true, 7336, "SUBWAY steak sandwich", 150, new Per100g(200, 10, 20, 8));
+        var kefir = new ReplayExpectation(true, true, 10821, "Кефир", 1000, new Per100g(51, 3.2m, 4.5m, 2.2m));
+        var pastry = new Per100g(233, 7.6m, 23.3m, 11.9m);
+        LaterEntry[] later = [new(11843, "Savoury pastry, Lidl bakery", "Закуска", 90, pastry), new(55, "Coffee", "Кафе", 200, new Per100g(2, 0.1m, 0, 0))];
+
+        var score = ParseAgreement.Replay([wrong, kefir], [new SuggestedItem("Kefir", 1000, kefir.Per100!, 10821), new SuggestedItem("Pastry", 90, pastry, 11843)], later);
+
+        score.Agreement.Should().Be(new AgreementResult(1, 1, 1, 0, 0, LoggedLater: 1));
+        score.Saved.Should().Be(score.Fresh, "the pastry logged by hand is part of the saved meal; the coffee was never expected");
+    }
+
+    [Fact]
     public void Nutrient_differences_are_summarized_over_meals_with_known_values()
     {
         var summary = NutrientAgreement.Summarize([

@@ -55,7 +55,7 @@ public record TraceCandidate(int Id, string Name, double Score, bool Own);
 /// Turns parsed foods into database foods: the model reads the text, the database supplies the numbers (SPEC 6.1).
 /// A decider (Jev) chooses from a trigram shortlist when one is set up; its "none" counts only when it is sure or
 /// Rank's top pick is weak, and a pick it is barely sure of leaves a strong top pick of Rank's standing and is no
-/// match otherwise. Anything it doesn't decide falls back to Rank's top pick. Without <paramref name="repeat"/> (the evaluation), no usual
+/// match otherwise. Anything it doesn't decide falls back to Rank's top pick. Without <paramref name="repeat"/> (the evaluation with --no-history), no usual
 /// foods or last amounts are used, so the parser and matcher are measured alone.
 /// </summary>
 public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, RepeatLoggingService? repeat = null)

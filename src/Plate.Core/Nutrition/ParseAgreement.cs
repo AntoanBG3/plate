@@ -4,14 +4,18 @@ namespace Plate.Core.Nutrition;
 /// <param name="FoodAgreed">Saved items the new run matched to the same database food (or, for AI estimates, the same name).</param>
 /// <param name="GramsAgreed">Of those, items whose grams are within the correction tolerance.</param>
 /// <param name="Extra">Items the new run found that the saved items don't account for.</param>
+/// <param name="LoggedLater">
+/// New items the saved rows don't account for but an entry logged right after the confirm does: the user unticked a
+/// wrong row and logged the food another way. Not extra, and their entries count in the saved totals.
+/// </param>
 /// <param name="Unknown">
 /// Items saved without a known food: the record predates saved foods being kept, or the user kept a food they rated as
 /// wrong. They are not expected, and each may account for one unpaired new item instead of it counting as extra.
 /// </param>
-public record AgreementResult(int Expected, int FoodAgreed, int GramsAgreed, int Extra, int Unknown = 0)
+public record AgreementResult(int Expected, int FoodAgreed, int GramsAgreed, int Extra, int Unknown = 0, int LoggedLater = 0)
 {
     public static AgreementResult operator +(AgreementResult a, AgreementResult b) =>
-        new(a.Expected + b.Expected, a.FoodAgreed + b.FoodAgreed, a.GramsAgreed + b.GramsAgreed, a.Extra + b.Extra, a.Unknown + b.Unknown);
+        new(a.Expected + b.Expected, a.FoodAgreed + b.FoodAgreed, a.GramsAgreed + b.GramsAgreed, a.Extra + b.Extra, a.Unknown + b.Unknown, a.LoggedLater + b.LoggedLater);
 
     public static readonly AgreementResult Zero = new(0, 0, 0, 0);
 }
@@ -23,7 +27,12 @@ public record AgreementResult(int Expected, int FoodAgreed, int GramsAgreed, int
 /// <param name="Description">The saved row's name, which identifies an AI estimate.</param>
 /// <param name="Per100">The saved per-100 g values; null when the record doesn't have them.</param>
 /// <param name="RejectedFoodItemId">The suggested food, when the user rated it as the wrong food.</param>
-public record ReplayExpectation(bool Included, bool FoodKnown, int? FoodItemId, string Description, decimal Grams, Per100g? Per100, int? RejectedFoodItemId = null);
+/// <param name="FoodName">The saved food's English name, so another database row of the same food also agrees.</param>
+public record ReplayExpectation(bool Included, bool FoodKnown, int? FoodItemId, string Description, decimal Grams, Per100g? Per100, int? RejectedFoodItemId = null,
+    string? FoodName = null);
+
+/// <summary>An entry the user logged right after confirming the parse, outside it (SPEC 11, feedback eval).</summary>
+public record LaterEntry(int? FoodItemId, string? FoodName, string Description, decimal Grams, Per100g Per100);
 
 /// <summary>Energy and macros of a whole meal.</summary>
 public record MealNutrients(decimal Kcal, decimal Protein, decimal Carbs, decimal Fat)
@@ -77,13 +86,16 @@ public record NutrientAgreement(int Meals, decimal MeanAbsKcal, decimal MedianAb
 /// How far a fresh parse and match of an old entry agrees with the saved log (SPEC 11, feedback eval): the foods and
 /// grams the user saved, not the ones first suggested. Agreement with the saved log is not accuracy, since a user can
 /// accept a bad suggestion. Items are paired by food, not by position, since a new run may order or split them differently.
+/// A food is the same database food, another row of it (<see cref="FoodEquivalence"/>), or for an AI estimate the same
+/// name. Entries logged right after the confirm only back up new items nothing saved accounts for; they are never
+/// expected, since the user may have logged something else entirely.
 /// </summary>
 public static class ParseAgreement
 {
     public static AgreementResult Score(IReadOnlyList<SavedItem> saved, IReadOnlyList<SuggestedItem> fresh) =>
         Replay(saved.Select(s => new ReplayExpectation(s.Included, true, s.FoodItemId, s.Description, s.Grams, s.Per100)).ToList(), fresh).Agreement;
 
-    public static ReplayScore Replay(IReadOnlyList<ReplayExpectation> expected, IReadOnlyList<SuggestedItem> fresh)
+    public static ReplayScore Replay(IReadOnlyList<ReplayExpectation> expected, IReadOnlyList<SuggestedItem> fresh, IReadOnlyList<LaterEntry>? later = null)
     {
         var used = new bool[fresh.Count];
         int count = 0, food = 0, grams = 0, unknown = 0;
@@ -100,7 +112,7 @@ public static class ParseAgreement
             var match = -1;
             for (var n = 0; n < fresh.Count && match < 0; n++)
             {
-                if (!used[n] && SameFood(e, fresh[n]))
+                if (!used[n] && SameFood(e.FoodItemId, e.FoodName, e.Description, e.Per100, fresh[n]))
                 {
                     match = n;
                 }
@@ -120,18 +132,33 @@ public static class ParseAgreement
             }
         }
 
+        // A new item nothing saved accounts for may be food the user logged another way right after.
+        var backing = new List<LaterEntry>();
+        var spare = (later ?? []).ToList();
+        for (var n = 0; n < fresh.Count; n++)
+        {
+            if (!used[n] && spare.FirstOrDefault(l => SameFood(l.FoodItemId, l.FoodName, l.Description, l.Per100, fresh[n])) is { } entry)
+            {
+                used[n] = true;
+                spare.Remove(entry);
+                backing.Add(entry);
+            }
+        }
+
         var unpaired = used.Count(u => !u);
         var repeated = expected.Count(e => e.RejectedFoodItemId is { } bad && fresh.Any(f => f.FoodItemId == bad));
         var included = expected.Where(e => e.Included).ToList();
-        var savedTotals = included.All(e => e.Per100 is not null) ? MealNutrients.Of(included.Select(e => (e.Grams, e.Per100!))) : null;
-        return new ReplayScore(new AgreementResult(count, food, grams, unpaired - Math.Min(unpaired, unknown), unknown), repeated,
+        var savedTotals = included.All(e => e.Per100 is not null)
+            ? MealNutrients.Of(included.Select(e => (e.Grams, e.Per100!)).Concat(backing.Select(b => (b.Grams, b.Per100))))
+            : null;
+        return new ReplayScore(new AgreementResult(count, food, grams, unpaired - Math.Min(unpaired, unknown), unknown, backing.Count), repeated,
             savedTotals, MealNutrients.Of(fresh.Select(f => (f.Grams, f.Per100))));
     }
 
-    private static bool SameFood(ReplayExpectation saved, SuggestedItem fresh) =>
-        saved.FoodItemId is { } id
-            ? fresh.FoodItemId == id
-            : fresh.FoodItemId is null && Normalize(saved.Description) == Normalize(fresh.Description);
+    private static bool SameFood(int? id, string? name, string description, Per100g? per100, SuggestedItem fresh) =>
+        id is { } food
+            ? fresh.FoodItemId == food || (fresh.FoodItemId is not null && FoodEquivalence.Same(name, per100, fresh.FoodName, fresh.Per100))
+            : fresh.FoodItemId is null && Normalize(description) == Normalize(fresh.Description);
 
     private static string Normalize(string text) =>
         string.Join(' ', text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)).ToLowerInvariant();

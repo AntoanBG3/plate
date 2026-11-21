@@ -13,7 +13,8 @@ public enum ParseCorrection
 }
 
 /// <summary>One row as the confirmation list suggested it.</summary>
-public record SuggestedItem(string Description, decimal Grams, Per100g Per100, int? FoodItemId);
+/// <param name="FoodName">The matched food's English name, for telling two database rows of the same food apart from different foods.</param>
+public record SuggestedItem(string Description, decimal Grams, Per100g Per100, int? FoodItemId, string? FoodName = null);
 
 /// <summary>The same row as the user submitted it.</summary>
 public record SavedItem(bool Included, string Description, decimal Grams, Per100g Per100, int? FoodItemId);

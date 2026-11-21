@@ -23,7 +23,7 @@ public class RepeatLoggingService(AppDbContext db, ICurrentUser currentUser, Tim
         var since = now - LastAmount.Window;
         var ids = foodItemIds.Distinct().ToList();
         var rows = await db.FoodLog
-            .Where(e => e.FoodItemId != null && ids.Contains(e.FoodItemId.Value) && e.CreatedAt >= since && e.Grams > 0)
+            .Where(e => e.FoodItemId != null && ids.Contains(e.FoodItemId.Value) && e.CreatedAt >= since && e.CreatedAt < now && e.Grams > 0)
             .Select(e => new { Id = e.FoodItemId!.Value, e.Grams, e.CreatedAt })
             .ToListAsync(ct);
 
@@ -53,7 +53,7 @@ public class RepeatLoggingService(AppDbContext db, ICurrentUser currentUser, Tim
             return [];
         }
 
-        var byPhrase = await db.UsualFoods.Where(u => all.Contains(u.Phrase)).ToDictionaryAsync(u => u.Phrase, u => u.FoodItemId, ct);
+        var byPhrase = await UsualFoodIdsAsync(all, ct);
         var ids = byPhrase.Values.Distinct().ToList();
         var foods = await db.FoodItems.Where(f => ids.Contains(f.Id)).ToDictionaryAsync(f => f.Id, ct); // own or shared only
 
@@ -72,6 +72,10 @@ public class RepeatLoggingService(AppDbContext db, ICurrentUser currentUser, Tim
 
         return result;
     }
+
+    /// <summary>The food remembered for each of these phrases (5.10 keys) that has one.</summary>
+    protected virtual Task<Dictionary<string, int>> UsualFoodIdsAsync(IReadOnlyCollection<string> phrases, CancellationToken ct) =>
+        db.UsualFoods.Where(u => phrases.Contains(u.Phrase)).ToDictionaryAsync(u => u.Phrase, u => u.FoodItemId, ct);
 
     /// <summary>
     /// Remembers which food the account saved for its words (SPEC 6.1, usual foods): the latest save wins. Recording

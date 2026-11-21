@@ -68,14 +68,14 @@ public record EvalItem(
     {
         if (Saved is { } s)
         {
-            return new ReplayExpectation(s.Included, true, s.FoodItemId, s.Description, s.Grams, s.Per100, RejectedFoodItemId);
+            return new ReplayExpectation(s.Included, true, s.FoodItemId, s.Description, s.Grams, s.Per100, RejectedFoodItemId, s.FoodName);
         }
 
         // An older case: an unticked item is known from its verdict, an accepted one was saved as suggested, and for
         // the rest the saved food was not recorded. The saved per-100 g values never were.
         var included = Verdict != EvalVerdict.Removed && (Verdict != EvalVerdict.WrongFood || SavedGrams is not null);
         var known = Verdict == EvalVerdict.Accepted && FoodItemId is not null;
-        return new ReplayExpectation(included, known, known ? FoodItemId : null, "", SavedGrams ?? Parsed.Grams, null, RejectedFoodItemId);
+        return new ReplayExpectation(included, known, known ? FoodItemId : null, "", SavedGrams ?? Parsed.Grams, null, RejectedFoodItemId, known ? FoodName : null);
     }
 }
 
@@ -91,12 +91,28 @@ public record EvalSaved(
     [property: JsonPropertyName("foodSource")] FoodSource? FoodSource);
 
 /// <summary>One confirmed parse as a regression case.</summary>
+/// <param name="Later">
+/// Entries the user logged within <see cref="FeedbackAdmin.LaterWindow"/> after confirming, outside this parse: often the
+/// food of a row they unticked, logged another way. Null in cases exported before they were kept.
+/// </param>
 public record EvalCase(
     [property: JsonPropertyName("runId")] int RunId,
     [property: JsonPropertyName("text")] string Text,
     [property: JsonPropertyName("aiModel")] string? AiModel,
     [property: JsonPropertyName("matchModel")] string? MatchModel,
-    [property: JsonPropertyName("items")] IReadOnlyList<EvalItem> Items);
+    [property: JsonPropertyName("items")] IReadOnlyList<EvalItem> Items,
+    [property: JsonPropertyName("later")] IReadOnlyList<EvalLater>? Later = null);
+
+/// <summary>An entry logged right after a confirmed parse, outside it.</summary>
+public record EvalLater(
+    [property: JsonPropertyName("description")] string Description,
+    [property: JsonPropertyName("grams")] decimal Grams,
+    [property: JsonPropertyName("per100")] Per100g Per100,
+    [property: JsonPropertyName("foodItemId")] int? FoodItemId,
+    [property: JsonPropertyName("foodName")] string? FoodName)
+{
+    public LaterEntry Entry() => new(FoodItemId, FoodName, Description, Grams, Per100);
+}
 
 public record Digest(DateTimeOffset Since, IReadOnlyList<FeedbackRow> Reports, IReadOnlyList<ErrorEvent> Errors, int Parses, int Confirmed, int Corrected,
     int RatedUp, int RatedDown);
@@ -108,6 +124,9 @@ public record Digest(DateTimeOffset Since, IReadOnlyList<FeedbackRow> Reports, I
 /// </summary>
 public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog audit)
 {
+    /// <summary>How long after confirming a parse an entry logged another way still counts as part of that meal.</summary>
+    public static readonly TimeSpan LaterWindow = TimeSpan.FromMinutes(30);
+
     private IQueryable<Core.Domain.Feedback> AllFeedback => db.Feedback.IgnoreQueryFilters();
 
     public async Task<List<FeedbackRow>> ListAsync(IReadOnlyCollection<FeedbackStatus>? statuses, DateTimeOffset? since, FeedbackArea? area, bool includeRatings, CancellationToken ct)
@@ -278,11 +297,34 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
 
             if (!flaggedOnly || items.Any(i => i.Verdict != EvalVerdict.Accepted))
             {
-                cases.Add(new EvalCase(run.Id, run.Text, run.AiModel, run.MatchModel, items));
+                cases.Add(new EvalCase(run.Id, run.Text, run.AiModel, run.MatchModel, items, await LaterAsync(run, ct)));
             }
         }
 
         return cases;
+    }
+
+    /// <summary>
+    /// What the user logged within <see cref="LaterWindow"/> after confirming the run, outside it, and still has. Quick
+    /// entries have no grams and say nothing about a food, so they are left out.
+    /// </summary>
+    private async Task<List<EvalLater>> LaterAsync(Core.Domain.ParseRun run, CancellationToken ct)
+    {
+        if (run.ConfirmedAt is not { } confirmed)
+        {
+            return [];
+        }
+
+        var until = confirmed + LaterWindow;
+        var entries = await db.FoodLog.IgnoreQueryFilters().AsNoTracking()
+            .Where(e => e.UserId == run.UserId && e.DeletedAt == null && e.Grams > 0 && e.CreatedAt >= confirmed && e.CreatedAt <= until
+                && (e.ParseRunId == null || e.ParseRunId != run.Id))
+            .OrderBy(e => e.CreatedAt)
+            .Select(e => new { e.Description, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FoodItemId, FoodName = e.FoodItem == null ? null : e.FoodItem.Name })
+            .ToListAsync(ct);
+        return entries.Select(e => new EvalLater(e.Description, e.Grams,
+            new Per100g(Math.Round(e.Kcal * 100 / e.Grams, 2), Math.Round(e.ProteinG * 100 / e.Grams, 2), Math.Round(e.CarbsG * 100 / e.Grams, 2), Math.Round(e.FatG * 100 / e.Grams, 2)),
+            e.FoodItemId, e.FoodName)).ToList();
     }
 
     public Task<List<ErrorEvent>> ErrorsAsync(DateTimeOffset since, CancellationToken ct) =>
