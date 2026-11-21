@@ -37,7 +37,7 @@ public partial class CatalogueTests(ITestOutputHelper output)
     // Strings that reach the user without a pattern above.
     private static readonly string[] Extra = ["assumed 100 g", "{0} × a serving of {1} g", "{0} × a piece of {1} g", "{0} × a pack of {1} g",
         "No weight per piece for this food, so check the grams.", "The pack size isn't known, so check the grams.", "No serving size for this food, so check the grams.",
-        "These values are estimated from the recipe, not read from a label.", "Freestyle", "Dark", "Light", "Match phone", "Entry deleted.", "Exercise removed."];
+        "These values are estimated from the recipe, not read from a label.", "Counted as weighed after cooking.", "Counted as weighed before cooking.", "Freestyle", "Dark", "Light", "Match phone", "Entry deleted.", "Exercise removed."];
 
     // Matched by a pattern but never shown: instructions sent to the model.
     private static readonly string[] Ignore = ["Write assumption in English.", "Reply in English.", "Write in English.", "Read this nutrition label."];

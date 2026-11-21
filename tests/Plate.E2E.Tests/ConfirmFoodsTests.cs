@@ -143,4 +143,38 @@ public class ConfirmFoodsTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await phone.Page.Locator("form[action='/food/confirm']").CountAsync()).Should().Be(0);
         (await phone.Page.ContentAsync()).Should().Contain("This review was already saved.");
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_weighed_staple_asks_whether_it_was_cooked_and_saves_the_answer(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync("/food/add?meal=Dinner&tab=text");
+        await phone.Page.Locator("textarea[name=text], input[name=text]").First.FillAsync("200 г басмати ориз");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").First.TapAsync());
+
+        var row = phone.Page.Locator(".result").First;
+        var question = row.Locator("[data-state-choice]");
+        (await question.Locator(".footnote").TextContentAsync()).Should().Be("When did you weigh it?");
+        var before = question.Locator("[data-state=raw]");
+        var after = question.Locator("[data-state=cooked]");
+        (await before.GetAttributeAsync("aria-pressed")).Should().Be("true", "the basmati the ranking found is dry rice");
+        var dryTotals = await row.Locator("[data-totals]").TextContentAsync();
+
+        await after.TapAsync();
+        (await after.GetAttributeAsync("aria-pressed")).Should().Be("true");
+        (await row.Locator("[data-totals]").TextContentAsync()).Should().NotBe(dryTotals, "cooked rice has about a third of the energy");
+        (await row.Locator(".result-notes").TextContentAsync()).Should().Contain("Counted as weighed after cooking.");
+        var cookedId = int.Parse((await after.GetAttributeAsync("data-choice-food"))!);
+        (await row.Locator("input[name$='FoodItemId']").InputValueAsync()).Should().Be(cookedId.ToString());
+
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/confirm'] button[type=submit]").Last.TapAsync());
+        await using var db = app.Db.CreateContext(null);
+        var saved = await db.FoodLog.IgnoreQueryFilters().OrderByDescending(e => e.Id).FirstAsync();
+        saved.FoodItemId.Should().Be(cookedId);
+        saved.Grams.Should().Be(200);
+        (saved.Kcal / 2).Should().BeLessThan(200, "the cooked values were saved");
+        phone.ShouldHaveNoErrors();
+    }
 }

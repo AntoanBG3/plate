@@ -213,6 +213,9 @@
   "Admin": [
     "src/Plate.Web/Views/Settings/Index.cshtml"
   ],
+  "After cooking": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
+  ],
   "Aim": [
     "src/Plate.Web/Views/Progress/Index.cshtml",
     "wwwroot/js"
@@ -355,6 +358,9 @@
   ],
   "Based on {0} kg, a healthy weight for your height.": [
     "src/Plate.Web/Views/Settings/_ProteinNote.cshtml"
+  ],
+  "Before cooking": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
   ],
   "Bench dip": [
     "exercise"
@@ -537,6 +543,14 @@
   "Couldn't read the label. Enter the values by hand.": [
     "src/Plate.Web/Controllers/FoodController.cs",
     "src/Plate.Web/Integrations/OpenRouterLabelReader.cs",
+    "wwwroot/js"
+  ],
+  "Counted as weighed after cooking.": [
+    "extra",
+    "wwwroot/js"
+  ],
+  "Counted as weighed before cooking.": [
+    "extra",
     "wwwroot/js"
   ],
   "Create a custom exercise": [
@@ -2680,6 +2694,9 @@
   ],
   "What's new": [
     "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "When did you weigh it?": [
+    "src/Plate.Web/Views/Food/Confirm.cshtml"
   ],
   "Won't change": [
     "src/Plate.Web/Features/Feedback/FeedbackText.cs"

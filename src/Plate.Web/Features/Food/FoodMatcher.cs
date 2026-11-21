@@ -38,7 +38,24 @@ public record ConfirmItem(
     string? MatchedNameEn = null,
     string? Status = null,
     bool Usual = false,
-    CountedAmount? Count = null);
+    CountedAmount? Count = null,
+    StateChoice? Choice = null,
+    bool Own = false);
+
+/// <summary>
+/// The cooked-or-dry question for a weighed staple (SPEC 6.1 step 4): the row's food is in <paramref name="Current"/> state,
+/// and <paramref name="Other"/> is the same staple the other way. Stored with the run's rows (ResolvedRow), so the names are fixed.
+/// </summary>
+public record StateChoice(
+    [property: System.Text.Json.Serialization.JsonPropertyName("current")] FoodState Current,
+    [property: System.Text.Json.Serialization.JsonPropertyName("other")] ChoiceFood Other);
+
+/// <summary>A food the cooked-or-dry question can switch a row to.</summary>
+public record ChoiceFood(
+    [property: System.Text.Json.Serialization.JsonPropertyName("id")] int Id,
+    [property: System.Text.Json.Serialization.JsonPropertyName("name")] string Name,
+    [property: System.Text.Json.Serialization.JsonPropertyName("per100")] Per100g Per100,
+    [property: System.Text.Json.Serialization.JsonPropertyName("state")] FoodState State);
 
 /// <summary>A count the text gave ("две", "half a"), of pieces, packs or servings. Stored with the run's rows (ResolvedRow), so the names are fixed.</summary>
 public record CountedAmount(
@@ -133,9 +150,78 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
                 row.Shortlist.Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence, decisions?.Model));
             result.Add(Choose(row, decision, decisions?.Model));
         }
+        await OfferStatesAsync(items, result, ct);
         if (repeat is not null) await UseLastAmountsAsync(items, result, ct);
         return result;
     }
+
+    private const string CookedNote = "Counted as weighed after cooking.";
+    private const string DryNote = "Counted as weighed before cooking.";
+
+    /// <summary>
+    /// A weighed staple whose state the text doesn't give (SPEC 6.1 step 4): 150 g of white rice is about 195 kcal cooked
+    /// and 548 kcal dry. The row asks when it was weighed, with the same staple the other way ready to switch to. When
+    /// the matched food is the other way from the parser's reading (cooked, for rice and pasta) and it isn't the account's
+    /// own or usual food, the row starts on the food that fits the reading; "Ориз Басмати" at 357 kcal for "200 г басмати
+    /// ориз" made a 714 kcal row.
+    /// </summary>
+    private async Task OfferStatesAsync(List<ParsedFoodItem> items, List<ConfirmItem> result, CancellationToken ct)
+    {
+        var found = new Dictionary<(string, FoodState), FoodMatch?>();
+        for (var n = 0; n < result.Count; n++)
+        {
+            var (item, row) = (items[n], result[n]);
+            if (!item.GramsStated || row.FoodItemId is not { } id || FoodStates.Stated(item.NameOriginal + " " + item.Preparation)
+                || (FoodStates.Staple(item.NameEn) ?? FoodStates.Staple(item.NameOriginal)) is not { } staple)
+            {
+                continue;
+            }
+
+            // The matched food has to be the staple too: a rice bar matched for "basmati rice" has no cooked version.
+            var current = FoodStates.Staple(row.MatchedNameEn ?? row.MatchedName) == staple || FoodStates.Staple(row.MatchedName) == staple
+                ? FoodStates.OfStaple(row.MatchedNameEn ?? row.MatchedName, row.MatchedName, row.Per100.Kcal)
+                : FoodState.NotApplicable;
+            if (current == FoodState.NotApplicable)
+            {
+                continue;
+            }
+
+            var other = current == FoodState.Raw ? FoodState.Cooked : FoodState.Raw;
+            if (!found.TryGetValue((staple, other), out var counterpart))
+            {
+                found[(staple, other)] = counterpart = await CounterpartAsync(staple, other, ct);
+            }
+
+            if (counterpart is null)
+            {
+                continue;
+            }
+
+            var mine = new ChoiceFood(id, row.MatchedName ?? row.Description, row.Per100, current);
+            if (item.State == other && !row.Usual && !row.Own)
+            {
+                var notes = row.Notes.Append(new LocalText(other == FoodState.Cooked ? CookedNote : DryNote)).ToList();
+                result[n] = Matched(item, counterpart, row.Grams, Confidence.Medium, notes, row.MatchModel) with
+                {
+                    Choice = new StateChoice(other, mine), State = other,
+                };
+            }
+            else
+            {
+                result[n] = row with
+                {
+                    Choice = new StateChoice(current, new ChoiceFood(counterpart.Id, counterpart.DisplayName, counterpart.Per100, other)), State = current,
+                };
+            }
+        }
+    }
+
+    /// <summary>The plain shared food for a staple in a state: "rice" cooked is a cooked white rice, not a niche variant.</summary>
+    private async Task<FoodMatch?> CounterpartAsync(string staple, FoodState state, CancellationToken ct) =>
+        (await foods.SearchAsync(staple, 120, MatchThreshold, ct))
+            .Where(f => !f.Own && FoodStates.Staple(f.Name) == staple && HeadMatches(f, staple) && FoodStates.OfStaple(f.Name, f.NameBg, f.KcalPer100g) == state)
+            .OrderByDescending(f => Rank(f, staple + (state == FoodState.Cooked ? " cooked" : " raw"), state))
+            .FirstOrDefault();
 
     private async Task<Candidates> FindCandidatesAsync(ParsedFoodItem item, FoodMatch? usual, bool trace, bool askModel, CancellationToken ct)
     {
@@ -386,7 +472,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
 
         return new ConfirmItem(name, grams, food.Per100, food.Id, food.DisplayName, confidence, notes, matchModel,
             Typed: Description(item), State: FoodStates.FromName(food.Name, food.NameBg),
-            MatchedNameEn: food.DisplayName == food.Name ? null : food.Name, Count: Counted(item));
+            MatchedNameEn: food.DisplayName == food.Name ? null : food.Name, Count: Counted(item), Own: food.Own);
     }
 
     private static CountedAmount? Counted(ParsedFoodItem item) =>

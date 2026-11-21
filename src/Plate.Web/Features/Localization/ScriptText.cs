@@ -25,6 +25,8 @@ public static class ScriptText
         "The pack size isn't known, so check the grams.",
         "No serving size for this food, so check the grams.",
         "These values are estimated from the recipe, not read from a label.",
+        "Counted as weighed after cooking.",
+        "Counted as weighed before cooking.",
         // session.js
         "This browser can't save pending changes. Keep this page open until they are sent.",
         "Your sign-in changed. Reload this page before sending pending changes.",

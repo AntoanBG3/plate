@@ -147,6 +147,52 @@ public class PortionTests(PostgresFixture fixture) : IClassFixture<PostgresFixtu
             .Should().Be(new CountedAmount(2, CountUnit.Piece));
     }
 
+    private static ParsedFoodItem Rice(string original, string state) =>
+        Live("basmati rice", original, 200, true, true, null, null) with { State = state == "cooked" ? FoodState.Cooked : FoodState.Raw };
+
+    [Fact]
+    public async Task Weighed_basmati_read_as_cooked_starts_on_cooked_rice_and_offers_the_dry_product()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+
+        var row = (await s.Matcher.ResolveAsync("около 200г басмати ориз", [Rice("басмати ориз", "cooked")], default)).Single();
+
+        row.Per100.Kcal.Should().BeLessThan(200, "the parser reads the weight as cooked");
+        row.Choice.Should().NotBeNull();
+        row.Choice!.Current.Should().Be(FoodState.Cooked);
+        row.Choice.Other.State.Should().Be(FoodState.Raw);
+        row.Choice.Other.Per100.Kcal.Should().BeGreaterThan(300, "the dry basmati the ranking found is one tap away");
+        row.Notes.Select(n => n.Format).Should().Contain("Counted as weighed after cooking.");
+    }
+
+    [Fact]
+    public async Task A_food_made_from_the_staple_gets_no_question()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var bar = await s.Db.FoodItems.FirstAsync(f => f.Name.StartsWith("Snacks, crisped rice bar"));
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, bar.Id, 0.99m);
+
+        var row = (await s.Matcher.ResolveAsync("200 g basmati rice", [Rice("basmati rice", "cooked") with { NameOriginal = "basmati rice" }], default)).Single();
+
+        row.FoodItemId.Should().Be(bar.Id);
+        row.Choice.Should().BeNull("a rice bar is not cooked or dry rice");
+    }
+
+    [Fact]
+    public async Task A_state_the_user_wrote_or_an_own_food_is_not_questioned()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var stated = (await s.Matcher.ResolveAsync("200 г сварен басмати ориз", [Rice("сварен басмати ориз", "cooked")], default)).Single();
+        stated.Choice.Should().BeNull("the text says cooked");
+
+        var tag = Guid.NewGuid().ToString("N")[..6];
+        s.Db.FoodItems.Add(new Core.Domain.FoodItem { Name = $"My basmati rice {tag}", OwnerUserId = s.UserId, KcalPer100g = 355, ProteinPer100g = 7, CarbsPer100g = 78, FatPer100g = 1, Source = Core.Domain.FoodSource.Manual });
+        await s.Db.SaveChangesAsync();
+        var own = (await s.Matcher.ResolveAsync($"200 g my basmati rice {tag}", [Rice($"my basmati rice {tag}", "cooked") with { NameEn = $"my basmati rice {tag}" }], default)).Single();
+        own.Per100.Kcal.Should().Be(355, "the account's own food stands");
+        own.Choice!.Other.State.Should().Be(FoodState.Cooked, "but cooked rice is offered");
+    }
+
     [Fact]
     public async Task The_fallback_parser_counts_pieces_too()
     {

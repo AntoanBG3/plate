@@ -540,6 +540,9 @@ form.is-busy + .thinking, form.is-busy .thinking { display: flex; }
 .result-amount .grams { display: flex; align-items: baseline; gap: 4px; padding: 6px var(--s-3); border-radius: var(--r-sm); background: var(--fill); }
 .result-amount .grams input { width: 4.5ch; border: 0; background: none; outline: none; text-align: right; font-family: var(--font-num); font-weight: var(--weight-semibold); font-size: var(--text-body); }
 .result-notes { padding-left: 36px; margin-top: var(--s-2); display: grid; gap: 2px; }
+.state-choice { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin-top: var(--s-2); padding-left: 36px; }
+.state-choice .segmented { flex: 1 1 14rem; }
+.state-choice .segment { flex: 1; min-height: 44px; }
 .result details { padding-left: 36px; margin-top: var(--s-2); }
 .result summary { font-size: var(--text-footnote); color: var(--accent-text); cursor: pointer; list-style: none; min-height: 32px; display: flex; align-items: center; }
 .result summary::-webkit-details-marker { display: none; }

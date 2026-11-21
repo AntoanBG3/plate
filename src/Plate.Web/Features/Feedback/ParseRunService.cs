@@ -28,7 +28,8 @@ public record ResolvedRow(string Description, decimal Grams, Per100g Per100, int
     [property: JsonPropertyName("state")] FoodState State = FoodState.NotApplicable,
     [property: JsonPropertyName("reviewNotes")] IReadOnlyList<LocalText>? ReviewNotes = null,
     [property: JsonPropertyName("review")] ReviewDestination? Review = null,
-    [property: JsonPropertyName("count")] CountedAmount? Count = null);
+    [property: JsonPropertyName("count")] CountedAmount? Count = null,
+    [property: JsonPropertyName("stateChoice")] StateChoice? Choice = null);
 
 /// <summary>One submitted row as stored in <see cref="ParseRun.Saved"/>.</summary>
 public record SavedRow(bool Included, string Description, decimal Grams, Per100g Per100, int? FoodItemId, ParseCorrection Corrections);
@@ -88,7 +89,7 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             Parsed = FeedbackJson.Write(result.Items),
             Resolved = FeedbackJson.Write(items.Select((item, n) => new ResolvedRow(item.Description, item.Grams, item.Per100, item.FoodItemId,
                 item.MatchedName, item.Confidence, item.Notes.Select(n => n.ToString()).ToList(), item.MatchModel, trace.ElementAtOrDefault(n), proposed[n], item.Status, item.Usual,
-                item.Typed, item.State, item.Notes, n == 0 && review is not null ? review with { Warning = result.Error } : null, item.Count)).ToList()),
+                item.Typed, item.State, item.Notes, n == 0 && review is not null ? review with { Warning = result.Error } : null, item.Count, item.Choice)).ToList()),
         };
 
         try
@@ -119,7 +120,7 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
         if (rows?.FirstOrDefault()?.Review is not { } destination || destination.Id != id) return null;
         var items = rows.Select(r => new ConfirmItem(r.Description, r.Grams, r.Per100, r.FoodItemId,
             r.MatchedName, r.Confidence, r.ReviewNotes ?? [], r.MatchModel, r.Typed ?? "", r.State,
-            Status: r.Status, Usual: r.Usual, Count: r.Count)).ToList();
+            Status: r.Status, Usual: r.Usual, Count: r.Count, Choice: r.Choice)).ToList();
         return new(destination.Date, destination.Meal, run!.Text, run.AiModel, items, destination.Warning, runId, id);
     }
 

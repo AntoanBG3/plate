@@ -361,24 +361,9 @@
         if (!pick || !changeRow) {
             return;
         }
-        const i = changeRow.dataset.row;
-        const set = (field, value) => {
-            const input = changeRow.querySelector(`[name="items[${i}].${field}"]`);
-            if (input) {
-                input.value = value || "";
-            }
-        };
-        set("FoodItemId", pick.dataset.candidate);
-        set("Kcal", pick.dataset.kcal);
-        set("Protein", pick.dataset.protein);
-        set("Carbs", pick.dataset.carbs);
-        set("Fat", pick.dataset.fat);
-        set("Fiber", pick.dataset.fiber);
-        set("SaturatedFat", pick.dataset.satfat);
-        set("MatchModel", "");
-        // The row is named after the food it now is, with that food's raw or cooked state.
-        set("Description", pick.dataset.name);
-        set("Status", pick.dataset.status);
+        setRowFood(changeRow, pick.dataset.candidate, pick.dataset);
+        // Another food entirely: the cooked-or-dry question was about the old one.
+        changeRow.querySelector("[data-state-choice]")?.remove();
         const notes = [];
         // A counted amount ("две закуски") follows the new food's piece, pack or serving weight, unless the grams were edited.
         const gramsInput = changeRow.querySelector('input[name$="Grams"]');
@@ -509,9 +494,54 @@
         }
     });
 
+    // Puts a food's id, values, name and state into a confirmation row's fields.
+    function setRowFood(row, id, d) {
+        const i = row.dataset.row;
+        const set = (field, value) => {
+            const input = row.querySelector(`[name="items[${i}].${field}"]`);
+            if (input) {
+                input.value = value || "";
+            }
+        };
+        set("FoodItemId", id);
+        set("Kcal", d.kcal);
+        set("Protein", d.protein);
+        set("Carbs", d.carbs);
+        set("Fat", d.fat);
+        set("Fiber", d.fiber);
+        set("SaturatedFat", d.satfat);
+        set("MatchModel", "");
+        // The row is named after the food it now is, with that food's raw or cooked state.
+        set("Description", d.name);
+        set("Status", d.status);
+    }
+
+    // "When did you weigh it?": the same staple cooked or dry; the grams stay, the food and its values change.
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-state-choice] [data-choice-food]");
+        if (!button || button.getAttribute("aria-pressed") === "true") {
+            return;
+        }
+        const row = button.closest(".result");
+        const d = button.dataset;
+        setRowFood(row, d.choiceFood, d);
+        showChosenFood(row, {
+            name: d.name, status: d.status, kcal: d.kcal, protein: d.protein, amountGrams: row.dataset.amountGrams, state: d.state,
+            notes: [t(d.state === "cooked" ? "Counted as weighed after cooking." : "Counted as weighed before cooking.")],
+        });
+        row.querySelector('input[name$="Grams"]').dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
     function showChosenFood(row, match) {
         row.dataset.chosenFood = JSON.stringify(match);
         if (match.amountGrams) row.dataset.amountGrams = match.amountGrams;
+        // A restored review shows the cooked-or-dry answer it was left on; another food picked has no such question.
+        if (!match.state) row.querySelector("[data-state-choice]")?.remove();
+        row.querySelectorAll("[data-state-choice] [data-choice-food]").forEach((b) => {
+            const on = b.dataset.state === match.state;
+            b.setAttribute("aria-pressed", String(on));
+            b.classList.toggle("is-active", on);
+        });
         const status = row.querySelector("[data-status]");
         status.textContent = match.status || "";
         status.hidden = !match.status;

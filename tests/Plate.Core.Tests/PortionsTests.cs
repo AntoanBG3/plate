@@ -96,6 +96,42 @@ public class WeighedMealsTests
     }
 }
 
+public class StapleStateTests
+{
+    [Theory]
+    [InlineData("basmati rice", "rice")]
+    [InlineData("басмати ориз", "rice")]
+    [InlineData("spaghetti", "pasta")]
+    [InlineData("пълнозърнести макарони", "pasta")]
+    [InlineData("овесени ядки", "oat")]
+    [InlineData("червена леща", "lentil")]
+    [InlineData("rice cakes", null)]
+    [InlineData("боб чорба", null)]
+    [InlineData("оризово мляко", null)]
+    [InlineData("chicken breast", null)]
+    [InlineData("бобено", "bean")]
+    public void Staples_are_named_by_their_English_word(string name, string? staple) =>
+        FoodStates.Staple(name).Should().Be(staple);
+
+    [Fact]
+    public void A_staple_without_a_state_in_its_name_is_read_from_its_energy()
+    {
+        FoodStates.OfStaple("Ориз Басмати", "Ориз Басмати", 357).Should().Be(FoodState.Raw);
+        FoodStates.OfStaple("Rice, white, long-grain, regular, enriched, cooked", null, 130).Should().Be(FoodState.Cooked);
+        FoodStates.OfStaple("Couscous", null, 112).Should().Be(FoodState.Cooked);
+        FoodStates.OfStaple("Granola", null, 220).Should().Be(FoodState.NotApplicable);
+    }
+
+    [Theory]
+    [InlineData("150 г сварен ориз", true)]
+    [InlineData("80 g dry pasta", true)]
+    [InlineData("сух ориз", true)]
+    [InlineData("басмати ориз", false)]
+    [InlineData("150 g rice", false)]
+    public void The_typed_words_say_the_state(string typed, bool stated) =>
+        FoodStates.Stated(typed).Should().Be(stated);
+}
+
 public class UnitWeightTextTests
 {
     [Theory]

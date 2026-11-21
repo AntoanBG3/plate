@@ -21,7 +21,7 @@ public record EvalFresh(string Description, decimal Grams, int? FoodItemId, stri
 /// <param name="FreshTotals">The same for what the parser and matcher give now.</param>
 /// <param name="Lost">For each saved food the replay didn't find, where it was lost: not ranked, or ranked but not chosen.</param>
 public record EvalCaseResult(int RunId, string Text, AgreementResult Score, int RepeatedWrongFoods, string? Error, IReadOnlyList<EvalFresh> Fresh,
-    IReadOnlyList<EvalFresh>? Saved = null, MealNutrients? SavedTotals = null, MealNutrients? FreshTotals = null, IReadOnlyList<string>? Lost = null);
+    IReadOnlyList<EvalFresh>? Saved = null, MealNutrients? SavedTotals = null, MealNutrients? FreshTotals = null, IReadOnlyList<string>? Lost = null, int Questions = 0);
 
 /// <param name="Superseded">Runs skipped because the same meal was typed again soon after.</param>
 public record EvalReport(string ParserModel, string MatcherModel, AgreementResult Total, int RepeatedWrongFoods, IReadOnlyList<EvalCaseResult> Cases, bool History = true,
@@ -129,7 +129,7 @@ public class ParseEvaluator(
         return new EvalCaseResult(c.RunId, c.Text, score.Agreement, score.RepeatedRejections, error,
             fresh.Select(f => new EvalFresh(f.Description, f.Grams, f.FoodItemId, f.MatchedName)).ToList(),
             [.. saved, .. (c.Later ?? []).Select(l => new EvalFresh("(logged after) " + l.Description, l.Grams, l.FoodItemId, l.FoodName))],
-            score.Saved, score.Fresh, Lost(c, expected, score.Missed ?? [], fresh, trace));
+            score.Saved, score.Fresh, Lost(c, expected, score.Missed ?? [], fresh, trace), fresh.Count(f => f.Choice is not null));
     }
 
     /// <summary>
@@ -267,6 +267,7 @@ public static class ParseEvaluation
         + (c.Score.Unknown > 0 ? $", saved food not recorded {c.Score.Unknown}" : "")
         + (c.Score.LoggedLater > 0 ? $", logged after {c.Score.LoggedLater}" : "")
         + (c.RepeatedWrongFoods > 0 ? $", picked a rejected food {c.RepeatedWrongFoods}x" : "")
+        + (c.Questions > 0 ? $", cooked-or-dry question {c.Questions}" : "")
         + (c.SavedTotals is { } s && c.FreshTotals is { } f ? $", kcal {Num(s.Kcal)} saved, {Num(f.Kcal)} now" : "")
         + $"  \"{Clip(c.Text)}\""
         + (c.Error is { } error ? $"  [{error}]" : "");
@@ -275,7 +276,8 @@ public static class ParseEvaluation
     {
         var line = $"Agreement with the saved log: food {r.Total.FoodAgreed}/{r.Total.Expected} ({EvalReport.Percent(r.Total.FoodAgreed, r.Total.Expected)}), grams {r.Total.GramsAgreed}/{r.Total.Expected} ({EvalReport.Percent(r.Total.GramsAgreed, r.Total.Expected)}), extra items {r.Total.Extra}, rejected foods picked again {r.RepeatedWrongFoods}"
             + (r.Total.LoggedLater > 0 ? $", found in entries logged right after {r.Total.LoggedLater}" : "")
-            + (r.Total.Unknown > 0 ? $", saved food not recorded for {r.Total.Unknown} items." : ".");
+            + (r.Total.Unknown > 0 ? $", saved food not recorded for {r.Total.Unknown} items" : "")
+            + (r.Cases.Sum(c => c.Questions) is var q and > 0 ? $", cooked-or-dry question on {q} items." : ".");
         var n = r.Nutrients;
         return n.Meals == 0 ? line
             : line + $" Per meal over {n.Meals} meals: kcal off by {Num(n.MeanAbsKcal)} on average (median {Num(n.MedianAbsKcal)}, bias {(n.MeanSignedKcal >= 0 ? "+" : "")}{Num(n.MeanSignedKcal)}), protein {Num(n.MeanAbsProtein)} g, carbs {Num(n.MeanAbsCarbs)} g, fat {Num(n.MeanAbsFat)} g.";
