@@ -20,6 +20,21 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
     }
 
     [Fact]
+    public async Task Disabling_the_matcher_keeps_the_ranking_and_skips_model_questions()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var (rankPick, _) = await ChickenAsync(s);
+        s.MatchDecider.Calls.Clear();
+        s.MatchDecider.Enabled = false;
+        var trace = new List<MatchTrace>();
+        var row = (await s.Matcher.ResolveAsync("200g chicken breast", [Parsed("chicken breast", 200, FoodState.Raw)], default, trace)).Single();
+        row.FoodItemId.Should().Be(rankPick);
+        trace.Single().Top.First().Id.Should().Be(rankPick);
+        trace.Single().Asked.Should().BeFalse();
+        s.MatchDecider.Calls.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task A_jev_pick_replaces_ranks_top_choice()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

@@ -103,10 +103,11 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     {
         var items = parsed.ToList();
         var usual = repeat is null ? [] : await repeat.UsualMatchesAsync(items, ct);
+        var askModel = items.Count > 0 && await decider.IsEnabledAsync(ct);
         var candidates = new List<Candidates>(items.Count);
         for (var i = 0; i < items.Count; i++)
         {
-            candidates.Add(await FindCandidatesAsync(items[i], usual.GetValueOrDefault(i), trace is not null, ct));
+            candidates.Add(await FindCandidatesAsync(items[i], usual.GetValueOrDefault(i), trace is not null, askModel, ct));
         }
 
         // Every item is context for the model, including foods already decided locally.
@@ -119,7 +120,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             var row = candidates[i];
             var decision = row.Shortlist.Count > 0 ? decisions?.Items.ElementAtOrDefault(i) : null;
             trace?.Add(new MatchTrace(
-                row.Ranked.Take(TraceSize).Select(t => new TraceCandidate(t.Food.Id, t.Food.DisplayName, Math.Round(t.Score, 3), t.Food.Own)).ToList(),
+                row.Ranked.Select(t => new TraceCandidate(t.Food.Id, t.Food.DisplayName, Math.Round(t.Score, 3), t.Food.Own)).ToList(),
                 row.Shortlist.Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence, decisions?.Model));
             result.Add(Choose(row, decision, decisions?.Model));
         }
@@ -127,10 +128,10 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         return result;
     }
 
-    private async Task<Candidates> FindCandidatesAsync(ParsedFoodItem item, FoodMatch? usual, bool trace, CancellationToken ct)
+    private async Task<Candidates> FindCandidatesAsync(ParsedFoodItem item, FoodMatch? usual, bool trace, bool askModel, CancellationToken ct)
     {
-        var ranked = usual is null || trace ? await RankAsync(item, ct) : [];
-        if (usual is not null || ranked.Count > 0 && ranked[0].Food.Own)
+        var ranked = usual is null || trace ? await RankAsync(item, trace ? TraceSize : 1, ct) : [];
+        if (!askModel || usual is not null || ranked.Count > 0 && ranked[0].Food.Own)
             return new(item, usual, ranked, []);
 
         var found = await foods.SearchAsync(item.NameEn, ShortlistSize, ShortlistThreshold, ct);
@@ -226,7 +227,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     private static MatchCandidate Candidate(FoodMatch f) => new(f.Id, f.Name, f.NameBg, f.Brand, f.Per100);
 
     /// <summary>Rank's candidates, best first, across the English search and, for text in another language, the original-name search.</summary>
-    private async Task<List<(FoodMatch Food, double Score)>> RankAsync(ParsedFoodItem item, CancellationToken ct)
+    private async Task<List<(FoodMatch Food, double Score)>> RankAsync(ParsedFoodItem item, int take, CancellationToken ct)
     {
         var ranked = (await foods.SearchAsync(FoodWords(item.NameEn), 120, MatchThreshold, ct))
             .Where(c => !MatchesOnlyItsUse(c, item.NameEn))
@@ -242,7 +243,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         }
 
         // A stable sort keeps the first of equal scores first, as MaxBy did.
-        return ranked.OrderByDescending(x => x.Score).ToList();
+        return ranked.OrderByDescending(x => x.Score).Take(take).ToList();
     }
 
     /// <summary>

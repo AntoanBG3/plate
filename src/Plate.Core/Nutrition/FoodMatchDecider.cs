@@ -17,6 +17,9 @@ public record MatchDecisions(IReadOnlyList<MatchDecision?> Items, string Model);
 /// <summary>Decides which database food each parsed item is, from a shortlist, or that none fits (SPEC 6.1).</summary>
 public interface IFoodMatchDecider
 {
+    /// <summary>Whether a model is selected. Ranking alone needs no candidate shortlists.</summary>
+    Task<bool> IsEnabledAsync(CancellationToken ct) => Task.FromResult(true);
+
     /// <summary>Null when no decision could be made (matcher off, no key, timeout, error); the caller then uses its own ranking.</summary>
     Task<MatchDecisions?> DecideAsync(string text, IReadOnlyList<MatchQuestion> questions, CancellationToken ct);
 }
