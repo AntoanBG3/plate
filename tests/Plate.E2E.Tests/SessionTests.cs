@@ -200,4 +200,19 @@ public class SessionTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await Rows(phone.Page).First.Locator("input[name=reps]").InputValueAsync()).Should().Be("11");
         phone.ShouldHaveNoErrors();
     }
+
+    [Fact]
+    public async Task Timer_cleanup_keeps_plates_open()
+    {
+        await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium);
+        var template = await phone.CreateTemplateAsync(app, "Audit timer", "Bench press");
+        await phone.StartSessionAsync(template);
+        await phone.LogSetAsync(phone.Page.Locator(".rows.working form[data-log-set]").First, "60", "8");
+        await phone.Page.Locator(".rows.working form.done").First.WaitForAsync();
+        await phone.Page.Locator("[data-sheet-open='plates-sheet']").TapAsync();
+        await phone.Page.Locator("#plates-sheet .sheet-close").WaitForAsync();
+        await phone.Page.EvaluateAsync("() => { const k = Object.keys(localStorage).find(k => k.startsWith('gym.restTimer.v2.')); const state = JSON.parse(localStorage[k]); state.end = Date.now() - 5000; localStorage[k] = JSON.stringify(state); }");
+        await phone.Page.WaitForFunctionAsync("() => document.querySelector('#rest-timer').hidden", null, new() { Timeout = 4000 });
+        (await phone.Page.EvaluateAsync<bool>("() => document.body.classList.contains('sheet-open') && !document.querySelector('#plates-sheet').hidden")).Should().BeTrue();
+    }
 }

@@ -320,43 +320,63 @@
 
     let openSheet = null;
     let lastFocus = null;
+    const backgroundSheets = [];
 
-    function showSheet(sheet) {
+    function controls(sheet) {
+        return Array.from(sheet.querySelectorAll("button, a[href], input, select, textarea, [tabindex]"))
+            .filter(el => el.tabIndex >= 0 && !el.matches(":disabled") && el.getClientRects().length > 0);
+    }
+
+    function focusSheet(sheet, last = false) {
+        const list = controls(sheet);
+        const panel = sheet.querySelector(".sheet-panel");
+        panel.tabIndex = -1;
+        (list[last ? list.length - 1 : 0] || panel).focus({ preventScroll: true });
+    }
+
+    function showSheet(sheet, opener = document.activeElement) {
         if (!sheet) {
             return;
         }
-        lastFocus = document.activeElement;
+        if (openSheet === sheet) return;
+        if (openSheet) {
+            backgroundSheets.push({ sheet: openSheet, opener: lastFocus });
+            openSheet.inert = true;
+        }
+        lastFocus = opener;
+        sheet.inert = false;
         sheet.hidden = false;
         sheet.getBoundingClientRect();
         document.body.classList.add("sheet-open");
         openSheet = sheet;
         const panel = sheet.querySelector(".sheet-panel");
         panel.style.transform = "";
-        const focusable = panel.querySelector("[autofocus], button, input, a[href]");
-        if (focusable) {
-            setTimeout(() => focusable.focus({ preventScroll: true }), 50);
-        }
+        focusSheet(sheet);
         sheet.dispatchEvent(new CustomEvent("sheet:open"));
     }
 
-    function hideSheet() {
+    function hideSheet(expected = openSheet) {
         const sheet = openSheet;
-        if (!sheet) {
+        if (!sheet || expected !== sheet) {
             return;
         }
-        openSheet = null;
-        document.body.classList.remove("sheet-open");
+        const opener = lastFocus;
+        const previous = backgroundSheets.pop();
+        openSheet = previous?.sheet || null;
+        lastFocus = previous?.opener || null;
+        sheet.inert = true;
+        if (openSheet) openSheet.inert = false;
+        document.body.classList.toggle("sheet-open", !!openSheet);
         sheet.querySelector(".sheet-panel").style.transform = "";
         sheet.dispatchEvent(new CustomEvent("sheet:close"));
         const done = () => {
-            if (openSheet !== sheet) {
+            if (openSheet !== sheet && !backgroundSheets.some(entry => entry.sheet === sheet)) {
                 sheet.hidden = true;
             }
         };
         reduce.matches ? done() : setTimeout(done, tokenMs("--dur-sheet-out", 260));
-        if (lastFocus && lastFocus.focus) {
-            lastFocus.focus({ preventScroll: true });
-        }
+        if (opener?.isConnected) opener.focus({ preventScroll: true });
+        if (openSheet && !openSheet.contains(document.activeElement)) focusSheet(openSheet);
     }
     window.gymSheet = { show: showSheet, hide: hideSheet };
 
@@ -365,14 +385,33 @@
         if (opener) {
             event.preventDefault();
             closeMenus();
-            showSheet(document.getElementById(opener.dataset.sheetOpen));
+            const trigger = opener.closest(".menu")?.parentElement.querySelector("[data-menu-trigger]") || opener;
+            showSheet(document.getElementById(opener.dataset.sheetOpen), trigger);
             return;
         }
         if (event.target.closest("[data-sheet-close]") || event.target.classList.contains("sheet-scrim")) {
             hideSheet();
         }
     });
+    document.addEventListener("focusin", event => {
+        if (openSheet && !openSheet.contains(event.target)) focusSheet(openSheet);
+    });
+    document.addEventListener("htmx:afterSwap", event => {
+        if (openSheet && openSheet.contains(event.detail.target) &&
+            (!openSheet.contains(document.activeElement) || document.activeElement.matches(".sheet-panel"))) focusSheet(openSheet);
+    });
+    document.addEventListener("gym:beforeswap", () => {
+        while (openSheet) hideSheet();
+    });
     document.addEventListener("keydown", (event) => {
+        if (openSheet && event.key === "Tab") {
+            const list = controls(openSheet);
+            const edge = event.shiftKey ? list[0] : list.at(-1);
+            if (list.length === 0 || edge === document.activeElement || !list.includes(document.activeElement)) {
+                event.preventDefault();
+                focusSheet(openSheet, event.shiftKey);
+            }
+        }
         if (event.key === "Escape") {
             hideSheet();
             closeMenus();

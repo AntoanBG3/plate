@@ -99,7 +99,7 @@
             form.dataset.confirmed = "true";
             form.requestSubmit(submitter && submitter.form === form ? submitter : undefined);
         };
-        window.gymSheet.show(sheet);
+        window.gymSheet.show(sheet, submitter || document.activeElement);
     }, true);
 
     // ---- forms that save on change (SPEC 7: logged sets, template exercises, Settings) ----
@@ -351,7 +351,7 @@
             const search = sheet.querySelector("[data-change-search]");
             search.value = open.dataset.query || "";
             sheet.querySelector("#change-food-results").replaceChildren();
-            window.gymSheet.show(sheet);
+            window.gymSheet.show(sheet, open);
             if (search.value && window.htmx) {
                 window.htmx.trigger(search, "search");
             }
