@@ -406,16 +406,16 @@ public class FoodController(
         public bool Include { get; set; }
         public string? Description { get; set; }
         public decimal Grams { get; set; }
-        public decimal Kcal { get; set; }
-        public decimal Protein { get; set; }
-        public decimal Carbs { get; set; }
-        public decimal Fat { get; set; }
+        public decimal? Kcal { get; set; }
+        public decimal? Protein { get; set; }
+        public decimal? Carbs { get; set; }
+        public decimal? Fat { get; set; }
         public decimal? Fiber { get; set; }
         public decimal? SaturatedFat { get; set; }
         public int? FoodItemId { get; set; }
         public string? MatchModel { get; set; }
         public string? Status { get; set; }
 
-        public Per100g Per100 => new(Kcal, Protein, Carbs, Fat, Fiber, SaturatedFat);
+        public Per100g Per100 => new(Kcal ?? 0, Protein ?? 0, Carbs ?? 0, Fat ?? 0, Fiber, SaturatedFat);
     }
 }

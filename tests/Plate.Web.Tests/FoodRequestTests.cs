@@ -239,6 +239,7 @@ public class FoodRequestTests(PostgresFixture fixture) : IClassFixture<PostgresF
         (await db.FoodLog.IgnoreQueryFilters().AnyAsync(x => x.UserId == userId)).Should().BeFalse();
         (await db.FoodLogRequests.IgnoreQueryFilters().AnyAsync(x => x.UserId == userId)).Should().BeFalse();
         fields["items[1].Grams"] = "100";
+        fields["items[1].Fat"] = "";
         (await AppFactory.PostAsync(client, "/food/confirm", token, fields)).StatusCode.Should().Be(HttpStatusCode.Redirect);
         (await AppFactory.PostAsync(client, "/food/confirm", token, fields)).StatusCode.Should().Be(HttpStatusCode.Redirect);
         (await db.FoodLog.IgnoreQueryFilters().Where(x => x.UserId == userId).Select(x => x.Kcal).ToListAsync())
