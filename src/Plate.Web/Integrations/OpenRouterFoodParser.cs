@@ -48,6 +48,9 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
           ("две закуски" 2, "2 eggs" 2, "a banana" 1, "една филия" 1), "pack" for a whole package, tub, bottle or can
           ("половин кофичка кисело мляко" 0.5, "a can of tuna" 1), "serving" for a serving or portion ("2 servings" 2).
           Fractions are decimals (half 0.5). Both null when the text gives a weight or volume or no count ("200 г", "some rice").
+          A food named once, without an amount, that is sold or eaten as single pieces is one piece: count 1, countUnit "piece",
+          amountGiven false ("закуска с лютеница и сирене от лидл", "кроасан", "a banana", "баничка"). Food served in portions
+          rather than pieces ("ориз", "салата", "супа") has no count.
           Still estimate grams for the count; the database's piece or pack weight replaces it when it has one.
         - state: "raw" or "cooked" for meat, fish, rice, pasta, grains and legumes; otherwise "na".
           Assume raw weight for meat and fish and cooked weight for rice and pasta unless the text says otherwise.
