@@ -1,0 +1,320 @@
+feedback matchbench on plate.peychev.uk (c7174df), 2026-11-21: OpenRouter's 20 most used decision models last week,
+parser output fixed (tools/matchbench/cases.jsonl), 3 repeats, 10 s timeout. Rate-limit errors (429) from nace-ai and liquid/d1.1 count as failures.
+
+96 cases, 107 items; ranking baseline first.
+96 cases, 107 items (10 with no right food in the catalogue, 2 whose right food the search doesn't reach), 3 repeats, 10 s timeout.
+
+model                                   final    @3s   pick   none stable   kcal  p50ms  p95ms   >3s fail        $
+off                                      76.6   76.6      -   10.0      -   19.6      0      0     0    0   0.0000
+typesafe/jev-1.13                        94.4   94.4   94.4   90.0   95.2    8.0    226    268     0    0   0.0499
+typesafe/jev-1.14                        95.3   95.3   95.1  100.0   97.1    5.6    226    261     0    0   0.0499
+perplexity/pplx-decider-v1.2             89.7   89.7   98.9   60.0   98.1   10.9    387    686     0    0   0.0168
+liquid/d1-ultra                          90.3   90.3   78.6   70.0   86.7   12.4    282    560     0    0   0.0291
+perplexity/pplx-decider-v1.3:free        93.8   93.8   98.9   70.0   99.0    2.1    392    879     0    0   0.0000
+liquid/d1.1                              91.6   91.6   86.7   93.3   81.0    9.3    269    386   0.7    2   0.0138
+openai/gpt-6-luna-decisions              93.5   93.5   93.7   90.0  100.0    7.5    290    502     0    0   0.0748
+perplexity/pplx-decider-flash-v1.3:free   90.0   90.0   96.1   80.0   95.2   11.2    226    349     0    0   0.0000
+nace-ai/drex-max                         94.4   94.4   96.5   90.0   96.2    2.3    439    930   1.4    4   0.0499
+google/gemini-decision-1                 98.1   98.1   93.7  100.0  100.0    3.0    320    451     0    0   0.0823
+microsoft/microsoft-decision-1           91.0   91.0   75.8   90.0   98.1    6.2    365    509   0.3    0   0.0336
+cloudflare/clef-flash                    84.7   84.7   96.1   80.0   91.4   11.0    343    627     0    0   0.0262
+nace-ai/drex-v1.5                        95.3   95.3   93.7   90.0  100.0    4.2    351   1064     0    0   0.0322
+liquid/d1.2-ultra                        90.0   90.0   96.8   70.0   98.1    8.6    308    435     0    0   0.0291
+perplexity/pplx-decider-flash-v1.2       86.9   86.6   95.8   70.0  100.0   12.1    233   1620   0.7    0   0.0084
+microsoft/microsoft-decision-1.1         95.3   95.3   90.5  100.0  100.0    6.0    369    417   0.3    0   0.0333
+cloudflare/clef                          86.9   86.9   97.9   83.3   93.3   11.0    656   1665   0.3    0   0.2164
+nace-ai/drex-v2.0                        91.3   91.3   63.5  100.0   95.2    9.1    402    659   1.7    5   0.0475
+respan/span-02                           91.6   91.6   75.8  100.0  100.0    3.5    391    570     0    0   0.0075
+liquid/d1.2                              89.1   89.1   90.2   80.0   82.9    9.7    309    420     0    0   0.0139
+
+final: item right after Plate's confidence floors; @3s: the same with answers slower than 3 s left to the ranking, as in production;
+pick: the raw answer on items whose right food is shortlisted; none: right on items with no right food in the catalogue;
+stable: same raw answer in every repeat; kcal: mean kcal off per item for its grams (wrong database picks only count); $: total cost.
+
+final by category                      ambiguous bg-generic en-generic      meal   nomatch   product    staple      typo     bg     en
+off                                        100.0      92.9      72.7      82.4      18.2      87.5      66.7      83.3   83.9   66.7
+typesafe/jev-1.13                          100.0      96.4      90.9     100.0      90.9     100.0      88.9      83.3   96.8   91.1
+typesafe/jev-1.14                          100.0      96.4      95.5     100.0     100.0     100.0      77.8      83.3   95.2   95.6
+perplexity/pplx-decider-v1.2               100.0      96.4      81.8     100.0      63.6     100.0      88.9      83.3   95.2   82.2
+liquid/d1-ultra                            100.0      96.4      87.9      94.1      72.7     100.0      81.5      83.3   94.1   85.2
+perplexity/pplx-decider-v1.3:free          100.0      96.4      92.4     100.0      72.7     100.0      88.9     100.0   98.4   87.4
+liquid/d1.1                                100.0      97.6      75.8      98.0      93.9     100.0      88.9      83.3   96.8   84.4
+openai/gpt-6-luna-decisions                100.0      92.9      95.5     100.0      90.9     100.0      77.8      83.3   91.9   95.6
+perplexity/pplx-decider-flash-v1.3:free     100.0      96.4      74.2     100.0      81.8     100.0      88.9      83.3   96.8   80.7
+nace-ai/drex-max                           100.0      96.4      90.9      94.1      90.9     100.0      88.9     100.0   98.4   88.9
+google/gemini-decision-1                   100.0     100.0      95.5     100.0     100.0     100.0      88.9     100.0  100.0   95.6
+microsoft/microsoft-decision-1             100.0      94.0      81.8      88.2      90.9     100.0     100.0      83.3   94.1   86.7
+cloudflare/clef-flash                      100.0      97.6      69.7      88.2      81.8      79.2      74.1      83.3   91.9   74.8
+nace-ai/drex-v1.5                          100.0      92.9      95.5     100.0      90.9     100.0      88.9     100.0   95.2   95.6
+liquid/d1.2-ultra                          100.0      96.4      83.3      94.1      72.7     100.0      88.9      83.3   95.2   83.0
+perplexity/pplx-decider-flash-v1.2         100.0     100.0      72.7      94.1      72.7      87.5      77.8      83.3   91.9   80.0
+microsoft/microsoft-decision-1.1           100.0      96.4      90.9     100.0     100.0     100.0      88.9      83.3   96.8   93.3
+cloudflare/clef                            100.0      96.4      72.7      90.2      84.8      87.5      81.5      83.3   92.5   79.3
+nace-ai/drex-v2.0                          100.0      96.4      81.8      94.1     100.0      95.8      77.8      83.3   95.2   85.9
+respan/span-02                             100.0      96.4      81.8     100.0     100.0     100.0      55.6     100.0   93.5   88.9
+liquid/d1.2                                100.0     100.0      80.3      92.2      81.8      95.8      70.4      83.3   93.0   83.7
+
+pick accuracy by confidence                      <0.3        0.3-0.7       0.7-0.95          ≥0.95
+typesafe/jev-1.13                           80.0 of 5    87.2 of 117    100.0 of 98    100.0 of 65
+typesafe/jev-1.14                           77.8 of 9    90.2 of 122    100.0 of 84    100.0 of 70
+perplexity/pplx-decider-v1.2              100.0 of 57    97.6 of 124    100.0 of 62    100.0 of 42
+liquid/d1-ultra                            54.5 of 22    73.2 of 183     97.3 of 75     100.0 of 5
+perplexity/pplx-decider-v1.3:free          100.0 of 7   100.0 of 117     96.7 of 91    100.0 of 70
+liquid/d1.1                                75.0 of 56    85.5 of 152    100.0 of 49    100.0 of 26
+openai/gpt-6-luna-decisions                         -     84.4 of 96    100.0 of 84    97.1 of 105
+perplexity/pplx-decider-flash-v1.3:free     90.7 of 54    97.5 of 121     95.7 of 70    100.0 of 40
+nace-ai/drex-max                          100.0 of 12    97.5 of 119     96.1 of 76    100.0 of 74
+google/gemini-decision-1                   57.1 of 21    93.2 of 132    100.0 of 72    100.0 of 60
+microsoft/microsoft-decision-1              50.0 of 6     68.4 of 98     68.5 of 89     92.4 of 92
+cloudflare/clef-flash                     94.1 of 152    98.4 of 124     100.0 of 9              -
+nace-ai/drex-v1.5                            0.0 of 3    92.3 of 117    94.7 of 114    100.0 of 51
+liquid/d1.2-ultra                          93.2 of 44    96.4 of 169    100.0 of 39    100.0 of 33
+perplexity/pplx-decider-flash-v1.2         90.9 of 99   100.0 of 111     94.1 of 51    100.0 of 24
+microsoft/microsoft-decision-1.1           50.0 of 30    90.2 of 123    100.0 of 81    100.0 of 51
+cloudflare/clef                           96.6 of 174   100.0 of 105     100.0 of 6              -
+nace-ai/drex-v2.0                          62.5 of 56    63.8 of 174     68.1 of 47     100.0 of 3
+respan/span-02                                      -    55.4 of 101    79.0 of 100     96.4 of 84
+liquid/d1.2                               84.3 of 108    89.9 of 109    100.0 of 45    100.0 of 23
+
+Items some model got wrong in the last repeat (model: chosen food):
+  c15 [bg-generic] "пилешко филе" in "200 г пилешко филе"
+      cloudflare/clef: Пилешко филе #10765 (81 kcal) (raw pick #2697 at 0.27)
+      off: Пилешко филе #10765 (81 kcal)
+  c16 [bg-generic] "кайма" in "200 г кайма"
+      microsoft/microsoft-decision-1.1: Кайма смес #8055 (301 kcal)
+      nace-ai/drex-v2.0: Кайма смес #8055 (301 kcal)
+      perplexity/pplx-decider-v1.2: Кайма смес #8055 (301 kcal)
+      perplexity/pplx-decider-v1.3:free: Кайма смес #8055 (301 kcal)
+      microsoft/microsoft-decision-1: Кайма смес #8055 (301 kcal)
+      respan/span-02: Кайма смес #8055 (301 kcal)
+      perplexity/pplx-decider-flash-v1.3:free: Кайма смес #8055 (301 kcal)
+      typesafe/jev-1.14: Кайма смес #8055 (301 kcal)
+      typesafe/jev-1.13: Кайма смес #8055 (301 kcal)
+      nace-ai/drex-v1.5: Кайма смес #8055 (301 kcal)
+      nace-ai/drex-max: Кайма смес #8055 (301 kcal)
+      liquid/d1-ultra: Кайма смес #8055 (301 kcal)
+      liquid/d1.2-ultra: Кайма смес #8055 (301 kcal)
+      openai/gpt-6-luna-decisions: Кайма смес #8055 (301 kcal)
+      liquid/d1.1: Кайма смес #8055 (301 kcal)
+  c19 [bg-generic] "картофи на фурна" in "200 г картофи на фурна"
+      cloudflare/clef-flash: Картофи, печени с обелката, без сол #6142 (93 kcal)
+      nace-ai/drex-v1.5: Картофи, печени с обелката, без сол #6142 (93 kcal)
+  c21 [bg-generic] "ябълка" in "ябълка"
+      openai/gpt-6-luna-decisions: Ябълка 100% #9426 (44 kcal)
+  c25 [bg-generic] "масло" in "10 г масло"
+      microsoft/microsoft-decision-1: AI estimate (raw pick none at 0.91)
+  c27 [bg-generic] "сарми с кайма" in "сарми с кайма"
+      off: CARRABBA'S ITALIAN GRILL, спагети с кайма и доматен сос #2321 (122 kcal)
+  c29 [en-generic] "grilled chicken breast" in "200g grilled chicken breast"
+      cloudflare/clef: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.09)
+      microsoft/microsoft-decision-1.1: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.88)
+      nace-ai/drex-v2.0: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.84)
+      perplexity/pplx-decider-v1.2: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.73)
+      cloudflare/clef-flash: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick #2704 at 0.10)
+      perplexity/pplx-decider-v1.3:free: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.83)
+      liquid/d1.2: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.67)
+      perplexity/pplx-decider-flash-v1.3:free: Пилешко филе, печено на фурна, обезмаслено, нарязано #2690 (79 kcal)
+      typesafe/jev-1.14: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.84)
+      typesafe/jev-1.13: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.52)
+      nace-ai/drex-max: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.88)
+      perplexity/pplx-decider-flash-v1.2: Пилешко филе, печено на фурна, обезмаслено, нарязано #2690 (79 kcal)
+      liquid/d1-ultra: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.69)
+      liquid/d1.2-ultra: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.89)
+      liquid/d1.1: Пилешко роле от гърди, печено на фурна #2691 (134 kcal) (raw pick none at 0.76)
+      off: Пилешко роле от гърди, печено на фурна #2691 (134 kcal)
+  c32 [en-generic] "avocado" in "half an avocado"
+      nace-ai/drex-v2.0: Авокадо, сурово, сорт Флорида #201 (120 kcal) (raw pick #199 at 0.23)
+      cloudflare/clef-flash: Авокадо, сурово, сорт Флорида #201 (120 kcal) (raw pick #199 at 0.22)
+      off: Авокадо, сурово, сорт Флорида #201 (120 kcal)
+  c36 [en-generic] "steamed broccoli" in "150g steamed broccoli"
+      nace-ai/drex-v2.0: Китайски броколи (гай лан), сготвени #2020 (22 kcal) (raw pick none at 0.42)
+      cloudflare/clef-flash: Китайски броколи (гай лан), сготвени #2020 (22 kcal) (raw pick #2023 at 0.17)
+      respan/span-02: Китайски броколи (гай лан), сготвени #2020 (22 kcal) (raw pick none at 0.86)
+      nace-ai/drex-v1.5: Китайски броколи (гай лан), сготвени #2020 (22 kcal) (raw pick none at 0.89)
+      off: Китайски броколи (гай лан), сготвени #2020 (22 kcal)
+  c38 [en-generic] "canned tuna in water" in "120g canned tuna in water"
+      cloudflare/clef: AI estimate (raw pick #3785 at 0.21)
+      liquid/d1.2: AI estimate (raw pick #3791 at 0.21)
+      perplexity/pplx-decider-flash-v1.3:free: AI estimate (raw pick #3792 at 0.23)
+      perplexity/pplx-decider-flash-v1.2: AI estimate (raw pick #3792 at 0.21)
+      liquid/d1.2-ultra: AI estimate (raw pick #3785 at 0.28)
+      liquid/d1.1: AI estimate (raw pick #3791 at 0.27)
+  c39 [en-generic] "whey protein" in "30g whey protein"
+      cloudflare/clef: AI estimate (raw pick #8302 at 0.23)
+      cloudflare/clef-flash: AI estimate (raw pick #1780 at 0.21)
+      liquid/d1.2: AI estimate (raw pick #8294 at 0.25)
+      perplexity/pplx-decider-flash-v1.2: AI estimate (raw pick #8302 at 0.22)
+      liquid/d1.1: AI estimate (raw pick #1780 at 0.26)
+  c43 [en-generic] "beef steak" in "250g raw beef steak"
+      cloudflare/clef: AI estimate (raw pick #1092 at 0.05)
+      perplexity/pplx-decider-v1.2: AI estimate (raw pick #1261 at 0.15)
+      cloudflare/clef-flash: AI estimate (raw pick #1092 at 0.15)
+      perplexity/pplx-decider-v1.3:free: AI estimate (raw pick #1261 at 0.29)
+      perplexity/pplx-decider-flash-v1.3:free: AI estimate (raw pick #1261 at 0.24)
+      nace-ai/drex-max: AI estimate (raw pick #1261 at 0.21)
+      perplexity/pplx-decider-flash-v1.2: AI estimate (raw pick #885 at 0.18)
+      liquid/d1.2-ultra: AI estimate (raw pick #883 at 0.23)
+      liquid/d1.1: AI estimate (raw pick #883 at 0.24)
+  c44 [en-generic] "spinach" in "50g raw spinach"
+      microsoft/microsoft-decision-1: Спанак #8149 (7 kcal)
+      off: Спанак #8149 (7 kcal)
+  c45 [en-generic] "strawberries" in "150g strawberries"
+      microsoft/microsoft-decision-1.1: Ягоди #8267 (79 kcal)
+      microsoft/microsoft-decision-1: Ягоди #8267 (79 kcal)
+      respan/span-02: Ягоди #8267 (79 kcal)
+      perplexity/pplx-decider-flash-v1.3:free: Ягоди #8267 (79 kcal)
+      perplexity/pplx-decider-flash-v1.2: Ягоди #8267 (79 kcal)
+  c48 [en-generic] "tofu" in "150g tofu"
+      cloudflare/clef: Тофу, пържено #7479 (270 kcal) (raw pick #7483 at 0.05)
+      nace-ai/drex-v2.0: Тофу, пържено #7479 (270 kcal)
+      perplexity/pplx-decider-v1.2: Тофу, пържено #7479 (270 kcal) (raw pick #7483 at 0.29)
+      cloudflare/clef-flash: Тофу, пържено #7479 (270 kcal) (raw pick #7483 at 0.04)
+      microsoft/microsoft-decision-1: AI estimate (raw pick none at 0.99)
+      respan/span-02: AI estimate (raw pick none at 0.93)
+      google/gemini-decision-1: Тофу, пържено #7479 (270 kcal) (raw pick none at 0.36)
+      typesafe/jev-1.13: Тофу, пържено #7479 (270 kcal) (raw pick none at 0.44)
+      perplexity/pplx-decider-flash-v1.2: Тофу, пържено #7479 (270 kcal) (raw pick #7483 at 0.18)
+      liquid/d1-ultra: Тофу, пържено #7479 (270 kcal) (raw pick none at 0.44)
+      openai/gpt-6-luna-decisions: Тофу, пържено #7479 (270 kcal) (raw pick none at 0.50)
+      liquid/d1.1: Тофу, пържено #7479 (270 kcal) (raw pick #7483 at 0.27)
+      off: Тофу, пържено #7479 (270 kcal)
+  c49 [en-generic] "mozzarella" in "125g mozzarella"
+      cloudflare/clef: AI estimate (raw pick #2626 at 0.17)
+      perplexity/pplx-decider-v1.2: AI estimate (raw pick #2626 at 0.29)
+      cloudflare/clef-flash: AI estimate (raw pick #2621 at 0.17)
+      microsoft/microsoft-decision-1: AI estimate (raw pick none at 0.93)
+      respan/span-02: AI estimate (raw pick none at 0.95)
+      liquid/d1.2: AI estimate (raw pick #2626 at 0.23)
+      perplexity/pplx-decider-flash-v1.3:free: AI estimate (raw pick #2625 at 0.21)
+      liquid/d1-ultra: Моцарела, обезмаслена #2624 (141 kcal) (raw pick none at 0.34)
+      liquid/d1.1: AI estimate (raw pick #2626 at 0.23)
+      off: Моцарела, обезмаслена #2624 (141 kcal)
+  c52 [staple] "суха паста" in "80 г суха паста"
+      cloudflare/clef: Суха Паста #8555 (417 kcal) (raw pick #5435 at 0.16)
+      nace-ai/drex-v2.0: Суха Паста #8555 (417 kcal) (raw pick #5435 at 0.23)
+      cloudflare/clef-flash: Суха Паста #8555 (417 kcal) (raw pick #5436 at 0.20)
+      respan/span-02: Суха Паста #8555 (417 kcal) (raw pick none at 0.35)
+      liquid/d1.2: Суха Паста #8555 (417 kcal) (raw pick #5436 at 0.26)
+      perplexity/pplx-decider-flash-v1.2: Суха Паста #8555 (417 kcal) (raw pick #5436 at 0.29)
+      off: Суха Паста #8555 (417 kcal)
+  c53 [staple] "cooked spaghetti" in "200g cooked spaghetti"
+      cloudflare/clef: Спагети със спанак, варени #7197 (130 kcal) (raw pick #7195 at 0.13)
+      microsoft/microsoft-decision-1.1: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.72)
+      nace-ai/drex-v2.0: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.86)
+      perplexity/pplx-decider-v1.2: Спагети, протеинови, варени #7195 (164 kcal)
+      cloudflare/clef-flash: Спагети със спанак, варени #7197 (130 kcal) (raw pick #6384 at 0.05)
+      perplexity/pplx-decider-v1.3:free: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.56)
+      respan/span-02: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.80)
+      google/gemini-decision-1: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.79)
+      liquid/d1.2: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.76)
+      perplexity/pplx-decider-flash-v1.3:free: Спагетена тиква, сготвена, без сол #7309 (27 kcal)
+      typesafe/jev-1.14: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.88)
+      typesafe/jev-1.13: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.52)
+      nace-ai/drex-v1.5: Спагети, протеинови, варени #7195 (164 kcal)
+      nace-ai/drex-max: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.76)
+      perplexity/pplx-decider-flash-v1.2: Спагети, протеинови, варени #7195 (164 kcal)
+      liquid/d1-ultra: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.69)
+      liquid/d1.2-ultra: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.48)
+      openai/gpt-6-luna-decisions: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.61)
+      liquid/d1.1: Спагети със спанак, варени #7197 (130 kcal) (raw pick none at 0.77)
+      off: Спагети със спанак, варени #7197 (130 kcal)
+  c55 [staple] "сварена леща" in "200 г сварена леща"
+      cloudflare/clef-flash: Кълнове от леща, сотирани, без сол #4705 (101 kcal) (raw pick #4700 at 0.30)
+      off: Кълнове от леща, сотирани, без сол #4705 (101 kcal)
+  c58 [staple] "сварен боб" in "100 г сварен боб"
+      respan/span-02: Боб варен #8703 (98 kcal)
+      typesafe/jev-1.14: Боб варен #8703 (98 kcal)
+      openai/gpt-6-luna-decisions: Сварен бял боб #10617 (103 kcal)
+  c59 [staple] "елда" in "60 г елда"
+      respan/span-02: Био елда #11202 (389 kcal)
+  c64 [product] "кифла" in "кифла"
+      cloudflare/clef: AI estimate (raw pick #8241 at 0.08)
+      cloudflare/clef-flash: AI estimate (raw pick #8031 at 0.10)
+      perplexity/pplx-decider-flash-v1.2: AI estimate (raw pick #8241 at 0.28)
+  c65 [product] "coca-cola" in "a can of coca-cola"
+      off: Лимонада Minute Maid #1824 (46 kcal)
+  c77 [typo] "kiselo mlyako" in "kiselo mlyako 400g"
+      cloudflare/clef: Кисело мляко, цедено #8102 (150 kcal) (raw pick #8015 at 0.04)
+      microsoft/microsoft-decision-1.1: Кисело мляко, цедено #8102 (150 kcal) (raw pick none at 0.38)
+      nace-ai/drex-v2.0: Кисело мляко, цедено #8102 (150 kcal) (raw pick none at 0.23)
+      perplexity/pplx-decider-v1.2: Кисело мляко, цедено #8102 (150 kcal) (raw pick #8015 at 0.26)
+      cloudflare/clef-flash: Кисело мляко, цедено #8102 (150 kcal) (raw pick #8015 at 0.03)
+      microsoft/microsoft-decision-1: Кисело мляко, цедено #8102 (150 kcal) (raw pick none at 0.54)
+      liquid/d1.2: Кисело мляко, цедено #8102 (150 kcal) (raw pick #8015 at 0.19)
+      perplexity/pplx-decider-flash-v1.3:free: Кисело мляко, цедено #8102 (150 kcal) (raw pick #8015 at 0.16)
+      typesafe/jev-1.14: Кисело мляко, цедено #8102 (150 kcal) (raw pick #8100 at 0.26)
+      typesafe/jev-1.13: Кисело мляко, цедено #8102 (150 kcal) (raw pick none at 0.33)
+      perplexity/pplx-decider-flash-v1.2: Кисело мляко, цедено #8102 (150 kcal) (raw pick #8015 at 0.19)
+      liquid/d1-ultra: Кисело мляко, цедено #8102 (150 kcal) (raw pick none at 0.33)
+      liquid/d1.2-ultra: Кисело мляко, цедено #8102 (150 kcal) (raw pick #8015 at 0.29)
+      openai/gpt-6-luna-decisions: Боженци Yogurt #10446 (69 kcal)
+      liquid/d1.1: Кисело мляко, цедено #8102 (150 kcal) (raw pick none at 0.28)
+      off: Кисело мляко, цедено #8102 (150 kcal)
+  c81 [nomatch] "pad thai" in "pad thai"
+      perplexity/pplx-decider-v1.2: Оризови спагети (нудли), варени #6424 (108 kcal)
+      perplexity/pplx-decider-v1.3:free: Оризови спагети (нудли), варени #6424 (108 kcal)
+      off: Тайландско кокосово къри SMART SOUP #6820 (36 kcal)
+  c82 [nomatch] "bubble tea" in "bubble tea"
+      off: Студен чай Snapple, черен и зелен, лимон, диетичен #1785 (2 kcal)
+  c83 [nomatch] "poke bowl with salmon" in "poke bowl with salmon"
+      off: Лаконос филизи, сурови #5766 (23 kcal)
+  c84 [nomatch] "acai bowl" in "acai bowl"
+      off: Напитка от акай бери, обогатена #1600 (62 kcal)
+  c86 [nomatch] "голям дюнер" in "голям дюнер"
+      off: Хамбургер, голям, единичен, със сосове, фаст фууд #3519 (256 kcal)
+  c87 [nomatch] "суши" in "суши сет"
+      cloudflare/clef: Круши, сурови #5525 (57 kcal) (raw pick none at 0.61)
+      perplexity/pplx-decider-v1.2: Круши, сурови #5525 (57 kcal) (raw pick none at 0.75)
+      cloudflare/clef-flash: Круши, сурови #5525 (57 kcal) (raw pick none at 0.47)
+      liquid/d1.2: Круши, сурови #5525 (57 kcal) (raw pick none at 0.86)
+      nace-ai/drex-v1.5: Круши, сурови #5525 (57 kcal) (raw pick none at 0.89)
+      perplexity/pplx-decider-flash-v1.2: Круши, сурови #5525 (57 kcal) (raw pick none at 0.72)
+      liquid/d1-ultra: Круши, сурови #5525 (57 kcal) (raw pick none at 0.83)
+      liquid/d1.2-ultra: Круши, сурови #5525 (57 kcal) (raw pick none at 0.63)
+      openai/gpt-6-luna-decisions: Круши, сурови #5525 (57 kcal) (raw pick none at 0.78)
+      liquid/d1.1: Круши, сурови #5525 (57 kcal) (raw pick none at 0.87)
+      off: Круши, сурови #5525 (57 kcal)
+  c88 [nomatch] "falafel wrap" in "falafel wrap"
+      perplexity/pplx-decider-v1.2: Фалафел, домашен #3447 (333 kcal) (raw pick none at 0.38)
+      cloudflare/clef-flash: Фалафел, домашен #3447 (333 kcal) (raw pick none at 0.45)
+      perplexity/pplx-decider-v1.3:free: Фалафел, домашен #3447 (333 kcal) (raw pick none at 0.75)
+      microsoft/microsoft-decision-1: Фалафел, домашен #3447 (333 kcal) (raw pick none at 0.83)
+      perplexity/pplx-decider-flash-v1.3:free: Фалафел, домашен #3447 (333 kcal) (raw pick none at 0.77)
+      perplexity/pplx-decider-flash-v1.2: Фалафел, домашен #3447 (333 kcal) (raw pick none at 0.55)
+      liquid/d1-ultra: Фалафел, домашен #3447 (333 kcal) (raw pick none at 0.86)
+      liquid/d1.2-ultra: Фалафел, домашен #3447 (333 kcal) (raw pick none at 0.71)
+      off: Фалафел, домашен #3447 (333 kcal)
+  c89 [nomatch] "боул с киноа и тофу" in "боул с киноа и тофу"
+      off: БУЛГУР С КИНОА И ЗЕЛЕНА ЛЕЩА #8480 (150 kcal)
+  c90 [nomatch] "beef pho" in "beef pho"
+      perplexity/pplx-decider-v1.2: Телешка супа с фиде, от консерва, приготвена с вода #7002 (34 kcal)
+      perplexity/pplx-decider-v1.3:free: Телешка супа с фиде, концентрирана, от консерва #7001 (67 kcal) (raw pick none at 0.54)
+      liquid/d1.2: Телешка супа с фиде, концентрирана, от консерва #7001 (67 kcal) (raw pick none at 0.77)
+      perplexity/pplx-decider-flash-v1.3:free: Телешка супа с фиде, концентрирана, от консерва #7001 (67 kcal) (raw pick none at 0.46)
+      typesafe/jev-1.13: Телешка супа с фиде, концентрирана, от консерва #7001 (67 kcal) (raw pick none at 0.81)
+      nace-ai/drex-max: Телешка супа с фиде, концентрирана, от консерва #7001 (67 kcal) (raw pick none at 0.72)
+      perplexity/pplx-decider-flash-v1.2: Телешка супа с фиде, концентрирана, от консерва #7001 (67 kcal) (raw pick none at 0.75)
+      liquid/d1-ultra: Телешка супа с фиде, концентрирана, от консерва #7001 (67 kcal) (raw pick none at 0.76)
+      liquid/d1.2-ultra: Телешка супа с фиде, концентрирана, от консерва #7001 (67 kcal) (raw pick none at 0.53)
+      off: Телешка супа с фиде, концентрирана, от консерва #7001 (67 kcal)
+  c92 [meal] "coffee" in "coffee with milk and a croissant"
+      cloudflare/clef: AI estimate (raw pick #1657 at 0.12)
+      cloudflare/clef-flash: AI estimate (raw pick #1672 at 0.05)
+  c92 [meal] "milk" in "coffee with milk and a croissant"
+      cloudflare/clef: Овче мляко, прясно #4952 (108 kcal) (raw pick #4946 at 0.23)
+      nace-ai/drex-v2.0: Овче мляко, прясно #4952 (108 kcal) (raw pick none at 0.41)
+      cloudflare/clef-flash: Овче мляко, прясно #4952 (108 kcal) (raw pick #4946 at 0.18)
+      microsoft/microsoft-decision-1: Овче мляко, прясно #4952 (108 kcal) (raw pick none at 0.90)
+      liquid/d1.2: Овче мляко, прясно #4952 (108 kcal) (raw pick none at 0.50)
+      nace-ai/drex-max: Овче мляко, прясно #4952 (108 kcal) (raw pick none at 0.47)
+      liquid/d1-ultra: Овче мляко, прясно #4952 (108 kcal) (raw pick none at 0.70)
+      liquid/d1.2-ultra: Овче мляко, прясно #4952 (108 kcal) (raw pick none at 0.43)
+      off: Овче мляко, прясно #4952 (108 kcal)
+  c93 [meal] "пилешко филе на скара" in "пилешко филе на скара с ориз и салата"
+      off: Пилешко роле от гърди, печено на фурна #2691 (134 kcal)
+  c93 [meal] "салата" in "пилешко филе на скара с ориз и салата"
+      off: Салата Ромен, сурова #4708 (17 kcal)
+  c94 [meal] "масло" in "хляб с масло и сирене"
+      microsoft/microsoft-decision-1: AI estimate (raw pick none at 0.98)
+  c96 [meal] "кебапчета" in "кебапчета с пържени картофи"
+      perplexity/pplx-decider-flash-v1.2: AI estimate (raw pick #8049 at 0.15)
