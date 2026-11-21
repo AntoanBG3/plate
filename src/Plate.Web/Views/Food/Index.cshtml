@@ -12,7 +12,7 @@
     var isYesterday = day.Date == Model.Today.AddDays(-1);
     string Share(decimal value, int? target) => (target is > 0 ? Math.Min(1m, value / target.Value) : 0m).ToString("0.###", inv);
 }
-<header class="page-head">
+<header class="page-head" data-module="food-review-saved" data-saved-review="@TempData[Notices.SavedReviewKey]">
     <h1 class="large-title">@L["Food"]</h1>
 </header>
 

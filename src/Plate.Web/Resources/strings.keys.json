@@ -755,6 +755,9 @@
   "Enter a valid email address.": [
     "src/Plate.Web/Features/Users/UserCreator.cs"
   ],
+  "Enter a valid number.": [
+    "src/Plate.Web/Features/DecimalBinding.cs"
+  ],
   "Enter a weekly rate for a cut or bulk.": [
     "src/Plate.Core/Domain/ProfileRules.cs",
     "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml",
@@ -961,7 +964,8 @@
     "src/Plate.Web/Views/Food/Confirm.cshtml"
   ],
   "Grams must be above 0 and at most {0}.": [
-    "src/Plate.Core/Nutrition/FoodMath.cs"
+    "src/Plate.Core/Nutrition/FoodMath.cs",
+    "wwwroot/js"
   ],
   "Hack squat": [
     "exercise"
@@ -2446,6 +2450,7 @@
     "wwwroot/js"
   ],
   "This food form is out of date. Check whether it was saved, then reload before trying again.": [
+    "src/Plate.Web/Controllers/FoodController.cs",
     "src/Plate.Web/Features/Food/IdempotentFoodPostAttribute.cs"
   ],
   "This invite is no longer valid. Ask Antoan for a new one.": [
@@ -2459,6 +2464,9 @@
   ],
   "This report is waiting to send. Its contents are locked. Keep this page open and press Send to retry.": [
     "wwwroot/js"
+  ],
+  "This review was already saved.": [
+    "src/Plate.Web/Features/Localization/Notices.cs"
   ],
   "This session expired. Sign in again in another tab, then return here to send pending changes.": [
     "wwwroot/js"

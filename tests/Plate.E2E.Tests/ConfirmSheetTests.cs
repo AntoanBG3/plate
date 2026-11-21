@@ -70,5 +70,27 @@ public class ConfirmSheetTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.AnimationsDoneAsync("#confirm-sheet .sheet-panel");
         (await yes.EvaluateAsync<bool>("b => { const r = b.getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest('[data-confirm-yes]') === b; }"))
             .Should().BeTrue("the confirmation sits above the sheet that asked for it");
+        await phone.Page.Keyboard.PressAsync("Escape");
+        var delete = phone.Page.Locator("#food-sheet-body form[action$='/delete'] button[type=submit]");
+        (await delete.EvaluateAsync<bool>("b => b === document.activeElement")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Quick_sheet_keeps_tab_inside_the_dialog()
+    {
+        await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium);
+        await phone.GoAsync("/food");
+        await phone.Page.Locator("[data-sheet-open='quick-sheet']").First.TapAsync();
+        var save = phone.Page.Locator("#quick-sheet button[type=submit]");
+        await save.WaitForAsync();
+        await phone.Page.WaitForFunctionAsync("() => document.querySelector('#quick-sheet').contains(document.activeElement)");
+        await save.FocusAsync();
+        await phone.Page.Keyboard.PressAsync("Tab");
+        (await phone.Page.EvaluateAsync<bool>("() => document.activeElement.matches('#quick-sheet [data-sheet-close]')")).Should().BeTrue();
+        await phone.Page.Keyboard.PressAsync("Shift+Tab");
+        (await save.EvaluateAsync<bool>("b => b === document.activeElement")).Should().BeTrue();
+        await phone.Page.Keyboard.PressAsync("Tab");
+        await phone.Page.Keyboard.PressAsync("Escape");
+        (await phone.Page.Locator("[data-sheet-open='quick-sheet']").First.EvaluateAsync<bool>("b => b === document.activeElement")).Should().BeTrue();
     }
 }

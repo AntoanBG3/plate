@@ -18,7 +18,9 @@
     <div class="banner is-error" role="alert" style="margin-top: var(--s-4)">@Ui.Icon("alert")<span>@L[Model.Warning]</span></div>
 }
 
-<form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/confirm" style="margin-top: var(--s-5)" data-module="@(Model.ParseRunId is null ? null : "parse-rating")" data-run="@Model.ParseRunId">
+<div data-module="food-review">
+<form data-module="@(Model.ParseRunId is null ? null : "parse-rating")" data-run="@Model.ParseRunId" method="post" asp-antiforgery="true" action="/food/confirm" style="margin-top: var(--s-5)">
+    <input type="hidden" name="requestId" value="@Model.RequestId" />
     @if (Model.ParseRunId is not null)
     {
         @* Shown by feedback.js: a rating is sent on its own, without saving the form. *@
@@ -58,7 +60,7 @@
                     }
                 </div>
                 <div class="result-amount">
-                    <label class="grams"><input type="text" name="items[@i].Grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
+                    <label class="grams"><input type="text" name="items[@i].Grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
                     <span class="footnote num" data-totals>@L["{0} kcal · {1} g protein", Math.Round(item.Per100.Kcal * item.Grams / 100), (item.Per100.Protein * item.Grams / 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)]</span>
                 </div>
                 <div class="result-notes footnote">
@@ -73,12 +75,12 @@
                 <details>
                     <summary>@L["Per 100 g values"]</summary>
                     <div class="per100">
-                        <label>@L["kcal"]<input class="input num" type="text" name="items[@i].Kcal" value="@item.Per100.Kcal.Kg()" min="0" max="900" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
-                        <label>@L["Protein"]<input class="input num" type="text" name="items[@i].Protein" value="@item.Per100.Protein.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
-                        <label>@L["Carbs"]<input class="input num" type="text" name="items[@i].Carbs" value="@item.Per100.Carbs.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
-                        <label>@L["Fat"]<input class="input num" type="text" name="items[@i].Fat" value="@item.Per100.Fat.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
-                        <label>@L["Fiber"]<input class="input num" type="text" name="items[@i].Fiber" value="@item.Per100.Fiber?.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
-                        <label>@L["Saturated fat"]<input class="input num" type="text" name="items[@i].SaturatedFat" value="@item.Per100.SaturatedFat?.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" /></label>
+                        <label>@L["kcal"]<input class="input num" type="text" name="items[@i].Kcal" value="@item.Per100.Kcal.Kg()" min="0" max="900" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+                        <label>@L["Protein"]<input class="input num" type="text" name="items[@i].Protein" value="@item.Per100.Protein.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+                        <label>@L["Carbs"]<input class="input num" type="text" name="items[@i].Carbs" value="@item.Per100.Carbs.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+                        <label>@L["Fat"]<input class="input num" type="text" name="items[@i].Fat" value="@item.Per100.Fat.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+                        <label>@L["Fiber"]<input class="input num" type="text" name="items[@i].Fiber" value="@item.Per100.Fiber?.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+                        <label>@L["Saturated fat"]<input class="input num" type="text" name="items[@i].SaturatedFat" value="@item.Per100.SaturatedFat?.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
                     </div>
                 </details>
                 <input type="hidden" name="items[@i].FoodItemId" value="@item.FoodItemId" />
@@ -90,6 +92,7 @@
     <p class="section-footer">@L["Database values come from USDA or foods you saved. AI estimates are the model's own numbers; check them against the label if you can."]</p>
     <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L[SaveTo[Model.Meal]]</button>
 </form>
+</div>
 
 @section Overlays {
     @* Change food: search the database and put another food on a row (site.js). *@

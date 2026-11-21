@@ -117,4 +117,30 @@ public class ConfirmFoodsTests(E2EFixture app) : IClassFixture<E2EFixture>
         await PickAsync("закуска с гауда", "90");
         (await grams.InputValueAsync()).Should().Be("100", "grams the user typed are kept");
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Review_survives_reload_and_back(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync("/food/add?meal=Lunch&tab=text");
+        await phone.Page.Locator("#text").FillAsync("150 g cooked rice");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").First.TapAsync());
+        (await phone.Page.Locator("form[action='/food/confirm']").CountAsync()).Should().Be(1);
+        var name = phone.Page.Locator(".name-input").First;
+        await name.FillAsync("My rice");
+        (await phone.Page.ReloadAsync())!.Status.Should().Be(200);
+        (await name.InputValueAsync()).Should().Be("My rice");
+        await phone.NavigateByAsync(() => phone.Page.Locator(".tabbar a[href='/train']").TapAsync());
+        await phone.NavigateByAsync(() => phone.Page.EvaluateAsync("history.back()"));
+        (await name.InputValueAsync()).Should().Be("My rice");
+
+        var id = await phone.Page.Locator("form[action='/food/confirm'] [name=requestId]").InputValueAsync();
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/confirm'] button[type=submit]").TapAsync());
+        (await phone.Page.EvaluateAsync<bool>("id => !!JSON.parse(sessionStorage.getItem('plate.food-reviews.' + document.documentElement.dataset.userId) || '{}')[id]", id)).Should().BeFalse();
+        await phone.NavigateByAsync(() => phone.Page.EvaluateAsync("history.back()"));
+        (await phone.Page.Locator("form[action='/food/confirm']").CountAsync()).Should().Be(0);
+        (await phone.Page.ContentAsync()).Should().Contain("This review was already saved.");
+    }
 }

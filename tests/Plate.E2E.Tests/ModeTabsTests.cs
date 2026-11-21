@@ -158,7 +158,7 @@ public class ModeTabsTests(E2EFixture app) : IClassFixture<E2EFixture>
 
         (await phone.Page.Locator(".result").CountAsync()).Should().BeGreaterThan(0);
         (await phone.Page.EvaluateAsync<string>("window.__nav")).Should().NotBe("same").And.NotBe("swap", "the list to confirm is another page");
-        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food/parse");
+        new Uri(phone.Page.Url).AbsolutePath.Should().StartWith("/food/review/");
         phone.ShouldHaveNoErrors();
     }
 

@@ -23,14 +23,12 @@
         target = calorieDays.Select(d => d.TargetKcal),
         maintenance = calorieDays.Select(d => d.MaintenanceKcal),
     });
-    var proteinMin = Model.ProteinMinG;
     var protein = JsonSerializer.Serialize(new
     {
         labels = calorieDays.Select(d => Ui.DayMonth(d.Date)),
         eaten = calorieDays.Select(d => d.ProteinG),
         aim = calorieDays.Select(d => d.TargetProteinG),
-        // Only on days that had a target: before the profile existed there was no minimum to draw.
-        minimum = calorieDays.Select(d => d.TargetProteinG is null ? null : proteinMin),
+        minimum = calorieDays.Select(d => d.ProteinMinG),
     });
     var trained = Model.Volume.Muscles.Where(m => m.ThisWeek > 0 || m.LastWeek > 0).ToList();
     var volume = JsonSerializer.Serialize(new
@@ -107,7 +105,7 @@
                 <select id="exerciseId" name="exerciseId">
                     @foreach (var exercise in Model.Exercises)
                     {
-                        <option value="@exercise.Id" selected="@(exercise.Id == Model.Selected.Id)">@L[exercise.Name]</option>
+                        <option value="@exercise.Id" selected="@(exercise.Id == Model.Selected.Id)">@L.Exercise(exercise.Name, exercise.IsCustom)</option>
                     }
                 </select>
             </div>
@@ -196,7 +194,7 @@
                 </div>
             </div>
             <div class="chart"><canvas id="protein-chart" role="img" aria-label="@L["Daily protein against the aim and minimum for the last 4 weeks"]"></canvas></div>
-            <div class="legend"><span><i style="background: var(--fill-strong)"></i>@L["Eaten"]</span><span><i class="line" style="background: var(--label)"></i>@L["Aim"]</span>@if (proteinMin is not null)
+            <div class="legend"><span><i style="background: var(--fill-strong)"></i>@L["Eaten"]</span><span><i class="line" style="background: var(--label)"></i>@L["Aim"]</span>@if (calorieDays.Any(d => d.ProteinMinG is not null))
                 {
                     <span><i class="dash"></i>@L["Minimum"]</span>
                 }</div>

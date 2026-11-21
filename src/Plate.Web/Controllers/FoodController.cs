@@ -88,18 +88,35 @@ public class FoodController(
             return View("Add", new FoodAddViewModel(date, meal, "text", text, "Write what you ate, up to 1000 characters.", null, [], null, [], []));
         }
 
-        var (result, items, runId) = await parseRuns.ParseAsync(text, ct);
-        if (items.Count == 0)
+        var draft = await parseRuns.CreateReviewAsync(date, meal, text, ct);
+        if (draft.Items.Count == 0)
         {
-            // Keep the text so nothing typed is lost, and offer manual entry.
-            return View("Add", new FoodAddViewModel(date, meal, "text", text, result.Error ?? new LocalText("Couldn't read that."), null, [], null, [], []));
+            return View("Add", new FoodAddViewModel(date, meal, "text", text, draft.Warning ?? new LocalText("Couldn't read that."), null, [], null, [], []));
         }
 
-        return View("Confirm", new ConfirmViewModel(date, meal, text, result.Model, items, result.Error, runId));
+        var url = Url.Action(nameof(Review), new { id = draft.RequestId, run = draft.ParseRunId })!;
+        if (Request.Headers["HX-Request"] == "true")
+        {
+            Response.Headers["HX-Push-Url"] = url;
+            return View("Confirm", draft);
+        }
+        return Redirect(url);
+    }
+
+    [HttpGet("review/{id:guid}")]
+    public async Task<IActionResult> Review(Guid id, int? run, CancellationToken ct)
+    {
+        if (await parseRuns.SavedLocationAsync(id, ct) is { } saved)
+        {
+            TempData.SavedReview(id, alreadySaved: true);
+            return LocalRedirect(saved);
+        }
+        var draft = await parseRuns.ReviewAsync(run, id, ct);
+        return draft is null ? NotFound() : View("Confirm", draft);
     }
 
     [HttpPost("confirm")]
-    [IdempotentFoodPost]
+    [IdempotentFoodPost(review: true)]
     public async Task<IActionResult> Confirm(DateOnly date, Meal meal, string? aiModel, int? parseRunId, List<ConfirmRow> items, CancellationToken ct)
     {
         if (!items.Any(i => i.Include))
@@ -189,9 +206,29 @@ public class FoodController(
 
     [HttpPost("items")]
     [IdempotentFoodPost]
-    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, CancellationToken ct)
+    [HandlesInvalidNumbers]
+    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string? name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, bool barcodeField, CancellationToken ct)
     {
-        await manualFoods.SaveAndLogAsync(date, meal, name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, grams, share, labelScanId, ct);
+        // Hidden routing and scan fields cannot be corrected in the form. Never reuse their binding defaults.
+        if (ModelState.Values.Any(field => field.Errors.Any(e => e.ErrorMessage != DecimalModelBinder.InvalidNumber)))
+            throw new ValidationException("This food form is out of date. Check whether it was saved, then reload before trying again.");
+        try
+        {
+            if (ModelState.FirstOrDefault(pair => pair.Value?.Errors.Count > 0).Key is { } field)
+                throw new ValidationException(DecimalModelBinder.InvalidNumber, field);
+
+            await manualFoods.SaveAndLogAsync(date, meal, name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, grams, share, labelScanId, ct);
+        }
+        catch (ValidationException ex) when (!Request.Headers.ContainsKey("HX-Request"))
+        {
+            var available = await labels.IsAvailableAsync(ct);
+            var manual = new ManualFoodFormModel(date, meal, barcodeField ? null : barcode, name, barcodeField,
+                LabelScanId: labelScanId, LabelAvailable: available, BarcodeValue: barcode, Share: share,
+                InvalidField: ex.Field, Submitted: true);
+            if (!barcodeField && barcode is not null) ViewData["Page"] = "food-barcode";
+            return View("Add", new FoodAddViewModel(date, meal, "manual", null, ex.Text, null, [], null, [], [],
+                available, Manual: manual));
+        }
         FocusMeal(meal);
         return Redirect($"/food?date={date:yyyy-MM-dd}");
     }
@@ -361,16 +398,16 @@ public class FoodController(
         public bool Include { get; set; }
         public string? Description { get; set; }
         public decimal Grams { get; set; }
-        public decimal Kcal { get; set; }
-        public decimal Protein { get; set; }
-        public decimal Carbs { get; set; }
-        public decimal Fat { get; set; }
+        public decimal? Kcal { get; set; }
+        public decimal? Protein { get; set; }
+        public decimal? Carbs { get; set; }
+        public decimal? Fat { get; set; }
         public decimal? Fiber { get; set; }
         public decimal? SaturatedFat { get; set; }
         public int? FoodItemId { get; set; }
         public string? MatchModel { get; set; }
         public string? Status { get; set; }
 
-        public Per100g Per100 => new(Kcal, Protein, Carbs, Fat, Fiber, SaturatedFat);
+        public Per100g Per100 => new(Kcal ?? 0, Protein ?? 0, Carbs ?? 0, Fat ?? 0, Fiber, SaturatedFat);
     }
 }

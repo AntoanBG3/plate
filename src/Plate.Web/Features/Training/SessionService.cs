@@ -230,26 +230,45 @@ public class SessionService(AppDbContext db, ICurrentUser currentUser, ProfileLo
             .SingleOrDefaultAsync(e => e.Id == sessionExerciseId, ct)
         ?? throw new NotFoundException();
 
-    /// <summary>Adds an exercise at the end of the session. Returns the new session exercise's id.</summary>
-    public async Task<int> AddExerciseAsync(int sessionId, int exerciseId, CancellationToken ct)
+    public async Task<int> AddExerciseAsync(int sessionId, int exerciseId, CancellationToken ct) =>
+        (await AddExercisesAsync(sessionId, [exerciseId], ct)).FirstId!.Value;
+
+    public async Task<(int? FirstId, Exercise? Duplicate)> AddExercisesAsync(int sessionId, IReadOnlyList<int> exerciseIds, CancellationToken ct)
     {
         var session = await db.Sessions.Include(s => s.Exercises).SingleOrDefaultAsync(s => s.Id == sessionId, ct)
             ?? throw new NotFoundException();
-        var exercise = await db.Exercises.SingleOrDefaultAsync(e => e.Id == exerciseId && !e.IsArchived, ct)
-            ?? throw new NotFoundException("Exercise not found.");
-
-        var item = new SessionExercise
+        if (exerciseIds.Count == 0)
         {
-            ExerciseId = exercise.Id,
-            SortOrder = session.Exercises.Count == 0 ? 0 : session.Exercises.Max(e => e.SortOrder) + 1,
-            RepMin = 8,
-            RepMax = 12,
-            WorkingSets = 3,
-            WeightIncrementKg = await profiles.DefaultIncrementAsync(ct),
-        };
-        session.Exercises.Add(item);
+            return (null, null);
+        }
+        var live = await db.Exercises.Where(e => exerciseIds.Contains(e.Id) && !e.IsArchived)
+            .ToDictionaryAsync(e => e.Id, ct);
+        if (exerciseIds.Any(id => !live.ContainsKey(id)))
+        {
+            throw new NotFoundException("Exercise not found.");
+        }
+
+        var existing = session.Exercises.Select(e => e.ExerciseId).ToHashSet();
+        var duplicate = exerciseIds.FirstOrDefault(existing.Contains);
+        var next = session.Exercises.Count == 0 ? 0 : session.Exercises.Max(e => e.SortOrder) + 1;
+        var increment = await profiles.DefaultIncrementAsync(ct);
+        SessionExercise? first = null;
+        foreach (var id in exerciseIds)
+        {
+            var item = new SessionExercise
+            {
+                ExerciseId = id,
+                SortOrder = next++,
+                RepMin = 8,
+                RepMax = 12,
+                WorkingSets = 3,
+                WeightIncrementKg = increment,
+            };
+            session.Exercises.Add(item);
+            first ??= item;
+        }
         await db.SaveChangesAsync(ct);
-        return item.Id;
+        return (first!.Id, live.GetValueOrDefault(duplicate));
     }
 
     /// <summary>

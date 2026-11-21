@@ -246,6 +246,8 @@ Deleted food entries, sets and exercises are kept for 24 hours so Undo can bring
 
 ### Feedback
 
+You can reload Check foods or return with Back to continue editing a recent food review in the same tab. Once saved, reopening the review takes you to the food log, where you can edit the entries.
+
 Every account can report problems and ideas in Settings → Send feedback (with a screenshot), rate how typed food was read on the Check foods screen, and use the "Report" links on barcode results, weight suggestions, the maintenance estimate and AI food entries. Errors in the app and the browser are recorded on their own. Everything stays in the database; the CLI reads it and answers it (SPEC section 11):
 
 ```sh
@@ -324,6 +326,6 @@ The build also fails when a NuGet package has a known high or critical advisory;
 
 Open `https://plate.peychev.uk` in Safari, sign in, then Share → Add to Home Screen. Open it from the home screen icon from then on; the login lasts 30 days and renews with use.
 
-Your data can be downloaded at any time from Settings → Export all data: one CSV file per kind of data in a zip, readable in Excel or Numbers.
+Settings → Export all data downloads a ZIP of CSV files readable in Excel or Numbers. It includes private foods, saved meals with their ingredients, exercise notes and bar settings, and profile preferences. Saved meal and food IDs link the files.
 
 Food forms carry a new request ID each time they are rendered. Resending the same form after a lost response returns its first successful result without adding food twice. Check the log after an uncertain-save warning; open a new form to add another entry. Food-request receipts are included in the export and removed with the account.

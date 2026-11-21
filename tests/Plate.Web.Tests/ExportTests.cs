@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 using FluentAssertions;
 using Plate.Core.Domain;
 using Plate.Web.Features.Export;
@@ -60,10 +61,41 @@ public class ExportTests(PostgresFixture fixture) : IClassFixture<PostgresFixtur
 
         files.Keys.Should().BeEquivalentTo(
             "profile.csv", "bodyweight.csv", "workouts.csv", "sets.csv", "templates.csv",
-            "custom_exercises.csv", "food_log.csv", "food_requests.csv", "maintenance_estimates.csv", "nutrition_targets.csv", "weekly_summaries.csv", "feedback.csv", "label_scans.csv", "usual_foods.csv");
+            "custom_exercises.csv", "food_log.csv", "food_requests.csv", "maintenance_estimates.csv", "nutrition_targets.csv", "weekly_summaries.csv", "feedback.csv", "label_scans.csv", "usual_foods.csv",
+            "private_foods.csv", "saved_meals.csv", "saved_meal_items.csv", "exercise_settings.csv");
         files["bodyweight.csv"].Should().Be("date,weight_kg\r\n2026-10-01,82.4\r\n");
         files["food_log.csv"].Should().StartWith("date,meal,description,status,grams,kcal,protein_g,carbs_g,fat_g,fiber_g,saturated_fat_g,source,ai_model,match_model,created_at_utc\r\n");
         files["food_log.csv"].Should().Contain("2026-10-01,Breakfast,\"Баница, 2 парчета\",,200,640,20,60,35,,,Ai,test,typesafe/jev-1.13-20260917,");
+    }
+
+    [Fact]
+    public async Task Exports_the_owners_food_meal_and_equipment_settings_with_their_ids()
+    {
+        async Task<(int Food, int Meal, int Exercise)> Seed(UserScope owner, string name)
+        {
+            var food = new FoodItem { OwnerUserId = owner.UserId, Name = name, ProteinPer100g = 12 };
+            owner.Db.FoodItems.Add(food);
+            await owner.Db.SaveChangesAsync();
+            var meal = new SavedMeal { UserId = owner.UserId, Name = name, CreatedAt = DateTimeOffset.UtcNow,
+                Items = [new SavedMealItem { FoodItemId = food.Id, Description = name, Grams = 125, ProteinG = 15 }] };
+            owner.Db.SavedMeals.Add(meal);
+            var exercise = await owner.Db.Exercises.FirstAsync(e => e.Name == "Bench press");
+            owner.Db.ExerciseSettings.Add(new UserExerciseSettings { UserId = owner.UserId, ExerciseId = exercise.Id, Note = name, BarWeightKg = 15 });
+            await owner.Db.SaveChangesAsync();
+            return (food.Id, meal.Id, exercise.Id);
+        }
+        await using var mine = new UserScope(fixture, await fixture.CreateUserAsync());
+        await using var other = new UserScope(fixture, await fixture.CreateUserAsync());
+        var ids = await Seed(mine, "My item");
+        await Seed(other, "Someone else's item");
+
+        var files = Unzip(await new DataExport(mine.Db).ZipAsync(default));
+        files["private_foods.csv"].Should().Contain($"{ids.Food},My item");
+        files["saved_meals.csv"].Should().Contain($"{ids.Meal},My item");
+        files["saved_meal_items.csv"].Should().Contain($"{ids.Meal},0,{ids.Food},My item,125,0,15");
+        files["exercise_settings.csv"].Should().Contain($"{ids.Exercise},Bench press,My item,15");
+        string.Concat(files.Values).Should().NotContain("Someone else's item");
+        files["profile.csv"].Should().Contain("activity_level");
     }
 
     [Fact]

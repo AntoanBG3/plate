@@ -9,7 +9,7 @@ public record WeightChart(string Range, IReadOnlyList<TrendPoint> Points);
 
 /// <param name="Kcal">Logged kcal, or null when nothing was logged that day.</param>
 /// <param name="TargetKcal">The target from the estimate in force that day.</param>
-public record CalorieDay(DateOnly Date, decimal? Kcal, int? TargetKcal, int? MaintenanceKcal, decimal? ProteinG = null, int? TargetProteinG = null);
+public record CalorieDay(DateOnly Date, decimal? Kcal, int? TargetKcal, int? MaintenanceKcal, decimal? ProteinG = null, int? TargetProteinG = null, int? ProteinMinG = null);
 
 /// <summary>Bodyweight and calorie history for the Progress charts.</summary>
 public class BodyAnalytics(AppDbContext db, BodyweightService bodyweights)
@@ -44,13 +44,15 @@ public class BodyAnalytics(AppDbContext db, BodyweightService bodyweights)
             .Select(g => new { Date = g.Key, Kcal = g.Sum(e => e.Kcal), ProteinG = g.Sum(e => e.ProteinG) })
             .ToDictionaryAsync(x => x.Date, ct);
         var estimates = await db.MaintenanceEstimates
-            .Where(e => e.CalculatedOn <= today)
+            .Where(e => e.CalculatedOn <= today && (e.CalculatedOn >= from ||
+                e.CalculatedOn == db.MaintenanceEstimates.Where(p => p.CalculatedOn < from).Max(p => (DateOnly?)p.CalculatedOn)))
             .OrderBy(e => e.CalculatedOn)
             .Select(e => new { e.CalculatedOn, e.TargetKcal, e.EstimatedTdeeKcal, e.TargetProteinG })
             .ToListAsync(ct);
 
         var days = new List<CalorieDay>(CalorieDays);
-        var snapshots = (await db.NutritionTargetDays.AsNoTracking().Where(x => x.Date <= today)
+        var snapshots = (await db.NutritionTargetDays.AsNoTracking().Where(x => x.Date <= today && (x.Date >= from ||
+                x.Date == db.NutritionTargetDays.Where(p => p.Date < from).Max(p => (DateOnly?)p.Date)))
             .OrderBy(x => x.Date).ToListAsync(ct))
             .Select(x => new { x.Date, Values = TargetDayValues.Read(x.Values) }).ToList();
         for (var day = from; day <= today; day = day.AddDays(1))
@@ -64,7 +66,8 @@ public class BodyAnalytics(AppDbContext db, BodyweightService bodyweights)
                 snapshot is null ? estimate?.TargetKcal : snapshot.Target.Kcal,
                 snapshot?.MaintenanceKcal ?? estimate?.EstimatedTdeeKcal,
                 eaten is null ? null : decimal.Round(eaten.ProteinG),
-                snapshot is null ? estimate?.TargetProteinG : snapshot.Target.ProteinG));
+                snapshot is null ? estimate?.TargetProteinG : snapshot.Target.ProteinG,
+                snapshot?.Target.Macros?.ProteinMinG));
         }
 
         return days;

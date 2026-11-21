@@ -99,6 +99,8 @@ public class ParseEvaluator(
 
     private sealed class NoDecider : IFoodMatchDecider
     {
+        public Task<bool> IsEnabledAsync(CancellationToken ct) => Task.FromResult(false);
+
         public Task<MatchDecisions?> DecideAsync(string text, IReadOnlyList<MatchQuestion> questions, CancellationToken ct) => Task.FromResult<MatchDecisions?>(null);
     }
 

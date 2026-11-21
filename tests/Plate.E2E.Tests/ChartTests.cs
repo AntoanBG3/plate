@@ -1,3 +1,6 @@
+using Plate.Core.Domain;
+using Plate.Web.Tests;
+using Microsoft.EntityFrameworkCore;
 using FluentAssertions;
 
 namespace Plate.E2E.Tests;
@@ -31,5 +34,43 @@ public class ChartTests(E2EFixture app) : IClassFixture<E2EFixture>
             """);
         radii.Should().AllSatisfy(r => r.Should().BeGreaterThan(0, "a line needs two days; one day is drawn as a point"));
         phone.ShouldHaveNoErrors();
+    }
+
+    [Fact]
+    public async Task Chart_uses_the_saved_minimum_for_yesterday()
+    {
+        await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium);
+        await phone.WithTargetsAsync(app);
+        await phone.GoAsync("/progress");
+        await using var system = app.Db.CreateContext(null);
+        var uid = await system.Users.Where(u => u.Email == phone.Email).Select(u => u.Id).SingleAsync();
+        await using var db = app.Db.CreateContext(uid);
+        var now = await db.NutritionTargetDays.SingleAsync();
+        var yesterday = now.Date.AddDays(-1);
+        var values = System.Text.Json.Nodes.JsonNode.Parse(now.Values)!;
+        values["macros"]!["proteinMinG"] = 95;
+        db.NutritionTargetDays.Add(new() {UserId = uid, Date = yesterday, Values = values.ToJsonString()});
+        db.FoodLog.Add(new() {UserId = uid, Date = yesterday, Description = "Stored day", Kcal = 200, CreatedAt = DateTimeOffset.UtcNow});
+        await db.SaveChangesAsync();
+        await phone.GoAsync("/progress");
+        var plotted = await phone.Page.EvaluateAsync<int>("() => JSON.parse(document.getElementById('protein-data').textContent).minimum.at(-2)");
+        plotted.Should().Be(95);
+    }
+
+    [Fact]
+    public async Task Bulgarian_progress_keeps_the_custom_name()
+    {
+        await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium);
+        await phone.WithTargetsAsync(app, bulgarian: true);
+        await using var system = app.Db.CreateContext(null);
+        var uid = await system.Users.Where(u => u.Email == phone.Email).Select(u => u.Id).SingleAsync();
+        await using var s = new UserScope(app.Db, uid);
+        var custom = await s.Exercises.CreateAsync("Warm-up", Muscle.Chest, Equipment.Other, [], default);
+        var session = await s.Sessions.StartAsync(null, default);
+        var item = await s.Sessions.AddExerciseAsync(session.Id, custom.Id, default);
+        await s.Sessions.LogSetAsync(new(Guid.NewGuid(), item, 20, 10, null, false, null), default);
+        await s.Sessions.FinishAsync(session.Id, default);
+        await phone.GoAsync("/progress");
+        (await phone.Page.Locator("#exerciseId option:checked").TextContentAsync()).Should().Be("Warm-up");
     }
 }

@@ -1,3 +1,6 @@
+using Plate.Core.Domain;
+using Plate.Web.Tests;
+using Microsoft.EntityFrameworkCore;
 using FluentAssertions;
 
 namespace Plate.E2E.Tests;
@@ -93,5 +96,30 @@ public class ExercisePickerTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.NavigateByAsync(() => phone.Page.Locator("#confirm-sheet [data-confirm-yes]").TapAsync());
         (await phone.Page.Locator("a.row-link").Filter(new() { HasText = "Sled push" }).CountAsync()).Should().Be(0);
         phone.ShouldHaveNoErrors();
+    }
+
+    [Fact]
+    public async Task Archived_pick_rolls_back_the_entire_selection()
+    {
+        await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium);
+        var id = await phone.CreateTemplateAsync(app, "Partial pick");
+        await using var db = app.Db.CreateContext(null);
+        var uid = await db.Users.Where(u => u.Email == phone.Email).Select(u => u.Id).SingleAsync();
+        await using var s = new UserScope(app.Db, uid);
+        var stale = await s.Exercises.CreateAsync("Audit old movement", Muscle.Chest, Equipment.Other, [], default);
+        var good = await app.ExerciseIdAsync("Bench press");
+        await phone.GoAsync($"/train/templates/{id}/add-exercise");
+        await s.Exercises.ArchiveAsync(stale.Id, default);
+        var status = await phone.Page.EvaluateAsync<int>("""
+            async ([path,good,stale]) => {
+                const data = new URLSearchParams();
+                data.append('exerciseIds', good);
+                data.append('exerciseIds', stale);
+                data.append('__RequestVerificationToken', window.gymToken());
+                return (await fetch(path, {method:'POST',body:data})).status;
+            }
+            """, new object[] {$"/train/templates/{id}/exercises", good, stale.Id});
+        status.Should().Be(404);
+        (await s.Db.TemplateExercises.Where(x => x.TemplateId == id).Select(x => x.ExerciseId).ToListAsync()).Should().BeEmpty();
     }
 }

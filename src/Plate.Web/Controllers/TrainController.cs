@@ -39,12 +39,13 @@ public class TrainController(
     public async Task<IActionResult> Session(int id, CancellationToken ct)
     {
         var session = await sessions.GetAsync(id, ct);
+        var guidance = await analytics.GuidanceAsync(session, ct);
         return View(new SessionViewModel(
             session,
-            await analytics.SuggestionsAsync(session, ct),
+            guidance.Suggestions,
             await settings.ForAsync(session.Exercises.Select(e => e.ExerciseId), ct),
             (await profiles.GetAsync(ct)).BarWeightKg,
-            await analytics.LastTimeAsync(session, ct)));
+            guidance.LastTime));
     }
 
     [HttpGet("sessions/{id:int}/summary")]
@@ -89,17 +90,10 @@ public class TrainController(
     public async Task<IActionResult> AddExercise(int id, int? exerciseId, List<int>? exerciseIds, CancellationToken ct)
     {
         var picked = exerciseIds is { Count: > 0 } ? exerciseIds : exerciseId is { } one ? [one] : [];
-        var before = (await sessions.GetAsync(id, ct)).Exercises.Select(e => e.ExerciseId).ToHashSet();
-        int? first = null;
-        foreach (var pick in picked)
+        var (first, duplicate) = await sessions.AddExercisesAsync(id, picked, ct);
+        if (duplicate is not null)
         {
-            var added = await sessions.AddExerciseAsync(id, pick, ct);
-            first ??= added;
-        }
-
-        if (picked.FirstOrDefault(before.Contains) is var again and > 0)
-        {
-            TempData.Notice(new LocalText("Added a second {0}.", localizer.Exercise(await exercises.GetAsync(again, ct))));
+            TempData.Notice(new LocalText("Added a second {0}.", localizer.Exercise(duplicate)));
         }
 
         if (first is { } f)
@@ -165,6 +159,7 @@ public class TrainController(
     /// once the sheet's own field sends (typed), only what is in the field counts, so clearing it asks for a weight.
     /// </summary>
     [HttpGet("session-exercises/{id:int}/plates")]
+    [HandlesInvalidNumbers]
     public async Task<IActionResult> Plates(int id, decimal? weight, decimal? suggested, bool typed, CancellationToken ct)
     {
         var exercise = await sessions.GetExerciseAsync(id, ct);

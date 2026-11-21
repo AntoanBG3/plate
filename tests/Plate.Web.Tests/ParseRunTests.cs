@@ -31,6 +31,25 @@ public partial class ParseRunTests(PostgresFixture fixture) : IClassFixture<Post
     }
 
     [Fact]
+    public void Reads_the_persisted_review_fields()
+    {
+        const string json = """
+            {"description":"Rice","per100":{"kcal":100},"confidence":"High","notes":[],
+             "typed":"my rice","state":"Cooked","reviewNotes":[{"format":"{0} g","args":["125"]}],
+             "review":{"id":"a6ef7889-93c2-4204-a691-a714c85e70b7","date":"2026-10-04","meal":"Lunch",
+                       "warning":{"format":"Check {0}","args":["rice"]}}}
+            """;
+        var row = FeedbackJson.Read<ResolvedRow>(json)!;
+        row.Typed.Should().Be("my rice");
+        row.State.Should().Be(FoodState.Cooked);
+        row.ReviewNotes!.Single().ToString().Should().Be("125 g");
+        row.Review!.Id.Should().Be(Guid.Parse("a6ef7889-93c2-4204-a691-a714c85e70b7"));
+        row.Review.Date.Should().Be(new DateOnly(2026, 10, 4));
+        row.Review.Meal.Should().Be(Plate.Core.Domain.Meal.Lunch);
+        row.Review.Warning!.ToString().Should().Be("Check rice");
+    }
+
+    [Fact]
     public async Task A_matched_row_is_named_as_the_database_food_and_an_estimate_as_typed()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
@@ -108,12 +127,20 @@ public partial class ParseRunTests(PostgresFixture fixture) : IClassFixture<Post
 
         var confirm = await AppFactory.PostAsync(client, "/food/parse", token, new() { ["date"] = "2026-10-04", ["meal"] = "Lunch", ["text"] = "150g banana" });
         confirm.StatusCode.Should().Be(HttpStatusCode.OK);
-        var html = await confirm.Content.ReadAsStringAsync();
+        var address = confirm.Headers.GetValues("HX-Push-Url").Single();
+        var original = await confirm.Content.ReadAsStringAsync();
+        var html = await client.GetStringAsync(address);
+        var (other, _) = await app.SignedInClientAsync();
+        (await other.GetAsync(address)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var requestId = Regex.Match(html, """name="requestId" value="([0-9a-f-]+)""").Groups[1].Value;
+        Guid.Parse(requestId).Should().NotBeEmpty();
+        original.Should().Contain(requestId);
+
         var runId = RunIdField().Match(html).Groups[1].Value;
         runId.Should().NotBeEmpty();
 
         // Submit the suggestion exactly as shown: nothing was corrected.
-        var fields = new Dictionary<string, string> { ["date"] = "2026-10-04", ["meal"] = "Lunch", ["aiModel"] = "fake", ["parseRunId"] = runId, ["items[0].Include"] = "true" };
+        var fields = new Dictionary<string, string> { ["requestId"] = requestId, ["date"] = "2026-10-04", ["meal"] = "Lunch", ["aiModel"] = "fake", ["parseRunId"] = runId, ["items[0].Include"] = "true" };
         foreach (var name in new[] { "Grams", "Kcal", "Protein", "Carbs", "Fat", "FoodItemId", "Status" })
         {
             fields[$"items[0].{name}"] = System.Net.WebUtility.HtmlDecode(Regex.Match(html, $"name=\"items\\[0\\]\\.{name}\" value=\"([^\"]*)\"").Groups[1].Value);

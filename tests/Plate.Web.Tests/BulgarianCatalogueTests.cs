@@ -46,7 +46,7 @@ public partial class BulgarianCatalogueTests
     [GeneratedRegex(@"\d,\d")]
     private static partial Regex DecimalComma();
 
-    [GeneratedRegex(@"\b(kcal|kg)\b")]
+    [GeneratedRegex(@"\b(kcal|kg|g|ml)\b")]
     private static partial Regex EnglishUnit();
 
     [GeneratedRegex(@"(?<![А-Яа-я])(Вие|Ви|Ваш|Ваша|Ваше|Ваши)(?![А-Яа-я])")]

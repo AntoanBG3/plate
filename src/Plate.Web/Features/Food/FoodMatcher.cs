@@ -100,99 +100,92 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         // The same niches in the Bulgarian names (the English ones above don't appear in them).
         "консерв", "замразен", "сушен", "на прах", "бебешк", "ресторант", "панир", "с кожа"];
 
+    private sealed record Candidates(ParsedFoodItem Item, FoodMatch? Usual, List<(FoodMatch Food, double Score)> Ranked, List<FoodMatch> Shortlist)
+    {
+        public (FoodMatch Food, double Score)? Best => Ranked.Count == 0 ? null : Ranked[0];
+    }
+
     /// <param name="trace">When given, receives one <see cref="MatchTrace"/> per item.</param>
     public async Task<List<ConfirmItem>> ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct, List<MatchTrace>? trace = null)
     {
         var items = parsed.ToList();
         var usual = repeat is null ? [] : await repeat.UsualMatchesAsync(items, ct);
-        var ranked = new List<(FoodMatch Food, double Score)?>();
-        var tops = new List<List<(FoodMatch Food, double Score)>>();
-        var shortlists = new List<List<FoodMatch>>();
-        foreach (var item in items)
+        var askModel = items.Count > 0 && await decider.IsEnabledAsync(ct);
+        var candidates = new List<Candidates>(items.Count);
+        for (var i = 0; i < items.Count; i++)
         {
-            var typed = item.NameOriginal + " " + item.NameEn;
-            var all = Collapse(await RankAsync(item, ct), x => x.Food, (x, food) => (food, x.Score), typed);
-            ranked.Add(all.Count == 0 ? null : all[0]);
-            tops.Add(all.Take(TraceSize).ToList());
-            var found = await foods.SearchAsync(item.NameEn, ShortlistSize, ShortlistThreshold, ct);
-            if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
-            {
-                found.AddRange(await foods.SearchAsync(item.NameOriginal, ShortlistSize, ShortlistThreshold, ct));
-            }
-
-            shortlists.Add(Shortlist(found, typed));
+            candidates.Add(await FindCandidatesAsync(items[i], usual.GetValueOrDefault(i), trace is not null, askModel, ct));
         }
 
-        // A usual food, or a food the user saved at the top of the ranking, stands: saving it is how they say "this is what I eat".
-        // That item still goes in as context, but not as a question.
-        for (var n = 0; n < items.Count; n++)
-        {
-            if (usual.ContainsKey(n) || ranked[n] is { Food.Own: true })
-            {
-                shortlists[n] = [];
-            }
-        }
-
-        // Every item goes in, so the others are context; only items with candidates become questions.
-        var decisions = shortlists.Any(l => l.Count > 0)
-            ? await decider.DecideAsync(text, items.Select((item, n) => new MatchQuestion(item, shortlists[n].Select(Candidate).ToList())).ToList(), ct)
+        // Every item is context for the model, including foods already decided locally.
+        var decisions = candidates.Any(c => c.Shortlist.Count > 0)
+            ? await decider.DecideAsync(text, candidates.Select(c => new MatchQuestion(c.Item, c.Shortlist.Select(Candidate).ToList())).ToList(), ct)
             : null;
-
-        var result = new List<ConfirmItem>();
-        for (var n = 0; n < items.Count; n++)
+        var result = new List<ConfirmItem>(items.Count);
+        for (var i = 0; i < candidates.Count; i++)
         {
-            var item = items[n];
-            var notes = new List<LocalText>();
-            if (!string.IsNullOrEmpty(item.Assumption))
-            {
-                notes.Add(new LocalText(item.Assumption));
-            }
-
-            var decision = shortlists[n].Count == 0 ? null : decisions?.Items.ElementAtOrDefault(n);
+            var row = candidates[i];
+            var decision = row.Shortlist.Count > 0 ? decisions?.Items.ElementAtOrDefault(i) : null;
             trace?.Add(new MatchTrace(
-                tops[n].Select(t => new TraceCandidate(t.Food.Id, t.Food.DisplayName, Math.Round(t.Score, 3), t.Food.Own)).ToList(),
-                shortlists[n].Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence, decisions?.Model));
-            if (usual.TryGetValue(n, out var mine))
-            {
-                result.Add(Matched(item, mine, Portion(item, mine, notes), Confidence.High, notes, null) with { Usual = true });
-                continue;
-            }
-
-            if (decision is { FoodItemId: not null } && decision.Confidence < PickFloor && ranked[n] is not { Score: >= UnsurePickFallbackFloor })
-            {
-                result.Add(Estimate(item, notes, decisions!.Model));
-            }
-            else if (decision is { FoodItemId: { } id } && decision.Confidence >= PickFloor && shortlists[n].FirstOrDefault(c => c.Id == id) is { } pick)
-            {
-                var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
-                result.Add(Matched(item, pick, Portion(item, pick, notes), confidence, notes, decisions!.Model));
-            }
-            else if (decision is { FoodItemId: null } && (decision.Confidence >= NoneGate || ranked[n] is not { Score: >= NoneFallbackFloor }))
-            {
-                result.Add(Estimate(item, notes, decisions!.Model));
-            }
-            else if (ranked[n] is { } best)
-            {
-                // "Database" (High) only for a close match whose main food word is one the user wrote; otherwise the
-                // confirmation marks it "Check this" (QA: a banana matched a strawberry-banana mousse as Database).
-                var english = best.Food.NameBg is null || string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase);
-                var confidence = best.Score >= HighConfidence && HeadMatches(best.Food, english ? item.NameEn : item.NameOriginal, !english)
-                    ? Confidence.High : Confidence.Medium;
-                result.Add(Matched(item, best.Food, Portion(item, best.Food, notes), confidence, notes, null));
-            }
-            else
-            {
-                result.Add(Estimate(item, notes, null));
-            }
+                row.Ranked.Select(t => new TraceCandidate(t.Food.Id, t.Food.DisplayName, Math.Round(t.Score, 3), t.Food.Own)).ToList(),
+                row.Shortlist.Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence, decisions?.Model));
+            result.Add(Choose(row, decision, decisions?.Model));
         }
-
-        if (repeat is not null)
-        {
-            await UseLastAmountsAsync(items, result, ct);
-        }
-
+        if (repeat is not null) await UseLastAmountsAsync(items, result, ct);
         return result;
     }
+
+    private async Task<Candidates> FindCandidatesAsync(ParsedFoodItem item, FoodMatch? usual, bool trace, bool askModel, CancellationToken ct)
+    {
+        var ranked = usual is null || trace ? await RankAsync(item, trace ? TraceSize : 1, ct) : [];
+        if (!askModel || usual is not null || ranked.Count > 0 && ranked[0].Food.Own)
+            return new(item, usual, ranked, []);
+
+        var found = await foods.SearchAsync(item.NameEn, ShortlistSize, ShortlistThreshold, ct);
+        if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
+            found.AddRange(await foods.SearchAsync(item.NameOriginal, ShortlistSize, ShortlistThreshold, ct));
+        return new(item, null, ranked, Shortlist(found, Typed(item)));
+    }
+
+    private static ConfirmItem Choose(Candidates candidates, MatchDecision? decision, string? model)
+    {
+        var item = candidates.Item;
+        var notes = new List<LocalText>();
+        if (!string.IsNullOrEmpty(item.Assumption))
+        {
+            notes.Add(new LocalText(item.Assumption));
+        }
+
+        if (candidates.Usual is { } mine)
+        {
+            return Matched(item, mine, Portion(item, mine, notes), Confidence.High, notes, null) with { Usual = true };
+        }
+
+        if (decision is { FoodItemId: not null } && decision.Confidence < PickFloor && candidates.Best is not { Score: >= UnsurePickFallbackFloor })
+        {
+            return Estimate(item, notes, model);
+        }
+        if (decision is { FoodItemId: { } id } && decision.Confidence >= PickFloor && candidates.Shortlist.FirstOrDefault(c => c.Id == id) is { } pick)
+        {
+            var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
+            return Matched(item, pick, Portion(item, pick, notes), confidence, notes, model);
+        }
+        if (decision is { FoodItemId: null } && (decision.Confidence >= NoneGate || candidates.Best is not { Score: >= NoneFallbackFloor }))
+        {
+            return Estimate(item, notes, model);
+        }
+        if (candidates.Best is { } best)
+        {
+            // "Database" (High) only for a close match whose main food word is one the user wrote; otherwise the
+            // confirmation marks it "Check this" (QA: a banana matched a strawberry-banana mousse as Database).
+            var english = best.Food.NameBg is null || string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase);
+            var confidence = best.Score >= HighConfidence && HeadMatches(best.Food, english ? item.NameEn : item.NameOriginal, !english)
+                ? Confidence.High : Confidence.Medium;
+            return Matched(item, best.Food, Portion(item, best.Food, notes), confidence, notes, null);
+        }
+        return Estimate(item, notes, null);
+    }
+
 
     private const string EstimatedNote = "These values are estimated from the recipe, not read from a label.";
 
@@ -303,7 +296,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     private static MatchCandidate Candidate(FoodMatch f) => new(f.Id, f.Name, f.NameBg, f.Brand, f.Per100);
 
     /// <summary>Rank's candidates, best first, across the English search and, for text in another language, the original-name search.</summary>
-    private async Task<List<(FoodMatch Food, double Score)>> RankAsync(ParsedFoodItem item, CancellationToken ct)
+    private async Task<List<(FoodMatch Food, double Score)>> RankAsync(ParsedFoodItem item, int take, CancellationToken ct)
     {
         var ranked = (await foods.SearchAsync(FoodWords(item.NameEn), 120, MatchThreshold, ct))
             .Where(c => !MatchesOnlyItsUse(c, item.NameEn))
@@ -318,9 +311,13 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
                 .Select(c => (Food: c, Score: Rank(c, item.NameOriginal, item.State, bulgarian: true))));
         }
 
-        // A stable sort keeps the first of equal scores first, as MaxBy did.
-        return ranked.OrderByDescending(x => x.Score).ToList();
+        // A stable sort keeps the first of equal scores first, as MaxBy did. Same-named products are grouped before
+        // taking, so Rank's pick is the group's representative, not whichever brand sorted first.
+        return Collapse(ranked.OrderByDescending(x => x.Score).ToList(), x => x.Food, (x, food) => (food, x.Score), Typed(item))
+            .Take(take).ToList();
     }
+
+    private static string Typed(ParsedFoodItem item) => item.NameOriginal + " " + item.NameEn;
 
     /// <summary>The grams for an item on this food (<see cref="Portions.For"/>), with a note on how they were reached.</summary>
     private static decimal Portion(ParsedFoodItem item, FoodMatch food, List<LocalText> notes)

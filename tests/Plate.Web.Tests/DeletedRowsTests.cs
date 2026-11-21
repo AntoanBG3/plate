@@ -35,7 +35,7 @@ public class DeletedRowsTests(PostgresFixture fixture) : IClassFixture<PostgresF
 
         clock.Now = clock.Now.AddDays(3);
         var second = await sessions.GetAsync((await sessions.StartAsync(template.Id, default)).Id, default);
-        var suggestions = await new TrainingAnalytics(s.Db, clock).SuggestionsAsync(second, default);
+        var suggestions = (await new TrainingAnalytics(s.Db, clock).GuidanceAsync(second, default)).Suggestions;
         return (s, suggestions[second.Exercises[0].Id]);
     }
 

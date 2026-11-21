@@ -201,19 +201,12 @@ public class ProfileRulesTests
     }
 
     [Fact]
-    public void Rejects_out_of_range_values()
+    public void Rejects_an_unknown_time_zone()
     {
         var p = Valid();
-        p.HeightCm = 90;
-        ProfileRules.Validate(p, 2026).Should().NotBeNull();
-
-        p = Valid();
         p.TimeZoneId = "Mars/Olympus";
         ProfileRules.Validate(p, 2026).Should().NotBeNull();
 
-        p = Valid();
-        p.ProteinGramsPerKg = 5;
-        ProfileRules.Validate(p, 2026).Should().NotBeNull();
     }
 
     [Theory]

@@ -11,6 +11,10 @@ public sealed class StubMatchDecider : IFoodMatchDecider
 
     public List<IReadOnlyList<MatchQuestion>> Calls { get; } = [];
 
+    public bool Enabled { get; set; } = true;
+
+    public Task<bool> IsEnabledAsync(CancellationToken ct) => Task.FromResult(Enabled);
+
     public string? LastText { get; private set; }
 
     public Task<MatchDecisions?> DecideAsync(string text, IReadOnlyList<MatchQuestion> questions, CancellationToken ct)

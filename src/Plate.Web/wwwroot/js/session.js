@@ -595,7 +595,7 @@
             write(REST_KEY, null);
             timer.hidden = true;
             if (window.gymSheet) {
-                window.gymSheet.hide();
+                window.gymSheet.hide(document.getElementById("rest-sheet"));
             }
             return false;
         }
@@ -661,7 +661,7 @@
             stopTicking();
             tick();
             if (window.gymSheet) {
-                window.gymSheet.hide();
+                window.gymSheet.hide(document.getElementById("rest-sheet"));
             }
         }
     });

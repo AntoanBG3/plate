@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Plate.Web.Data;
 using Plate.Web.Features.Body;
 using Plate.Web.Features.Profile;
@@ -8,6 +9,8 @@ namespace Plate.Web.Tests;
 /// <summary>The services as one user sees them, sharing one DbContext like a request scope.</summary>
 public sealed class UserScope : IAsyncDisposable
 {
+    private readonly MemoryCache cache = new(new MemoryCacheOptions());
+
     public UserScope(PostgresFixture fixture, string userId)
     {
         UserId = userId;
@@ -26,7 +29,7 @@ public sealed class UserScope : IAsyncDisposable
         SavedMeals = new Plate.Web.Features.Food.SavedMealService(Db, currentUser, TimeProvider.System);
         Undo = new Plate.Web.Features.Undo.UndoService(Db, TimeProvider.System);
         ParseRuns = new Plate.Web.Features.Feedback.ParseRunService(Db, currentUser, new Plate.Web.Integrations.FakeFoodParser(), Matcher, Namer, TimeProvider.System,
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<Plate.Web.Features.Feedback.ParseRunService>.Instance, Repeat);
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<Plate.Web.Features.Feedback.ParseRunService>.Instance, cache, Repeat);
     }
 
     public Plate.Web.Features.Feedback.ParseRunService ParseRuns { get; }
@@ -53,5 +56,9 @@ public sealed class UserScope : IAsyncDisposable
     public ExerciseService Exercises { get; }
     public ExerciseSettingsService ExerciseSettings { get; }
 
-    public ValueTask DisposeAsync() => Db.DisposeAsync();
+    public ValueTask DisposeAsync()
+    {
+        cache.Dispose();
+        return Db.DisposeAsync();
+    }
 }
