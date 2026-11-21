@@ -1,3 +1,5 @@
+using System.Data.Common;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using FluentAssertions;
 using Plate.Core.Training;
 using Plate.Web.Features.Analytics;
@@ -13,6 +15,17 @@ public class AnalyticsTests(PostgresFixture fixture) : IClassFixture<PostgresFix
         public DateTimeOffset Now { get; set; } = now;
 
         public override DateTimeOffset GetUtcNow() => Now;
+    }
+
+    private sealed class CountReads : DbCommandInterceptor
+    {
+        public int Count { get; private set; }
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData,
+            InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+        {
+            Count++;
+            return ValueTask.FromResult(result);
+        }
     }
 
     /// <summary>Logs one finished session of the template with the given working sets for the first exercise.</summary>
@@ -45,14 +58,31 @@ public class AnalyticsTests(PostgresFixture fixture) : IClassFixture<PostgresFix
     [Fact]
     public async Task Suggestion_uses_the_previous_sessions_of_that_exercise()
     {
-        var (s, clock, sessions, analytics, templateId) = await SetupAsync();
+        var (s, clock, sessions, _, templateId) = await SetupAsync();
         await using var _ = s;
 
         await SessionAsync(s, sessions, templateId, (80, 12), (80, 12), (80, 12));
+        for (var skip = 0; skip < 4; skip++)
+        {
+            clock.Now = clock.Now.AddDays(1);
+            await SessionAsync(s, sessions, templateId); // warm-ups only
+        }
         clock.Now = clock.Now.AddDays(2);
         var current = await sessions.GetAsync((await sessions.StartAsync(templateId, default)).Id, default);
 
-        var suggestion = (await analytics.SuggestionsAsync(current, default))[current.Exercises[0].Id];
+        // Six slots must share one history read even when they refer to different lifts.
+        var benchId = current.Exercises[0].ExerciseId;
+        var extra = await s.Db.Exercises.Where(e => e.Id != benchId).Take(5).Select(e => e.Id).ToListAsync();
+        await sessions.AddExercisesAsync(current.Id, extra, default);
+        s.Db.ChangeTracker.Clear();
+        current = await sessions.GetAsync(current.Id, default);
+        var reads = new CountReads();
+        await using var counted = fixture.CreateContext(s.UserId, null, reads);
+        var guidance = await new TrainingAnalytics(counted, clock).GuidanceAsync(current, default);
+        reads.Count.Should().Be(1);
+        guidance.Suggestions.Should().HaveCount(6);
+        guidance.LastTime[current.Exercises[0].Id].Should().HaveCount(3);
+        var suggestion = guidance.Suggestions[current.Exercises[0].Id];
 
         suggestion!.Kind.Should().Be(ProgressionKind.Progress);
         suggestion.Sets[0].WeightKg.Should().Be(82.5m);
@@ -67,7 +97,7 @@ public class AnalyticsTests(PostgresFixture fixture) : IClassFixture<PostgresFix
         var id = await SessionAsync(s, sessions, templateId, (60, 10));
         var session = await sessions.GetAsync(id, default);
 
-        (await analytics.SuggestionsAsync(session, default)).Values.Should().ContainSingle().Which.Should().BeNull();
+        (await analytics.GuidanceAsync(session, default)).Suggestions.Values.Should().ContainSingle().Which.Should().BeNull();
         (await analytics.RecordsAsync(session, default)).Should().BeEmpty();
     }
 

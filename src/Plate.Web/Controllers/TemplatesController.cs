@@ -101,30 +101,18 @@ public class TemplatesController(TemplateService templates, ExerciseService exer
     public async Task<IActionResult> AddExercise(int id, int? exerciseId, List<int>? exerciseIds, CancellationToken ct)
     {
         var picked = exerciseIds is { Count: > 0 } ? exerciseIds : exerciseId is { } one ? [one] : [];
-        var before = (await templates.GetAsync(id, ct)).Exercises.Select(e => e.ExerciseId).ToHashSet();
-        int? first = null;
-        foreach (var pick in picked)
+        var (first, duplicate) = await templates.AddExercisesAsync(id, picked, ct);
+        if (duplicate is not null)
         {
-            var added = await templates.AddExerciseAsync(id, pick, ct);
-            first ??= added;
+            TempData.Notice(new LocalText("Added a second {0}.", localizer.Exercise(duplicate)));
         }
 
-        await NoteSecondCopyAsync(picked, before, ct);
         if (first is { } f)
         {
             TempData.Focus($"te-{f}");
         }
 
         return Redirect($"/train/templates/{id}");
-    }
-
-    /// <summary>Picking an exercise that is already there adds a second one; say so, as that may be a slip.</summary>
-    private async Task NoteSecondCopyAsync(List<int> picked, HashSet<int> before, CancellationToken ct)
-    {
-        if (picked.FirstOrDefault(before.Contains) is var again and > 0)
-        {
-            TempData.Notice(new LocalText("Added a second {0}.", localizer.Exercise(await exercises.GetAsync(again, ct))));
-        }
     }
 
     [HttpPost("exercises/{id:int}")]

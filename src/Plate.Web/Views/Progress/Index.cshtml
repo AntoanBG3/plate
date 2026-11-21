@@ -107,7 +107,7 @@
                 <select id="exerciseId" name="exerciseId">
                     @foreach (var exercise in Model.Exercises)
                     {
-                        <option value="@exercise.Id" selected="@(exercise.Id == Model.Selected.Id)">@L[exercise.Name]</option>
+                        <option value="@exercise.Id" selected="@(exercise.Id == Model.Selected.Id)">@L.Exercise(exercise.Name, exercise.IsCustom)</option>
                     }
                 </select>
             </div>

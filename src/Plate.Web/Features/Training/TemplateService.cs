@@ -91,21 +91,40 @@ public class TemplateService(AppDbContext db, ICurrentUser currentUser, TimeProv
         }
     }
 
-    /// <summary>Adds an exercise at the end of the template. Returns the new template exercise's id.</summary>
-    public async Task<int> AddExerciseAsync(int templateId, int exerciseId, CancellationToken ct)
-    {
-        var template = await GetAsync(templateId, ct);
-        var exercise = await db.Exercises.SingleOrDefaultAsync(e => e.Id == exerciseId && !e.IsArchived, ct)
-            ?? throw new NotFoundException("Exercise not found.");
+    public async Task<int> AddExerciseAsync(int templateId, int exerciseId, CancellationToken ct) =>
+        (await AddExercisesAsync(templateId, [exerciseId], ct)).FirstId!.Value;
 
-        var item = new TemplateExercise
+    public async Task<(int? FirstId, Exercise? Duplicate)> AddExercisesAsync(int templateId, IReadOnlyList<int> exerciseIds, CancellationToken ct)
+    {
+        var template = await db.Templates.Include(t => t.Exercises).SingleOrDefaultAsync(t => t.Id == templateId && !t.IsArchived, ct)
+            ?? throw new NotFoundException();
+        if (exerciseIds.Count == 0)
         {
-            ExerciseId = exercise.Id,
-            SortOrder = template.Exercises.Count == 0 ? 0 : template.Exercises.Max(e => e.SortOrder) + 1,
-        };
-        template.Exercises.Add(item);
+            return (null, null);
+        }
+        var live = await db.Exercises.Where(e => exerciseIds.Contains(e.Id) && !e.IsArchived)
+            .ToDictionaryAsync(e => e.Id, ct);
+        if (exerciseIds.Any(id => !live.ContainsKey(id)))
+        {
+            throw new NotFoundException("Exercise not found.");
+        }
+
+        var existing = template.Exercises.Select(e => e.ExerciseId).ToHashSet();
+        var duplicate = exerciseIds.FirstOrDefault(existing.Contains);
+        var next = template.Exercises.Count == 0 ? 0 : template.Exercises.Max(e => e.SortOrder) + 1;
+        TemplateExercise? first = null;
+        foreach (var id in exerciseIds)
+        {
+            var item = new TemplateExercise
+            {
+                ExerciseId = id,
+                SortOrder = next++,
+            };
+            template.Exercises.Add(item);
+            first ??= item;
+        }
         await db.SaveChangesAsync(ct);
-        return item.Id;
+        return (first!.Id, live.GetValueOrDefault(duplicate));
     }
 
     public async Task UpdateExerciseAsync(int templateExerciseId, TemplateExerciseInput input, CancellationToken ct)
