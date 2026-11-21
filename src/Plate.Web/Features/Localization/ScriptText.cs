@@ -12,6 +12,7 @@ public static class ScriptText
         "Something went wrong ({0}). Try again.",
         "Couldn't load the page. That change may have been saved. Check before trying again.",
         "{0} kcal · {1} g protein",
+        "Grams must be above 0 and at most {0}.",
         "OK",
         "Add",
         "Add {0}",

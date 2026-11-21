@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using FluentAssertions;
 using Microsoft.Playwright;
 
@@ -551,5 +552,49 @@ public class LabelPhotoTests(E2EFixture app) : IClassFixture<E2EFixture>
 
         (await phone.Page.Locator("[data-module=\"label\"].is-busy").CountAsync()).Should().Be(0, "the replaced read's spinner is cleared");
         (await phone.Page.Locator("[data-label-status]").IsVisibleAsync()).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Bare_separator_cannot_be_saved_as_protein()
+    {
+        await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium);
+        await phone.GoAsync("/food/add?meal=Lunch&tab=manual");
+        var page = phone.Page;
+        await page.FillAsync("#m-name", "Audit decimal");
+        await page.FillAsync("#m-kcal", "100");
+        await page.FillAsync("#m-protein", ".");
+        await page.FillAsync("#m-carbs", "25");
+        await page.FillAsync("#m-fat", "0");
+        await page.FillAsync("#m-grams", "100");
+        (await page.Locator("#m-protein").EvaluateAsync<bool>("e => e.checkValidity()")).Should().BeFalse();
+        await page.Locator("form[action='/food/items']").EvaluateAsync("f => f.noValidate = true");
+        await phone.NavigateByAsync(() => page.Locator("form[action='/food/items'] button[type=submit]").First.TapAsync());
+        await using var db = app.Db.CreateContext(null);
+        (await db.FoodLog.IgnoreQueryFilters().AnyAsync(e => e.Description == "Audit decimal")).Should().BeFalse();
+        (await page.Locator("#m-protein").InputValueAsync()).Should().Be(".");
+    }
+
+    [Fact]
+    public async Task Rejected_portion_preserves_the_manual_form()
+    {
+        await using var phone = await app.SignedInPhoneAsync(E2EFixture.Chromium);
+        await phone.GoAsync("/food/add?meal=Lunch&tab=manual");
+        var page = phone.Page;
+        await page.FillAsync("#m-name", "Audit portion");
+        await page.FillAsync("#m-barcode", "4006381333931");
+        await page.Locator("input[name=share][type=checkbox]").UncheckAsync();
+        await page.FillAsync("#m-kcal", "100");
+        await page.FillAsync("#m-protein", "0");
+        await page.FillAsync("#m-carbs", "25");
+        await page.FillAsync("#m-fat", "0");
+        await page.FillAsync("#m-grams", "3001");
+        (await page.Locator("#m-grams").EvaluateAsync<bool>("e => e.checkValidity()")).Should().BeFalse();
+        await page.Locator("form[action='/food/items']").EvaluateAsync("f => f.noValidate = true");
+        await phone.NavigateByAsync(() => page.Locator("form[action='/food/items'] button[type=submit]").First.TapAsync());
+        (await page.Locator("#m-name").InputValueAsync()).Should().Be("Audit portion");
+        (await page.Locator("#m-grams").InputValueAsync()).Should().Be("3001");
+        (await page.Locator("#m-grams").GetAttributeAsync("aria-invalid")).Should().Be("true");
+        (await page.Locator("#m-barcode").InputValueAsync()).Should().Be("4006381333931");
+        (await page.Locator("input[name=share][type=checkbox]").IsCheckedAsync()).Should().BeFalse();
     }
 }

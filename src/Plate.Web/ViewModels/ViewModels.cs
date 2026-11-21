@@ -188,7 +188,8 @@ public record FoodAddViewModel(
     IReadOnlyList<Plate.Web.Features.Food.RecentFood> Recents,
     IReadOnlyList<SavedMeal> SavedMeals,
     bool LabelAvailable = false,
-    IReadOnlyDictionary<int, decimal>? LastGrams = null);
+    IReadOnlyDictionary<int, decimal>? LastGrams = null,
+    ManualFoodFormModel? Manual = null);
 
 public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<Plate.Web.Features.Food.ConfirmItem> Items, Plate.Core.Text.LocalText? Warning, int? ParseRunId = null);
 
@@ -215,7 +216,9 @@ public record ManualFoodFormModel(
     string? BarcodeValue = null,
     bool Share = true,
     decimal? TypedGrams = null,
-    decimal? TypedServing = null);
+    decimal? TypedServing = null,
+    string? InvalidField = null,
+    bool Submitted = false);
 
 /// <summary>A food the app already has for a barcode in the manual form, offered instead of a new one (SPEC 7).</summary>
 /// <param name="Own">The user's own private food; rejecting it clears the barcode, since one account can't have two foods with it.</param>

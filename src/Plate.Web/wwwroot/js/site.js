@@ -463,6 +463,15 @@
     };
 
     if ("serviceWorker" in navigator) {
+    // Text inputs accept both decimal separators. Browsers apply min and max only to number inputs.
+    document.addEventListener("input", event => {
+        const field = event.target;
+        if (!field.matches('[data-label-form] input[name="grams"], [data-label-form] input[name="servingGrams"]')) return;
+        const grams = Number(field.value.trim().replace(",", "."));
+        field.setCustomValidity(field.value && Number.isFinite(grams) && (grams <= 0 || grams > Number(field.max))
+            ? t("Grams must be above 0 and at most {0}.", field.max) : "");
+    });
+
         navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
 

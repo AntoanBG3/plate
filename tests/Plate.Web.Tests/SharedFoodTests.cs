@@ -290,10 +290,10 @@ public class SharedFoodTests(PostgresFixture fixture) : IClassFixture<PostgresFi
         var code = NewEan();
         await SaveManualAsync(a, Unique("First qsf"), code, share: true);
 
-        // A plain form post with a validation error goes back with the message shown on the next page.
+        // Keep the submitted form and show the error on it.
         var response = await SaveManualAsync(b, Unique("Second qsf"), code, share: true);
-        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
-        (await PageAsync(b, response.Headers.Location!.OriginalString)).Should().Contain("A food with that barcode is already shared. Scan it again to use it.");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("A food with that barcode is already shared. Scan it again to use it.");
     }
 
     [Fact]
@@ -350,7 +350,7 @@ public class SharedFoodTests(PostgresFixture fixture) : IClassFixture<PostgresFi
         var code = NewEan();
         var name = Unique("Retry qsf");
 
-        (await SaveManualAsync(a, name, code, share: true, grams: grams, date: date)).StatusCode.Should().Be(HttpStatusCode.Redirect);
+        (await SaveManualAsync(a, name, code, share: true, grams: grams, date: date)).StatusCode.Should().Be(HttpStatusCode.OK);
         await using (var db = fixture.CreateContext(null))
         {
             (await db.FoodItems.IgnoreQueryFilters().AnyAsync(f => f.Barcode == code)).Should().BeFalse("nothing is kept from a refused save");

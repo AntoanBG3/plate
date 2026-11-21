@@ -6,7 +6,8 @@
     var hasBarcode = Model.Barcode is not null || !string.IsNullOrEmpty(Model.BarcodeValue);
     var label = Model.Label;
     // Numbers are written with a dot in both languages (SPEC 8), or the inputs' pattern rejects them on iOS.
-    string? Value(decimal? v) => v?.ToString("0.#", inv);
+    string? Value(string field, decimal? v) => Model.Submitted
+        ? ViewData.ModelState[field]?.AttemptedValue : v?.ToString("0.#", inv);
     // A value computed from kJ or a per-serving column is marked for checking; one the label didn't give is left empty and marked.
     string Mark(decimal? v, LabelField field) =>
         label is null ? "num" : label.Converted.HasFlag(field) ? "num is-converted" : v is null ? "num is-missing" : "num";
@@ -34,6 +35,7 @@
     }
     <form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/items">
         <input type="hidden" name="date" value="@date" />
+        <input type="hidden" name="barcodeField" value="@Model.BarcodeField.ToString()" />
         <input type="hidden" name="meal" value="@Model.Meal" />
         @if (Model.Barcode is not null)
         {
@@ -44,7 +46,7 @@
             <input type="hidden" name="labelScanId" value="@scanId" />
         }
         <div class="list">
-            <div class="field-row stacked"><label for="m-name" class="sr-only">@L["Name"]</label><input id="m-name" type="text" name="name" value="@(Model.Name ?? label?.Name)" maxlength="200" required placeholder="@L["Food name, e.g. Кисело мляко 2%"]" /></div>
+            <div class="field-row stacked"><label for="m-name" class="sr-only">@L["Name"]</label><input id="m-name" aria-invalid="@(Model.InvalidField == "name" ? "true" : null)" autofocus="@(Model.InvalidField == "name")" type="text" name="name" value="@(Model.Name ?? label?.Name)" maxlength="200" required placeholder="@L["Food name, e.g. Кисело мляко 2%"]" /></div>
             @if (Model.BarcodeField)
             {
                 <div class="field-row"><label for="m-barcode">@L["Barcode"]</label><input id="m-barcode" class="num" type="text" name="barcode" value="@Model.BarcodeValue" inputmode="numeric" pattern="[0-9 \-]{8,16}" autocomplete="off" placeholder="@L["Optional"]" data-barcode-input /><button type="button" class="icon-btn" data-scan-into aria-label="@L["Scan the barcode"]">@Ui.Icon("barcode")</button></div>
@@ -56,17 +58,17 @@
         }
         <h2 class="section-header" style="margin-top: var(--s-5)">@L["Per 100 g, from the label"]</h2>
         <div class="list">
-            <div class="field-row"><label for="m-kcal">@L["Energy"]</label><input id="m-kcal" class="@Mark(label?.Kcal, LabelField.Kcal)" type="text" name="kcal" value="@Value(label?.Kcal)" min="0" max="900" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required /><span class="unit">@L["kcal"]</span></div>
-            <div class="field-row"><label for="m-protein">@L["Protein"]</label><input id="m-protein" class="@Mark(label?.Protein, LabelField.Protein)" type="text" name="protein" value="@Value(label?.Protein)" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
-            <div class="field-row"><label for="m-carbs">@L["Carbs"]</label><input id="m-carbs" class="@Mark(label?.Carbs, LabelField.Carbs)" type="text" name="carbs" value="@Value(label?.Carbs)" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
-            <div class="field-row"><label for="m-fat">@L["Fat"]</label><input id="m-fat" class="@Mark(label?.Fat, LabelField.Fat)" type="text" name="fat" value="@Value(label?.Fat)" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
-            <div class="field-row is-optional"><label for="m-satfat">@L["of which saturated"]</label><input id="m-satfat" class="@Mark(label?.SaturatedFat, LabelField.SaturatedFat)" type="text" name="saturatedFat" value="@Value(label?.SaturatedFat)" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
-            <div class="field-row is-optional"><label for="m-fiber">@L["Fiber"]</label><input id="m-fiber" class="@Mark(label?.Fiber, LabelField.Fiber)" type="text" name="fiber" value="@Value(label?.Fiber)" min="0" max="100" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+            <div class="field-row"><label for="m-kcal">@L["Energy"]</label><input id="m-kcal" class="@Mark(label?.Kcal, LabelField.Kcal)" type="text" name="kcal" aria-invalid="@(Model.InvalidField == "kcal" ? "true" : null)" autofocus="@(Model.InvalidField == "kcal")" value="@Value("kcal", label?.Kcal)" min="0" max="900" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L["kcal"]</span></div>
+            <div class="field-row"><label for="m-protein">@L["Protein"]</label><input id="m-protein" class="@Mark(label?.Protein, LabelField.Protein)" type="text" name="protein" aria-invalid="@(Model.InvalidField == "protein" ? "true" : null)" autofocus="@(Model.InvalidField == "protein")" value="@Value("protein", label?.Protein)" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
+            <div class="field-row"><label for="m-carbs">@L["Carbs"]</label><input id="m-carbs" class="@Mark(label?.Carbs, LabelField.Carbs)" type="text" name="carbs" aria-invalid="@(Model.InvalidField == "carbs" ? "true" : null)" autofocus="@(Model.InvalidField == "carbs")" value="@Value("carbs", label?.Carbs)" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
+            <div class="field-row"><label for="m-fat">@L["Fat"]</label><input id="m-fat" class="@Mark(label?.Fat, LabelField.Fat)" type="text" name="fat" aria-invalid="@(Model.InvalidField == "fat" ? "true" : null)" autofocus="@(Model.InvalidField == "fat")" value="@Value("fat", label?.Fat)" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
+            <div class="field-row is-optional"><label for="m-satfat">@L["of which saturated"]</label><input id="m-satfat" class="@Mark(label?.SaturatedFat, LabelField.SaturatedFat)" type="text" name="saturatedFat" aria-invalid="@(Model.InvalidField == "saturatedFat" ? "true" : null)" autofocus="@(Model.InvalidField == "saturatedFat")" value="@Value("saturatedFat", label?.SaturatedFat)" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+            <div class="field-row is-optional"><label for="m-fiber">@L["Fiber"]</label><input id="m-fiber" class="@Mark(label?.Fiber, LabelField.Fiber)" type="text" name="fiber" aria-invalid="@(Model.InvalidField == "fiber" ? "true" : null)" autofocus="@(Model.InvalidField == "fiber")" value="@Value("fiber", label?.Fiber)" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
         </div>
         <h2 class="section-header" style="margin-top: var(--s-5)">@L["Portion"]</h2>
         <div class="list">
-            <div class="field-row is-optional"><label for="m-serving">@L["One serving"]</label><input id="m-serving" class="num" type="text" name="servingGrams" value="@Value(label?.ServingGrams ?? Model.TypedServing)" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
-            <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="text" name="grams" value="@Value(Model.TypedGrams ?? label?.ServingGrams)" min="1" max="3000" step="any" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
+            <div class="field-row is-optional"><label for="m-serving">@L["One serving"]</label><input id="m-serving" class="num" type="text" name="servingGrams" aria-invalid="@(Model.InvalidField == "servingGrams" ? "true" : null)" autofocus="@(Model.InvalidField == "servingGrams")" value="@Value("servingGrams", label?.ServingGrams ?? Model.TypedServing)" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+            <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="text" name="grams" aria-invalid="@(Model.InvalidField == "grams" ? "true" : null)" autofocus="@(Model.InvalidField == "grams")" value="@Value("grams", Model.TypedGrams ?? label?.ServingGrams)" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
         </div>
         @* Shown only with a barcode: others find a shared food by scanning it (SPEC 4). Without one the server keeps it private. *@
         <div class="list" data-share style="margin-top: var(--s-5)" hidden="@(!hasBarcode)">

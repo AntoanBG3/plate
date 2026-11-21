@@ -352,6 +352,7 @@ builder.Services.AddControllersWithViews(o =>
 {
     o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
     o.Filters.Add<FeatureExceptionFilter>();
+    o.Filters.Add<ValidateDecimalInputs>();
     o.ModelBinderProviders.Insert(0, new DecimalModelBinderProvider());
 });
 builder.Services.AddAntiforgery(o =>
