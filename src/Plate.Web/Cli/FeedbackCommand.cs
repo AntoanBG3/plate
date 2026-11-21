@@ -27,6 +27,8 @@ public static class FeedbackCommand
           parses [--since 30d] [--flagged] [--limit 50] [--export-eval]
           eval [--since 365d] [--flagged] [--limit 20] [--parser <model>] [--matcher off|jev|<decision model id>]
                                           spends OpenRouter credit; unknown options are refused
+          matchbench --models <id,id,...> [--repeat 3] [--timeout 10] < tools/matchbench/cases.jsonl
+                                          compares decision models on labelled items; spends OpenRouter credit
           pilot [--file <csv>|-] [--account <email>] [--check] [--no-history]
                                           the weighed-meal pilot (reports/weighed-meal-pilot.md); one parse of credit per meal
           labels [--since 30d] [--edited] [--failed] [--limit 50]
@@ -158,6 +160,9 @@ public static class FeedbackCommand
 
                 case "eval":
                     return await ParseEvaluation.RunAsync(scope.ServiceProvider, rest, o, json, ct);
+
+                case "matchbench":
+                    return await MatchBenchmark.RunAsync(scope.ServiceProvider, rest, o, input ?? Console.In, json, ct);
 
                 case "pilot":
                     return await PilotEvaluation.RunAsync(scope.ServiceProvider, rest, o, input ?? Console.In, json, ct);

@@ -79,7 +79,11 @@ public class JevFoodMatchDecider(HttpClient http, ILogger<JevFoodMatchDecider> l
             var usage = (node as JsonObject)?["usage"] as JsonObject;
             log.LogInformation("Jev {Model} decided {Count} items in {Ms} ms, {Tokens} input tokens, ${Cost}",
                 decisions.Model, questions.Count, clock.ElapsedMilliseconds, usage?["input_tokens"]?.ToString(), usage?["cost"]?.ToString());
-            return (decisions, null);
+            return (decisions with
+            {
+                InputTokens = usage?["input_tokens"] is JsonValue t && t.TryGetValue<int>(out var tokens) ? tokens : null,
+                Cost = usage?["cost"] is JsonValue c && c.TryGetValue<decimal>(out var cost) ? cost : null,
+            }, null);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {

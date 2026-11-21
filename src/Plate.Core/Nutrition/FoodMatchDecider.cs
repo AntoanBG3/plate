@@ -12,7 +12,9 @@ public record MatchDecision(int? FoodItemId, decimal Confidence);
 
 /// <param name="Items">One entry per question, in the same order; null where that item was not decided.</param>
 /// <param name="Model">The model version that answered.</param>
-public record MatchDecisions(IReadOnlyList<MatchDecision?> Items, string Model);
+/// <param name="InputTokens">What OpenRouter counted for the call, when it says.</param>
+/// <param name="Cost">What OpenRouter charged for the call in US dollars, when it says.</param>
+public record MatchDecisions(IReadOnlyList<MatchDecision?> Items, string Model, int? InputTokens = null, decimal? Cost = null);
 
 /// <summary>Decides which database food each parsed item is, from a shortlist, or that none fits (SPEC 6.1).</summary>
 public interface IFoodMatchDecider
