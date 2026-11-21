@@ -161,6 +161,45 @@ public class EvalCaseTests(PostgresFixture fixture) : IClassFixture<PostgresFixt
         (await s.Repeat.UsualMatchesAsync([item], default))[0].Id.Should().Be(after.Id, "the live service knows the latest save");
     }
 
+    [Fact]
+    public async Task A_meal_typed_again_soon_after_supersedes_the_earlier_run()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var first = await s.ParseRuns.ParseAsync("200g chicken breast raw, 90g qqzxw", default);
+        await s.ParseRuns.ConfirmAsync(first.RunId, [
+            new SavedItem(true, first.Items[0].Description, 200, first.Items[0].Per100, first.Items[0].FoodItemId),
+            new SavedItem(false, first.Items[1].Description, 90, first.Items[1].Per100, null),
+        ], default);
+        await s.Db.SaveChangesAsync();
+        var again = await s.ParseRuns.ParseAsync("200g chicken breast raw", default);
+        await s.ParseRuns.ConfirmAsync(again.RunId, [new SavedItem(true, again.Items[0].Description, 200, again.Items[0].Per100, again.Items[0].FoodItemId)], default);
+        await s.Db.SaveChangesAsync();
+
+        var cases = (await Admin(s).EvalCasesAsync(DateTimeOffset.UtcNow.AddHours(-1), false, default)).Where(c => c.RunId == first.RunId || c.RunId == again.RunId).ToList();
+
+        cases.Single(c => c.RunId == first.RunId).SupersededBy.Should().Be(again.RunId);
+        cases.Single(c => c.RunId == again.RunId).SupersededBy.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task A_miss_says_whether_the_saved_food_was_ranked()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var outcome = await s.ParseRuns.ParseAsync("200g chicken breast raw", default);
+        var a = await s.Db.FoodItems.SingleAsync(f => f.Id == outcome.Items[0].FoodItemId);
+        var b = await OtherSeedFoodAsync(s, a.Id);
+        await s.ParseRuns.ConfirmAsync(outcome.RunId, [new SavedItem(true, b.Name, 200, Fresh(b, 200).Per100, b.Id)], default);
+        await s.Db.SaveChangesAsync();
+        var c = (await Admin(s).EvalCasesAsync(DateTimeOffset.UtcNow.AddHours(-1), false, default)).Single(x => x.RunId == outcome.RunId);
+
+        var ranked = ParseEvaluator.Score(c, [Fresh(a, 200)], trace: [new MatchTrace([new(a.Id, a.Name, 1.4, false), new(b.Id, b.Name, 1.1, false)], true, a.Id, 0.62m)]);
+        var unranked = ParseEvaluator.Score(c, [Fresh(a, 200)], trace: [new MatchTrace([new(a.Id, a.Name, 1.4, false)], false, null, null)]);
+
+        ranked.Lost.Should().ContainSingle().Which.Should().Be($"{b.Name}: #{b.Id} ranked 2 for that item, but {a.Name} #{a.Id} was chosen (the decider picked #{a.Id} at 0.62)");
+        unranked.Lost.Should().ContainSingle().Which.Should().Contain("was not among any item's top 1 ranked candidates");
+        ParseEvaluation.CaseText(ranked).Should().Contain("    lost  ");
+    }
+
     // A case as exported before the saved row was kept (the start of Fixtures/parse-corrections.sample.jsonl).
     private const string OldCase = """
         {"runId":0,"text":"200g chicken breast raw, a banana","aiModel":"fake","items":[{"index":0,"parsed":{"nameEn":"chicken breast raw","nameOriginal":"200g chicken breast raw","grams":200,"state":"Raw","estimated":{"kcal":100,"protein":5,"carbs":15,"fat":3}},"verdict":"accepted","foodItemId":2698,"foodName":"Chicken, breast, meat and skin, raw","foodSource":"Usda","savedGrams":200,"reasons":"None"},{"index":1,"parsed":{"nameEn":"a banana","nameOriginal":"a banana","grams":100,"state":"NotApplicable","estimated":{"kcal":100,"protein":5,"carbs":15,"fat":3}},"verdict":"wrong-food","foodItemId":10051,"foodName":"Mousse","foodSource":"OpenFoodFacts","reasons":"WrongFood"},{"index":2,"parsed":{"nameEn":"rice","nameOriginal":"ориз","grams":150,"state":"Cooked","estimated":{"kcal":130,"protein":2.7,"carbs":28,"fat":0.3}},"verdict":"corrected","foodItemId":5,"foodName":"Rice","foodSource":"Usda","savedGrams":180,"reasons":"None"}]}

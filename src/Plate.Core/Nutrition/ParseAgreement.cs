@@ -55,7 +55,8 @@ public record MealNutrients(decimal Kcal, decimal Protein, decimal Carbs, decima
 /// <param name="Saved">The saved meal's totals; null when any saved item lacks its per-100 g values.</param>
 /// <param name="Fresh">The new run's totals over every item it found.</param>
 /// <param name="RepeatedRejections">Items whose rejected food the new run picked again.</param>
-public record ReplayScore(AgreementResult Agreement, int RepeatedRejections, MealNutrients? Saved, MealNutrients Fresh);
+/// <param name="Missed">Indexes into the expectations of saved foods the new run didn't find.</param>
+public record ReplayScore(AgreementResult Agreement, int RepeatedRejections, MealNutrients? Saved, MealNutrients Fresh, IReadOnlyList<int>? Missed = null);
 
 /// <summary>Per-meal differences between replayed and saved nutrients, over the meals where both are known.</summary>
 public record NutrientAgreement(int Meals, decimal MeanAbsKcal, decimal MedianAbsKcal, decimal MeanSignedKcal, decimal MeanAbsProtein, decimal MeanAbsCarbs, decimal MeanAbsFat)
@@ -99,7 +100,8 @@ public static class ParseAgreement
     {
         var used = new bool[fresh.Count];
         int count = 0, food = 0, grams = 0, unknown = 0;
-        foreach (var e in expected.Where(e => e.Included))
+        var missed = new List<int>();
+        foreach (var (e, index) in expected.Select((e, n) => (e, n)).Where(x => x.e.Included))
         {
             // Keeping a food after rating it wrong says nothing about which food is right.
             if (!e.FoodKnown || (e.FoodItemId is { } id && id == e.RejectedFoodItemId))
@@ -120,6 +122,7 @@ public static class ParseAgreement
 
             if (match < 0)
             {
+                missed.Add(index);
                 continue;
             }
 
@@ -152,7 +155,7 @@ public static class ParseAgreement
             ? MealNutrients.Of(included.Select(e => (e.Grams, e.Per100!)).Concat(backing.Select(b => (b.Grams, b.Per100))))
             : null;
         return new ReplayScore(new AgreementResult(count, food, grams, unpaired - Math.Min(unpaired, unknown), unknown, backing.Count), repeated,
-            savedTotals, MealNutrients.Of(fresh.Select(f => (f.Grams, f.Per100))));
+            savedTotals, MealNutrients.Of(fresh.Select(f => (f.Grams, f.Per100))), missed);
     }
 
     private static bool SameFood(int? id, string? name, string description, Per100g? per100, SuggestedItem fresh) =>

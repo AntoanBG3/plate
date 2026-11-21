@@ -292,6 +292,24 @@ public class ParseAgreementTests
     }
 }
 
+public class ParseRepeatsTests
+{
+    private static readonly DateTimeOffset Confirmed = new(2026, 11, 20, 19, 42, 0, TimeSpan.Zero);
+
+    [Fact]
+    public void The_same_meal_typed_again_soon_after_replaces_the_one_left_with_unticked_rows()
+    {
+        // Runs 20 and 21: the second typed 146 minutes later, the first left with its pastries unticked.
+        const string first = "Закуска с лютеница и сирене от лидл\nЗакуска пица от лидл\nБутерка с шоколад от лидл\n1 литър 2.2% кефир";
+        const string second = "закуска с лютеница и сирене лидл\nзакуска пица лидл";
+
+        ParseRepeats.Supersedes(Confirmed, first, false, Confirmed.AddMinutes(146), second).Should().BeTrue();
+        ParseRepeats.Supersedes(Confirmed, first, true, Confirmed.AddMinutes(146), second).Should().BeFalse("a meal accepted as parsed was eaten");
+        ParseRepeats.Supersedes(Confirmed, first, false, Confirmed.AddHours(4), second).Should().BeFalse("too long after");
+        ParseRepeats.Supersedes(Confirmed, "200g cottage cheese", false, Confirmed.AddMinutes(30), "кафе с мляко").Should().BeFalse("other words");
+    }
+}
+
 public class ModelAccuracyTests
 {
     [Fact]

@@ -95,13 +95,18 @@ public record EvalSaved(
 /// Entries the user logged within <see cref="FeedbackAdmin.LaterWindow"/> after confirming, outside this parse: often the
 /// food of a row they unticked, logged another way. Null in cases exported before they were kept.
 /// </param>
+/// <param name="SupersededBy">
+/// A later run that typed this meal again (<see cref="ParseRepeats"/>); the eval skips this one, while its rejected foods
+/// still count in the regression tests.
+/// </param>
 public record EvalCase(
     [property: JsonPropertyName("runId")] int RunId,
     [property: JsonPropertyName("text")] string Text,
     [property: JsonPropertyName("aiModel")] string? AiModel,
     [property: JsonPropertyName("matchModel")] string? MatchModel,
     [property: JsonPropertyName("items")] IReadOnlyList<EvalItem> Items,
-    [property: JsonPropertyName("later")] IReadOnlyList<EvalLater>? Later = null);
+    [property: JsonPropertyName("later")] IReadOnlyList<EvalLater>? Later = null,
+    [property: JsonPropertyName("supersededBy")] int? SupersededBy = null);
 
 /// <summary>An entry logged right after a confirmed parse, outside it.</summary>
 public record EvalLater(
@@ -297,7 +302,10 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
 
             if (!flaggedOnly || items.Any(i => i.Verdict != EvalVerdict.Accepted))
             {
-                cases.Add(new EvalCase(run.Id, run.Text, run.AiModel, run.MatchModel, items, await LaterAsync(run, ct)));
+                var accepted = items.All(i => i.Verdict == EvalVerdict.Accepted);
+                var by = runs.FirstOrDefault(r => r.Id != run.Id && r.UserId == run.UserId && r.CreatedAt > run.CreatedAt
+                    && ParseRepeats.Supersedes(run.ConfirmedAt ?? run.CreatedAt, run.Text, accepted, r.CreatedAt, r.Text));
+                cases.Add(new EvalCase(run.Id, run.Text, run.AiModel, run.MatchModel, items, await LaterAsync(run, ct), by?.Id));
             }
         }
 

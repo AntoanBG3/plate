@@ -10,7 +10,8 @@ namespace Plate.Web.Features.Feedback;
 /// <param name="ParserModel">Null for the model picked in the admin area.</param>
 /// <param name="MatcherModel">"off", a decision model id, or null for the one picked in the admin area.</param>
 /// <param name="History">Replay with each account's usual foods and last amounts as they were at the parse, as the app would have; off measures the parser and matcher alone.</param>
-public record EvalRequest(DateTimeOffset Since, bool FlaggedOnly, int Limit, string? ParserModel, string? MatcherModel, bool History = true);
+/// <param name="StoredParse">Match the items the parser gave at the time instead of parsing again, so matchers are compared on the same items.</param>
+public record EvalRequest(DateTimeOffset Since, bool FlaggedOnly, int Limit, string? ParserModel, string? MatcherModel, bool History = true, bool StoredParse = false);
 
 /// <param name="Known">False for a saved item whose food the case doesn't record.</param>
 public record EvalFresh(string Description, decimal Grams, int? FoodItemId, string? MatchedName, bool Known = true);
@@ -18,10 +19,13 @@ public record EvalFresh(string Description, decimal Grams, int? FoodItemId, stri
 /// <param name="Saved">What the user saved, item by item, to set beside <paramref name="Fresh"/>.</param>
 /// <param name="SavedTotals">The saved meal's energy and macros; null when the case lacks the saved values.</param>
 /// <param name="FreshTotals">The same for what the parser and matcher give now.</param>
+/// <param name="Lost">For each saved food the replay didn't find, where it was lost: not ranked, or ranked but not chosen.</param>
 public record EvalCaseResult(int RunId, string Text, AgreementResult Score, int RepeatedWrongFoods, string? Error, IReadOnlyList<EvalFresh> Fresh,
-    IReadOnlyList<EvalFresh>? Saved = null, MealNutrients? SavedTotals = null, MealNutrients? FreshTotals = null);
+    IReadOnlyList<EvalFresh>? Saved = null, MealNutrients? SavedTotals = null, MealNutrients? FreshTotals = null, IReadOnlyList<string>? Lost = null);
 
-public record EvalReport(string ParserModel, string MatcherModel, AgreementResult Total, int RepeatedWrongFoods, IReadOnlyList<EvalCaseResult> Cases, bool History = true)
+/// <param name="Superseded">Runs skipped because the same meal was typed again soon after.</param>
+public record EvalReport(string ParserModel, string MatcherModel, AgreementResult Total, int RepeatedWrongFoods, IReadOnlyList<EvalCaseResult> Cases, bool History = true,
+    IReadOnlyList<int>? Superseded = null, bool StoredParse = false)
 {
     public static string Percent(int n, int of) => of == 0 ? "-" : $"{100.0 * n / of:0}%";
 
@@ -65,8 +69,10 @@ public class ParseEvaluator(
     /// Parses and matches <paramref name="text"/> as <paramref name="userId"/>, with that account's history as it was at
     /// <paramref name="asOf"/> unless <paramref name="history"/> is off. Nothing is saved.
     /// </summary>
+    /// <param name="stored">Items to match instead of parsing <paramref name="text"/> again.</param>
+    /// <param name="trace">When given, receives the matcher's trace per item.</param>
     public async Task<(FoodParseResult Parsed, IReadOnlyList<ConfirmItem> Items)> ReplayAsync(string userId, string text, DateTimeOffset asOf, bool history,
-        (string Key, string Parser, string Matcher) models, CancellationToken ct)
+        (string Key, string Parser, string Matcher) models, CancellationToken ct, IReadOnlyList<ParsedFoodItem>? stored = null, List<MatchTrace>? trace = null)
     {
         var user = new FixedCurrentUser(userId);
         await using var db = new AppDbContext(options, user);
@@ -74,8 +80,8 @@ public class ParseEvaluator(
         IFoodMatchDecider decider = models.Matcher == AiTasks.Off ? new NoDecider() : new KeyedDecider(jev, models.Key, models.Matcher);
         // As the app would have matched it then: the account's usual foods and last amounts from before the parse.
         var matcher = new FoodMatcher(foods, decider, history ? new HistoryAsOf(db, user, asOf) : null);
-        var parsed = await parser.ParseAsync(text, models.Key, models.Parser, ct);
-        return (parsed, parsed.Items.Count == 0 ? [] : await matcher.ResolveAsync(text, parsed.Items, ct));
+        var parsed = stored is null ? await parser.ParseAsync(text, models.Key, models.Parser, ct) : new FoodParseResult(stored, null, "stored");
+        return (parsed, parsed.Items.Count == 0 ? [] : await matcher.ResolveAsync(text, parsed.Items, ct, trace));
     }
 
     public async Task<EvalReport> RunAsync(EvalRequest request, Action<EvalCaseResult, int, int>? onCase, CancellationToken ct)
@@ -83,22 +89,26 @@ public class ParseEvaluator(
         var models = await ModelsAsync(request.ParserModel, request.MatcherModel, ct);
         var (parserModel, matcherModel) = (models.Parser, models.Matcher);
 
-        var cases = (await admin.EvalCasesAsync(request.Since, request.FlaggedOnly, ct)).TakeLast(request.Limit).ToList();
+        var all = await admin.EvalCasesAsync(request.Since, request.FlaggedOnly, ct);
+        var superseded = all.Where(c => c.SupersededBy is not null).Select(c => c.RunId).ToList();
+        var cases = all.Where(c => c.SupersededBy is null).TakeLast(request.Limit).ToList();
         var total = AgreementResult.Zero;
         var repeats = 0;
         var results = new List<EvalCaseResult>();
         foreach (var c in cases)
         {
             var run = await rootDb.ParseRuns.IgnoreQueryFilters().Where(r => r.Id == c.RunId).Select(r => new { r.UserId, r.CreatedAt }).SingleAsync(ct);
-            var (parsed, fresh) = await ReplayAsync(run.UserId, c.Text, run.CreatedAt, request.History, models, ct);
-            var result = Score(c, fresh, parsed.Error?.ToString());
+            var trace = new List<MatchTrace>();
+            var (parsed, fresh) = await ReplayAsync(run.UserId, c.Text, run.CreatedAt, request.History, models, ct,
+                request.StoredParse ? c.Items.Select(i => i.Parsed).ToList() : null, trace);
+            var result = Score(c, fresh, parsed.Error?.ToString(), trace);
             repeats += result.RepeatedWrongFoods;
             total += result.Score;
             results.Add(result);
             onCase?.Invoke(result, results.Count, cases.Count);
         }
 
-        return new EvalReport(parserModel, matcherModel, total, repeats, results, request.History);
+        return new EvalReport(request.StoredParse ? "stored parse" : parserModel, matcherModel, total, repeats, results, request.History, superseded, request.StoredParse);
     }
 
     /// <summary>
@@ -106,7 +116,7 @@ public class ParseEvaluator(
     /// picked again counts as a repeat, an entry logged right after the confirm can back up a new item, and the meal's
     /// energy and macros are compared with the saved grams and values.
     /// </summary>
-    public static EvalCaseResult Score(EvalCase c, IReadOnlyList<ConfirmItem> fresh, string? error = null)
+    public static EvalCaseResult Score(EvalCase c, IReadOnlyList<ConfirmItem> fresh, string? error = null, IReadOnlyList<MatchTrace>? trace = null)
     {
         var expected = c.Items.Select(i => i.Expectation()).ToList();
         var score = ParseAgreement.Replay(expected,
@@ -119,7 +129,44 @@ public class ParseEvaluator(
         return new EvalCaseResult(c.RunId, c.Text, score.Agreement, score.RepeatedRejections, error,
             fresh.Select(f => new EvalFresh(f.Description, f.Grams, f.FoodItemId, f.MatchedName)).ToList(),
             [.. saved, .. (c.Later ?? []).Select(l => new EvalFresh("(logged after) " + l.Description, l.Grams, l.FoodItemId, l.FoodName))],
-            score.Saved, score.Fresh);
+            score.Saved, score.Fresh, Lost(c, expected, score.Missed ?? [], fresh, trace));
+    }
+
+    /// <summary>
+    /// Where each missed saved food was lost, from the matcher's trace: ranked among the top candidates but not chosen
+    /// (a selection miss, with the decider's pick when it was asked), or not ranked at all (the search or the catalogue).
+    /// </summary>
+    private static IReadOnlyList<string> Lost(EvalCase c, IReadOnlyList<ReplayExpectation> expected, IReadOnlyList<int> missed, IReadOnlyList<ConfirmItem> fresh,
+        IReadOnlyList<MatchTrace>? trace)
+    {
+        var result = new List<string>();
+        var traces = trace ?? [];
+        foreach (var n in missed)
+        {
+            var e = expected[n];
+            var name = c.Items[n].Saved?.Description ?? c.Items[n].Parsed.NameOriginal;
+            if (e.FoodItemId is not { } food)
+            {
+                result.Add($"{name}: saved as an AI estimate; the replay matched a database food or named it differently");
+                continue;
+            }
+
+            var hit = traces.Select((t, i) => (t, i)).FirstOrDefault(x => x.t.Top.Any(t => t.Id == food));
+            if (hit.t is null)
+            {
+                result.Add($"{name}: #{food} was not among any item's top {traces.Select(t => t.Top.Count).DefaultIfEmpty(0).Max()} ranked candidates (search or catalogue)");
+                continue;
+            }
+
+            var rank = hit.t.Top.ToList().FindIndex(t => t.Id == food) + 1;
+            var chosen = fresh.ElementAtOrDefault(hit.i) is { } f ? f.FoodItemId is { } id ? $"{f.MatchedName} #{id}" : "an AI estimate" : "nothing";
+            result.Add($"{name}: #{food} ranked {rank} for that item, but {chosen} was chosen"
+                + (hit.t.Asked ? $" (the decider picked {(hit.t.DeciderPick is { } p ? "#" + p : "none")} at {hit.t.DeciderConfidence:0.00})" : How(fresh, hit.i)));
+        }
+
+        return result;
+
+        static string How(IReadOnlyList<ConfirmItem> fresh, int i) => fresh.ElementAtOrDefault(i)?.Usual == true ? " (a usual food)" : " (by the ranking)";
     }
 
     private sealed class NoDecider : IFoodMatchDecider
@@ -139,10 +186,10 @@ public class ParseEvaluator(
 /// <summary><c>feedback eval</c>: the evaluation with text or JSON output.</summary>
 public static class ParseEvaluation
 {
-    public const string Usage = "Usage: feedback eval [--since 365d] [--flagged] [--limit 20] [--parser <model>] [--matcher off|jev|<decision model id>] [--no-history] [--json]";
+    public const string Usage = "Usage: feedback eval [--since 365d] [--flagged] [--limit 20] [--parser <model>] [--matcher off|jev|<decision model id>] [--no-history] [--stored-parse] [--json]";
 
     private static readonly string[] Valued = ["--since", "--limit", "--parser", "--matcher"];
-    private static readonly string[] Flags = ["--flagged", "--json", "--no-history"];
+    private static readonly string[] Flags = ["--flagged", "--json", "--no-history", "--stored-parse"];
 
     /// <param name="args">The command's arguments, starting with "eval".</param>
     public static async Task<int> RunAsync(IServiceProvider services, string[] args, TextWriter o, bool json, CancellationToken ct)
@@ -175,7 +222,8 @@ public static class ParseEvaluation
             int.TryParse(Option(args, "--limit"), CultureInfo.InvariantCulture, out var l) && l > 0 ? l : 20,
             Option(args, "--parser"),
             Option(args, "--matcher"),
-            History: !args.Contains("--no-history"));
+            History: !args.Contains("--no-history"),
+            StoredParse: args.Contains("--stored-parse"));
         if (await services.GetRequiredService<OpenRouterSettings>().GetKeyAsync(ct) is null)
         {
             Console.Error.WriteLine("No OpenRouter key is set, so there is nothing to evaluate against.");
@@ -201,11 +249,12 @@ public static class ParseEvaluation
 
         if (json)
         {
-            Cli.FeedbackCommand.WriteJson(o, new { report.ParserModel, report.MatcherModel, history = report.History, total = report.Total, repeatedWrongFoods = report.RepeatedWrongFoods, nutrients = report.Nutrients, cases = report.Cases });
+            Cli.FeedbackCommand.WriteJson(o, new { report.ParserModel, report.MatcherModel, history = report.History, superseded = report.Superseded, total = report.Total, repeatedWrongFoods = report.RepeatedWrongFoods, nutrients = report.Nutrients, cases = report.Cases });
         }
         else
         {
-            o.WriteLine($"Parser {report.ParserModel}, matcher {report.MatcherModel}, {(report.History ? "with each account's history as it was" : "without history")}.");
+            o.WriteLine($"Parser {report.ParserModel}, matcher {report.MatcherModel}, {(report.History ? "with each account's history as it was" : "without history")}."
+                + (report.Superseded is { Count: > 0 } s ? $" Skipped {s.Count} runs typed again soon after: {string.Join(", ", s)}." : ""));
             o.WriteLine(TotalLine(report));
             o.WriteLine("Cost is not reported here; check the OpenRouter activity page.");
         }
@@ -249,6 +298,7 @@ public static class ParseEvaluation
         var lines = new List<string> { CaseLine(c) };
         lines.AddRange((c.Saved ?? []).Select(i => "    saved " + ItemText(i)));
         lines.AddRange(c.Fresh.Select(i => "    now   " + ItemText(i)));
+        lines.AddRange((c.Lost ?? []).Select(l => "    lost  " + l));
         return string.Join('\n', lines);
     }
 
