@@ -116,7 +116,8 @@ public class FoodSearchEquivalenceTests(PostgresFixture fixture) : IClassFixture
             SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                    f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
                    (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {s.UserId}) AS "ByOther",
-                   GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')))::float8 AS "Score"
+                   GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')))::float8 AS "Score",
+                   f."PieceGrams", f."PackGrams", f."ValuesEstimated"
             FROM "FoodItems" f
             WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {s.UserId})
               AND GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) >= {minScore}
@@ -132,6 +133,7 @@ public class FoodSearchEquivalenceTests(PostgresFixture fixture) : IClassFixture
                 SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                        f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
                        (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {s.UserId}) AS "ByOther",
+                       f."PieceGrams", f."PackGrams", f."ValuesEstimated",
                        GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) AS sim,
                        starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre
                 FROM "FoodItems" f
@@ -139,7 +141,8 @@ public class FoodSearchEquivalenceTests(PostgresFixture fixture) : IClassFixture
                   AND GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) >= 0.3
             )
             SELECT "Id", "Name", "NameBg", "Brand", "KcalPer100g", "ProteinPer100g", "CarbsPer100g", "FatPer100g",
-                   "FiberPer100g", "SaturatedFatPer100g", "DefaultServingGrams", "Own", "ByOther", (sim + CASE WHEN pre THEN 1 ELSE 0 END)::float8 AS "Score"
+                   "FiberPer100g", "SaturatedFatPer100g", "DefaultServingGrams", "Own", "ByOther", (sim + CASE WHEN pre THEN 1 ELSE 0 END)::float8 AS "Score",
+                   "PieceGrams", "PackGrams", "ValuesEstimated"
             FROM m
             ORDER BY "Own" DESC, pre DESC, CASE WHEN pre THEN length("Name") END, sim DESC, length("Name")
             LIMIT {take * 2}

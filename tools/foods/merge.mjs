@@ -131,10 +131,10 @@ for (const g of keptGeneric) {
     const key = clean(g.name_bg).toLowerCase();
     if (seenNames.has(key)) continue;
     seenNames.add(key);
-    out.push({ kind: "generic", barcode: "", name_bg: clean(g.name_bg), name_en: english[g.name_bg] || "", brand: "", kcal: g.kcal, protein: g.protein, carbs: g.carbs, fat: g.fat, serving_g: "", source: g.source, fiber: "", satfat: "" });
+    out.push({ kind: "generic", barcode: "", name_bg: clean(g.name_bg), name_en: english[g.name_bg] || "", brand: "", kcal: g.kcal, protein: g.protein, carbs: g.carbs, fat: g.fat, serving_g: "", source: g.source, fiber: "", satfat: "", piece_g: "", basis: "" });
 }
 for (const p of off) {
-    out.push({ kind: "product", barcode: p.barcode, name_bg: clean(p.name_bg), name_en: "", brand: p.brand, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, serving_g: p.serving_g, source: "https://world.openfoodfacts.org/product/" + p.barcode, fiber: p.fiber ?? "", satfat: p.satfat ?? "" });
+    out.push({ kind: "product", barcode: p.barcode, name_bg: clean(p.name_bg), name_en: "", brand: p.brand, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, serving_g: p.serving_g, source: "https://world.openfoodfacts.org/product/" + p.barcode, fiber: p.fiber ?? "", satfat: p.satfat ?? "", piece_g: "", basis: "" });
 }
 // Hand-curated foods with their own sources, kept as they are.
 for (const curated of ["lidl-bakery.csv"]) {
@@ -157,6 +157,6 @@ for (const row of out) {
     row.brand = mixedScript(row.brand);
 }
 
-writeCsv(path.join(seedDir, "bg-foods.csv"), ["kind", "barcode", "name_bg", "name_en", "brand", "kcal", "protein", "carbs", "fat", "serving_g", "source", "fiber", "satfat"], out);
+writeCsv(path.join(seedDir, "bg-foods.csv"), ["kind", "barcode", "name_bg", "name_en", "brand", "kcal", "protein", "carbs", "fat", "serving_g", "source", "fiber", "satfat", "piece_g", "basis"], out);
 writeCsv(path.join(raw, "usda-bg-names.csv"), ["fdc_id", "name_bg"], [...usdaNames].map(([fdc_id, name_bg]) => ({ fdc_id, name_bg })));
 console.log(`kept ${keptGeneric.length} generic (${generic.length - keptGeneric.length} duplicates removed, ${usdaNames.size} of them matched USDA), ${off.length} products`);

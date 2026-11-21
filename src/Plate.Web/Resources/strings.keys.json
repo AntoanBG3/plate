@@ -1369,6 +1369,10 @@
   "No products with nutrition data found.": [
     "src/Plate.Web/Views/Food/Add.cshtml"
   ],
+  "No serving size for this food, so check the grams.": [
+    "extra",
+    "wwwroot/js"
+  ],
   "No sets": [
     "src/Plate.Web/Views/Train/Summary.cshtml"
   ],
@@ -1389,6 +1393,10 @@
   ],
   "No weigh-ins yet": [
     "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "No weight per piece for this food, so check the grams.": [
+    "extra",
+    "wwwroot/js"
   ],
   "No working sets in the last two weeks.": [
     "src/Plate.Web/Views/Progress/Index.cshtml"
@@ -2386,6 +2394,10 @@
   "The new passwords do not match.": [
     "src/Plate.Web/Controllers/SettingsController.cs"
   ],
+  "The pack size isn't known, so check the grams.": [
+    "extra",
+    "wwwroot/js"
+  ],
   "The password needs at least 12 characters.": [
     "src/Plate.Web/Features/Users/UserCreator.cs"
   ],
@@ -2416,6 +2428,10 @@
   ],
   "There is no empty warm-up row to remove.": [
     "src/Plate.Web/Controllers/TrainController.cs"
+  ],
+  "These values are estimated from the recipe, not read from a label.": [
+    "extra",
+    "wwwroot/js"
   ],
   "These were saved on this phone before reports were linked to an account. Send them only if you wrote them.": [
     "src/Plate.Web/Views/Feedback/Index.cshtml"
@@ -2794,9 +2810,6 @@
   "assumed 100 g": [
     "extra"
   ],
-  "assumed 100 g each": [
-    "extra"
-  ],
   "at least the floor {0} of {1} days": [
     "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
   ],
@@ -3042,8 +3055,17 @@
   "{0} sets are saved on this phone and will send when the connection is back.": [
     "wwwroot/js"
   ],
+  "{0} × a pack of {1} g": [
+    "extra",
+    "wwwroot/js"
+  ],
+  "{0} × a piece of {1} g": [
+    "extra",
+    "wwwroot/js"
+  ],
   "{0} × a serving of {1} g": [
-    "extra"
+    "extra",
+    "wwwroot/js"
   ],
   "{0}% a week": [
     "src/Plate.Web/Views/Settings/Index.cshtml"

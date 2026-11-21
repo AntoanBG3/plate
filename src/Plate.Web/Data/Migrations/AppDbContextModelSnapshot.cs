@@ -377,6 +377,14 @@ namespace Plate.Web.Data.Migrations
                     b.Property<string>("OwnerUserId")
                         .HasColumnType("text");
 
+                    b.Property<decimal?>("PackGrams")
+                        .HasPrecision(7, 1)
+                        .HasColumnType("numeric(7,1)");
+
+                    b.Property<decimal?>("PieceGrams")
+                        .HasPrecision(7, 1)
+                        .HasColumnType("numeric(7,1)");
+
                     b.Property<decimal>("ProteinPer100g")
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)");
@@ -391,6 +399,9 @@ namespace Plate.Web.Data.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.Property<bool>("Unnamed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ValuesEstimated")
                         .HasColumnType("boolean");
 
                     b.HasKey("Id");

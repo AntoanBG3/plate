@@ -8,7 +8,8 @@ namespace Plate.Web.Data.Seed;
 /// <summary>
 /// Imports Data/Seed/bg-foods.csv (built by tools/foods): Bulgarian generic foods and dishes compiled from public
 /// tables, and products sold in Bulgaria from Open Food Facts. Runs on every start and only adds what is missing,
-/// so a newer file adds its new rows: products by barcode, generic foods by Bulgarian name.
+/// so a newer file adds its new rows: products by barcode, generic foods by Bulgarian name. A generic food seeded before
+/// the file had piece weights and a values basis gets them (<see cref="AddPiecesAndBasisAsync"/>).
 /// </summary>
 public static class BgFoodSeed
 {
@@ -30,9 +31,11 @@ public static class BgFoodSeed
 
         var items = new List<FoodItem>();
         var extras = new Dictionary<string, (decimal? Fiber, decimal? Saturated)>(StringComparer.Ordinal);
+        var pieces = new Dictionary<string, (decimal? Piece, bool Estimated)>(StringComparer.Ordinal);
         foreach (var line in File.ReadLines(path).Skip(1))
         {
-            // kind,barcode,name_bg,name_en,brand,kcal,protein,carbs,fat,serving_g,source,fiber,satfat
+            // kind,barcode,name_bg,name_en,brand,kcal,protein,carbs,fat,serving_g,source,fiber,satfat,piece_g,basis
+            // basis: "label" (printed values), "estimate" (computed from a recipe) or empty (a composition table or Open Food Facts).
             var f = UsdaSeed.ParseCsvLine(line);
             if (f.Count < 10 || f[2].Length == 0)
             {
@@ -41,6 +44,11 @@ public static class BgFoodSeed
 
             var product = f[0] == "product";
             var (fiber, saturated) = (Optional(f, 11), Optional(f, 12));
+            var (piece, estimated) = (Optional(f, 13), f.Count > 14 && f[14] == "estimate");
+            if (!product && (piece is not null || estimated))
+            {
+                pieces.TryAdd(MixedScript.Normalize(f[2]), (piece, estimated));
+            }
             if (product && (fiber is not null || saturated is not null))
             {
                 extras.TryAdd(f[1], (fiber, saturated));
@@ -65,6 +73,8 @@ public static class BgFoodSeed
                 FiberPer100g = fiber,
                 SaturatedFatPer100g = saturated,
                 DefaultServingGrams = f[9].Length == 0 ? null : D(f[9]),
+                PieceGrams = piece,
+                ValuesEstimated = estimated,
                 Source = product ? FoodSource.OpenFoodFacts : FoodSource.Reference,
             });
         }
@@ -79,6 +89,33 @@ public static class BgFoodSeed
 
         db.ChangeTracker.AutoDetectChangesEnabled = true;
         await AddFiberAndSaturatedFatAsync(db, extras, ct);
+        await AddPiecesAndBasisAsync(db, pieces, ct);
+    }
+
+    /// <summary>
+    /// Shared generic foods seeded before the CSV had piece weights and a values basis get them, by Bulgarian name. Only
+    /// a missing piece weight is filled and the estimate flag only set, so a start with nothing new writes nothing.
+    /// </summary>
+    private static async Task AddPiecesAndBasisAsync(AppDbContext db, Dictionary<string, (decimal? Piece, bool Estimated)> pieces, CancellationToken ct)
+    {
+        if (pieces.Count == 0)
+        {
+            return;
+        }
+
+        var names = pieces.Keys.ToList();
+        var stale = await db.FoodItems.IgnoreQueryFilters()
+            .Where(f => f.OwnerUserId == null && f.Source == FoodSource.Reference && f.NameBg != null && names.Contains(f.NameBg))
+            .Where(f => f.PieceGrams == null || !f.ValuesEstimated)
+            .ToListAsync(ct);
+        foreach (var item in stale)
+        {
+            var (piece, estimated) = pieces[item.NameBg!];
+            item.PieceGrams ??= piece;
+            item.ValuesEstimated |= estimated;
+        }
+
+        await db.SaveChangesAsync(ct);
     }
 
     /// <summary>

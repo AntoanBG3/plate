@@ -2,7 +2,9 @@ namespace Plate.Core.Nutrition;
 
 /// <summary>A packaged product from an external food database such as Open Food Facts.</summary>
 /// <param name="Unnamed">The database had no name, so <paramref name="Name"/> is made up from the brand and quantity.</param>
-public record ProductInfo(string Barcode, string Name, string? Brand, Per100g Per100, decimal? ServingGrams, bool Unnamed = false);
+/// <param name="PieceGrams">One piece, when the serving is given as a count of pieces ("2 biscuits (30 g)").</param>
+/// <param name="PackGrams">The pack's net weight, when given in grams.</param>
+public record ProductInfo(string Barcode, string Name, string? Brand, Per100g Per100, decimal? ServingGrams, bool Unnamed = false, decimal? PieceGrams = null, decimal? PackGrams = null);
 
 public enum LookupStatus
 {

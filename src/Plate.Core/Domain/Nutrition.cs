@@ -59,6 +59,19 @@ public class FoodItem
     public decimal? SaturatedFatPer100g { get; set; }
 
     public decimal? DefaultServingGrams { get; set; }
+
+    /// <summary>
+    /// One piece's weight, for a counted amount ("две закуски"). Null when the source doesn't give it: a serving can be
+    /// several pieces, so <see cref="DefaultServingGrams"/> never stands in for it.
+    /// </summary>
+    public decimal? PieceGrams { get; set; }
+
+    /// <summary>The whole pack's net weight, for a fraction of a pack ("половин кофичка"); null when unknown.</summary>
+    public decimal? PackGrams { get; set; }
+
+    /// <summary>The per-100 g values are an estimate (from a recipe), not a printed label or a composition table.</summary>
+    public bool ValuesEstimated { get; set; }
+
     public FoodSource Source { get; set; }
 
     /// <summary>

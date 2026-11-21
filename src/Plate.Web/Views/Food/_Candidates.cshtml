@@ -13,7 +13,8 @@ else
             var state = L.State(Plate.Core.Nutrition.FoodStates.FromName(f.Name, f.NameBg));
             <button type="button" class="row row-link" style="width: 100%; text-align: left" data-candidate="@f.Id" data-name="@f.DisplayName" data-status="@state"
                     data-kcal="@f.KcalPer100g.ToString(inv)" data-protein="@f.ProteinPer100g.ToString(inv)" data-carbs="@f.CarbsPer100g.ToString(inv)"
-                    data-fat="@f.FatPer100g.ToString(inv)" data-fiber="@f.FiberPer100g?.ToString(inv)" data-satfat="@f.SaturatedFatPer100g?.ToString(inv)">
+                    data-fat="@f.FatPer100g.ToString(inv)" data-fiber="@f.FiberPer100g?.ToString(inv)" data-satfat="@f.SaturatedFatPer100g?.ToString(inv)"
+                    data-piece="@f.PieceGrams?.ToString("0.#", inv)" data-pack="@f.PackGrams?.ToString("0.#", inv)" data-serving="@f.DefaultServingGrams?.ToString("0.#", inv)" data-estimated="@(f.ValuesEstimated ? "true" : "false")">
                 <span class="row-main">
                     <span class="row-title entry-title">@f.DisplayName@if (state is not null)
                         {<span class="chip status-chip">@state</span>}</span>

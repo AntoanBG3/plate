@@ -71,6 +71,36 @@ public class FoodSeedTests(PostgresFixture fixture) : IClassFixture<PostgresFixt
     }
 
     [Fact]
+    public async Task Piece_weights_and_estimated_values_are_imported_and_filled_in_on_foods_seeded_before()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..8];
+        await using (var db = fixture.CreateContext(null))
+        {
+            // Seeded by a file without the two columns: the serving was there, the piece weight and basis were not.
+            db.FoodItems.Add(new FoodItem { Name = $"Pastry {tag}", NameBg = $"Закуска {tag}, Пекарна Лидл", Source = FoodSource.Reference, KcalPer100g = 233, DefaultServingGrams = 90 });
+            await db.SaveChangesAsync();
+        }
+
+        var csv = TempCsv(
+            "kind,barcode,name_bg,name_en,brand,kcal,protein,carbs,fat,serving_g,source,fiber,satfat,piece_g,basis",
+            $"generic,,\"Закуска {tag}, Пекарна Лидл\",Pastry {tag},Lidl,233,7.6,23.3,11.9,90,https://example.test (estimate),1.3,6.1,90,estimate",
+            $"generic,,\"Кифла {tag}, Пекарна Лидл\",Roll {tag},Lidl,260,8,50,2,60,https://example.test,,,60,label",
+            $"generic,,Хляб {tag},Bread {tag},,250,8,50,1,,https://example.test,,,,");
+        await using (var db = fixture.CreateContext(null))
+        {
+            await BgFoodSeed.SeedAsync(db, csv, default);
+            await BgFoodSeed.SeedAsync(db, csv, default);
+        }
+
+        await using var check = fixture.CreateContext(null);
+        var foods = await check.FoodItems.IgnoreQueryFilters().Where(f => f.Name.EndsWith(tag)).ToDictionaryAsync(f => f.Name);
+        foods.Should().HaveCount(3);
+        foods[$"Pastry {tag}"].Should().Match<FoodItem>(f => f.PieceGrams == 90 && f.ValuesEstimated);
+        foods[$"Roll {tag}"].Should().Match<FoodItem>(f => f.PieceGrams == 60 && !f.ValuesEstimated && f.DefaultServingGrams == 60);
+        foods[$"Bread {tag}"].Should().Match<FoodItem>(f => f.PieceGrams == null && !f.ValuesEstimated);
+    }
+
+    [Fact]
     public async Task USDA_foods_seeded_earlier_get_their_Bulgarian_names_once()
     {
         var tag = Guid.NewGuid().ToString("N")[..8];

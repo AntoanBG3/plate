@@ -265,6 +265,24 @@ public class IntegrationParsingTests
         OpenFoodFactsClient.ReadProduct(JsonNode.Parse("""{"product_name":"x","nutriments":{}}""")!, "1").Should().BeNull();
     }
 
+    [Fact]
+    public void Open_food_facts_gives_a_piece_weight_only_for_a_counted_serving_and_a_pack_weight_in_grams()
+    {
+        var biscuits = OpenFoodFactsClient.ReadProduct(JsonNode.Parse("""
+            {"product_name":"Biscuits","serving_quantity":30,"serving_size":"2 biscuits (30 g)","product_quantity":"200","product_quantity_unit":"g",
+             "nutriments":{"energy-kcal_100g":480,"proteins_100g":6,"carbohydrates_100g":68,"fat_100g":20}}
+            """)!, "1")!;
+        biscuits.PieceGrams.Should().Be(15);
+        biscuits.PackGrams.Should().Be(200);
+
+        var yogurt = OpenFoodFactsClient.ReadProduct(JsonNode.Parse("""
+            {"product_name":"Kiselo mlyako","serving_quantity":"125","serving_size":"125 g","quantity":"400 g",
+             "nutriments":{"energy-kcal_100g":62,"proteins_100g":3.3,"carbohydrates_100g":4.2,"fat_100g":3.6}}
+            """)!, "2")!;
+        yogurt.PieceGrams.Should().BeNull("a serving in grams says nothing about pieces");
+        yogurt.PackGrams.Should().Be(400);
+    }
+
     [Theory]
     [InlineData("\"product_name\":\"Kiselo mlyako\",\"product_name_en\":\"Yoghurt\"", "Kiselo mlyako", false)]
     [InlineData("\"product_name\":\"\",\"product_name_en\":\"Yoghurt\",\"generic_name\":\"Dairy\"", "Yoghurt", false)]

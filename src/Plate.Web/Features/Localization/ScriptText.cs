@@ -17,6 +17,13 @@ public static class ScriptText
         "Add {0}",
         "Database: {0}",
         "Database",
+        "{0} × a piece of {1} g",
+        "{0} × a pack of {1} g",
+        "{0} × a serving of {1} g",
+        "No weight per piece for this food, so check the grams.",
+        "The pack size isn't known, so check the grams.",
+        "No serving size for this food, so check the grams.",
+        "These values are estimated from the recipe, not read from a label.",
         // session.js
         "This browser can't save pending changes. Keep this page open until they are sent.",
         "Your sign-in changed. Reload this page before sending pending changes.",

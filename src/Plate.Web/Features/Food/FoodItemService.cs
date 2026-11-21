@@ -8,9 +8,12 @@ namespace Plate.Web.Features.Food;
 
 /// <summary>A food from a name search, with how closely it matched (0 to 1).</summary>
 /// <param name="ByOther">A shared manual food another account added (SPEC 7); says nothing about who.</param>
-public record FoodMatch(int Id, string Name, string? NameBg, string? Brand, decimal KcalPer100g, decimal ProteinPer100g, decimal CarbsPer100g, decimal FatPer100g, decimal? FiberPer100g, decimal? SaturatedFatPer100g, decimal? DefaultServingGrams, bool Own, bool ByOther, double Score)
+public record FoodMatch(int Id, string Name, string? NameBg, string? Brand, decimal KcalPer100g, decimal ProteinPer100g, decimal CarbsPer100g, decimal FatPer100g, decimal? FiberPer100g, decimal? SaturatedFatPer100g, decimal? DefaultServingGrams, bool Own, bool ByOther, double Score,
+    decimal? PieceGrams = null, decimal? PackGrams = null, bool ValuesEstimated = false)
 {
     public Per100g Per100 => new(KcalPer100g, ProteinPer100g, CarbsPer100g, FatPer100g, FiberPer100g, SaturatedFatPer100g);
+
+    public UnitWeights Weights => new(PieceGrams, PackGrams, DefaultServingGrams);
 
     /// <summary>The Bulgarian name for a Bulgarian interface when there is one.</summary>
     public string DisplayName => Localization.Localizer.IsBulgarian && !string.IsNullOrEmpty(NameBg) ? NameBg : Name;
@@ -38,7 +41,8 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                    f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
                    (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
-                   GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')))::float8 AS "Score"
+                   GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')))::float8 AS "Score",
+                   f."PieceGrams", f."PackGrams", f."ValuesEstimated"
             FROM "FoodItems" f
             WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {userId})
               AND (NOT {indexed} OR f."Name" %> {q} OR f."NameBg" %> {q})
@@ -83,6 +87,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
                 SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                        f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
                        (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
+                       f."PieceGrams", f."PackGrams", f."ValuesEstimated",
                        GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) AS sim,
                        starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre
                 FROM "FoodItems" f
@@ -91,7 +96,8 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
                   AND GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) >= 0.3
             )
             SELECT "Id", "Name", "NameBg", "Brand", "KcalPer100g", "ProteinPer100g", "CarbsPer100g", "FatPer100g",
-                   "FiberPer100g", "SaturatedFatPer100g", "DefaultServingGrams", "Own", "ByOther", (sim + CASE WHEN pre THEN 1 ELSE 0 END)::float8 AS "Score"
+                   "FiberPer100g", "SaturatedFatPer100g", "DefaultServingGrams", "Own", "ByOther", (sim + CASE WHEN pre THEN 1 ELSE 0 END)::float8 AS "Score",
+                   "PieceGrams", "PackGrams", "ValuesEstimated"
             FROM m
             -- Among names that start with the search, the shortest is the plain food ("Bananas, raw" before
             -- "Bananas, dehydrated, or banana powder"); the rest by similarity.
@@ -226,6 +232,8 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             FiberPer100g = p.Per100.Fiber,
             SaturatedFatPer100g = p.Per100.SaturatedFat,
             DefaultServingGrams = p.ServingGrams,
+            PieceGrams = p.PieceGrams,
+            PackGrams = p.PackGrams,
             Source = FoodSource.OpenFoodFacts,
             Unnamed = p.Unnamed,
         };

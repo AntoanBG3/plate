@@ -21,6 +21,9 @@ public enum Confidence
 /// estimate. When null the view shows <paramref name="State"/>.
 /// </param>
 /// <param name="Usual">Matched through the account's usual food for these words (SPEC 6.1 step 1).</param>
+/// <param name="Count">
+/// The count the text gave instead of a weight, kept so the row's grams can follow when another food is picked for it.
+/// </param>
 public record ConfirmItem(
     string Description,
     decimal Grams,
@@ -34,7 +37,11 @@ public record ConfirmItem(
     FoodState State = FoodState.NotApplicable,
     string? MatchedNameEn = null,
     string? Status = null,
-    bool Usual = false);
+    bool Usual = false,
+    CountedAmount? Count = null);
+
+/// <summary>A count the text gave ("две", "half a"), of pieces, packs or servings.</summary>
+public record CountedAmount(decimal Units, CountUnit Of);
 
 /// <summary>How one item was matched, kept with the parse run for feedback (SPEC 11): the ranking's top candidates and the decider's answer.</summary>
 /// <param name="DeciderModel">The decision model that answered for this parse, even where its answer was not used.</param>
@@ -187,11 +194,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         return result;
     }
 
-    // Note formats about a counted amount; they are localisation keys, listed in CatalogueTests.Extra.
-    private const string ServingNote = "{0} × a serving of {1} g";
-    private const string EachNote = "assumed 100 g each";
-
-    private static readonly string[] AmountNotes = [ServingNote, EachNote];
+    private const string EstimatedNote = "These values are estimated from the recipe, not read from a label.";
 
     /// <summary>
     /// SPEC 6.1 step 4: when the text gave no amount, a matched food takes the account's last amount, and the note
@@ -211,7 +214,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             if (last.TryGetValue(result[n].FoodItemId!.Value, out var grams))
             {
                 var notes = result[n].Notes
-                    .Where(note => note.Format != items[n].Assumption && !AmountNotes.Contains(note.Format))
+                    .Where(note => note.Format != items[n].Assumption && !Portions.Notes.Contains(note.Format))
                     .Append(new LocalText("Your usual amount, {0} g", grams.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)))
                     .ToList();
                 result[n] = result[n] with { Grams = grams, Notes = notes };
@@ -319,25 +322,22 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         return ranked.OrderByDescending(x => x.Score).ToList();
     }
 
-    /// <summary>
-    /// The grams for an item: as parsed, or for a count ("a banana") the food's serving times the count, with a note.
-    /// Foods without a serving keep the parser's 100 g each.
-    /// </summary>
+    /// <summary>The grams for an item on this food (<see cref="Portions.For"/>), with a note on how they were reached.</summary>
     private static decimal Portion(ParsedFoodItem item, FoodMatch food, List<LocalText> notes)
     {
-        if (item.Units is not { } units)
+        var portion = Portions.For(item, food.Weights);
+        if (portion.Basis == PortionBasis.Count)
         {
-            return item.Grams;
+            // The parser's assumption was about the grams it guessed, which the food's own weight now replaces.
+            notes.RemoveAll(n => n.Format == item.Assumption);
         }
 
-        if (food.DefaultServingGrams is { } serving and > 0)
+        if (portion.Note is { } note)
         {
-            notes.Add(new LocalText(ServingNote, units, serving.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)));
-            return serving * units;
+            notes.Add(note);
         }
 
-        notes.Add(new LocalText(EachNote));
-        return item.Grams;
+        return portion.Grams;
     }
 
     /// <summary>The food's main word (before the first comma, in USDA's naming) is one the user wrote.</summary>
@@ -380,10 +380,18 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     private static ConfirmItem Matched(ParsedFoodItem item, FoodMatch food, decimal grams, Confidence confidence, List<LocalText> notes, string? matchModel)
     {
         var name = food.DisplayName.Length > 200 ? food.DisplayName[..200] : food.DisplayName;
+        if (food.ValuesEstimated)
+        {
+            notes.Add(new LocalText(EstimatedNote));
+        }
+
         return new ConfirmItem(name, grams, food.Per100, food.Id, food.DisplayName, confidence, notes, matchModel,
             Typed: Description(item), State: FoodStates.FromName(food.Name, food.NameBg),
-            MatchedNameEn: food.DisplayName == food.Name ? null : food.Name);
+            MatchedNameEn: food.DisplayName == food.Name ? null : food.Name, Count: Counted(item));
     }
+
+    private static CountedAmount? Counted(ParsedFoodItem item) =>
+        !item.GramsStated && item.Units is { } units && units > 0 ? new CountedAmount(units, item.CountOf ?? CountUnit.Piece) : null;
 
     /// <summary>No database food: the parser's own numbers, marked Low.</summary>
     private static ConfirmItem Estimate(ParsedFoodItem item, List<LocalText> notes, string? matchModel)
@@ -396,7 +404,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
 
         var typed = Description(item);
         return new ConfirmItem(typed, item.Grams, item.Estimated, null, null, Confidence.Low, notes, matchModel, Typed: typed, State: item.State,
-            Status: FoodNaming.AcceptStatus(item.Preparation, item.State));
+            Status: FoodNaming.AcceptStatus(item.Preparation, item.State), Count: Counted(item));
     }
 
     /// <summary>

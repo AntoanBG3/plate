@@ -387,6 +387,32 @@
         using.textContent = t("Database: {0}", pick.dataset.name);
         using.hidden = false;
         changeRow.querySelectorAll("[data-note]").forEach((note) => note.remove());
+        const notes = [];
+        // A counted amount ("две закуски") follows the new food's piece, pack or serving weight, unless the grams were edited.
+        const gramsInput = changeRow.querySelector('input[name$="Grams"]');
+        const count = Number(changeRow.dataset.amountCount);
+        if (count > 0 && Number(gramsInput.value.replace(",", ".")) === Number(changeRow.dataset.amountGrams)) {
+            const of = changeRow.dataset.amountOf || "piece";
+            const weight = Number(pick.dataset[of] || 0);
+            if (weight > 0) {
+                const grams = String(Math.round(count * weight * 10) / 10);
+                gramsInput.value = grams;
+                changeRow.dataset.amountGrams = grams;
+                notes.push(t(of === "pack" ? "{0} × a pack of {1} g" : of === "serving" ? "{0} × a serving of {1} g" : "{0} × a piece of {1} g", String(count), String(weight)));
+            } else {
+                notes.push(t(of === "pack" ? "The pack size isn't known, so check the grams." : of === "serving" ? "No serving size for this food, so check the grams." : "No weight per piece for this food, so check the grams."));
+            }
+        }
+        if (pick.dataset.estimated === "true") {
+            notes.push(t("These values are estimated from the recipe, not read from a label."));
+        }
+        const changeButton = changeRow.querySelector("[data-change-food]");
+        for (const text of notes) {
+            const span = document.createElement("span");
+            span.dataset.note = "";
+            span.textContent = text;
+            changeButton.before(span);
+        }
         const chip = changeRow.querySelector("[data-chip]");
         chip.className = "chip good";
         chip.textContent = t("Database");

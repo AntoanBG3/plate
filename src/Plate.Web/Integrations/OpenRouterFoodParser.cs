@@ -42,6 +42,13 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
         - grams: the edible weight. Estimate vague amounts ("a banana", "a plate of rice", "една филия") and explain in assumption.
         - amountGiven: true when the text gives this food's amount as a weight, volume, count or fraction ("200 g", "2 eggs",
           "half a pack", "две филии"); false when it gives no amount ("извара", "some rice", "a banana": an article alone is not an amount).
+        - gramsStated: true when the text gives this food's weight or volume ("200 g", "165 g total", "1 литър"), so grams is
+          that amount; false when grams is your estimate. A stated weight wins over any count.
+        - count and countUnit: when the text counts this food instead of weighing it, how many and of what: "piece" for items
+          ("две закуски" 2, "2 eggs" 2, "a banana" 1, "една филия" 1), "pack" for a whole package, tub, bottle or can
+          ("половин кофичка кисело мляко" 0.5, "a can of tuna" 1), "serving" for a serving or portion ("2 servings" 2).
+          Fractions are decimals (half 0.5). Both null when the text gives a weight or volume or no count ("200 г", "some rice").
+          Still estimate grams for the count; the database's piece or pack weight replaces it when it has one.
         - state: "raw" or "cooked" for meat, fish, rice, pasta, grains and legumes; otherwise "na".
           Assume raw weight for meat and fish and cooked weight for rice and pasta unless the text says otherwise.
         - preparation: how it was cooked, only if the text says so, in the language of the text
@@ -71,6 +78,9 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                   "nameOriginal": { "type": "string" },
                   "grams": { "type": "number" },
                   "amountGiven": { "type": "boolean" },
+                  "gramsStated": { "type": "boolean" },
+                  "count": { "type": ["number", "null"] },
+                  "countUnit": { "type": ["string", "null"], "enum": ["piece", "pack", "serving", null] },
                   "state": { "type": "string", "enum": ["raw", "cooked", "na"] },
                   "preparation": { "type": ["string", "null"] },
                   "assumption": { "type": ["string", "null"] },
@@ -81,7 +91,7 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                   "fiberPer100g": { "type": ["number", "null"] },
                   "saturatedFatPer100g": { "type": ["number", "null"] }
                 },
-                "required": ["nameEn", "nameOriginal", "grams", "amountGiven", "state", "preparation", "assumption", "kcalPer100g", "proteinPer100g", "carbsPer100g", "fatPer100g", "fiberPer100g", "saturatedFatPer100g"],
+                "required": ["nameEn", "nameOriginal", "grams", "amountGiven", "gramsStated", "count", "countUnit", "state", "preparation", "assumption", "kcalPer100g", "proteinPer100g", "carbsPer100g", "fatPer100g", "fiberPer100g", "saturatedFatPer100g"],
                 "additionalProperties": false
               }
             }
@@ -215,6 +225,10 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                 continue;
             }
 
+            var stated = node["gramsStated"] is JsonValue s && s.TryGetValue<bool>(out var st) && st;
+            // A count is read only without a stated weight, and only when it says what it counts.
+            var unit = stated ? null : Str(node["countUnit"]) switch { "piece" => CountUnit.Piece, "pack" => CountUnit.Pack, "serving" => CountUnit.Serving, _ => (CountUnit?)null };
+            var count = unit is null ? null : Num(node["count"]) is var n && n is > 0 and <= 100 ? n : (decimal?)null;
             var item = new ParsedFoodItem(
                 Str(node["nameEn"]) ?? "",
                 Str(node["nameOriginal"]) ?? Str(node["nameEn"]) ?? "",
@@ -223,7 +237,10 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                 Str(node["preparation"]),
                 Str(node["assumption"]),
                 Estimate(node),
-                AmountGiven: node["amountGiven"] is JsonValue given && given.TryGetValue<bool>(out var g) ? g : true);
+                Units: count,
+                AmountGiven: stated || (node["amountGiven"] is JsonValue given && given.TryGetValue<bool>(out var g) ? g : true),
+                CountOf: count is null ? null : unit,
+                GramsStated: stated);
 
             if (item.NameEn.Length == 0 || FoodMath.Validate(item.Grams, item.Estimated) is not null)
             {

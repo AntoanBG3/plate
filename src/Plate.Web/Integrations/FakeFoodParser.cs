@@ -51,7 +51,8 @@ public partial class FakeFoodParser : IFoodParser
                 : FoodState.NotApplicable;
 
             // The name is what was written without its amount; the amount is in grams.
-            items.Add(new ParsedFoodItem(piece, piece, grams, state, null, assumption, new Per100g(100, 5, 15, 3), units, given));
+            items.Add(new ParsedFoodItem(piece, piece, grams, state, null, assumption, new Per100g(100, 5, 15, 3), units, given,
+                units is null ? null : CountUnit.Piece, GramsStated: match.Success));
         }
 
         return Task.FromResult(items.Count == 0

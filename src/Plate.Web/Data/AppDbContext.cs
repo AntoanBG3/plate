@@ -161,6 +161,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.FiberPer100g).HasPrecision(6, 2);
             e.Property(x => x.SaturatedFatPer100g).HasPrecision(6, 2);
             e.Property(x => x.DefaultServingGrams).HasPrecision(7, 1);
+            e.Property(x => x.PieceGrams).HasPrecision(7, 1);
+            e.Property(x => x.PackGrams).HasPrecision(7, 1);
             e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
             // A barcode is unique among shared foods, and per owner among private ones (SPEC 4).
             e.HasIndex(x => x.Barcode).IsUnique().HasFilter("\"Barcode\" IS NOT NULL AND \"OwnerUserId\" IS NULL").HasDatabaseName("IX_FoodItems_Barcode_Shared");

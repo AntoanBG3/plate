@@ -19,7 +19,7 @@ public class OpenFoodFactsOptions
 /// </summary>
 public class OpenFoodFactsClient(HttpClient http, ILogger<OpenFoodFactsClient> log) : IFoodDatabase
 {
-    private const string Fields = "code,product_name,product_name_en,generic_name,generic_name_en,brands,quantity,nutriments,serving_quantity";
+    private const string Fields = "code,product_name,product_name_en,generic_name,generic_name_en,brands,quantity,nutriments,serving_quantity,serving_size,product_quantity,product_quantity_unit";
 
     public async Task<ProductLookup> GetByBarcodeAsync(string barcode, CancellationToken ct)
     {
@@ -111,13 +111,16 @@ public class OpenFoodFactsClient(HttpClient http, ILogger<OpenFoodFactsClient> l
 
         // No name in any field (feedback #5, a Monster can): the brand and quantity stand in until a user names it.
         var stand = string.Join(' ', new[] { brand, product["quantity"]?.ToString().Trim() }.Where(v => !string.IsNullOrEmpty(v)));
+        var serving = Num(product["serving_quantity"]) is { } s and > 0 ? s : (decimal?)null;
         return new ProductInfo(
             barcode,
             name ?? (brand is null ? $"Product {barcode}" : stand),
             brand,
             new Per100g(kcal.Value, protein.Value, carbs.Value, fat.Value, Optional(n?["fiber_100g"], 100), Optional(n?["saturated-fat_100g"], fat.Value + 0.5m)),
-            Num(product["serving_quantity"]) is { } s and > 0 ? s : null,
-            Unnamed: name is null);
+            serving,
+            Unnamed: name is null,
+            PieceGrams: UnitWeightText.PieceGrams(product["serving_size"]?.ToString(), serving),
+            PackGrams: UnitWeightText.PackGrams(Num(product["product_quantity"]), product["product_quantity_unit"]?.ToString(), product["quantity"]?.ToString()));
     }
 
     /// <summary>A value that is not required to log the product; dropped when it is negative or above <paramref name="max"/>.</summary>

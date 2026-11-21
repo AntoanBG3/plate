@@ -81,4 +81,40 @@ public class ConfirmFoodsTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.Page.WaitForFunctionAsync("e => Number(getComputedStyle(e).opacity) < 0.6", amount, new() { Timeout = 10_000 });
         phone.ShouldHaveNoErrors();
     }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task A_counted_amount_follows_the_food_picked_for_its_row_until_the_grams_are_edited(string browser)
+    {
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        await phone.GoAsync("/food/add?meal=Breakfast&tab=text");
+        await phone.Page.Locator("textarea[name=text], input[name=text]").First.FillAsync("две закуски със сирене с лютеница от лидл");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/parse'] button[type=submit]").First.TapAsync());
+
+        var row = phone.Page.Locator(".result").First;
+        var grams = row.Locator("input[name$='Grams']");
+        (await grams.InputValueAsync()).Should().Be("180", "two pieces of 90 g");
+        (await row.Locator(".result-notes").TextContentAsync()).Should().Contain("estimated from the recipe");
+
+        async Task PickAsync(string query, string piece)
+        {
+            await phone.Page.RunAndWaitForResponseAsync(() => row.Locator("[data-change-food]").TapAsync(), r => r.Url.Contains("/food/candidates"));
+            var search = phone.Page.Locator("#change-food-sheet [data-change-search]");
+            await phone.Page.RunAndWaitForResponseAsync(() => search.FillAsync(query), r => r.Url.Contains("/food/candidates") && r.Url.Contains(Uri.EscapeDataString(query.Split(' ')[0])));
+            await phone.Page.WaitForFunctionAsync("() => !document.querySelector('#change-food-results.htmx-settling, #change-food-results.htmx-swapping')");
+            var pick = phone.Page.Locator($"#change-food-results [data-candidate][data-piece='{piece}']").First;
+            await pick.WaitForAsync(new() { Timeout = 5000 });
+            await pick.TapAsync();
+        }
+
+        await PickAsync("кроасан с масло", "57");
+        (await grams.InputValueAsync()).Should().Be("114", "two croissants of 57 g");
+        var notes = await row.Locator(".result-notes").TextContentAsync();
+        notes.Should().Contain("2 × a piece of 57 g").And.NotContain("estimated from the recipe", "the croissant's values are from its label");
+
+        await grams.FillAsync("100");
+        await PickAsync("закуска с гауда", "90");
+        (await grams.InputValueAsync()).Should().Be("100", "grams the user typed are kept");
+    }
 }

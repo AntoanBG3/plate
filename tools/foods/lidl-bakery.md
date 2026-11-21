@@ -1,6 +1,6 @@
 # Lidl Bulgaria bakery (Пекарна Lidl)
 
-Collected 2026-11-20 for feedback #7-#10 (Lidl bakery items matched unrelated foods). The rows are kept in `tools/foods/lidl-bakery.csv`, which `merge.mjs` appends to `src/Plate.Web/Data/Seed/bg-foods.csv`; edit them there and copy the change into the seed (`tests/js/curated-foods.test.cjs` checks they match). They are generic foods named "<product>, Пекарна Лидл", brand Lidl.
+Collected 2026-11-20 for feedback #7-#10 (Lidl bakery items matched unrelated foods). The rows are kept in `tools/foods/lidl-bakery.csv`, which `merge.mjs` appends to `src/Plate.Web/Data/Seed/bg-foods.csv`; edit them there and copy the change into the seed (`tests/js/curated-foods.test.cjs` checks they match). They are generic foods named "<product>, Пекарна Лидл", brand Lidl. `serving_g` and `piece_g` are both the piece weight below, and `basis` is the Basis column (`label` or `estimate`); the app shows a note on rows whose values are an estimate.
 
 ## Sources
 
