@@ -52,6 +52,15 @@ public class PortionTests(PostgresFixture fixture) : IClassFixture<PostgresFixtu
     }
 
     [Fact]
+    public void An_approximate_weight_without_a_count_is_a_stated_weight()
+    {
+        // Run 24: "около 200г басмати ориз" came back with gramsStated false, so no cooked-or-dry question.
+        Live("basmati rice", "басмати ориз", 200, true, false, null, null).GramsStated.Should().BeTrue();
+        Live("pastry", "закуска", 150, false, false, 1, "piece").GramsStated.Should().BeFalse("no amount given");
+        Live("pastries", "закуски", 150, true, false, 2, "piece").GramsStated.Should().BeFalse("a count is not a weight");
+    }
+
+    [Fact]
     public async Task An_explicit_total_weight_wins_over_the_count()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

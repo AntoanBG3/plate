@@ -120,6 +120,8 @@ public class StapleStateTests
         FoodStates.OfStaple("Rice, white, long-grain, regular, enriched, cooked", null, 130).Should().Be(FoodState.Cooked);
         FoodStates.OfStaple("Couscous", null, 112).Should().Be(FoodState.Cooked);
         FoodStates.OfStaple("Granola", null, 220).Should().Be(FoodState.NotApplicable);
+        FoodStates.OfStaple("Lentils, raw", "Леща", 105).Should().Be(FoodState.NotApplicable, "the name and the energy disagree");
+        FoodStates.OfStaple("Lentils, raw", "Леща", 352).Should().Be(FoodState.Raw);
     }
 
     [Theory]

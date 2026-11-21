@@ -66,12 +66,16 @@ public static class FoodStates
     /// <summary>
     /// A staple food's state from its name, or else from its energy: dry grains and pasta have 300 to 380 kcal per 100 g
     /// and cooked ones 100 to 200, so a product named "Ориз Басмати" at 357 kcal is dry.
+    /// A name and an energy that disagree ("Lentils, raw" at 105 kcal, a reference row with cooked values) give no state.
     /// </summary>
-    public static FoodState OfStaple(string? name, string? nameBg, decimal kcalPer100g) =>
-        FromName(name, nameBg) is var s && s != FoodState.NotApplicable ? s
-            : kcalPer100g >= 250 ? FoodState.Raw
-            : kcalPer100g is > 0 and <= 200 ? FoodState.Cooked
+    public static FoodState OfStaple(string? name, string? nameBg, decimal kcalPer100g)
+    {
+        var byEnergy = kcalPer100g >= 250 ? FoodState.Raw : kcalPer100g is > 0 and <= 200 ? FoodState.Cooked : FoodState.NotApplicable;
+        var byName = FromName(name, nameBg);
+        return byName == FoodState.NotApplicable ? byEnergy
+            : byEnergy == FoodState.NotApplicable || byEnergy == byName ? byName
             : FoodState.NotApplicable;
+    }
 
     /// <summary>What the user typed says whether the weight is raw (or dry) or cooked: "150 г сварен ориз", "80 g dry pasta".</summary>
     public static bool Stated(string? typed) =>

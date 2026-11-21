@@ -42,8 +42,9 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
         - grams: the edible weight. Estimate vague amounts ("a banana", "a plate of rice", "една филия") and explain in assumption.
         - amountGiven: true when the text gives this food's amount as a weight, volume, count or fraction ("200 g", "2 eggs",
           "half a pack", "две филии"); false when it gives no amount ("извара", "some rice", "a banana": an article alone is not an amount).
-        - gramsStated: true when the text gives this food's weight or volume ("200 g", "165 g total", "1 литър"), so grams is
-          that amount; false when grams is your estimate. A stated weight wins over any count.
+        - gramsStated: true when the text gives this food's weight or volume, also an approximate one ("200 g", "165 g total",
+          "1 литър", "около 200г", "about 150 g"), so grams is that amount; false when grams is your estimate. A stated weight
+          wins over any count.
         - count and countUnit: when the text counts this food instead of weighing it, how many and of what: "piece" for items
           ("две закуски" 2, "2 eggs" 2, "a banana" 1, "една филия" 1), "pack" for a whole package, tub, bottle or can
           ("половин кофичка кисело мляко" 0.5, "a can of tuna" 1), "serving" for a serving or portion ("2 servings" 2).
@@ -228,7 +229,10 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                 continue;
             }
 
-            var stated = node["gramsStated"] is JsonValue s && s.TryGetValue<bool>(out var st) && st;
+            var given = node["amountGiven"] is not JsonValue a || !a.TryGetValue<bool>(out var ag) || ag;
+            var hasCount = node["count"] is JsonValue cv && cv.TryGetValue<double>(out var cd) && cd > 0;
+            // An amount given without a count is a weight or volume, whatever gramsStated says ("около 200г", run 24).
+            var stated = (node["gramsStated"] is JsonValue s && s.TryGetValue<bool>(out var st) && st) || (given && !hasCount && node["gramsStated"] is not null);
             // A count is read only without a stated weight, and only when it says what it counts.
             var unit = stated ? null : Str(node["countUnit"]) switch { "piece" => CountUnit.Piece, "pack" => CountUnit.Pack, "serving" => CountUnit.Serving, _ => (CountUnit?)null };
             var count = unit is null ? null : Num(node["count"]) is var n && n is > 0 and <= 100 ? n : (decimal?)null;
@@ -241,7 +245,7 @@ public class OpenRouterFoodParser(HttpClient http, OpenRouterModels catalog, ILo
                 Str(node["assumption"]),
                 Estimate(node),
                 Units: count,
-                AmountGiven: stated || (node["amountGiven"] is JsonValue given && given.TryGetValue<bool>(out var g) ? g : true),
+                AmountGiven: stated || given,
                 CountOf: count is null ? null : unit,
                 GramsStated: stated);
 
