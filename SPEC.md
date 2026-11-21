@@ -565,7 +565,7 @@ Settings is a short hub, not one long page (progressive disclosure: NN/g, and th
 - General page: theme and language; the time zone, picked from a list; the weekly AI summary on or off (6.5), with the line "Last week's numbers are sent to an AI model through OpenRouter."
 - Sign-in & security page: passkeys (add, remove), change password, log out everywhere.
 - Settings shows nothing about the AI models or the key. Only the developer manages them, in the admin area (section 12).
-- Export all of the user's data as CSV files in a zip.
+- Export all of the user's data as CSV files in a zip. Include private foods, saved meals and their ordered items, per-exercise notes and bar overrides, and profile preferences. Export their IDs so related rows can be joined.
 - Feedback: Send feedback and Your feedback (section 11).
 
 ---

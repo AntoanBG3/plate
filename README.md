@@ -324,6 +324,6 @@ The build also fails when a NuGet package has a known high or critical advisory;
 
 Open `https://plate.peychev.uk` in Safari, sign in, then Share → Add to Home Screen. Open it from the home screen icon from then on; the login lasts 30 days and renews with use.
 
-Your data can be downloaded at any time from Settings → Export all data: one CSV file per kind of data in a zip, readable in Excel or Numbers.
+Settings → Export all data downloads a ZIP of CSV files readable in Excel or Numbers. It includes private foods, saved meals with their ingredients, exercise notes and bar settings, and profile preferences. Saved meal and food IDs link the files.
 
 Food forms carry a new request ID each time they are rendered. Resending the same form after a lost response returns its first successful result without adding food twice. Check the log after an uncertain-save warning; open a new form to add another entry. Food-request receipts are included in the export and removed with the account.
