@@ -44,7 +44,7 @@ public class LabelPhotoTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await phone.Page.InputValueAsync("#m-kcal")).Should().Be("38");
         (await phone.Page.InputValueAsync("#m-protein")).Should().Be("1.8");
         (await phone.Page.InputValueAsync("#m-name")).Should().Be("Айрян");
-        (await phone.Page.Locator("[data-label-form] .banner").First.InnerTextAsync()).Should().Contain(bulgarian ? "100 ml" : "Per 100 ml, used as per 100 g.");
+        (await phone.Page.Locator("[data-label-form] .banner").First.InnerTextAsync()).Should().Contain(bulgarian ? "За 100 мл, използвано като за 100 г." : "Per 100 ml, used as per 100 g.");
 
         await phone.Page.FillAsync("#m-grams", "250");
         await phone.NavigateByAsync(() => phone.Page.Locator("[data-label-form] button[type=submit]").TapAsync());
