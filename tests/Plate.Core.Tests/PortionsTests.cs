@@ -64,6 +64,38 @@ public class PortionsTests
         Portions.For(Item(100, 3), new UnitWeights(Piece: 50, null, null)).Grams.Should().Be(150);
 }
 
+public class WeighedMealsTests
+{
+    private static WeighedResult Result(string id, string category, decimal weighedKcal, decimal plateKcal, bool uncertain = false) =>
+        new(new WeighedMeal(id, null, null, category, "x", [new WeighedItem("food", 100, new Per100g(weighedKcal, 10, 10, 5), "label", uncertain)]),
+            new MealNutrients(plateKcal, 10, 10, 5));
+
+    [Fact]
+    public void The_reference_is_the_weighed_grams_times_the_values()
+    {
+        var meal = new WeighedMeal("1", null, null, "counted", "две закуски", [
+            new WeighedItem("pastry", 180, new Per100g(233, 7.6m, 23.3m, 11.9m), "estimate", false),
+            new WeighedItem("ayran", 250, new Per100g(37, 1.7m, 2.6m, 2), "label", false)]);
+
+        meal.Reference.Should().Be(new MealNutrients(511.9m, 17.9m, 48.4m, 26.4m));
+    }
+
+    [Fact]
+    public void Uncertain_meals_are_left_out_and_the_largest_misses_come_first()
+    {
+        var summary = WeighedMeals.Summarize([
+            Result("a", "counted", 400, 420), Result("b", "staple", 300, 500), Result("c", "staple", 200, 150), Result("d", "loose", 600, 100, uncertain: true)]);
+
+        summary.Uncertain.Should().Be(1);
+        summary.Overall.Meals.Should().Be(3);
+        summary.Overall.MeanAbsKcal.Should().Be(90);
+        summary.Overall.MeanSignedKcal.Should().Be(56.7m);
+        summary.ByCategory.Keys.Should().Equal("counted", "staple");
+        summary.ByCategory["staple"].MeanAbsKcal.Should().Be(125);
+        summary.LargestMisses.Select(r => r.Meal.Id).Should().Equal("b", "c", "a");
+    }
+}
+
 public class UnitWeightTextTests
 {
     [Theory]

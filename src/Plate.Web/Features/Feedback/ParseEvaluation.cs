@@ -50,13 +50,38 @@ public class ParseEvaluator(
     IFoodDatabase foodDatabase,
     AppDbContext rootDb) : IParseEvaluator
 {
-    public async Task<EvalReport> RunAsync(EvalRequest request, Action<EvalCaseResult, int, int>? onCase, CancellationToken ct)
+    /// <summary>The key and the parser and matcher models a run uses: the ones asked for, else those picked in the admin area.</summary>
+    public async Task<(string Key, string Parser, string Matcher)> ModelsAsync(string? parserModel, string? matcherModel, CancellationToken ct)
     {
         var key = await settings.GetKeyAsync(ct) ?? throw new ValidationException("No OpenRouter key is set.");
-        var parserModel = request.ParserModel ?? await settings.GetModelAsync(AiTask.Parser, ct);
-        var matcherModel = request.MatcherModel is { } m
+        var parser = parserModel ?? await settings.GetModelAsync(AiTask.Parser, ct);
+        var matcher = matcherModel is { } m
             ? m.Equals("jev", StringComparison.OrdinalIgnoreCase) ? JevFoodMatchDecider.Jev113 : m.ToLowerInvariant()
             : await settings.GetModelAsync(AiTask.Matcher, ct);
+        return (key, parser, matcher);
+    }
+
+    /// <summary>
+    /// Parses and matches <paramref name="text"/> as <paramref name="userId"/>, with that account's history as it was at
+    /// <paramref name="asOf"/> unless <paramref name="history"/> is off. Nothing is saved.
+    /// </summary>
+    public async Task<(FoodParseResult Parsed, IReadOnlyList<ConfirmItem> Items)> ReplayAsync(string userId, string text, DateTimeOffset asOf, bool history,
+        (string Key, string Parser, string Matcher) models, CancellationToken ct)
+    {
+        var user = new FixedCurrentUser(userId);
+        await using var db = new AppDbContext(options, user);
+        var foods = new FoodItemService(db, user, foodDatabase);
+        IFoodMatchDecider decider = models.Matcher == AiTasks.Off ? new NoDecider() : new KeyedDecider(jev, models.Key, models.Matcher);
+        // As the app would have matched it then: the account's usual foods and last amounts from before the parse.
+        var matcher = new FoodMatcher(foods, decider, history ? new HistoryAsOf(db, user, asOf) : null);
+        var parsed = await parser.ParseAsync(text, models.Key, models.Parser, ct);
+        return (parsed, parsed.Items.Count == 0 ? [] : await matcher.ResolveAsync(text, parsed.Items, ct));
+    }
+
+    public async Task<EvalReport> RunAsync(EvalRequest request, Action<EvalCaseResult, int, int>? onCase, CancellationToken ct)
+    {
+        var models = await ModelsAsync(request.ParserModel, request.MatcherModel, ct);
+        var (parserModel, matcherModel) = (models.Parser, models.Matcher);
 
         var cases = (await admin.EvalCasesAsync(request.Since, request.FlaggedOnly, ct)).TakeLast(request.Limit).ToList();
         var total = AgreementResult.Zero;
@@ -65,15 +90,7 @@ public class ParseEvaluator(
         foreach (var c in cases)
         {
             var run = await rootDb.ParseRuns.IgnoreQueryFilters().Where(r => r.Id == c.RunId).Select(r => new { r.UserId, r.CreatedAt }).SingleAsync(ct);
-            var user = new FixedCurrentUser(run.UserId);
-            await using var db = new AppDbContext(options, user);
-            var foods = new FoodItemService(db, user, foodDatabase);
-            IFoodMatchDecider decider = matcherModel == AiTasks.Off ? new NoDecider() : new KeyedDecider(jev, key, matcherModel);
-            // As the app would have matched it then: the account's usual foods and last amounts from before the parse.
-            var matcher = new FoodMatcher(foods, decider, request.History ? new HistoryAsOf(db, user, run.CreatedAt) : null);
-
-            var parsed = await parser.ParseAsync(c.Text, key, parserModel, ct);
-            var fresh = parsed.Items.Count == 0 ? [] : await matcher.ResolveAsync(c.Text, parsed.Items, ct);
+            var (parsed, fresh) = await ReplayAsync(run.UserId, c.Text, run.CreatedAt, request.History, models, ct);
             var result = Score(c, fresh, parsed.Error?.ToString());
             repeats += result.RepeatedWrongFoods;
             total += result.Score;

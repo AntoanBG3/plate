@@ -1,0 +1,7 @@
+meal,eaten_at,account,category,text,item,grams,kcal_100g,protein_100g,carbs_100g,fat_100g,source,uncertain,notes
+example-1,2026-11-22 08:15,you@example.com,counted,Две закуски с лютеница и сирене от Лидл и айрян,Закуска със сирене и лютеница (Lidl),172,233,7.6,23.3,11.9,Plate's Lidl estimate,,two pieces: 88 g and 84 g
+example-1,,,,,Айрян Верея 2%,250,45,3.2,4.5,1.6,label,,
+example-2,2026-11-22 13:30,you@example.com,staple,150 г ориз и пилешко филе на скара,"Rice, white, long-grain, cooked",150,130,2.7,28.2,0.3,USDA,,weighed after cooking
+example-2,,,,,Chicken breast grilled,142,165,31,0,3.6,USDA,,weighed cooked; 180 g raw
+example-3,2026-11-22 19:45,you@example.com,homemade,Чиния мусака,Мусака (домашна),320,151,7.1,9.8,9.2,recipe batch,,"batch: 2,350 g cooked from ingredients totalling 3,548 kcal"
+example-4,2026-11-23 10:00,you@example.com,loose,малко ядки,Walnuts,24,654,15.2,13.7,65.2,label,yes,handful eaten from the bag; bag weighed before and after

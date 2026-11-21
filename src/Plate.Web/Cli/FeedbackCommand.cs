@@ -27,6 +27,8 @@ public static class FeedbackCommand
           parses [--since 30d] [--flagged] [--limit 50] [--export-eval]
           eval [--since 365d] [--flagged] [--limit 20] [--parser <model>] [--matcher off|jev|<decision model id>]
                                           spends OpenRouter credit; unknown options are refused
+          pilot [--file <csv>|-] [--account <email>] [--check] [--no-history]
+                                          the weighed-meal pilot (reports/weighed-meal-pilot.md); one parse of credit per meal
           labels [--since 30d] [--edited] [--failed] [--limit 50]
           label <id>                      what the label model read, the values offered and what was saved
           label-photo <id> [n]            the nth photo's raw bytes (1 by default) to stdout, while kept (30 days); audited
@@ -40,7 +42,7 @@ public static class FeedbackCommand
 
     private static readonly JsonSerializerOptions Pretty = new(FeedbackJson.Options) { WriteIndented = true };
 
-    public static async Task<int> RunAsync(IServiceProvider services, string[] args, TextWriter? output = null, Stream? binary = null)
+    public static async Task<int> RunAsync(IServiceProvider services, string[] args, TextWriter? output = null, Stream? binary = null, TextReader? input = null)
     {
         var o = output ?? Console.Out;
         var rest = args.Skip(1).ToArray();
@@ -156,6 +158,9 @@ public static class FeedbackCommand
 
                 case "eval":
                     return await ParseEvaluation.RunAsync(scope.ServiceProvider, rest, o, json, ct);
+
+                case "pilot":
+                    return await PilotEvaluation.RunAsync(scope.ServiceProvider, rest, o, input ?? Console.In, json, ct);
 
                 case "errors":
                     var errors = await admin.ErrorsAsync(Since(Option(rest, "--since"), TimeSpan.FromDays(7))!.Value, ct);
