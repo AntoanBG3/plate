@@ -25,7 +25,7 @@
         <div class="stat"><div class="stat-value num">@item.CarbsPer100g.Kg(1)</div><div class="stat-label">@L["carbs"]</div></div>
         <div class="stat"><div class="stat-value num">@item.FatPer100g.Kg(1)</div><div class="stat-label">@L["fat"]</div></div>
     </div>
-    <p class="section-footer">@L["Per 100 g"]</p>
+    <p class="section-footer">@L.PerHundred(item.Unit)</p>
     <form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/log-item" class="section portion-form" data-per100="@item.KcalPer100g.Kg(),@item.ProteinPer100g.Kg()">
         <input type="hidden" name="date" value="@date" />
         <input type="hidden" name="meal" value="@Model.Meal" />
@@ -39,7 +39,7 @@
             <p class="section-footer">@L["Open Food Facts has no name for this product. The name you give it is saved for everyone."]</p>
         }
         <div class="list">
-            <div class="field-row"><label for="grams">@L["How much?"]</label><input id="grams" class="num" type="text" name="grams" value="@amount.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required autofocus="@(!item.Unnamed)" /><span class="unit">@L["g"]</span></div>
+            <div class="field-row"><label for="grams">@L["How much?"]</label><input id="grams" class="num" type="text" name="grams" value="@amount.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required autofocus="@(!item.Unnamed)" /><span class="unit">@L.Unit(item.Unit)</span></div>
         </div>
         @if (Model.LastGrams is not null)
         {

@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text;
+using Plate.Core.Domain;
 using Plate.Web.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -162,14 +163,17 @@ public class DataExport(AppDbContext db)
     private async Task<Csv> PrivateFoodsAsync(CancellationToken ct)
     {
         var csv = new Csv("food_item_id", "name", "name_bg", "brand", "barcode", "kcal_per_100g", "protein_per_100g",
-            "carbs_per_100g", "fat_per_100g", "fiber_per_100g", "saturated_fat_per_100g", "default_serving_g", "source");
+            "carbs_per_100g", "fat_per_100g", "fiber_per_100g", "saturated_fat_per_100g", "default_serving_g", "source", "unit");
         foreach (var f in await db.FoodItems.AsNoTracking().Where(f => f.OwnerUserId != null).OrderBy(f => f.Id).ToListAsync(ct))
         {
             csv.Row(f.Id, f.Name, f.NameBg, f.Brand, f.Barcode, f.KcalPer100g, f.ProteinPer100g, f.CarbsPer100g,
-                f.FatPer100g, f.FiberPer100g, f.SaturatedFatPer100g, f.DefaultServingGrams, f.Source);
+                f.FatPer100g, f.FiberPer100g, f.SaturatedFatPer100g, f.DefaultServingGrams, f.Source, UnitName(f.Unit));
         }
         return csv;
     }
+
+    /// <summary>"g" or "ml": what the amount ("grams") and the per-100 values of a row count in (SPEC 4).</summary>
+    private static string UnitName(FoodUnit unit) => unit == FoodUnit.Millilitres ? "ml" : "g";
 
     private async Task<Csv> SavedMealsAsync(CancellationToken ct)
     {
@@ -182,12 +186,12 @@ public class DataExport(AppDbContext db)
     private async Task<Csv> SavedMealItemsAsync(CancellationToken ct)
     {
         var csv = new Csv("saved_meal_id", "position", "food_item_id", "description", "grams", "kcal", "protein_g",
-            "carbs_g", "fat_g", "fiber_g", "saturated_fat_g", "source");
+            "carbs_g", "fat_g", "fiber_g", "saturated_fat_g", "source", "unit");
         var items = await db.SavedMealItems.AsNoTracking().OrderBy(i => i.SavedMealId).ThenBy(i => i.SortOrder).ThenBy(i => i.Id).ToListAsync(ct);
         foreach (var i in items)
         {
             csv.Row(i.SavedMealId, i.SortOrder, i.FoodItemId, i.Description, i.Grams, i.Kcal, i.ProteinG, i.CarbsG,
-                i.FatG, i.FiberG, i.SaturatedFatG, i.Source);
+                i.FatG, i.FiberG, i.SaturatedFatG, i.Source, UnitName(i.Unit));
         }
         return csv;
     }
@@ -204,11 +208,11 @@ public class DataExport(AppDbContext db)
 
     private async Task<Csv> FoodLogAsync(CancellationToken ct)
     {
-        var csv = new Csv("date", "meal", "description", "status", "grams", "kcal", "protein_g", "carbs_g", "fat_g", "fiber_g", "saturated_fat_g", "source", "ai_model", "match_model", "created_at_utc");
+        var csv = new Csv("date", "meal", "description", "status", "grams", "kcal", "protein_g", "carbs_g", "fat_g", "fiber_g", "saturated_fat_g", "source", "ai_model", "match_model", "created_at_utc", "unit");
         var entries = await db.FoodLog.AsNoTracking().OrderBy(e => e.Date).ThenBy(e => e.CreatedAt).ToListAsync(ct);
         foreach (var e in entries)
         {
-            csv.Row(e.Date, e.Meal.ToString(), e.Description, e.Status, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG, e.Source.ToString(), e.AiModel, e.MatchModel, e.CreatedAt);
+            csv.Row(e.Date, e.Meal.ToString(), e.Description, e.Status, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG, e.Source.ToString(), e.AiModel, e.MatchModel, e.CreatedAt, UnitName(e.Unit));
         }
 
         return csv;

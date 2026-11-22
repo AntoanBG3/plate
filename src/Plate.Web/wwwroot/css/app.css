@@ -254,6 +254,10 @@ html:is([data-nav="same"], [data-nav="swap"]):not(.is-full-load) .segmented[data
 .segment:has(:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 .segment { cursor: pointer; transition: background-color var(--dur-small) var(--ease-out), box-shadow var(--dur-small) var(--ease-out), transform var(--dur-page) var(--ease-snappy); }
 .segmented-wrap { padding: var(--s-1) 0 var(--s-4); }
+/* Amounts in g or ml (Ui.UnitWords): the manual form follows its "Per 100 g / Per 100 ml" choice, a Check foods row
+   the food picked for it. */
+.in-ml, .in-millilitres .in-g, form:has(input[name="unit"][value="Millilitres"]:checked) .in-g { display: none; }
+.in-millilitres .in-ml, form:has(input[name="unit"][value="Millilitres"]:checked) .in-ml { display: inline; }
 
 /* Mode tabs (add food): words with a bar under the selected one. The size follows the screen and never grows with
    Dynamic Type, so five Bulgarian words always fit on one line. The tabs share the row's spare width so that the

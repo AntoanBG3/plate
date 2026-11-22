@@ -18,7 +18,7 @@
     {
         <p class="footnote">@L["Added by another user"]</p>
     }
-    <p class="footnote num">@L["{0} kcal · {1} g protein", Math.Round(item.KcalPer100g), item.ProteinPer100g.ToString("0.#", inv)] · @L["Per 100 g"]</p>
+    <p class="footnote num">@L["{0} kcal · {1} g protein", Math.Round(item.KcalPer100g), item.ProteinPer100g.ToString("0.#", inv)] · @L.PerHundred(item.Unit)</p>
     <p style="margin-top: var(--s-3)">@L["Is this the same food?"]</p>
     <div class="known-actions">
         <a class="btn btn-tinted" href="/food/barcode?date=@date&amp;meal=@Model.Meal&amp;code=@Model.Code">@L["Yes, use it"]</a>

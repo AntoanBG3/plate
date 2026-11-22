@@ -10,6 +10,13 @@ public static class Ui
     public static IHtmlContent Icon(string name, string? cssClass = null) =>
         new HtmlString($"<svg class=\"icon{(cssClass is null ? "" : " " + cssClass)}\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#i-{name}\"/></svg>");
 
+    /// <summary>
+    /// Both unit words for an amount field whose food can change on the page (the manual form's "Per 100 g / ml" choice,
+    /// a Check foods row after Change food); app.css shows the one in force. "in-millilitres" on an ancestor picks ml.
+    /// </summary>
+    public static IHtmlContent UnitWords(Localizer l, string cssClass = "unit") =>
+        new HtmlString($"<span class=\"{cssClass}\"><span class=\"in-g\">{System.Net.WebUtility.HtmlEncode(l["g"])}</span><span class=\"in-ml\">{System.Net.WebUtility.HtmlEncode(l["ml"])}</span></span>");
+
     /// <summary>"Saturday, 3 October" or "Събота, 3 октомври".</summary>
     public static string LongDate(DateOnly date) => Capitalize(date.ToString("dddd, d MMMM", Localizer.DateCulture));
 

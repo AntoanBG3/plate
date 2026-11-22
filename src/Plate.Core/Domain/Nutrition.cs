@@ -11,6 +11,15 @@ public enum FoodSource
     Reference,
 }
 
+/// <summary>What a food's amounts are counted in. Its per-100 values are per 100 of this unit (SPEC 4, 6.6).</summary>
+public enum FoodUnit
+{
+    Grams,
+
+    /// <summary>Read from a per-100 ml label (a drink, an oil): amounts are entered and shown in ml.</summary>
+    Millilitres,
+}
+
 public enum Meal
 {
     Breakfast,
@@ -72,6 +81,12 @@ public class FoodItem
     /// <summary>The per-100 g values are an estimate (from a recipe), not a printed label or a composition table.</summary>
     public bool ValuesEstimated { get; set; }
 
+    /// <summary>
+    /// Grams unless the values came from a per-100 ml label. Then the per-100 values, the serving and every amount
+    /// logged of this food are in ml; nothing converts between the two.
+    /// </summary>
+    public FoodUnit Unit { get; set; }
+
     public FoodSource Source { get; set; }
 
     /// <summary>
@@ -89,7 +104,13 @@ public class FoodLogEntry
     public DateOnly Date { get; set; }
     public Meal Meal { get; set; }
     public string Description { get; set; } = "";
+
+    /// <summary>The amount eaten, in <see cref="Unit"/> (the name is from when every amount was in grams).</summary>
     public decimal Grams { get; set; }
+
+    /// <summary>The food's unit when it was logged, kept so a past day shows what it showed then.</summary>
+    public FoodUnit Unit { get; set; }
+
     public decimal Kcal { get; set; }
     public decimal ProteinG { get; set; }
     public decimal CarbsG { get; set; }
@@ -157,8 +178,10 @@ public class SavedMealItem
     public int SortOrder { get; set; }
     public string Description { get; set; } = "";
 
-    /// <summary>0 for a quick entry, which has no amount.</summary>
+    /// <summary>0 for a quick entry, which has no amount. In <see cref="Unit"/>.</summary>
     public decimal Grams { get; set; }
+
+    public FoodUnit Unit { get; set; }
 
     public decimal Kcal { get; set; }
     public decimal ProteinG { get; set; }

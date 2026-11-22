@@ -11,6 +11,8 @@
     // A value computed from kJ or a per-serving column is marked for checking; one the label didn't give is left empty and marked.
     string Mark(decimal? v, LabelField field) =>
         label is null ? "num" : label.Converted.HasFlag(field) ? "num is-converted" : v is null ? "num is-missing" : "num";
+    // Per 100 g or per 100 ml: the label's column, else what was sent back with an error, else grams (SPEC 6.6).
+    var unit = label?.Unit ?? Model.Unit ?? Plate.Core.Domain.FoodUnit.Grams;
 }
 <div id="manual-food" data-label-form>
     @if (Model.LabelAvailable)
@@ -56,7 +58,13 @@
         {
             <div data-known hidden></div>
         }
-        <h2 class="section-header" style="margin-top: var(--s-5)">@L["Per 100 g, from the label"]</h2>
+        <h2 class="section-header" style="margin-top: var(--s-5)">@L["From the label"]</h2>
+        <div class="segmented-wrap">
+            <div class="segmented" role="radiogroup" aria-label="@L["Values per"]">
+                <label class="segment"><input type="radio" name="unit" value="Grams" checked="@(unit == Plate.Core.Domain.FoodUnit.Grams)" />@L["Per 100 g"]</label>
+                <label class="segment"><input type="radio" name="unit" value="Millilitres" checked="@(unit == Plate.Core.Domain.FoodUnit.Millilitres)" />@L["Per 100 ml"]</label>
+            </div>
+        </div>
         <div class="list">
             <div class="field-row"><label for="m-kcal">@L["Energy"]</label><input id="m-kcal" class="@Mark(label?.Kcal, LabelField.Kcal)" type="text" name="kcal" aria-invalid="@(Model.InvalidField == "kcal" ? "true" : null)" autofocus="@(Model.InvalidField == "kcal")" value="@Value("kcal", label?.Kcal)" min="0" max="900" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L["kcal"]</span></div>
             <div class="field-row"><label for="m-protein">@L["Protein"]</label><input id="m-protein" class="@Mark(label?.Protein, LabelField.Protein)" type="text" name="protein" aria-invalid="@(Model.InvalidField == "protein" ? "true" : null)" autofocus="@(Model.InvalidField == "protein")" value="@Value("protein", label?.Protein)" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
@@ -67,8 +75,8 @@
         </div>
         <h2 class="section-header" style="margin-top: var(--s-5)">@L["Portion"]</h2>
         <div class="list">
-            <div class="field-row is-optional"><label for="m-serving">@L["One serving"]</label><input id="m-serving" class="num" type="text" name="servingGrams" aria-invalid="@(Model.InvalidField == "servingGrams" ? "true" : null)" autofocus="@(Model.InvalidField == "servingGrams")" value="@Value("servingGrams", label?.ServingGrams ?? Model.TypedServing)" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
-            <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="text" name="grams" aria-invalid="@(Model.InvalidField == "grams" ? "true" : null)" autofocus="@(Model.InvalidField == "grams")" value="@Value("grams", Model.TypedGrams ?? label?.ServingGrams)" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
+            <div class="field-row is-optional"><label for="m-serving">@L["One serving"]</label><input id="m-serving" class="num" type="text" name="servingGrams" aria-invalid="@(Model.InvalidField == "servingGrams" ? "true" : null)" autofocus="@(Model.InvalidField == "servingGrams")" value="@Value("servingGrams", label?.ServingGrams ?? Model.TypedServing)" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" placeholder="@L["Optional"]" />@Ui.UnitWords(L)</div>
+            <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="text" name="grams" aria-invalid="@(Model.InvalidField == "grams" ? "true" : null)" autofocus="@(Model.InvalidField == "grams")" value="@Value("grams", Model.TypedGrams ?? label?.ServingGrams)" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required />@Ui.UnitWords(L)</div>
         </div>
         @* Shown only with a barcode: others find a shared food by scanning it (SPEC 4). Without one the server keeps it private. *@
         <div class="list" data-share style="margin-top: var(--s-5)" hidden="@(!hasBarcode)">

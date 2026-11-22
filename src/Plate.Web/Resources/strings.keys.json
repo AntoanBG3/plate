@@ -233,6 +233,8 @@
     "src/Plate.Web/Views/SettingsExercises/Edit.cshtml"
   ],
   "Amount": [
+    "src/Plate.Web/Views/Food/Add.cshtml",
+    "src/Plate.Web/Views/Food/Confirm.cshtml",
     "src/Plate.Web/Views/Food/Entry.cshtml"
   ],
   "An account with this email already exists.": [
@@ -933,6 +935,9 @@
   "From a starting maintenance of about {0} kcal, with {1} g of protein. It adapts as you log food and weight.": [
     "src/Plate.Web/Views/Onboarding/_SetupForm.cshtml"
   ],
+  "From the label": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
+  ],
   "Front raise": [
     "exercise"
   ],
@@ -972,10 +977,6 @@
   ],
   "Got it": [
     "src/Plate.Web/Views/Today/Index.cshtml"
-  ],
-  "Grams": [
-    "src/Plate.Web/Views/Food/Add.cshtml",
-    "src/Plate.Web/Views/Food/Confirm.cshtml"
   ],
   "Grams must be above 0 and at most {0}.": [
     "src/Plate.Core/Nutrition/FoodMath.cs",
@@ -1593,17 +1594,15 @@
     "exercise"
   ],
   "Per 100 g": [
-    "src/Plate.Web/Views/Food/Barcode.cshtml",
-    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+    "src/Plate.Web/Features/Localization/Localizer.cs",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Per 100 g values": [
     "src/Plate.Web/Views/Food/Confirm.cshtml"
   ],
-  "Per 100 g, from the label": [
+  "Per 100 ml": [
+    "src/Plate.Web/Features/Localization/Localizer.cs",
     "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
-  ],
-  "Per 100 ml, used as per 100 g.": [
-    "src/Plate.Core/Nutrition/LabelReading.cs"
   ],
   "Per meal: about 0.3 g of protein per kg at breakfast, lunch and dinner; 0.4 g and at least 25 g from 65. Morton 2018.": [
     "src/Plate.Web/Views/Settings/Goal.cshtml"
@@ -2394,6 +2393,9 @@
   "The food parser took too long. Try again, or enter the food by hand.": [
     "src/Plate.Web/Integrations/OpenRouterFoodParser.cs"
   ],
+  "The label gives values per 100 ml, so amounts of this food are in ml.": [
+    "src/Plate.Core/Nutrition/LabelReading.cs"
+  ],
   "The label only gives values per serving. Enter them by hand or photograph the per-100 g column.": [
     "src/Plate.Core/Nutrition/LabelReading.cs"
   ],
@@ -2471,6 +2473,7 @@
   ],
   "This food form is out of date. Check whether it was saved, then reload before trying again.": [
     "src/Plate.Web/Controllers/FoodController.cs",
+    "src/Plate.Web/Features/Food/FoodItemService.cs",
     "src/Plate.Web/Features/Food/IdempotentFoodPostAttribute.cs"
   ],
   "This invite is no longer valid. Ask Antoan for a new one.": [
@@ -2617,6 +2620,9 @@
   ],
   "Use the form instead": [
     "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "Values per": [
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Values per 100 g are impossible (over 900 kcal or over 100 g of macros).": [
     "src/Plate.Core/Nutrition/FoodMath.cs"
@@ -2878,14 +2884,11 @@
     "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
   ],
   "g": [
-    "src/Plate.Web/Views/Food/Add.cshtml",
-    "src/Plate.Web/Views/Food/Barcode.cshtml",
-    "src/Plate.Web/Views/Food/Confirm.cshtml",
+    "src/Plate.Web/Features/Localization/Localizer.cs",
     "src/Plate.Web/Views/Food/Entry.cshtml",
     "src/Plate.Web/Views/Food/Index.cshtml",
     "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml",
     "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
-    "src/Plate.Web/Views/Food/_SavedMeal.cshtml",
     "src/Plate.Web/Views/Progress/Index.cshtml",
     "src/Plate.Web/Views/Today/Index.cshtml"
   ],
@@ -2946,6 +2949,9 @@
   "minimum reached {0} of {1} days": [
     "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
   ],
+  "ml": [
+    "src/Plate.Web/Features/Localization/Localizer.cs"
+  ],
   "not enough known": [
     "src/Plate.Web/Views/Shared/_WeekCard.cshtml"
   ],
@@ -2982,8 +2988,7 @@
     "src/Plate.Web/Views/Templates/Index.cshtml"
   ],
   "{0} g": [
-    "src/Plate.Web/Views/Food/Entry.cshtml",
-    "src/Plate.Web/Views/Food/Index.cshtml",
+    "src/Plate.Web/Features/Localization/Localizer.cs",
     "src/Plate.Web/Views/Today/Index.cshtml",
     "wwwroot/js"
   ],
@@ -3033,8 +3038,10 @@
     "wwwroot/js"
   ],
   "{0} kcal, {1} g protein per 100 g": [
-    "src/Plate.Web/Views/Food/Add.cshtml",
-    "src/Plate.Web/Views/Food/_Candidates.cshtml"
+    "src/Plate.Web/Features/Localization/Localizer.cs"
+  ],
+  "{0} kcal, {1} g protein per 100 ml": [
+    "src/Plate.Web/Features/Localization/Localizer.cs"
   ],
   "{0} kg": [
     "wwwroot/js"
@@ -3052,6 +3059,9 @@
     "wwwroot/js"
   ],
   "{0} min": [
+    "src/Plate.Web/Features/Localization/Localizer.cs"
+  ],
+  "{0} ml": [
     "src/Plate.Web/Features/Localization/Localizer.cs"
   ],
   "{0} new replies": [

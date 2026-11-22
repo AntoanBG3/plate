@@ -190,7 +190,13 @@ public record FoodAddViewModel(
     IReadOnlyDictionary<int, decimal>? LastGrams = null,
     ManualFoodFormModel? Manual = null);
 
-public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<Plate.Web.Features.Food.ConfirmItem> Items, Plate.Core.Text.LocalText? Warning, int? ParseRunId = null, Guid RequestId = default);
+/// <param name="MillilitreFoods">The rows' foods counted in ml (SPEC 4); their amounts show ml. Read when the page is shown.</param>
+public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<Plate.Web.Features.Food.ConfirmItem> Items, Plate.Core.Text.LocalText? Warning, int? ParseRunId = null, Guid RequestId = default,
+    IReadOnlySet<int>? MillilitreFoods = null)
+{
+    public FoodUnit UnitOf(Plate.Web.Features.Food.ConfirmItem item) =>
+        item.FoodItemId is { } id && MillilitreFoods?.Contains(id) == true ? FoodUnit.Millilitres : FoodUnit.Grams;
+}
 
 /// <param name="AddedByAnother">The food is a shared manual one another account added (SPEC 7).</param>
 /// <param name="LastGrams">This account's last amount for the product (SPEC 5.10), or null.</param>
@@ -217,7 +223,8 @@ public record ManualFoodFormModel(
     decimal? TypedGrams = null,
     decimal? TypedServing = null,
     string? InvalidField = null,
-    bool Submitted = false);
+    bool Submitted = false,
+    FoodUnit? Unit = null);
 
 /// <summary>A food the app already has for a barcode in the manual form, offered instead of a new one (SPEC 7).</summary>
 /// <param name="Own">The user's own private food; rejecting it clears the barcode, since one account can't have two foods with it.</param>

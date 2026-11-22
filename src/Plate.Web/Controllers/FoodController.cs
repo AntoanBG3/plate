@@ -29,6 +29,10 @@ public class FoodController(
 {
     private static readonly string[] Tabs = ["text", "barcode", "search", "recent", "manual"];
 
+    /// <summary>Which of the review's foods count in ml, read when the page is shown (SPEC 4).</summary>
+    private async Task<ConfirmViewModel> WithUnitsAsync(ConfirmViewModel draft, CancellationToken ct) =>
+        draft with { MillilitreFoods = await foods.MillilitreFoodsAsync(draft.Items.Select(i => i.FoodItemId).OfType<int>(), ct) };
+
     [HttpGet("")]
     public async Task<IActionResult> Index(DateOnly? date, CancellationToken ct)
     {
@@ -98,7 +102,7 @@ public class FoodController(
         if (Request.Headers["HX-Request"] == "true")
         {
             Response.Headers["HX-Push-Url"] = url;
-            return View("Confirm", draft);
+            return View("Confirm", await WithUnitsAsync(draft, ct));
         }
         return Redirect(url);
     }
@@ -112,7 +116,7 @@ public class FoodController(
             return LocalRedirect(saved);
         }
         var draft = await parseRuns.ReviewAsync(run, id, ct);
-        return draft is null ? NotFound() : View("Confirm", draft);
+        return draft is null ? NotFound() : View("Confirm", await WithUnitsAsync(draft, ct));
     }
 
     [HttpPost("confirm")]
@@ -207,7 +211,7 @@ public class FoodController(
     [HttpPost("items")]
     [IdempotentFoodPost]
     [HandlesInvalidNumbers]
-    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string? name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, bool barcodeField, CancellationToken ct)
+    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string? name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, bool barcodeField, CancellationToken ct, FoodUnit unit = FoodUnit.Grams)
     {
         // Hidden routing and scan fields cannot be corrected in the form. Never reuse their binding defaults.
         if (ModelState.Values.Any(field => field.Errors.Any(e => e.ErrorMessage != DecimalModelBinder.InvalidNumber)))
@@ -217,14 +221,14 @@ public class FoodController(
             if (ModelState.FirstOrDefault(pair => pair.Value?.Errors.Count > 0).Key is { } field)
                 throw new ValidationException(DecimalModelBinder.InvalidNumber, field);
 
-            await manualFoods.SaveAndLogAsync(date, meal, name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, grams, share, labelScanId, ct);
+            await manualFoods.SaveAndLogAsync(date, meal, name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, grams, share, labelScanId, ct, unit);
         }
         catch (ValidationException ex) when (!Request.Headers.ContainsKey("HX-Request"))
         {
             var available = await labels.IsAvailableAsync(ct);
             var manual = new ManualFoodFormModel(date, meal, barcodeField ? null : barcode, name, barcodeField,
                 LabelScanId: labelScanId, LabelAvailable: available, BarcodeValue: barcode, Share: share,
-                InvalidField: ex.Field, Submitted: true);
+                InvalidField: ex.Field, Submitted: true, Unit: unit);
             if (!barcodeField && barcode is not null) ViewData["Page"] = "food-barcode";
             return View("Add", new FoodAddViewModel(date, meal, "manual", null, ex.Text, null, [], null, [], [],
                 available, Manual: manual));

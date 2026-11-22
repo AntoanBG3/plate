@@ -173,7 +173,7 @@
                         @{ var status = L.Status(e); var grams = e.Source != EntrySource.Quick; }
                         <span class="row-title entry-title">@L.Entry(e.Description)@if (grams || status is not null)
                             {<text> </text><span class="entry-tail">@if (grams)
-                                {<span class="entry-grams num">· @L["{0} g", e.Grams.Kg()]</span>}@if (status is not null)
+                                {<span class="entry-grams num">· @L.Amount(e.Grams, e.Unit)</span>}@if (status is not null)
                                 {<span class="chip status-chip" data-status>@status</span>}</span>}</span>
                         <span class="row-sub num" style="display: block">@L["{0} kcal · {1} g protein", Math.Round(e.Kcal), e.ProteinG.Kg(1)]</span>
                     </span>

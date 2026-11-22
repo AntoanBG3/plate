@@ -57,8 +57,31 @@ public class LabelValuesTests
         LabelValues.Normalize(Label(LabelBasis.PerServing, serving: null)).Error.Should().Be(LabelValues.PerServingOnly);
 
     [Fact]
-    public void Per100mlIsUsedAsPer100gWithNote() =>
-        LabelValues.Normalize(Label(LabelBasis.Per100ml)).Values!.Notes.Should().Contain(LabelValues.MillilitresAsGrams);
+    public void Per100mlKeepsItsValuesInMillilitres()
+    {
+        var v = LabelValues.Normalize(Label(LabelBasis.Per100ml, serving: 250, kcal: 38, protein: 1.8m)).Values!;
+        v.Unit.Should().Be(Plate.Core.Domain.FoodUnit.Millilitres);
+        v.Kcal.Should().Be(38, "the values stay per 100 ml, nothing is converted");
+        v.Protein.Should().Be(1.8m);
+        v.ServingGrams.Should().Be(250, "the serving is in the label's unit too");
+        v.Converted.Should().Be(LabelField.None);
+        v.Notes.Should().Contain(LabelValues.PerMillilitres);
+    }
+
+    [Theory]
+    [InlineData(LabelBasis.Per100g)]
+    [InlineData(LabelBasis.PerServing)]
+    public void OtherBasesAreInGrams(LabelBasis basis) =>
+        LabelValues.Normalize(Label(basis, serving: 30)).Values!.Unit.Should().Be(Plate.Core.Domain.FoodUnit.Grams);
+
+    [Fact]
+    public void ChangingTheUnitCountsAsAnEdit()
+    {
+        var suggested = LabelValues.Normalize(Label(LabelBasis.Per100ml)).Values!;
+        var per100 = new Per100g(250, 10, 30, 10, 2, 4);
+        LabelValues.Edited(suggested, per100, null, Plate.Core.Domain.FoodUnit.Millilitres).Should().BeFalse();
+        LabelValues.Edited(suggested, per100, null, Plate.Core.Domain.FoodUnit.Grams).Should().BeTrue();
+    }
 
     [Fact]
     public void RoundsToOneDecimalAndKcalToWhole()

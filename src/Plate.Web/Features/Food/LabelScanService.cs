@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Plate.Core.Domain;
 using Plate.Core.Nutrition;
 using Plate.Core.Text;
@@ -83,8 +84,9 @@ public class LabelScanService(AppDbContext db, ILabelReader reader, ICurrentUser
             saved.SaturatedFatPer100g,
             saved.FiberPer100g,
             saved.DefaultServingGrams,
+            Unit = saved.Unit.ToString(),
         }, Json);
-        scan.Edited = LabelValues.Edited(suggested, saved.Per100(), saved.DefaultServingGrams);
+        scan.Edited = LabelValues.Edited(suggested, saved.Per100(), saved.DefaultServingGrams, saved.Unit);
         await db.SaveChangesAsync(ct);
     }
 
@@ -116,10 +118,12 @@ internal record StoredLabelValues(
     decimal? ServingGrams,
     LabelField Converted,
     string[] Notes,
-    string[] Warnings)
+    string[] Warnings,
+    // Absent in scans stored before per-100 ml labels were kept, which were all read as per 100 g.
+    [property: JsonPropertyName("unit"), JsonConverter(typeof(JsonStringEnumConverter<FoodUnit>))] FoodUnit Unit = FoodUnit.Grams)
 {
     public static StoredLabelValues From(LabelValues v) => new(v.Name, v.Brand, v.Kcal, v.Protein, v.Carbs, v.Fat, v.SaturatedFat, v.Fiber,
-        v.ServingGrams, v.Converted, v.Notes.Select(n => n.ToString()).ToArray(), v.Warnings.Select(w => w.ToString()).ToArray());
+        v.ServingGrams, v.Converted, v.Notes.Select(n => n.ToString()).ToArray(), v.Warnings.Select(w => w.ToString()).ToArray(), v.Unit);
 
-    public LabelValues ToValues() => new(Name, Brand, Kcal, Protein, Carbs, Fat, SaturatedFat, Fiber, ServingGrams, Converted, [], []);
+    public LabelValues ToValues() => new(Name, Brand, Kcal, Protein, Carbs, Fat, SaturatedFat, Fiber, ServingGrams, Converted, [], [], Unit);
 }

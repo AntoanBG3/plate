@@ -44,12 +44,24 @@ public class LabelPhotoTests(E2EFixture app) : IClassFixture<E2EFixture>
         (await phone.Page.InputValueAsync("#m-kcal")).Should().Be("38");
         (await phone.Page.InputValueAsync("#m-protein")).Should().Be("1.8");
         (await phone.Page.InputValueAsync("#m-name")).Should().Be("Айрян");
-        (await phone.Page.Locator("[data-label-form] .banner").First.InnerTextAsync()).Should().Contain(bulgarian ? "За 100 мл, използвано като за 100 г." : "Per 100 ml, used as per 100 g.");
+        (await phone.Page.Locator("[data-label-form] .banner").First.InnerTextAsync()).Should().Contain(bulgarian
+            ? "Етикетът дава стойности на 100 мл, затова количествата на тази храна са в мл."
+            : "The label gives values per 100 ml, so amounts of this food are in ml.");
+
+        // The label's column was per 100 ml, so the amounts are in ml; choosing per 100 g switches them back, and again.
+        var ml = bulgarian ? "мл" : "ml";
+        var g = bulgarian ? "г" : "g";
+        var unit = phone.Page.Locator("#m-grams + .unit");
+        (await unit.InnerTextAsync()).Trim().Should().Be(ml);
+        await phone.Page.Locator("[data-label-form] .segment", new() { HasText = bulgarian ? "На 100 г" : "Per 100 g" }).TapAsync();
+        (await unit.InnerTextAsync()).Trim().Should().Be(g);
+        await phone.Page.Locator("[data-label-form] .segment", new() { HasText = bulgarian ? "На 100 мл" : "Per 100 ml" }).TapAsync();
+        (await unit.InnerTextAsync()).Trim().Should().Be(ml);
 
         await phone.Page.FillAsync("#m-grams", "250");
         await phone.NavigateByAsync(() => phone.Page.Locator("[data-label-form] button[type=submit]").TapAsync());
         new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food");
-        (await phone.Page.Locator("main").InnerTextAsync()).Should().Contain("Айрян");
+        (await phone.Page.Locator("main").InnerTextAsync()).Should().Contain("Айрян").And.Contain("250 " + ml);
         phone.ShouldHaveNoErrors();
     }
 
