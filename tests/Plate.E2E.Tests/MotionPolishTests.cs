@@ -6,7 +6,7 @@ using Microsoft.Playwright;
 
 namespace Plate.E2E.Tests;
 
-/// <summary>Motion refinements taken from apple.com (docs/plans/2026-10-11-motion-polish-design.md).</summary>
+/// <summary>Motion refinements taken from apple.com.</summary>
 public class MotionPolishTests(E2EFixture app) : IClassFixture<E2EFixture>
 {
     private const string MenuVisibility = "m => getComputedStyle(m).visibility";
