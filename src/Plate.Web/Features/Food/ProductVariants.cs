@@ -5,21 +5,45 @@ namespace Plate.Web.Features.Food;
 /// <summary>Product details that distinguish otherwise similar catalogue names in either language.</summary>
 internal static partial class ProductVariants
 {
-    // A brand used as the product name. Its manufacturer's portfolio also contains water, lemonade and sports drinks.
-    internal static string LookupName(string query) =>
-        Normalise(query) == "coca cola" ? "cola" : query;
-
-    // Compare a branded product on its remaining food words. A matching manufacturer alone cannot identify the item.
-    internal static bool Compatible(string name, string? brand, string query, string lookup)
+    /// <summary>Brands people write as the name of the product type: "a can of coca-cola" is a cola.</summary>
+    private static readonly Dictionary<string, string> BrandProducts = new()
     {
-        if (lookup != query)
+        ["coca cola"] = "cola", ["coke"] = "cola", ["pepsi"] = "cola", ["кока кола"] = "кола", ["пепси"] = "кола",
+    };
+
+    /// <summary>The words to look a food up by: the product type for a brand that names one, otherwise the text itself.</summary>
+    internal static string LookupName(string query) =>
+        BrandProducts.TryGetValue(Normalise(query), out var product) ? product : query;
+
+    /// <summary>
+    /// The user's words appear in a USDA name only in its manufacturer field: "The COCA-COLA company, Minute Maid,
+    /// Lemonade" is not a cola, and "COCA-COLA, POWERADE" is a sports drink. USDA gives the maker its own comma field,
+    /// either named a company or as the first of two all-capital fields ("ABBOTT, ENSURE").
+    /// </summary>
+    internal static bool MatchesOnlyItsMaker(string name, string query)
+    {
+        var fields = name.Split(',').Select(f => f.Trim()).ToList();
+        var maker = fields.Select((f, i) => i > 0 && (Company().IsMatch(f) || i + 1 < fields.Count && AllCapitals(f) && AllCapitals(fields[i + 1]))).ToList();
+        if (!maker.Contains(true))
         {
-            // In USDA names a manufacturer can occupy its own comma-delimited field.
-            var fields = name.Split(',');
-            var product = fields.Where((part, i) => i == 0 || !Normalise(part).Contains("coca cola", StringComparison.Ordinal));
-            if (!Words(string.Join(' ', product)).Contains("cola")) return false;
+            return false;
         }
 
+        var wanted = Words(query);
+        wanted.ExceptWith(NonIdentity);
+        var makerWords = Words(string.Join(' ', fields.Where((_, i) => maker[i])));
+        var productWords = Words(string.Join(' ', fields.Where((_, i) => !maker[i])));
+        return wanted.Overlaps(makerWords) && !wanted.Overlaps(productWords);
+
+        static bool AllCapitals(string field) => field.Count(char.IsLetter) >= 2 && field.Where(char.IsLetter).All(char.IsUpper);
+    }
+
+    [GeneratedRegex(@"\b(company|inc|corp|corporation|llc)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex Company();
+
+    // Compare a branded product on its remaining food words. A matching manufacturer alone cannot identify the item.
+    internal static bool Compatible(string name, string? brand, string query)
+    {
         if (!NamedBrand(brand, query)) return true;
         var brandWords = Words(brand!);
         var identity = Words(Percentage().Replace(query, " "));
@@ -60,7 +84,7 @@ internal static partial class ProductVariants
 
     internal static double Adjustment(string name, string? brand, string query)
     {
-        double score = NamedBrand(brand, query) && Compatible(name, brand, query, query) ? 0.45 : 0;
+        double score = NamedBrand(brand, query) && Compatible(name, brand, query) ? 0.45 : 0;
         foreach (var variant in Variants)
         {
             if (!variant.IsMatch(name)) continue;

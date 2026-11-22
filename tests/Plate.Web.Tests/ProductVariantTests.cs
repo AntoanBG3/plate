@@ -37,6 +37,14 @@ public class ProductVariantTests(PostgresFixture fixture) : IClassFixture<Postgr
     }
 
     [Theory]
+    [InlineData("Beverages, The COCA-COLA company, Minute Maid, Lemonade", "cola", true)]
+    [InlineData("Beverages, COCA-COLA, POWERADE, lemon-lime flavored, ready-to-drink", "cola", true)]
+    [InlineData("Beverages, carbonated, cola, regular", "cola", false)]
+    [InlineData("Candies, MARS SNACKFOOD US, SNICKERS CRUNCHER", "snickers", false)]
+    public void A_food_named_only_in_its_maker_field_is_not_that_food(string name, string query, bool onlyMaker) =>
+        ProductVariants.MatchesOnlyItsMaker(name, query).Should().Be(onlyMaker);
+
+    [Theory]
     [InlineData("tofu", "Tofu, prepared with calcium sulfate", "Tofu, fried")]
     [InlineData("fried tofu", "Tofu, fried", "Tofu, prepared with calcium sulfate")]
     [InlineData("кисело мляко 2%", "Кисело мляко, 2% масленост", "Кисело мляко 4%")]

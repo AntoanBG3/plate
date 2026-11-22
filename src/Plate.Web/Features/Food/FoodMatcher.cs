@@ -417,7 +417,8 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             {
                 var name = bulgarian ? food.NameBg : food.Name;
                 if (string.IsNullOrWhiteSpace(name) || MatchesOnlyItsUse(food, query, bulgarian)
-                    || !ProductVariants.Compatible(name, food.Brand, query, lookup))
+                    || !ProductVariants.Compatible(name, food.Brand, query)
+                    || !bulgarian && ProductVariants.MatchesOnlyItsMaker(food.Name, FoodWords(query)))
                     continue;
                 ranked.Add((food, Rank(food, query, item.State, bulgarian)));
             }
