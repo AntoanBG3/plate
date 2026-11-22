@@ -342,8 +342,28 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
 
     private static HashSet<string> IdentityWords(string name) =>
         Words(name).Where(w => w.Any(char.IsLetter) && !Descriptors.Contains(w) && !FoodStates.Stated(w))
-            .Select(w => w switch { "закуски" => "закуска", "yoghurt" => "yogurt", "aubergine" => "eggplant", "courgette" => "zucchini", _ => w })
+            .Select(w => w switch { "yoghurt" => "yogurt", "aubergine" => "eggplant", "courgette" => "zucchini", _ => w })
+            .Select(Stem)
             .ToHashSet();
+
+    private static readonly string[] BulgarianEndings = ["ове", "еве", "ът", "ят", "и", "а", "о", "е", "я"];
+
+    /// <summary>
+    /// One form per word, so the number or gender the user typed doesn't decide identity: "ябълки" and "Ябълка",
+    /// "яйца" and "Яйце", "пилешки" and "Пилешко" agree, while "суши" and "круши" stay different. Bulgarian loses one
+    /// plural, article or final vowel ending, keeping at least three letters; English "berry" meets <see cref="Words"/>'
+    /// "berri" from "berries".
+    /// </summary>
+    internal static string Stem(string word)
+    {
+        if (word.Any(c => c is >= 'а' and <= 'я'))
+        {
+            var ending = BulgarianEndings.FirstOrDefault(e => word.EndsWith(e, StringComparison.Ordinal) && word.Length - e.Length >= 3);
+            return ending is null ? word : word[..^ending.Length];
+        }
+
+        return word.Length > 3 && word.EndsWith('y') ? word[..^1] + "i" : word;
+    }
 
     private const string EstimatedNote = "These values are estimated from the recipe, not read from a label.";
 

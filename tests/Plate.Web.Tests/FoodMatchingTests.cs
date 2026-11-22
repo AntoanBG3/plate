@@ -131,6 +131,21 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
         item.MatchModel.Should().BeNull("Rank decided");
     }
 
+    [Fact]
+    public async Task An_unsure_none_does_not_hand_the_row_to_a_ranking_without_identity()
+    {
+        // Matchbench c87: three deciders said "none" for суши below 0.9, and the ranking's pears (круши) stood.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, null, 0.6m);
+        var item = Parsed("sushi", 200, FoodState.NotApplicable) with { NameOriginal = "суши" };
+        var inspection = new List<RankingInspection>();
+
+        var row = (await s.Matcher.ResolveAsync("суши сет", [item], default, inspectRanking: inspection)).Single();
+
+        row.FoodItemId.Should().BeNull();
+        inspection.Single().Outcome.Should().Be("estimate: ranking: after unsure decider none, identity not supported");
+    }
+
     [Theory]
     [InlineData(null, 0.5, "ranking: after unsure decider none")]
     [InlineData(null, 0.95, "estimate: decider none")]
@@ -216,6 +231,22 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
 
     private static FoodMatch Food(int id, string name, string? nameBg, string? brand, decimal kcal, bool own = false) =>
         new(id, name, nameBg, brand, kcal, 2, 15, 8, null, null, null, own, false, 0.9);
+
+    [Theory]
+    [InlineData("ябълки", "Apples, raw", "Ябълка, сурова", true)]
+    [InlineData("яйца", "Egg, whole, raw", "Яйце, цяло, сурово", true)]
+    [InlineData("пилешки гърди", "Chicken breast", "Пилешко гърди", true)]
+    [InlineData("суши", "Pears, raw", "Круши, сурови", false)]
+    public void Bulgarian_identity_ignores_number_and_gender(string typed, string name, string nameBg, bool complete)
+    {
+        var item = Parsed("x", 100, FoodState.NotApplicable) with { NameEn = "zzz", NameOriginal = typed };
+        (FoodMatcher.Identity(item, [(Food(1, name, nameBg, null, 50), 1)]) == FoodMatcher.IdentityEvidence.Complete).Should().Be(complete);
+    }
+
+    [Fact]
+    public void English_identity_meets_plurals() =>
+        FoodMatcher.Identity(Parsed("strawberry", 100, FoodState.NotApplicable), [(Food(1, "Strawberries, raw", null, null, 30), 1)])
+            .Should().Be(FoodMatcher.IdentityEvidence.Complete);
 
     [Theory]
     [InlineData(0.85, true)]
