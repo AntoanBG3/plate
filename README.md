@@ -99,7 +99,7 @@ docker builder prune -f                      # the SDK build cache sits on the b
 For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the admin area under AI, `/admin/ai` (stored encrypted with the Data Protection keys, shared by all accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The same page has one model per AI task:
 
 - Food parser: picked from OpenRouter's catalog (default `openai/gpt-6-luna`, or `OPENROUTER_MODEL`).
-- Food matcher: Off (the database ranking picks the food, the default) or TypeSafe's Jev 1.13, a decision model that chooses which database food each item is, or says none fits. It uses the same key and costs about $0.0002 per entry. Picking it runs a test decision. Entries record which Jev version chose their match (`match_model` in the export); `docker logs plate-app | grep "Jev "` shows each call's latency and cost.
+- Food matcher: Off (the database ranking picks a food when the name identifies it and uses the estimate otherwise, the default) or TypeSafe's Jev 1.13, a decision model that chooses which database food each item is, or says none fits. It uses the same key and costs about $0.0002 per entry. Picking it runs a test decision. Entries record which Jev version chose their match (`match_model` in the export); `docker logs plate-app | grep "Jev "` shows each call's latency and cost.
 
 Add an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
 

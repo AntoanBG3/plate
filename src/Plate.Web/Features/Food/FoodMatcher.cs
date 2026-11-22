@@ -128,7 +128,15 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     private sealed record Candidates(ParsedFoodItem Item, FoodMatch? Usual, List<(FoodMatch Food, double Score)> Ranked, List<FoodMatch> Shortlist)
     {
         public (FoodMatch Food, double Score)? Best => Ranked.Count == 0 ? null : Ranked[0];
-        public string RankingReason => Best is null ? "no candidates" : "highest ranked food";
+        private IdentityEvidence Evidence { get; } = Identity(Item, Ranked);
+        public bool Supported => Evidence is IdentityEvidence.Complete or IdentityEvidence.PartialWithLead;
+        public string RankingReason => Evidence switch
+        {
+            IdentityEvidence.Empty => "no candidates",
+            IdentityEvidence.Complete => "food identity matched",
+            IdentityEvidence.PartialWithLead => "food identity supported by runner-up margin",
+            _ => "insufficient food identity",
+        };
     }
 
     /// <param name="trace">When given, receives one <see cref="MatchTrace"/> per item.</param>
@@ -141,7 +149,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         var candidates = new List<Candidates>(items.Count);
         for (var i = 0; i < items.Count; i++)
         {
-            candidates.Add(await FindCandidatesAsync(items[i], usual.GetValueOrDefault(i), inspectRanking is not null ? int.MaxValue : trace is null ? 1 : TraceSize, askModel, ct));
+            candidates.Add(await FindCandidatesAsync(items[i], usual.GetValueOrDefault(i), inspectRanking is not null ? int.MaxValue : trace is null ? 2 : TraceSize, askModel, ct));
         }
 
         // Every item is context for the model, including foods already decided locally.
@@ -235,14 +243,15 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
 
     private async Task<Candidates> FindCandidatesAsync(ParsedFoodItem item, FoodMatch? usual, int rankDepth, bool askModel, CancellationToken ct)
     {
-        var ranked = usual is null || rankDepth > 1 ? await RankAsync(item, rankDepth, ct) : [];
-        if (!askModel || usual is not null || ranked.Count > 0 && ranked[0].Food.Own)
-            return new(item, usual, ranked, []);
+        var ranked = usual is null || rankDepth >= TraceSize ? await RankAsync(item, rankDepth, ct) : [];
+        var local = new Candidates(item, usual, ranked, []);
+        if (!askModel || usual is not null || local.Supported && local.Best is { Food.Own: true })
+            return local;
 
         var found = await foods.SearchAsync(item.NameEn, ShortlistSize, ShortlistThreshold, ct);
         if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
             found.AddRange(await foods.SearchAsync(item.NameOriginal, ShortlistSize, ShortlistThreshold, ct));
-        return new(item, null, ranked, Shortlist(found, Typed(item)));
+        return local with { Shortlist = Shortlist(found, Typed(item)) };
     }
 
     /// <returns>The row, and which path chose it (reported by the benchmark).</returns>
@@ -281,7 +290,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             { Confidence: < PickFloor } => "ranking: after unsure decider pick",
             _ => "ranking: decider pick not offered",
         };
-        if (candidates.Best is { } best)
+        if (candidates.Supported && candidates.Best is { } best)
         {
             // "Database" (High) only for a close match whose main food word is one the user wrote; otherwise the
             // confirmation marks it "Check this" (QA: a banana matched a strawberry-banana mousse as Database).
@@ -290,9 +299,51 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
                 ? Confidence.High : Confidence.Medium;
             return (Matched(item, best.Food, Portion(item, best.Food, notes), confidence, notes, null), path);
         }
-        return (Estimate(item, notes, null), "estimate: no candidates");
+        return (Estimate(item, notes, null), candidates.Best is null ? "estimate: no candidates" : "estimate: " + path + ", identity not supported");
     }
 
+
+    internal enum IdentityEvidence { Empty, Insufficient, Complete, PartialWithLead }
+
+    // Preparation and generic descriptors can corroborate a match in Rank, but cannot identify a food.
+    private static readonly HashSet<string> Descriptors =
+        ["a", "an", "the", "of", "and", "with", "from", "in", "for", "without", "с", "със", "за", "на", "от", "и", "без",
+         "plain", "fresh", "large", "small", "голям", "голяма", "голямо", "малък", "пресен", "прясна", "dry", "dried"];
+
+    internal static IdentityEvidence Identity(ParsedFoodItem item, IReadOnlyList<(FoodMatch Food, double Score)> ranked)
+    {
+        if (ranked.Count == 0) return IdentityEvidence.Empty;
+        var (food, score) = ranked[0];
+        // Compare each rendering separately. The parser's English can bridge a Bulgarian typo or transliteration.
+        var evidence = new[] { (item.NameEn, food.Name), (item.NameOriginal, food.NameBg ?? food.Name),
+            (item.NameOriginal, food.Name) };
+        var partial = false;
+        foreach (var (query, name) in evidence)
+        {
+            // Use the same food identity wording as candidate retrieval.
+            var wanted = IdentityWords(FoodWords(query));
+            if (wanted.Count == 0) continue;
+            var available = IdentityWords(name);
+            // Brand can complete the requested name only when the product itself supplied evidence.
+            if (food.Brand is { } brand && wanted.Overlaps(available.Except(IdentityWords(brand))))
+                available.UnionWith(IdentityWords(brand));
+            var common = wanted.Count(available.Contains);
+            if (common == wanted.Count) return IdentityEvidence.Complete;
+            if (common < 2 || common * 4 < wanted.Count * 3) continue;
+            // A single shared ingredient is too weak for a multiword dish. A partial match needs its main
+            // food phrase and at least three quarters of its identifying words before the margin matters.
+            var main = IdentityWords(System.Text.RegularExpressions.Regex.Split(query, @"[,]|\s+(?:with|from|със|с|от)\s+",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase)[0]);
+            partial |= main.Count > 0 && main.IsSubsetOf(available);
+        }
+        return partial && ranked.Count > 1 && score - ranked[1].Score >= 0.1
+            ? IdentityEvidence.PartialWithLead : IdentityEvidence.Insufficient;
+    }
+
+    private static HashSet<string> IdentityWords(string name) =>
+        Words(name).Where(w => w.Any(char.IsLetter) && !Descriptors.Contains(w) && !FoodStates.Stated(w))
+            .Select(w => w switch { "закуски" => "закуска", "yoghurt" => "yogurt", "aubergine" => "eggplant", "courgette" => "zucchini", _ => w })
+            .ToHashSet();
 
     private const string EstimatedNote = "These values are estimated from the recipe, not read from a label.";
 

@@ -19,6 +19,26 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
         return (rank.FoodItemId!.Value, s.MatchDecider.Calls.Single()[0].Candidates);
     }
 
+    [Theory]
+    [InlineData("sushi", "суши")]
+    [InlineData("bubble tea", "bubble tea")]
+    [InlineData("falafel wrap", "falafel wrap")]
+    public async Task Ranking_declines_a_spelling_collision_or_partial_dish(string english, string original)
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Enabled = false;
+        var item = Parsed(english, 150, FoodState.NotApplicable) with { NameOriginal = original };
+        var ranking = new List<RankingInspection>();
+
+        var row = (await s.Matcher.ResolveAsync(original, [item], default, inspectRanking: ranking)).Single();
+
+        ranking.Single().Pool.Should().NotBeEmpty();
+        row.FoodItemId.Should().BeNull();
+        row.Per100.Should().Be(item.Estimated);
+        row.Confidence.Should().Be(Confidence.Low);
+        ranking.Single().Reason.Should().Contain("identity");
+    }
+
     [Fact]
     public async Task Disabling_the_matcher_keeps_the_ranking_and_skips_model_questions()
     {
@@ -196,6 +216,18 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
 
     private static FoodMatch Food(int id, string name, string? nameBg, string? brand, decimal kcal, bool own = false) =>
         new(id, name, nameBg, brand, kcal, 2, 15, 8, null, null, null, own, false, 0.9);
+
+    [Theory]
+    [InlineData(0.85, true)]
+    [InlineData(0.95, false)]
+    public void A_partial_match_needs_a_lead_over_the_next_food(double second, bool supported)
+    {
+        var item = Parsed("tomato soup with basil cream", 100, FoodState.Cooked);
+        var top = Food(1, "Tomato soup, basil", null, null, 80);
+        var other = Food(2, "Tomato soup, plain", null, null, 55);
+        FoodMatcher.Identity(item, [(top, 1), (other, second)]).Should().Be(supported
+            ? FoodMatcher.IdentityEvidence.PartialWithLead : FoodMatcher.IdentityEvidence.Insufficient);
+    }
 
     private static readonly FoodMatch[] Lyutenitsas =
     [
