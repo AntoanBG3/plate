@@ -1034,6 +1034,9 @@ namespace Plate.Web.Data.Migrations
                     b.Property<int>("MatchMs")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("NamerMs")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Parsed")
                         .IsRequired()
                         .HasColumnType("jsonb");
@@ -1056,6 +1059,9 @@ namespace Plate.Web.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("TotalMs")
+                        .HasColumnType("integer");
 
                     b.Property<string>("UserId")
                         .IsRequired()

@@ -95,6 +95,16 @@ public class ParseRun
     public string? MatchModel { get; set; }
     public int ParserMs { get; set; }
     public int MatchMs { get; set; }
+
+    /// <summary>The namer's time (SPEC 6.1); null for runs from before it was recorded, which is unknown, not zero.</summary>
+    public int? NamerMs { get; set; }
+
+    /// <summary>
+    /// The whole parse as the user waited for it, parser, matcher and namer together, whether it worked, timed out
+    /// or failed; null for runs from before it was recorded (P9).
+    /// </summary>
+    public int? TotalMs { get; set; }
+
     public string? ParserError { get; set; }
 
     /// <summary>JSON: the parser's items as returned.</summary>

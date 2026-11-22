@@ -54,6 +54,7 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
 
     public async Task<ParseOutcome> ParseAsync(string text, CancellationToken ct, ReviewDestination? review = null)
     {
+        var total = Stopwatch.StartNew();
         var clock = Stopwatch.StartNew();
         var result = await parser.ParseAsync(text, ct);
         var parserMs = (int)clock.ElapsedMilliseconds;
@@ -68,7 +69,9 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             matchMs = (int)clock.ElapsedMilliseconds;
         }
 
+        clock.Restart();
         var proposed = await NameAsync(items, ct);
+        var namerMs = (int)clock.ElapsedMilliseconds;
         items = items.Select((item, n) => item with
         {
             Description = FoodNaming.Accept(proposed[n]?.Name, item.State) ?? item.Description,
@@ -85,6 +88,8 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             MatchModel = Trim(trace.Select(t => t.DeciderModel).FirstOrDefault(m => m is not null) ?? items.Select(i => i.MatchModel).FirstOrDefault(m => m is not null)),
             ParserMs = parserMs,
             MatchMs = matchMs,
+            NamerMs = namerMs,
+            TotalMs = (int)total.ElapsedMilliseconds,
             ParserError = result.Error is { } error ? Trim(error.ToString(), 500) : null,
             Parsed = FeedbackJson.Write(result.Items),
             Resolved = FeedbackJson.Write(items.Select((item, n) => new ResolvedRow(item.Description, item.Grams, item.Per100, item.FoodItemId,

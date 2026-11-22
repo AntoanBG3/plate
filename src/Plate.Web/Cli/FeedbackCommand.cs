@@ -441,6 +441,7 @@ public static class FeedbackCommand
     {
         o.WriteLine($"Parse run {run.Id} by {run.Reporter}, {When(run.CreatedAt)}: \"{run.Text}\"");
         o.WriteLine($"  parser {run.AiModel ?? "-"} {run.ParserMs} ms, matcher {run.MatchModel ?? "ranking"} {run.MatchMs} ms, "
+            + (run.TotalMs is { } total ? $"namer {run.NamerMs} ms, total {total} ms, " : "total unknown, ")
             + (run.ConfirmedAt is null ? "not saved" : $"saved, corrections: {run.Corrections}"));
         if (run.ParserError is not null)
         {
@@ -508,6 +509,11 @@ public static class FeedbackCommand
     {
         o.WriteLine($"Server version {Features.Diagnostics.AppVersion.Current}. Since {When(d.Since)}:");
         o.WriteLine($"  {d.Reports.Count} reports, {d.Errors.Count} errors seen, {d.Parses} parses ({d.Confirmed} saved, {d.Corrected} corrected), ratings {d.RatedUp} up / {d.RatedDown} down");
+        if (d.ParseTimes is { } times)
+        {
+            o.WriteLine($"  Parse time, start to Check foods: median {times.MedianMs} ms, 95th percentile {times.P95Ms} ms, over {times.Runs} of {d.Parses} parses"
+                + (times.Runs < d.Parses ? " (older runs didn't record it)" : ""));
+        }
         o.WriteLine();
         o.WriteLine("Accounts:");
         WriteAccounts(o, d);
