@@ -71,8 +71,10 @@ public class FoodSearchEquivalenceTests(PostgresFixture fixture) : IClassFixture
         await transaction.CommitAsync();
     }
 
-    [Fact]
-    public async Task The_actual_matcher_query_can_use_the_existing_name_indexes()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The_actual_matcher_query_can_use_the_search_indexes(bool includeBrand)
     {
         var capture = new CaptureSearch();
         var user = await fixture.CreateUserAsync();
@@ -80,7 +82,7 @@ public class FoodSearchEquivalenceTests(PostgresFixture fixture) : IClassFixture
         // Finish index maintenance after the fixture's bulk seed before checking a normal planner choice.
         await db.Database.ExecuteSqlRawAsync("VACUUM (ANALYZE) \"FoodItems\"");
         var foods = new FoodItemService(db, new FixedCurrentUser(user), new FakeFoodDatabase());
-        await foods.SearchAsync("sardines", 50, 0.3, default);
+        await foods.SearchAsync("sardines", 50, 0.3, default, includeBrand);
         capture.Sql.Should().NotBeNull();
         await using var connection = new NpgsqlConnection(fixture.ConnectionString);
         await connection.OpenAsync();
@@ -91,6 +93,7 @@ public class FoodSearchEquivalenceTests(PostgresFixture fixture) : IClassFixture
         command.Parameters.AddRange(capture.Parameters.ToArray());
         var plan = (string)(await command.ExecuteScalarAsync())!;
         plan.Should().Contain("Bitmap Index Scan").And.Contain("IX_FoodItems_Name");
+        if (includeBrand) plan.Should().Contain("IX_FoodItems_Brand");
         plan.Should().NotContain("\"Node Type\": \"Seq Scan\"");
     }
 

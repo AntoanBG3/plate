@@ -27,7 +27,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     /// The user's own foods first, then shared ones (USDA, Open Food Facts cache, manual barcode items),
     /// ranked by trigram word similarity of the English or Bulgarian name.
     /// </summary>
-    public async Task<List<FoodMatch>> SearchAsync(string query, int take, double minScore, CancellationToken ct)
+    public async Task<List<FoodMatch>> SearchAsync(string query, int take, double minScore, CancellationToken ct, bool includeBrand = false)
     {
         var q = query.Trim();
         if (q.Length < 2)
@@ -37,16 +37,23 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
 
         // Raw SQL bypasses the global query filter, so ownership is checked explicitly here.
         var userId = currentUser.UserId ?? "";
+        var brandTokens = includeBrand ? ProductVariants.BrandTokens(q) : [];
         return await WithWordSimilarityAsync(minScore, indexed => db.Database.SqlQuery<FoodMatch>($"""
             SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                    f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
                    (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
-                   GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')))::float8 AS "Score",
+                   score.value::float8 AS "Score",
                    f."PieceGrams", f."PackGrams", f."ValuesEstimated"
             FROM "FoodItems" f
+            CROSS JOIN LATERAL (SELECT GREATEST(
+                word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')),
+                CASE WHEN {includeBrand} AND word_similarity(f."Brand", {q}) = 1 THEN GREATEST(
+                    word_similarity({q}, f."Brand" || ' ' || f."Name"), word_similarity({q}, f."Name" || ' ' || f."Brand"),
+                    word_similarity({q}, f."Brand" || ' ' || f."NameBg"), word_similarity({q}, f."NameBg" || ' ' || f."Brand")) END
+            ) AS value) score
             WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {userId})
-              AND (NOT {indexed} OR f."Name" %> {q} OR f."NameBg" %> {q})
-              AND GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) >= {minScore}
+              AND (NOT {indexed} OR f."Name" %> {q} OR f."NameBg" %> {q} OR ({includeBrand} AND f."Brand" %> ANY ({brandTokens})))
+              AND score.value >= {minScore}
             ORDER BY "Own" DESC, "Score" DESC, length(f."Name")
             LIMIT {take}
             """).ToListAsync(ct), ct);

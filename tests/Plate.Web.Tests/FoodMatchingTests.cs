@@ -19,6 +19,26 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
         return (rank.FoodItemId!.Value, s.MatchDecider.Calls.Single()[0].Candidates);
     }
 
+    [Theory]
+    [InlineData("sushi", "суши")]
+    [InlineData("bubble tea", "bubble tea")]
+    [InlineData("falafel wrap", "falafel wrap")]
+    public async Task Ranking_declines_a_spelling_collision_or_partial_dish(string english, string original)
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Enabled = false;
+        var item = Parsed(english, 150, FoodState.NotApplicable) with { NameOriginal = original };
+        var ranking = new List<RankingInspection>();
+
+        var row = (await s.Matcher.ResolveAsync(original, [item], default, inspectRanking: ranking)).Single();
+
+        ranking.Single().Pool.Should().NotBeEmpty();
+        row.FoodItemId.Should().BeNull();
+        row.Per100.Should().Be(item.Estimated);
+        row.Confidence.Should().Be(Confidence.Low);
+        ranking.Single().Reason.Should().Contain("identity");
+    }
+
     [Fact]
     public async Task Disabling_the_matcher_keeps_the_ranking_and_skips_model_questions()
     {
@@ -112,6 +132,37 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
     }
 
     [Fact]
+    public async Task An_unsure_none_does_not_hand_the_row_to_a_ranking_without_identity()
+    {
+        // Matchbench c87: three deciders said "none" for суши below 0.9, and the ranking's pears (круши) stood.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, null, 0.6m);
+        var item = Parsed("sushi", 200, FoodState.NotApplicable) with { NameOriginal = "суши" };
+        var inspection = new List<RankingInspection>();
+
+        var row = (await s.Matcher.ResolveAsync("суши сет", [item], default, inspectRanking: inspection)).Single();
+
+        row.FoodItemId.Should().BeNull();
+        inspection.Single().Outcome.Should().Be("estimate: ranking: after unsure decider none, identity not supported");
+    }
+
+    [Theory]
+    [InlineData(null, 0.5, "ranking: after unsure decider none")]
+    [InlineData(null, 0.95, "estimate: decider none")]
+    [InlineData(-1, 0.97, "decider pick")]
+    public async Task The_inspection_names_the_path_that_chose_the_row(int? pick, double confidence, string outcome)
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, pick is null ? null : q[0].Candidates[0].Id, (decimal)confidence);
+        var inspection = new List<RankingInspection>();
+
+        await s.Matcher.ResolveAsync("chicken", [Parsed("chicken breast", 200, FoodState.Raw)], default, inspectRanking: inspection);
+
+        inspection.Single().Outcome.Should().Be(outcome);
+        inspection.Single().Pool.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public async Task A_pick_below_the_floor_with_a_weak_ranking_uses_the_ai_estimate()
     {
         // Feedback #8 and #9: Lidl pastries became a breakfast pizza and tea biscuits on picks at 0.22 and 0.23.
@@ -180,6 +231,34 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
 
     private static FoodMatch Food(int id, string name, string? nameBg, string? brand, decimal kcal, bool own = false) =>
         new(id, name, nameBg, brand, kcal, 2, 15, 8, null, null, null, own, false, 0.9);
+
+    [Theory]
+    [InlineData("ябълки", "Apples, raw", "Ябълка, сурова", true)]
+    [InlineData("яйца", "Egg, whole, raw", "Яйце, цяло, сурово", true)]
+    [InlineData("пилешки гърди", "Chicken breast", "Пилешко гърди", true)]
+    [InlineData("суши", "Pears, raw", "Круши, сурови", false)]
+    public void Bulgarian_identity_ignores_number_and_gender(string typed, string name, string nameBg, bool complete)
+    {
+        var item = Parsed("x", 100, FoodState.NotApplicable) with { NameEn = "zzz", NameOriginal = typed };
+        (FoodMatcher.Identity(item, [(Food(1, name, nameBg, null, 50), 1)]) == FoodMatcher.IdentityEvidence.Complete).Should().Be(complete);
+    }
+
+    [Fact]
+    public void English_identity_meets_plurals() =>
+        FoodMatcher.Identity(Parsed("strawberry", 100, FoodState.NotApplicable), [(Food(1, "Strawberries, raw", null, null, 30), 1)])
+            .Should().Be(FoodMatcher.IdentityEvidence.Complete);
+
+    [Theory]
+    [InlineData(0.85, true)]
+    [InlineData(0.95, false)]
+    public void A_partial_match_needs_a_lead_over_the_next_food(double second, bool supported)
+    {
+        var item = Parsed("tomato soup with basil cream", 100, FoodState.Cooked);
+        var top = Food(1, "Tomato soup, basil", null, null, 80);
+        var other = Food(2, "Tomato soup, plain", null, null, 55);
+        FoodMatcher.Identity(item, [(top, 1), (other, second)]).Should().Be(supported
+            ? FoodMatcher.IdentityEvidence.PartialWithLead : FoodMatcher.IdentityEvidence.Insufficient);
+    }
 
     private static readonly FoodMatch[] Lyutenitsas =
     [

@@ -52,7 +52,7 @@ public record BenchItem(
 /// <param name="Pick">The decider's raw answer: a food id, 0 for "none", null for no answer (timeout, error, or not asked).</param>
 /// <param name="Final">The row's food after the matcher's floors, or null for an AI estimate.</param>
 public record BenchOutcome(string Model, int Repeat, string CaseId, int Item, int? Pick, decimal? Confidence, bool PickRight, int? Final, bool FinalRight,
-    bool FinalRightAt3s, decimal? KcalError, long Ms, bool Failed, int? Tokens, decimal? Cost);
+    bool FinalRightAt3s, decimal? KcalError, long Ms, bool Failed, int? Tokens, decimal? Cost, int? PoolSize, int? FirstAcceptableRank, string? RankingReason, string? Outcome = null);
 
 /// <summary>
 /// <c>feedback matchbench</c>: compares decision models on a labelled set of parsed items against the live catalogue.
@@ -79,6 +79,7 @@ public static class MatchBenchmark
 
         var models = list.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(m => m != AiTasks.Off).Distinct().ToList();
         var repeats = int.TryParse(Option(args, "--repeat"), out var r) && r is > 0 and <= 10 ? r : 3;
+        if (models.Count == 0) repeats = 1;
         var timeout = TimeSpan.FromSeconds(int.TryParse(Option(args, "--timeout"), out var t) && t is > 0 and <= 60 ? t : 10);
         var cases = new List<BenchCase>();
         while (input.ReadLine() is { } line)
@@ -148,7 +149,8 @@ public static class MatchBenchmark
             foreach (var c in cases)
             {
                 var recorder = new Recorder(asker);
-                var rows = await new FoodMatcher(service, recorder).ResolveAsync(c.Text, c.Items.Select(i => i.Parsed()).ToList(), ct);
+                var ranking = new List<RankingInspection>();
+                var rows = await new FoodMatcher(service, recorder).ResolveAsync(c.Text, c.Items.Select(i => i.Parsed()).ToList(), ct, inspectRanking: ranking);
                 var ids = rows.Select(x => x.FoodItemId).Concat(recorder.Questions.SelectMany(q => q.Candidates.Select(x => (int?)x.Id))).OfType<int>().Distinct().Where(id => !foods.ContainsKey(id)).ToList();
                 foreach (var f in await db.FoodItems.IgnoreQueryFilters().Where(f => ids.Contains(f.Id)).Select(f => new { f.Id, f.Name, f.NameBg, f.KcalPer100g }).ToListAsync(ct))
                 {
@@ -168,11 +170,15 @@ public static class MatchBenchmark
                     int? pick = decision is null ? null : decision.FoodItemId ?? 0;
                     var pickRight = pick switch { null => false, 0 => noneRight, var id => Right(id.Value) };
                     var final = rows[n].FoodItemId;
-                    var finalRight = final is { } fid ? Right(fid) : noneRight;
+                    var finalRight = final is { } fid ? Right(fid) : item.NoneOk || item.Accept is null;
+                    var inspection = ranking.ElementAtOrDefault(n);
+                    var firstRank = inspection?.Pool.Select((food, i) => new { Food = food, Rank = i + 1 })
+                        .FirstOrDefault(x => item.Right(x.Food.Name, x.Food.NameBg, x.Food.KcalPer100g))?.Rank;
                     var slow = recorder.Ms > ProductionMs || recorder.Failed;
                     var at3s = asker is null || !slow ? finalRight : baselineRight!.GetValueOrDefault((c.Id, n));
                     outcomes.Add(new BenchOutcome(model, rep, c.Id, n, pick, decision?.Confidence, pickRight, final, finalRight, at3s,
-                        KcalError(item, final, finalRight, shortlist, foods), recorder.Ms, recorder.Failed && asker is not null, recorder.Decisions?.InputTokens, recorder.Decisions?.Cost));
+                        KcalError(item, final, finalRight, shortlist, foods), recorder.Ms, recorder.Failed && asker is not null, recorder.Decisions?.InputTokens, recorder.Decisions?.Cost,
+                        inspection?.Pool.Count, firstRank, inspection?.Reason, inspection?.Outcome));
                 }
             }
         }
@@ -205,7 +211,15 @@ public static class MatchBenchmark
     /// <summary>Per model: accuracy, stability, calibration, latency and cost.</summary>
     public record ModelSummary(string Model, int Calls, double FinalAccuracy, double FinalAt3s, double PickAccuracy, double NoMatchRight, double Stability,
         double MeanKcalError, double P50Ms, double P95Ms, double MaxMs, double Over3s, int Failures, decimal Cost, double MeanTokens,
-        IReadOnlyDictionary<string, double> ByCategory, IReadOnlyDictionary<string, double> ByLang, IReadOnlyList<CalibrationBucket> Calibration);
+        IReadOnlyDictionary<string, double> ByCategory, IReadOnlyDictionary<string, double> ByLang, IReadOnlyList<CalibrationBucket> Calibration, SelectionMetrics Selection);
+
+    public record SelectionMetrics(int Items, int Selected, int CorrectSelections, int Absent, int AbsentDeclined, int Required, int RequiredDeclined)
+    {
+        public double? Precision => Percent(CorrectSelections, Selected);
+        public double? Coverage => Percent(Selected, Items);
+        public double? AbsentRejection => Percent(AbsentDeclined, Absent);
+        private static double? Percent(int n, int total) => total == 0 ? null : Math.Round(100.0 * n / total, 1);
+    }
 
     public record CalibrationBucket(string Bucket, int Count, double Accuracy);
 
@@ -214,6 +228,7 @@ public static class MatchBenchmark
         var items = cases.SelectMany(c => c.Items.Select((it, n) => (Case: c, Item: it, N: n))).ToList();
         var nomatch = items.Where(x => x.Item.Accept is null).Select(x => (x.Case.Id, x.N)).ToHashSet();
         var reach = items.Where(x => x.Item.Accept is not null && reachable.GetValueOrDefault((x.Case.Id, x.N))).Select(x => (x.Case.Id, x.N)).ToHashSet();
+        var required = items.Where(x => x.Item.Accept is not null && !x.Item.NoneOk).Select(x => (x.Case.Id, x.N)).ToHashSet();
         var category = items.ToDictionary(x => (x.Case.Id, x.N), x => x.Case.Category);
         var lang = items.ToDictionary(x => (x.Case.Id, x.N), x => x.Case.Lang);
         var result = new List<ModelSummary>();
@@ -245,7 +260,9 @@ public static class MatchBenchmark
                 calls.Where(x => x.Tokens is not null).Select(x => (double)x.Tokens!.Value).DefaultIfEmpty(0).Average(),
                 mine.GroupBy(x => category[(x.CaseId, x.Item)]).OrderBy(g => g.Key).ToDictionary(g => g.Key, g => Share(g, x => x.FinalRight)),
                 mine.GroupBy(x => lang[(x.CaseId, x.Item)]).OrderBy(g => g.Key).ToDictionary(g => g.Key, g => Share(g, x => x.FinalRight)),
-                calibration));
+                calibration, new SelectionMetrics(mine.Count, mine.Count(x => x.Final.HasValue), mine.Count(x => x.Final.HasValue && x.FinalRight),
+                    mine.Count(x => nomatch.Contains((x.CaseId, x.Item))), mine.Count(x => nomatch.Contains((x.CaseId, x.Item)) && x.Final is null),
+                    mine.Count(x => required.Contains((x.CaseId, x.Item))), mine.Count(x => required.Contains((x.CaseId, x.Item)) && x.Final is null))));
         }
 
         return result;
@@ -258,7 +275,7 @@ public static class MatchBenchmark
     {
         var items = cases.Sum(c => c.Items.Count);
         o.WriteLine($"{cases.Count} cases, {items} items ({cases.SelectMany(c => c.Items).Count(i => i.Accept is null)} with no right food in the catalogue, "
-            + $"{reachable.Count(r => !r.Value && cases.First(c => c.Id == r.Key.Item1).Items[r.Key.Item2].Accept is not null)} whose right food the search doesn't reach), {repeats} repeats, {timeout.TotalSeconds:0} s timeout.");
+            + $"{reachable.Count(r => !r.Value && cases.First(c => c.Id == r.Key.Item1).Items[r.Key.Item2].Accept is not null)} whose right food the decision shortlist misses), {repeats} repeats, {timeout.TotalSeconds:0} s timeout.");
         o.WriteLine();
         o.WriteLine($"{"model",-38} {"final",6} {"@3s",6} {"pick",6} {"none",6} {"stable",6} {"kcal",6} {"p50ms",6} {"p95ms",6} {">3s",5} {"fail",4} {"$",8}");
         foreach (var s in report)
@@ -270,6 +287,27 @@ public static class MatchBenchmark
         o.WriteLine("final: item right after Plate's confidence floors; @3s: the same with answers slower than 3 s left to the ranking, as in production;");
         o.WriteLine("pick: the raw answer on items whose right food is shortlisted; none: right on items with no right food in the catalogue;");
         o.WriteLine("stable: same raw answer in every repeat; kcal: mean kcal off per item for its grams (wrong database picks only count); $: total cost.");
+        o.WriteLine();
+        foreach (var s in report)
+        {
+            var m = s.Selection;
+            o.WriteLine($"{s.Model}: Selected correctly {m.CorrectSelections}/{m.Selected} ({P(m.Precision ?? double.NaN)}%); selected {m.Selected}/{m.Items} ({P(m.Coverage ?? double.NaN)}%); absent declined {m.AbsentDeclined}/{m.Absent} ({P(m.AbsentRejection ?? double.NaN)}%); Required matches declined {m.RequiredDeclined}/{m.Required}.");
+        }
+        o.WriteLine();
+        o.WriteLine("How rows were chosen (path: items, right):");
+        foreach (var s in report)
+        {
+            var paths = outcomes.Where(x => x.Model == s.Model && x.Outcome is not null).GroupBy(x => x.Outcome!).OrderByDescending(g => g.Count())
+                .Select(g => $"{g.Key}: {g.Count()}, {g.Count(x => x.FinalRight)} right");
+            o.WriteLine($"  {s.Model}: {string.Join("; ", paths)}");
+        }
+
+        o.WriteLine();
+        o.WriteLine("Deterministic ranking by item (before any cooked-or-dry substitution):");
+        foreach (var x in outcomes.Where(x => x.Model == "off").OrderBy(x => x.CaseId).ThenBy(x => x.Item))
+        {
+            o.WriteLine($"  {x.CaseId}/{x.Item + 1}: first acceptable rank {x.FirstAcceptableRank?.ToString() ?? "-"} of {x.PoolSize}; {x.RankingReason}; {x.Outcome}; {(x.FinalRight ? "right" : "wrong")}");
+        }
         o.WriteLine();
         var categories = report.SelectMany(s => s.ByCategory.Keys).Distinct().OrderBy(x => x).ToList();
         o.WriteLine($"{"final by category",-38} " + string.Join(" ", categories.Select(c => $"{c,9}")) + "     bg     en");

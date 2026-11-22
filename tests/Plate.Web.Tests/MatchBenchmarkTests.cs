@@ -40,13 +40,20 @@ public class MatchBenchmarkTests(PostgresFixture fixture) : IClassFixture<Postgr
     {
         using var app = new AppFactory(fixture);
         var lines = string.Join('\n', File.ReadLines(Cases).Where(l => l.Contains("\"a banana\"") || l.Contains("\"pad thai\"")));
+        // Required positive whose input retrieves nothing: declining it must count as a miss.
+        lines += "\n" + """{"id":"missing","category":"generic","lang":"en","text":"xqzj","items":[{"nameEn":"xqzj","nameOriginal":"xqzj","state":"na","grams":100,"accept":"banana","noneOk":false}]}""";
         var output = new StringWriter();
 
         (await FeedbackCommand.RunAsync(app.Services, ["feedback", "matchbench", "--models", "off"], output, input: new StringReader(lines))).Should().Be(0);
 
         var text = output.ToString();
-        text.Should().Contain("2 cases, 2 items (1 with no right food in the catalogue")
+        text.Should().Contain("3 cases, 3 items (1 with no right food in the catalogue")
             .And.MatchRegex(@"off\s+\d+\.\d")
-            .And.Contain("final by category");
+            .And.Contain("final by category")
+            .And.Contain("1 repeat")
+            .And.Contain("Selected correctly")
+            .And.Contain("Required matches declined 1/2")
+            .And.Contain("How rows were chosen")
+            .And.Contain("missing/1: first acceptable rank - of 0; no candidates; estimate: no candidates; wrong");
     }
 }

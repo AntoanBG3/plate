@@ -6,7 +6,7 @@ All five build phases are in place:
 
 - Workouts: templates, sessions with double-progression suggestions, a rest timer, and an offline queue so sets logged on bad signal are never lost.
 - Training charts: estimated 1RM per exercise and weekly sets per muscle.
-- Food: logging by text (parsed by an LLM through OpenRouter, numbers taken from the food database, optionally with a decision model choosing the database food), barcode, search and recents.
+- Food: logging by text (parsed by an LLM through OpenRouter, numbers taken from the food database, optionally with a decision model choosing the database food), barcode, search and recents. Text matching considers named brands, preparation, flavour and fat content.
 - Targets: trend weight, a weekly adaptive maintenance estimate, and calorie and protein targets for a cut, maintenance or bulk, with weight and calorie charts. Until there are about three weeks of logs, maintenance comes from the NASEM 2023 energy equations (sex, age, height, weight and activity level).
 - Setup: on first sign-in a short AI chat fills in the profile and ends on an editable summary; without an OpenRouter key it is a plain form.
 - Settings: profile, CSV export of all your data, password change and logging out everywhere.
@@ -99,7 +99,7 @@ docker builder prune -f                      # the SDK build cache sits on the b
 For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the admin area under AI, `/admin/ai` (stored encrypted with the Data Protection keys, shared by all accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The same page has one model per AI task:
 
 - Food parser: picked from OpenRouter's catalog (default `openai/gpt-6-luna`, or `OPENROUTER_MODEL`).
-- Food matcher: Off (the database ranking picks the food, the default) or TypeSafe's Jev 1.13, a decision model that chooses which database food each item is, or says none fits. It uses the same key and costs about $0.0002 per entry. Picking it runs a test decision. Entries record which Jev version chose their match (`match_model` in the export); `docker logs plate-app | grep "Jev "` shows each call's latency and cost.
+- Food matcher: Off (the database ranking picks a food when the name identifies it and uses the estimate otherwise, the default) or TypeSafe's Jev 1.13, a decision model that chooses which database food each item is, or says none fits. It uses the same key and costs about $0.0002 per entry. Picking it runs a test decision. Entries record which Jev version chose their match (`match_model` in the export); `docker logs plate-app | grep "Jev "` shows each call's latency and cost.
 
 Add an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
 
