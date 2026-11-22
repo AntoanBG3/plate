@@ -1,7 +1,12 @@
 // Caches static files only (SPEC section 8). Pages and data always come from the server;
 // when a page can't be fetched, the offline page is shown instead. Static files carry ?v=<hash>,
 // so a cached copy of the exact URL is served without revalidating.
-const CACHE = "gym-static-v32";
+const CACHE = "gym-static-v33";
+// The pinned libraries under /lib (the barcode reader's 1.1 MB WASM, Chart.js, htmx, fonts) live in a cache of their
+// own that survives a CACHE bump, so a deploy doesn't download them again: Safari refetched all of them on every bump
+// (P12, docs/perf/2026-11-22-precache-reuse.md). Bump LIB whenever a file under /lib changes; tests/js/sw-lib.test.cjs
+// fails until it is bumped.
+const LIB = "gym-lib-v1";
 const OFFLINE = "/offline.html";
 const PRECACHE = [
     OFFLINE,
@@ -41,14 +46,37 @@ const PRECACHE = [
     "/lib/fonts/fira-sans-600-cyrillic.woff2",
 ];
 
+function isLib(path) {
+    return path.startsWith("/lib/");
+}
+
+// The cache a file belongs in.
+function cacheFor(path) {
+    return caches.open(isLib(path) ? LIB : CACHE);
+}
+
+// The library files already in LIB (from an earlier worker) are kept; only missing ones are fetched. Either cache
+// failing to fill fails the install, so the old worker stays in charge.
+async function precache() {
+    const lib = await caches.open(LIB);
+    const missing = [];
+    for (const path of PRECACHE.filter(isLib)) {
+        if (!(await lib.match(path))) missing.push(path);
+    }
+    await Promise.all([
+        caches.open(CACHE).then((cache) => cache.addAll(PRECACHE.filter((path) => !isLib(path)))),
+        lib.addAll(missing),
+    ]);
+}
+
 self.addEventListener("install", (event) => {
-    event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
+    event.waitUntil(precache().then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
     event.waitUntil(
         caches.keys()
-            .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+            .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== LIB).map((k) => caches.delete(k))))
             .then(() => self.clients.claim()));
 });
 
@@ -56,18 +84,20 @@ function isStatic(url) {
     return url.origin === self.location.origin && /^\/(css|js|lib)\//.test(url.pathname);
 }
 
-// Stores a newly fetched version and drops older versions of the same file.
+// Stores a newly fetched version and drops older versions of the same file. A library's precached copy (its URL
+// without ?v=) stays: the next worker finds it there and doesn't download the file again.
 async function store(request, url, response) {
-    const cache = await caches.open(CACHE);
+    const cache = await cacheFor(url.pathname);
     const keys = await cache.keys();
     await Promise.all(keys
         .filter((k) => new URL(k.url).pathname === url.pathname && k.url !== request.url)
+        .filter((k) => !(isLib(url.pathname) && new URL(k.url).search === ""))
         .map((k) => cache.delete(k)));
     await cache.put(request, response);
 }
 
 async function staticResponse(event, request, url) {
-    const cache = await caches.open(CACHE);
+    const cache = await cacheFor(url.pathname);
     // Exact URL first: versioned URLs (?v=hash) never change, so no revalidation is needed.
     const exact = await cache.match(request);
     if (exact) {
