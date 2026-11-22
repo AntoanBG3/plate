@@ -16,7 +16,7 @@ public record FeedbackDetail(FeedbackRow Row, string? Reply, string? FixedInVers
 
 public record ParseRunDetail(int Id, DateTimeOffset CreatedAt, string Reporter, string Text, string? AiModel, string? MatchModel, int ParserMs, int MatchMs,
     string? ParserError, JsonNode? Parsed, JsonNode? Resolved, JsonNode? Saved, ParseCorrection Corrections, DateTimeOffset? ConfirmedAt,
-    IReadOnlyList<(int? Item, FeedbackRating? Rating, ParseReason Reasons, string? Message)> Ratings);
+    IReadOnlyList<(int? Item, FeedbackRating? Rating, ParseReason Reasons, string? Message)> Ratings, int? NamerMs = null, int? TotalMs = null);
 
 /// <summary>What the user's actions say about one parsed item.</summary>
 public static class EvalVerdict
@@ -119,8 +119,22 @@ public record EvalLater(
     public LaterEntry Entry() => new(FoodItemId, FoodName, Description, Grams, Per100);
 }
 
+/// <param name="ParseTimes">The whole parse's time over the period's runs that recorded it, or null when none did.</param>
 public record Digest(DateTimeOffset Since, IReadOnlyList<FeedbackRow> Reports, IReadOnlyList<ErrorEvent> Errors, int Parses, int Confirmed, int Corrected,
-    int RatedUp, int RatedDown);
+    int RatedUp, int RatedDown, ParseTimes? ParseTimes = null);
+
+/// <summary>Median and 95th percentile of the whole parse (P9), over <paramref name="Runs"/> runs; older runs have no total.</summary>
+public record ParseTimes(int Runs, int MedianMs, int P95Ms)
+{
+    public static ParseTimes? Of(IReadOnlyList<int> totals)
+    {
+        if (totals.Count == 0) return null;
+        var sorted = totals.Order().ToList();
+        // Nearest rank: the smallest value with at least p of the runs at or below it.
+        int Rank(double p) => sorted[Math.Max(0, (int)Math.Ceiling(p * sorted.Count) - 1)];
+        return new ParseTimes(sorted.Count, Rank(0.5), Rank(0.95));
+    }
+}
 
 /// <summary>
 /// Feedback across all accounts, for the CLI and the admin area (SPEC 11, 12). Reads ignore the user filters, so
@@ -236,7 +250,7 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
             .ToListAsync(ct);
         return new ParseRunDetail(run.Id, run.CreatedAt, await ReporterAsync(run.UserId, ct), run.Text, run.AiModel, run.MatchModel, run.ParserMs, run.MatchMs,
             run.ParserError, JsonNode.Parse(run.Parsed), JsonNode.Parse(run.Resolved), run.Saved is null ? null : JsonNode.Parse(run.Saved),
-            run.Corrections, run.ConfirmedAt, ratings.Select(r => (r.ParseItemIndex, r.Rating, r.Reasons, r.Message)).ToList());
+            run.Corrections, run.ConfirmedAt, ratings.Select(r => (r.ParseItemIndex, r.Rating, r.Reasons, r.Message)).ToList(), run.NamerMs, run.TotalMs);
     }
 
     /// <summary>Parse runs since a time, newest first; with <paramref name="flaggedOnly"/>, only those corrected or rated down.</summary>
@@ -349,7 +363,8 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
             await runs.CountAsync(r => r.ConfirmedAt != null, ct),
             await runs.CountAsync(r => r.Corrections != ParseCorrection.None, ct),
             await ratings.CountAsync(f => f.Rating == FeedbackRating.Up, ct),
-            await ratings.CountAsync(f => f.Rating == FeedbackRating.Down, ct));
+            await ratings.CountAsync(f => f.Rating == FeedbackRating.Down, ct),
+            ParseTimes.Of(await runs.Where(r => r.TotalMs != null).Select(r => r.TotalMs!.Value).ToListAsync(ct)));
     }
 
     public async Task<ChangelogEntry> AddChangelogAsync(string textEn, string textBg, int? feedbackId, string? version, CancellationToken ct)
