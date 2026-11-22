@@ -34,16 +34,19 @@ public partial class ErrorRecorder(IServiceScopeFactory scopes, TimeProvider tim
                 using var scope = scopes.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var now = time.GetUtcNow();
-                var existing = await db.ErrorEvents.FirstOrDefaultAsync(e => e.Fingerprint == fingerprint, ct);
-                if (existing is not null)
+                var existing = await db.ErrorEvents.Where(e => e.Fingerprint == fingerprint).Select(e => (int?)e.Id).FirstOrDefaultAsync(ct);
+                if (existing is { } id)
                 {
-                    existing.Count++;
-                    existing.LastSeenAt = now;
-                    existing.LastTraceId = Clip(report.TraceId, 100);
-                    existing.LastVersion = Clip(report.Version, 40);
-                    existing.UserId = report.UserId ?? existing.UserId;
-                    existing.Path = Clip(report.Path, 300);
-                    await db.SaveChangesAsync(ct);
+                    // In the database, not read-modify-write: two requests failing at once each count.
+                    var (traceId, version, path) = (Clip(report.TraceId, 100), Clip(report.Version, 40), Clip(report.Path, 300));
+                    await db.ErrorEvents.Where(e => e.Id == id).ExecuteUpdateAsync(u => u
+                        .SetProperty(e => e.Count, e => e.Count + 1)
+                        .SetProperty(e => e.LastSeenAt, now)
+                        .SetProperty(e => e.LastTraceId, traceId)
+                        .SetProperty(e => e.LastVersion, version)
+                        .SetProperty(e => e.UserId, e => report.UserId ?? e.UserId)
+                        .SetProperty(e => e.Path, path), ct);
+                    await CountDayAsync(db, id, now, ct);
                     return;
                 }
 
@@ -67,6 +70,7 @@ public partial class ErrorRecorder(IServiceScopeFactory scopes, TimeProvider tim
                 try
                 {
                     await db.SaveChangesAsync(ct);
+                    await CountDayAsync(db, error.Id, now, ct);
                     notifier.EnqueueError(error.Id);
                     return;
                 }
@@ -80,6 +84,16 @@ public partial class ErrorRecorder(IServiceScopeFactory scopes, TimeProvider tim
         {
             log.LogWarning(ex, "Could not record an error.");
         }
+    }
+
+    /// <summary>One more on the group's UTC day (P10), atomically, so concurrent reports never lose a count.</summary>
+    private static Task CountDayAsync(AppDbContext db, int errorEventId, DateTimeOffset now, CancellationToken ct)
+    {
+        var day = DateOnly.FromDateTime(now.UtcDateTime);
+        return db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "ErrorEventDays" ("ErrorEventId", "Day", "Count") VALUES ({errorEventId}, {day}, 1)
+            ON CONFLICT ("ErrorEventId", "Day") DO UPDATE SET "Count" = "ErrorEventDays"."Count" + 1
+            """, ct);
     }
 
     /// <summary>A browser error's type from its message: "Uncaught TypeError: x is undefined" → TypeError.</summary>

@@ -38,6 +38,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<LabelScan> LabelScans => Set<LabelScan>();
     public DbSet<LabelScanPhoto> LabelScanPhotos => Set<LabelScanPhoto>();
     public DbSet<ErrorEvent> ErrorEvents => Set<ErrorEvent>();
+    public DbSet<ErrorEventDay> ErrorEventDays => Set<ErrorEventDay>();
     public DbSet<ChangelogEntry> Changelog => Set<ChangelogEntry>();
     public DbSet<AdminAudit> AdminAudit => Set<AdminAudit>();
     public DbSet<OnboardingChat> OnboardingChats => Set<OnboardingChat>();
@@ -330,6 +331,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.ContentType).HasMaxLength(20);
             e.HasIndex(x => new { x.LabelScanId, x.Position }).IsUnique();
             e.HasQueryFilter(x => x.LabelScan.UserId == CurrentUserId);
+        });
+
+        builder.Entity<ErrorEventDay>(e =>
+        {
+            e.HasKey(x => new { x.ErrorEventId, x.Day });
+            e.HasOne<ErrorEvent>().WithMany().HasForeignKey(x => x.ErrorEventId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Day);
         });
 
         builder.Entity<Feedback>(e =>
