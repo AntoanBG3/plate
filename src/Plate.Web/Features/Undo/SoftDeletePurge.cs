@@ -5,8 +5,8 @@ namespace Plate.Web.Features.Undo;
 
 /// <summary>
 /// Hourly, permanently deletes rows that were soft-deleted more than a day ago, and old feedback data nobody
-/// reported on: parse runs after 180 days and errors not seen for 90, label photos after 30 days and label scans
-/// after 180 (SPEC 11).
+/// reported on: parse runs after 180 days and errors not seen for 90, label photos after 30 days, label scans and
+/// AI call records after 180 (SPEC 11).
 /// </summary>
 public sealed class SoftDeletePurge(IServiceScopeFactory scopes, TimeProvider time, ILogger<SoftDeletePurge> log) : BackgroundService
 {
@@ -17,6 +17,7 @@ public sealed class SoftDeletePurge(IServiceScopeFactory scopes, TimeProvider ti
     public static readonly TimeSpan KeepLabelPhotos = TimeSpan.FromDays(30);
     public static readonly TimeSpan KeepLabelScans = TimeSpan.FromDays(180);
     public static readonly TimeSpan KeepUsualFoods = TimeSpan.FromDays(180);
+    public static readonly TimeSpan KeepAiCalls = TimeSpan.FromDays(180);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -73,6 +74,7 @@ public sealed class SoftDeletePurge(IServiceScopeFactory scopes, TimeProvider ti
         var scanCutoff = now - KeepLabelScans;
         count += await db.LabelScans.IgnoreQueryFilters().Where(s => s.CreatedAt < scanCutoff).ExecuteDeleteAsync(ct);
         count += await db.UsualFoods.IgnoreQueryFilters().Where(u => u.LastUsedAt < now - KeepUsualFoods).ExecuteDeleteAsync(ct);
+        count += await db.AiCalls.IgnoreQueryFilters().Where(c => c.At < now - KeepAiCalls).ExecuteDeleteAsync(ct);
         return count;
     }
 }

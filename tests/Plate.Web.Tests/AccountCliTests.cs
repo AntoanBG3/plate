@@ -217,7 +217,8 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime, IClassFi
             UserId = userId, CreatedAt = DateTimeOffset.UtcNow, Model = "test/label", FoodItemId = sharedFood.Id,
             Photos = [new LabelScanPhoto { ContentType = "image/jpeg", Bytes = [0xFF, 0xD8, 0xFF] }],
         };
-        db.AddRange(feedback, error, new OnboardingChat { UserId = userId }, scan);
+        db.AddRange(feedback, error, new OnboardingChat { UserId = userId }, scan,
+            new AiCall { UserId = userId, At = DateTimeOffset.UtcNow, Task = "parser", Model = "test/model", Cost = 0.0001m, DurationMs = 900 });
         await db.SaveChangesAsync();
 
         return new Owned([set.Id], [.. session.Exercises.Select(e => e.Id)], [.. template.Exercises.Select(e => e.Id)], feedback.Id, error.Id, sharedFood.Id, scan.Id);

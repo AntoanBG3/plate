@@ -269,7 +269,7 @@ You can reload Check foods or return with Back to continue editing a recent food
 Every account can report problems and ideas in Settings → Send feedback (with a screenshot), rate how typed food was read on the Check foods screen, and use the "Report" links on barcode results, weight suggestions, the maintenance estimate and AI food entries. Errors in the app and the browser are recorded on their own. Everything stays in the database; the CLI reads it and answers it (SPEC section 11):
 
 ```sh
-ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback digest       # what came in this week
+ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback digest       # what came in this week, with each account's activity and AI cost
 ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback show 12
 ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback status 12 fixed --reply "Fixed, thanks." --version abc1234
 ```
