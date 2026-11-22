@@ -36,6 +36,20 @@ public class ProductVariantTests(PostgresFixture fixture) : IClassFixture<Postgr
         result.MatchedName.Should().NotContainEquivalentOf("lemonade");
     }
 
+    [Fact]
+    public async Task After_an_unsure_none_plain_tofu_is_not_fried_tofu()
+    {
+        // Matchbench c48: the production decider said "none" at 0.36 for "150g tofu", and the ranking's fried tofu stood.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, null, 0.36m);
+        var item = new ParsedFoodItem("tofu", "tofu", 150, FoodState.NotApplicable, null, null, new Per100g(80, 8, 2, 5));
+
+        var row = (await s.Matcher.ResolveAsync("150g tofu", [item], default)).Single();
+
+        row.FoodItemId.Should().NotBeNull();
+        (row.MatchedNameEn ?? row.MatchedName).Should().ContainEquivalentOf("tofu").And.NotContainEquivalentOf("fried");
+    }
+
     [Theory]
     [InlineData("Beverages, The COCA-COLA company, Minute Maid, Lemonade", "cola", true)]
     [InlineData("Beverages, COCA-COLA, POWERADE, lemon-lime flavored, ready-to-drink", "cola", true)]
