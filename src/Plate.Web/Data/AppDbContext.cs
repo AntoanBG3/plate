@@ -29,6 +29,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<SavedMeal> SavedMeals => Set<SavedMeal>();
     public DbSet<SavedMealItem> SavedMealItems => Set<SavedMealItem>();
     public DbSet<UsualFood> UsualFoods => Set<UsualFood>();
+    public DbSet<Recipe> Recipes => Set<Recipe>();
+    public DbSet<RecipeIngredient> RecipeIngredients => Set<RecipeIngredient>();
     public DbSet<MaintenanceEstimate> MaintenanceEstimates => Set<MaintenanceEstimate>();
     public DbSet<NutritionTargetDay> NutritionTargetDays => Set<NutritionTargetDay>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
@@ -232,6 +234,30 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.FiberG).HasPrecision(6, 1);
             e.Property(x => x.SaturatedFatG).HasPrecision(6, 1);
             e.HasQueryFilter(x => x.SavedMeal.UserId == CurrentUserId);
+        });
+
+        builder.Entity<Recipe>(e =>
+        {
+            e.HasKey(x => x.FoodItemId);
+            e.HasOne(x => x.FoodItem).WithOne().HasForeignKey<Recipe>(x => x.FoodItemId).OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.YieldGrams).HasPrecision(7, 1);
+            // The recipe's food is private, so its owner is the recipe's.
+            e.HasQueryFilter(x => x.FoodItem.OwnerUserId != null && x.FoodItem.OwnerUserId == CurrentUserId);
+        });
+
+        builder.Entity<RecipeIngredient>(e =>
+        {
+            e.HasOne(x => x.Recipe).WithMany(r => r.Ingredients).HasForeignKey(x => x.RecipeFoodItemId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<FoodItem>().WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
+            e.Property(x => x.Description).HasMaxLength(200);
+            e.Property(x => x.Grams).HasPrecision(7, 1);
+            e.Property(x => x.KcalPer100g).HasPrecision(7, 2);
+            e.Property(x => x.ProteinPer100g).HasPrecision(6, 2);
+            e.Property(x => x.CarbsPer100g).HasPrecision(6, 2);
+            e.Property(x => x.FatPer100g).HasPrecision(6, 2);
+            e.Property(x => x.FiberPer100g).HasPrecision(6, 2);
+            e.Property(x => x.SaturatedFatPer100g).HasPrecision(6, 2);
+            e.HasQueryFilter(x => x.Recipe.FoodItem.OwnerUserId != null && x.Recipe.FoodItem.OwnerUserId == CurrentUserId);
         });
 
         builder.Entity<UsualFood>(e =>

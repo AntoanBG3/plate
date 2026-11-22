@@ -63,6 +63,13 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     public async Task<string?> DisplayNameOrNullAsync(int id, CancellationToken ct) =>
         await FindVisibleAsync(id, ct) is { } item ? Localization.FoodNames.DisplayName(item) : null;
 
+    /// <summary>Those of these foods that are the account's recipes (SPEC 5.12).</summary>
+    public async Task<HashSet<int>> RecipeIdsAsync(IEnumerable<int> ids, CancellationToken ct)
+    {
+        var list = ids.Distinct().ToList();
+        return list.Count == 0 ? [] : (await db.FoodItems.Where(f => list.Contains(f.Id) && f.Source == FoodSource.Recipe).Select(f => f.Id).ToListAsync(ct)).ToHashSet();
+    }
+
     /// <summary>The food when this user may see it (their own or a shared one), otherwise null.</summary>
     public Task<FoodItem?> FindVisibleAsync(int id, CancellationToken ct) =>
         db.FoodItems.SingleOrDefaultAsync(f => f.Id == id, ct);
