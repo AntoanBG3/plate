@@ -66,6 +66,8 @@ public record CountedAmount(
 /// <param name="DeciderModel">The decision model that answered for this parse, even where its answer was not used.</param>
 public record MatchTrace(IReadOnlyList<TraceCandidate> Top, bool Asked, int? DeciderPick, decimal? DeciderConfidence, string? DeciderModel = null);
 
+public record RankingInspection(IReadOnlyList<FoodMatch> Pool, string Reason);
+
 public record TraceCandidate(int Id, string Name, double Score, bool Own);
 
 /// <summary>
@@ -122,10 +124,12 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     private sealed record Candidates(ParsedFoodItem Item, FoodMatch? Usual, List<(FoodMatch Food, double Score)> Ranked, List<FoodMatch> Shortlist)
     {
         public (FoodMatch Food, double Score)? Best => Ranked.Count == 0 ? null : Ranked[0];
+        public string RankingReason => Best is null ? "no candidates" : "highest ranked food";
     }
 
     /// <param name="trace">When given, receives one <see cref="MatchTrace"/> per item.</param>
-    public async Task<List<ConfirmItem>> ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct, List<MatchTrace>? trace = null)
+    public async Task<List<ConfirmItem>> ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct, List<MatchTrace>? trace = null,
+        List<RankingInspection>? inspectRanking = null)
     {
         var items = parsed.ToList();
         var usual = repeat is null ? [] : await repeat.UsualMatchesAsync(items, ct);
@@ -133,7 +137,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         var candidates = new List<Candidates>(items.Count);
         for (var i = 0; i < items.Count; i++)
         {
-            candidates.Add(await FindCandidatesAsync(items[i], usual.GetValueOrDefault(i), trace is not null, askModel, ct));
+            candidates.Add(await FindCandidatesAsync(items[i], usual.GetValueOrDefault(i), inspectRanking is not null ? int.MaxValue : trace is null ? 1 : TraceSize, askModel, ct));
         }
 
         // Every item is context for the model, including foods already decided locally.
@@ -146,8 +150,9 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             var row = candidates[i];
             var decision = row.Shortlist.Count > 0 ? decisions?.Items.ElementAtOrDefault(i) : null;
             trace?.Add(new MatchTrace(
-                row.Ranked.Select(t => new TraceCandidate(t.Food.Id, t.Food.DisplayName, Math.Round(t.Score, 3), t.Food.Own)).ToList(),
+                row.Ranked.Take(TraceSize).Select(t => new TraceCandidate(t.Food.Id, t.Food.DisplayName, Math.Round(t.Score, 3), t.Food.Own)).ToList(),
                 row.Shortlist.Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence, decisions?.Model));
+            inspectRanking?.Add(new RankingInspection(row.Ranked.Select(t => t.Food).ToList(), row.RankingReason));
             result.Add(Choose(row, decision, decisions?.Model));
         }
         await OfferStatesAsync(items, result, ct);
@@ -223,9 +228,9 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             .OrderByDescending(f => Rank(f, staple + (state == FoodState.Cooked ? " cooked" : " raw"), state))
             .FirstOrDefault();
 
-    private async Task<Candidates> FindCandidatesAsync(ParsedFoodItem item, FoodMatch? usual, bool trace, bool askModel, CancellationToken ct)
+    private async Task<Candidates> FindCandidatesAsync(ParsedFoodItem item, FoodMatch? usual, int rankDepth, bool askModel, CancellationToken ct)
     {
-        var ranked = usual is null || trace ? await RankAsync(item, trace ? TraceSize : 1, ct) : [];
+        var ranked = usual is null || rankDepth > 1 ? await RankAsync(item, rankDepth, ct) : [];
         if (!askModel || usual is not null || ranked.Count > 0 && ranked[0].Food.Own)
             return new(item, usual, ranked, []);
 
