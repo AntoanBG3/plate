@@ -174,6 +174,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasIndex(x => x.OwnerUserId);
             e.HasIndex(x => x.Name).HasMethod("gin").HasOperators("gin_trgm_ops");
             e.HasIndex(x => x.NameBg).HasMethod("gin").HasOperators("gin_trgm_ops");
+            e.HasIndex(x => x.Brand).HasMethod("gin").HasOperators("gin_trgm_ops");
             e.HasQueryFilter(x => x.OwnerUserId == null || x.OwnerUserId == CurrentUserId);
         });
 
