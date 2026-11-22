@@ -6,7 +6,7 @@ All five build phases are in place:
 
 - Workouts: templates, sessions with double-progression suggestions, a rest timer, and an offline queue so sets logged on bad signal are never lost.
 - Training charts: estimated 1RM per exercise and weekly sets per muscle.
-- Food: logging by text (parsed by an LLM through OpenRouter, numbers taken from the food database, optionally with a decision model choosing the database food), barcode, search and recents.
+- Food: logging by text (parsed by an LLM through OpenRouter, numbers taken from the food database, optionally with a decision model choosing the database food), barcode, search and recents. Text matching considers named brands, preparation, flavour and fat content.
 - Targets: trend weight, a weekly adaptive maintenance estimate, and calorie and protein targets for a cut, maintenance or bulk, with weight and calorie charts. Until there are about three weeks of logs, maintenance comes from the NASEM 2023 energy equations (sex, age, height, weight and activity level).
 - Setup: on first sign-in a short AI chat fills in the profile and ends on an editable summary; without an OpenRouter key it is a plain form.
 - Settings: profile, CSV export of all your data, password change and logging out everywhere.

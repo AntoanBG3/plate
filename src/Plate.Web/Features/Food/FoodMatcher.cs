@@ -405,17 +405,22 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     /// <summary>Rank's candidates, best first, across the English search and, for text in another language, the original-name search.</summary>
     private async Task<List<(FoodMatch Food, double Score)>> RankAsync(ParsedFoodItem item, int take, CancellationToken ct)
     {
-        var ranked = (await foods.SearchAsync(FoodWords(item.NameEn), 120, MatchThreshold, ct))
-            .Where(c => !MatchesOnlyItsUse(c, item.NameEn))
-            .Select(c => (Food: c, Score: Rank(c, item.NameEn, item.State)))
-            .ToList();
+        var ranked = new List<(FoodMatch Food, double Score)>();
+        await AddLanguageAsync(item.NameEn, bulgarian: false);
         if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
+            await AddLanguageAsync(item.NameOriginal, bulgarian: true);
+
+        async Task AddLanguageAsync(string query, bool bulgarian)
         {
-            // Typed in Bulgarian: Bulgarian dishes and products, and USDA foods by their Bulgarian names, are
-            // ranked by how well their Bulgarian name fits what the user wrote.
-            ranked.AddRange((await foods.SearchAsync(item.NameOriginal, 120, MatchThreshold, ct))
-                .Where(c => !string.IsNullOrEmpty(c.NameBg) && !MatchesOnlyItsUse(c, item.NameOriginal, bulgarian: true))
-                .Select(c => (Food: c, Score: Rank(c, item.NameOriginal, item.State, bulgarian: true))));
+            var lookup = ProductVariants.LookupName(query);
+            foreach (var food in await foods.SearchAsync(bulgarian ? lookup : FoodWords(query), 120, MatchThreshold, ct, includeBrand: true))
+            {
+                var name = bulgarian ? food.NameBg : food.Name;
+                if (string.IsNullOrWhiteSpace(name) || MatchesOnlyItsUse(food, query, bulgarian)
+                    || !ProductVariants.Compatible(name, food.Brand, query, lookup))
+                    continue;
+                ranked.Add((food, Rank(food, query, item.State, bulgarian)));
+            }
         }
 
         // A stable sort keeps the first of equal scores first, as MaxBy did. Same-named products are grouped before
@@ -566,7 +571,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         };
 
         // Shorter names are usually the plain version of a food rather than a niche variant.
-        return score - name.Length / 2000.0;
+        return score + ProductVariants.Adjustment(name, food.Brand, query) - name.Length / 2000.0;
     }
 
     /// <summary>
@@ -576,6 +581,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     /// </summary>
     internal static string FoodWords(string text)
     {
+        text = ProductVariants.LookupName(text);
         var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var kept = words.Where(w => !CookedWords.Contains(w.ToLowerInvariant()) && !w.Equals("raw", StringComparison.OrdinalIgnoreCase)).ToList();
         return kept.Count == 0 ? text : string.Join(' ', kept);

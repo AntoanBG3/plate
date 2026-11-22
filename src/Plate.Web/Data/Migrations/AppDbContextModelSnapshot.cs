@@ -416,6 +416,11 @@ namespace Plate.Web.Data.Migrations
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
 
+                    b.HasIndex("Brand");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Brand"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Brand"), new[] { "gin_trgm_ops" });
+
                     b.HasIndex("NameBg");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("NameBg"), "gin");
