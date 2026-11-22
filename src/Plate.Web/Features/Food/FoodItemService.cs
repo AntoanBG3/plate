@@ -9,9 +9,12 @@ namespace Plate.Web.Features.Food;
 /// <summary>A food from a name search, with how closely it matched (0 to 1).</summary>
 /// <param name="ByOther">A shared manual food another account added (SPEC 7); says nothing about who.</param>
 public record FoodMatch(int Id, string Name, string? NameBg, string? Brand, decimal KcalPer100g, decimal ProteinPer100g, decimal CarbsPer100g, decimal FatPer100g, decimal? FiberPer100g, decimal? SaturatedFatPer100g, decimal? DefaultServingGrams, bool Own, bool ByOther, double Score,
-    decimal? PieceGrams = null, decimal? PackGrams = null, bool ValuesEstimated = false)
+    decimal? PieceGrams = null, decimal? PackGrams = null, bool ValuesEstimated = false, bool PerMillilitre = false)
 {
     public Per100g Per100 => new(KcalPer100g, ProteinPer100g, CarbsPer100g, FatPer100g, FiberPer100g, SaturatedFatPer100g);
+
+    /// <summary>The food's unit; the search SQL reads it as <see cref="PerMillilitre"/>, since the column is text.</summary>
+    public FoodUnit Unit => PerMillilitre ? FoodUnit.Millilitres : FoodUnit.Grams;
 
     public UnitWeights Weights => new(PieceGrams, PackGrams, DefaultServingGrams);
 
@@ -43,7 +46,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
                    f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
                    (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
                    score.value::float8 AS "Score",
-                   f."PieceGrams", f."PackGrams", f."ValuesEstimated"
+                   f."PieceGrams", f."PackGrams", f."ValuesEstimated", f."Unit" = 'Millilitres' AS "PerMillilitre"
             FROM "FoodItems" f
             CROSS JOIN LATERAL (SELECT GREATEST(
                 word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", '')),
@@ -62,6 +65,14 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     /// <summary>The food's name as shown (Bulgarian when the reader uses it), or null when it isn't visible to this user.</summary>
     public async Task<string?> DisplayNameOrNullAsync(int id, CancellationToken ct) =>
         await FindVisibleAsync(id, ct) is { } item ? Localization.FoodNames.DisplayName(item) : null;
+
+    /// <summary>Those of these foods that count in ml (SPEC 4).</summary>
+    public async Task<IReadOnlySet<int>> MillilitreFoodsAsync(IEnumerable<int> ids, CancellationToken ct)
+    {
+        var list = ids.Distinct().ToList();
+        return list.Count == 0 ? new HashSet<int>()
+            : (await db.FoodItems.Where(f => list.Contains(f.Id) && f.Unit == FoodUnit.Millilitres).Select(f => f.Id).ToListAsync(ct)).ToHashSet();
+    }
 
     /// <summary>The food when this user may see it (their own or a shared one), otherwise null.</summary>
     public Task<FoodItem?> FindVisibleAsync(int id, CancellationToken ct) =>
@@ -94,7 +105,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
                 SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                        f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
                        (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
-                       f."PieceGrams", f."PackGrams", f."ValuesEstimated",
+                       f."PieceGrams", f."PackGrams", f."ValuesEstimated", f."Unit" = 'Millilitres' AS "PerMillilitre",
                        GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) AS sim,
                        starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre
                 FROM "FoodItems" f
@@ -104,7 +115,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             )
             SELECT "Id", "Name", "NameBg", "Brand", "KcalPer100g", "ProteinPer100g", "CarbsPer100g", "FatPer100g",
                    "FiberPer100g", "SaturatedFatPer100g", "DefaultServingGrams", "Own", "ByOther", (sim + CASE WHEN pre THEN 1 ELSE 0 END)::float8 AS "Score",
-                   "PieceGrams", "PackGrams", "ValuesEstimated"
+                   "PieceGrams", "PackGrams", "ValuesEstimated", "PerMillilitre"
             FROM m
             -- Among names that start with the search, the shortest is the plain food ("Bananas, raw" before
             -- "Bananas, dehydrated, or banana powder"); the rest by similarity.
@@ -253,8 +264,14 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     /// A food typed in by hand. With a barcode and <paramref name="share"/> it is shared, so others who scan the same
     /// product get it; otherwise it belongs to this user only (SPEC 4).
     /// </summary>
-    public async Task<FoodItem> CreateManualAsync(string? name, string? barcode, Per100g per100, decimal? servingGrams, bool share, CancellationToken ct)
+    public async Task<FoodItem> CreateManualAsync(string? name, string? barcode, Per100g per100, decimal? servingGrams, bool share, CancellationToken ct,
+        FoodUnit unit = FoodUnit.Grams)
     {
+        if (!Enum.IsDefined(unit))
+        {
+            throw new ValidationException("This food form is out of date. Check whether it was saved, then reload before trying again.");
+        }
+
         name = name?.Trim() ?? "";
         if (name.Length is 0 or > 200)
         {
@@ -296,6 +313,7 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             FiberPer100g = per100.Fiber,
             SaturatedFatPer100g = per100.SaturatedFat,
             DefaultServingGrams = servingGrams,
+            Unit = unit,
             Source = FoodSource.Manual,
         };
         db.FoodItems.Add(item);

@@ -1,3 +1,4 @@
+using Plate.Core.Domain;
 using Plate.Core.Text;
 
 namespace Plate.Core.Nutrition;
@@ -55,8 +56,9 @@ public enum LabelField
 
 public record LabelOutcome(LabelValues? Values, LocalText? Error);
 
-/// <summary>Per-100 g values for the manual food form, made from a label reading (SPEC 6.6). Null means leave the field empty.</summary>
+/// <summary>Per-100 g (or per-100 ml) values for the manual food form, made from a label reading (SPEC 6.6). Null means leave the field empty.</summary>
 /// <param name="Converted">Fields computed from kJ or from a per-serving column, highlighted for checking.</param>
+/// <param name="Unit">Millilitres when the label's column was per 100 ml: the values, the serving and the amount eaten are then in ml.</param>
 public record LabelValues(
     string? Name,
     string? Brand,
@@ -69,12 +71,13 @@ public record LabelValues(
     decimal? ServingGrams,
     LabelField Converted,
     IReadOnlyList<LocalText> Notes,
-    IReadOnlyList<LocalText> Warnings)
+    IReadOnlyList<LocalText> Warnings,
+    FoodUnit Unit = FoodUnit.Grams)
 {
     public static readonly LocalText NotFound = new LocalText("Couldn't find a nutrition table in that photo.");
     public static readonly LocalText PerServingOnly = new LocalText("The label only gives values per serving. Enter them by hand or photograph the per-100 g column.");
     public static readonly LocalText EnergyDisagrees = new LocalText("The label's kJ and kcal disagree; the kcal value was used.");
-    public static readonly LocalText MillilitresAsGrams = new LocalText("Per 100 ml, used as per 100 g.");
+    public static readonly LocalText PerMillilitres = new LocalText("The label gives values per 100 ml, so amounts of this food are in ml.");
     public static readonly LocalText LeftEmpty = new LocalText("Some values were outside what a food can have and were left empty.");
     public static readonly LocalText MacrosOver100 = new LocalText("Protein, carbs and fat add up to more than 100 g. Check them.");
     public static readonly LocalText SaturatedAboveFat = new LocalText("Saturated fat is more than fat. Check both.");
@@ -118,7 +121,7 @@ public record LabelValues(
         }
         else if (r.Basis == LabelBasis.Per100ml)
         {
-            notes.Add(MillilitresAsGrams);
+            notes.Add(PerMillilitres);
         }
 
         var dropped = false;
@@ -167,13 +170,15 @@ public record LabelValues(
 
         var serving = r.ServingGrams is > 0 and <= FoodMath.MaxGrams ? Math.Round(r.ServingGrams.Value, 1, MidpointRounding.AwayFromZero) : (decimal?)null;
         return new LabelOutcome(
-            new LabelValues(Clean(r.Name), Clean(r.Brand), outKcal, protein, carbs, fat, saturated, fiber, serving, converted, notes, warnings),
+            new LabelValues(Clean(r.Name), Clean(r.Brand), outKcal, protein, carbs, fat, saturated, fiber, serving, converted, notes, warnings,
+                r.Basis == LabelBasis.Per100ml ? FoodUnit.Millilitres : FoodUnit.Grams),
             null);
     }
 
-    /// <summary>Whether what was saved differs from what was suggested beyond rounding (0.5 kcal, 0.05 g).</summary>
-    public static bool Edited(LabelValues suggested, Per100g saved, decimal? savedServing) =>
-        Differs(suggested.Kcal, saved.Kcal, 0.5m)
+    /// <summary>Whether what was saved differs from what was suggested beyond rounding (0.5 kcal, 0.05 g), or in its unit.</summary>
+    public static bool Edited(LabelValues suggested, Per100g saved, decimal? savedServing, FoodUnit savedUnit = FoodUnit.Grams) =>
+        suggested.Unit != savedUnit
+        || Differs(suggested.Kcal, saved.Kcal, 0.5m)
         || Differs(suggested.Protein, saved.Protein, 0.05m)
         || Differs(suggested.Carbs, saved.Carbs, 0.05m)
         || Differs(suggested.Fat, saved.Fat, 0.05m)

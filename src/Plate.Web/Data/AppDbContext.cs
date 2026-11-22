@@ -154,6 +154,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.Brand).HasMaxLength(200);
             e.Property(x => x.Barcode).HasMaxLength(32);
             e.Property(x => x.Source).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Unit).HasConversion<string>().HasMaxLength(12);
             e.Property(x => x.KcalPer100g).HasPrecision(7, 2);
             e.Property(x => x.ProteinPer100g).HasPrecision(6, 2);
             e.Property(x => x.CarbsPer100g).HasPrecision(6, 2);
@@ -183,6 +184,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.Description).HasMaxLength(200);
             e.Property(x => x.Meal).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Source).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Unit).HasConversion<string>().HasMaxLength(12);
             e.Property(x => x.AiModel).HasMaxLength(100);
             e.Property(x => x.MatchModel).HasMaxLength(100);
             e.Property(x => x.Status).HasMaxLength(Plate.Core.Nutrition.FoodNaming.MaxStatusLength);
@@ -224,6 +226,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.HasOne<FoodItem>().WithMany().HasForeignKey(x => x.FoodItemId).OnDelete(DeleteBehavior.SetNull);
             e.Property(x => x.Description).HasMaxLength(200);
             e.Property(x => x.Source).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Unit).HasConversion<string>().HasMaxLength(12);
             e.Property(x => x.Grams).HasPrecision(7, 1);
             e.Property(x => x.Kcal).HasPrecision(7, 1);
             e.Property(x => x.ProteinG).HasPrecision(6, 1);

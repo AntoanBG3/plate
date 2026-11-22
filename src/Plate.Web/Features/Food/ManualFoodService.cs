@@ -11,7 +11,7 @@ namespace Plate.Web.Features.Food;
 public class ManualFoodService(AppDbContext db, FoodItemService foods, FoodLogService log, LabelScanService labels)
 {
     public async Task<FoodItem> SaveAndLogAsync(DateOnly date, Meal meal, string? name, string? barcode, Per100g per100, decimal? servingGrams,
-        decimal grams, bool share, int? labelScanId, CancellationToken ct)
+        decimal grams, bool share, int? labelScanId, CancellationToken ct, FoodUnit unit = FoodUnit.Grams)
     {
         if (FoodMath.ValidateGrams(grams) is { } error)
             throw new ValidationException(error, nameof(grams));
@@ -20,7 +20,7 @@ public class ManualFoodService(AppDbContext db, FoodItemService foods, FoodLogSe
 
         await using var transaction = db.Database.CurrentTransaction is null
             ? await db.Database.BeginTransactionAsync(ct) : null;
-        var item = await foods.CreateManualAsync(name, barcode, per100, servingGrams, share, ct);
+        var item = await foods.CreateManualAsync(name, barcode, per100, servingGrams, share, ct, unit);
         await labels.RecordSaveAsync(labelScanId, item, ct);
         await log.AddAsync([new NewEntry(date, meal, item.Name, grams, item.Per100(), item.Id, item.Barcode is null ? EntrySource.Manual : EntrySource.Barcode)], ct);
         if (transaction is not null) await transaction.CommitAsync(ct);

@@ -64,7 +64,7 @@ public class ExportTests(PostgresFixture fixture) : IClassFixture<PostgresFixtur
             "custom_exercises.csv", "food_log.csv", "food_requests.csv", "maintenance_estimates.csv", "nutrition_targets.csv", "weekly_summaries.csv", "feedback.csv", "label_scans.csv", "usual_foods.csv",
             "private_foods.csv", "saved_meals.csv", "saved_meal_items.csv", "exercise_settings.csv");
         files["bodyweight.csv"].Should().Be("date,weight_kg\r\n2026-10-01,82.4\r\n");
-        files["food_log.csv"].Should().StartWith("date,meal,description,status,grams,kcal,protein_g,carbs_g,fat_g,fiber_g,saturated_fat_g,source,ai_model,match_model,created_at_utc\r\n");
+        files["food_log.csv"].Should().StartWith("date,meal,description,status,grams,kcal,protein_g,carbs_g,fat_g,fiber_g,saturated_fat_g,source,ai_model,match_model,created_at_utc,unit\r\n");
         files["food_log.csv"].Should().Contain("2026-10-01,Breakfast,\"Баница, 2 парчета\",,200,640,20,60,35,,,Ai,test,typesafe/jev-1.13-20260917,");
     }
 

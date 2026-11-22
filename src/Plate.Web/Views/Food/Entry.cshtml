@@ -10,7 +10,7 @@
     <h1 class="large-title" style="font-size: var(--text-title-1)">@L.Entry(Model.Description)</h1>
     @if (Model.Source != EntrySource.Quick)
     {
-        <p class="subhead entry-title"><span class="num">@L["{0} g", Model.Grams.Kg()]</span>@if (L.Status(Model.Status, ViewData["FoodState"] as Plate.Core.Nutrition.FoodState? ?? default, L.Entry(Model.Description)) is { } status)
+        <p class="subhead entry-title"><span class="num">@L.Amount(Model.Grams, Model.Unit)</span>@if (L.Status(Model.Status, ViewData["FoodState"] as Plate.Core.Nutrition.FoodState? ?? default, L.Entry(Model.Description)) is { } status)
             {<span class="chip status-chip" data-status>@status</span>}</p>
     }
 </header>
@@ -41,7 +41,7 @@
     <form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id" class="section">
         <div class="list">
             <div class="field-row"><label for="description">@L["Description"]</label><input id="description" type="text" name="description" value="@Plate.Core.Text.FoodText.StripAmount(Model.Description)" maxlength="200" required /></div>
-            <div class="field-row"><label for="grams">@L["Amount"]</label><input id="grams" class="num" type="text" name="grams" value="@Model.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L["g"]</span></div>
+            <div class="field-row"><label for="grams">@L["Amount"]</label><input id="grams" class="num" type="text" name="grams" value="@Model.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L.Unit(Model.Unit)</span></div>
             <div class="field-row">
                 <label for="meal">@L["Meal"]</label>
                 <select id="meal" name="meal">

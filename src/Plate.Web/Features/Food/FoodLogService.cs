@@ -9,7 +9,7 @@ namespace Plate.Web.Features.Food;
 public record NewEntry(DateOnly Date, Meal Meal, string Description, decimal Grams, Per100g Per100, int? FoodItemId, EntrySource Source, string? AiModel = null, string? MatchModel = null, int? ParseRunId = null, string? Status = null);
 
 /// <summary>A frequently logged food for one-tap re-logging.</summary>
-public record RecentFood(string Description, int? FoodItemId, decimal LastGrams, Per100g Per100, int Times);
+public record RecentFood(string Description, int? FoodItemId, decimal LastGrams, Per100g Per100, int Times, FoodUnit Unit = FoodUnit.Grams);
 
 /// <summary>The This week card: averages and the targets they are judged against.</summary>
 public record WeekCard(WeekSummary Week, MacroTarget Targets, int? TargetKcal);
@@ -78,9 +78,12 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 throw new ValidationException(new LocalText("{0}: {1}", e.Description, error));
             }
 
-            if (e.FoodItemId is { } id && !await db.FoodItems.AnyAsync(f => f.Id == id, ct))
+            // An entry is counted in its food's unit (SPEC 4): ml for a food from a per-100 ml label.
+            var unit = FoodUnit.Grams;
+            if (e.FoodItemId is { } id)
             {
-                throw new NotFoundException("Food not found.");
+                unit = await db.FoodItems.Where(f => f.Id == id).Select(f => (FoodUnit?)f.Unit).SingleOrDefaultAsync(ct)
+                    ?? throw new NotFoundException("Food not found.");
             }
 
             var totals = FoodMath.For(e.Per100, e.Grams);
@@ -91,6 +94,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 Meal = e.Meal,
                 Description = CleanDescription(e.Description),
                 Grams = Math.Round(e.Grams, 1),
+                Unit = unit,
                 Kcal = totals.Kcal,
                 ProteinG = totals.ProteinG,
                 CarbsG = totals.CarbsG,
@@ -201,7 +205,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
         var since = today.AddDays(-RecentOrder.Days);
         var rows = await db.FoodLog
             .Where(e => e.Date >= since && e.Grams > 0)
-            .Select(e => new { e.Id, e.Meal, e.Date, e.CreatedAt, e.Description, e.FoodItemId, e.Grams, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG })
+            .Select(e => new { e.Id, e.Meal, e.Date, e.CreatedAt, e.Description, e.FoodItemId, e.Grams, e.Unit, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG })
             .ToListAsync(ct);
         var byId = rows.ToDictionary(r => r.Id);
 
@@ -213,7 +217,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 return new RecentFood(last.Description, last.FoodItemId, last.Grams,
                     new Per100g(Math.Round(last.Kcal * f, 1), Math.Round(last.ProteinG * f, 2), Math.Round(last.CarbsG * f, 2), Math.Round(last.FatG * f, 2),
                         Round(last.FiberG * f, 2), Round(last.SaturatedFatG * f, 2)),
-                    g.Times);
+                    g.Times, last.Unit);
             })
             .ToList();
     }
@@ -233,6 +237,7 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
                 Meal = meal,
                 Description = e.Description,
                 Grams = e.Grams,
+                Unit = e.Unit,
                 Kcal = e.Kcal,
                 ProteinG = e.ProteinG,
                 CarbsG = e.CarbsG,

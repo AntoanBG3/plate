@@ -50,6 +50,21 @@ public class Localizer
             ? this[text.Format]
             : string.Format(CultureInfo.InvariantCulture, this[text.Format], text.Args.Select(a => a is LocalText inner ? this[inner] : a).ToArray());
 
+    /// <summary>An amount of food in its unit: "250 g", or "250 ml" for a food from a per-100 ml label.</summary>
+    public string Amount(decimal amount, Plate.Core.Domain.FoodUnit unit) =>
+        unit == Plate.Core.Domain.FoodUnit.Millilitres ? this["{0} ml", amount.Kg()] : this["{0} g", amount.Kg()];
+
+    /// <summary>A food's energy and protein per 100 of its unit, as search results and the change-food sheet show them.</summary>
+    public string KcalProteinPerHundred(decimal kcal, decimal protein, bool perMillilitre) => perMillilitre
+        ? this["{0} kcal, {1} g protein per 100 ml", Math.Round(kcal), protein.Kg(1)]
+        : this["{0} kcal, {1} g protein per 100 g", Math.Round(kcal), protein.Kg(1)];
+
+    /// <summary>The unit word on its own, beside an amount field.</summary>
+    public string Unit(Plate.Core.Domain.FoodUnit unit) => unit == Plate.Core.Domain.FoodUnit.Millilitres ? this["ml"] : this["g"];
+
+    /// <summary>"Per 100 g" or "Per 100 ml".</summary>
+    public string PerHundred(Plate.Core.Domain.FoodUnit unit) => unit == Plate.Core.Domain.FoodUnit.Millilitres ? this["Per 100 ml"] : this["Per 100 g"];
+
     /// <summary>Singular for 1, plural otherwise; the count fills {0}.</summary>
     public string Count(long n, string one, string other) => this[LocalText.Count(n, one, other)];
 

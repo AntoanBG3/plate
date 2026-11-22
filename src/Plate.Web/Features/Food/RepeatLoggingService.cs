@@ -141,5 +141,5 @@ public class RepeatLoggingService(AppDbContext db, ICurrentUser currentUser, Tim
     private FoodMatch Match(FoodItem f) =>
         new(f.Id, f.Name, f.NameBg, f.Brand, f.KcalPer100g, f.ProteinPer100g, f.CarbsPer100g, f.FatPer100g, f.FiberPer100g, f.SaturatedFatPer100g,
             f.DefaultServingGrams, Own: f.OwnerUserId is not null, ByOther: FoodItemService.AddedByAnother(f, currentUser.UserId), Score: 1,
-            f.PieceGrams, f.PackGrams, f.ValuesEstimated);
+            f.PieceGrams, f.PackGrams, f.ValuesEstimated, f.Unit == FoodUnit.Millilitres);
 }

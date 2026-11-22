@@ -514,6 +514,8 @@
         // The row is named after the food it now is, with that food's raw or cooked state.
         set("Description", d.name);
         set("Status", d.status);
+        // Its amount is in that food's unit (app.css shows g or ml).
+        row.classList.toggle("in-millilitres", d.unit === "ml");
     }
 
     // "When did you weigh it?": the same staple cooked or dry; the grams stay, the food and its values change.
