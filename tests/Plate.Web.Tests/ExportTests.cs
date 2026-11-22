@@ -62,7 +62,7 @@ public class ExportTests(PostgresFixture fixture) : IClassFixture<PostgresFixtur
         files.Keys.Should().BeEquivalentTo(
             "profile.csv", "bodyweight.csv", "workouts.csv", "sets.csv", "templates.csv",
             "custom_exercises.csv", "food_log.csv", "food_requests.csv", "maintenance_estimates.csv", "nutrition_targets.csv", "weekly_summaries.csv", "feedback.csv", "label_scans.csv", "usual_foods.csv",
-            "private_foods.csv", "saved_meals.csv", "saved_meal_items.csv", "exercise_settings.csv");
+            "private_foods.csv", "saved_meals.csv", "saved_meal_items.csv", "exercise_settings.csv", "ai_calls.csv");
         files["bodyweight.csv"].Should().Be("date,weight_kg\r\n2026-10-01,82.4\r\n");
         files["food_log.csv"].Should().StartWith("date,meal,description,status,grams,kcal,protein_g,carbs_g,fat_g,fiber_g,saturated_fat_g,source,ai_model,match_model,created_at_utc\r\n");
         files["food_log.csv"].Should().Contain("2026-10-01,Breakfast,\"Баница, 2 парчета\",,200,640,20,60,35,,,Ai,test,typesafe/jev-1.13-20260917,");
@@ -129,6 +129,18 @@ public class ExportTests(PostgresFixture fixture) : IClassFixture<PostgresFixtur
 
         files["usual_foods.csv"].Should().StartWith("phrase,food_item_id,food,last_used_at_utc\r\n")
             .And.Contain($"банан,{food.Id},");
+    }
+
+    [Fact]
+    public async Task Ai_calls_are_exported_without_any_text()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.Db.AiCalls.Add(new AiCall { UserId = s.UserId, At = new DateTimeOffset(2026, 11, 22, 9, 0, 0, TimeSpan.Zero), Task = "parser", Model = "meta/muse-ember", InputTokens = 446, OutputTokens = 168, Cost = 0.0001286m, DurationMs = 2398 });
+        await s.Db.SaveChangesAsync();
+
+        var csv = Unzip(await new DataExport(s.Db).ZipAsync(default))["ai_calls.csv"];
+
+        csv.Should().Be("at_utc,task,model,input_tokens,output_tokens,cost_usd,duration_ms,failed\r\n2026-11-22T09:00:00Z,parser,meta/muse-ember,446,168,0.0001286,2398,false\r\n");
     }
 
     /// <summary>File name to text, after checking each file starts with the UTF-8 byte order mark.</summary>

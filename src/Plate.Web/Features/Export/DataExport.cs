@@ -33,6 +33,7 @@ public class DataExport(AppDbContext db)
             ["saved_meal_items.csv"] = await SavedMealItemsAsync(ct),
             ["exercise_settings.csv"] = await ExerciseSettingsAsync(ct),
             ["usual_foods.csv"] = await UsualFoodsAsync(ct),
+            ["ai_calls.csv"] = await AiCallsAsync(ct),
         };
 
         using var stream = new MemoryStream();
@@ -168,6 +169,15 @@ public class DataExport(AppDbContext db)
             csv.Row(f.Id, f.Name, f.NameBg, f.Brand, f.Barcode, f.KcalPer100g, f.ProteinPer100g, f.CarbsPer100g,
                 f.FatPer100g, f.FiberPer100g, f.SaturatedFatPer100g, f.DefaultServingGrams, f.Source);
         }
+        return csv;
+    }
+
+    private async Task<Csv> AiCallsAsync(CancellationToken ct)
+    {
+        var csv = new Csv("at_utc", "task", "model", "input_tokens", "output_tokens", "cost_usd", "duration_ms", "failed");
+        foreach (var c in await db.AiCalls.AsNoTracking().OrderBy(c => c.At).ThenBy(c => c.Id).ToListAsync(ct))
+            // numeric(12,8) reads back with trailing zeros; the dollars are written as OpenRouter gave them.
+            csv.Row(c.At, c.Task, c.Model, c.InputTokens, c.OutputTokens, c.Cost?.ToString("0.########", System.Globalization.CultureInfo.InvariantCulture), c.DurationMs, c.Failed);
         return csv;
     }
 

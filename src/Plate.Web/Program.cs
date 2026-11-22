@@ -133,34 +133,34 @@ builder.Services.AddHttpClient<OpenRouterFoodParser>(c =>
 {
     OpenRouterClient(c);
     c.Timeout = TimeSpan.FromSeconds(40);
-});
+}).AddHttpMessageHandler(sp => AiUsageRecorder.For(sp, "parser"));
 builder.Services.AddHttpClient<JevFoodMatchDecider>(c =>
 {
     OpenRouterClient(c);
     // The decider cancels each call after 3 s itself; this is only a backstop.
     c.Timeout = TimeSpan.FromSeconds(10);
-});
+}).AddHttpMessageHandler(sp => AiUsageRecorder.For(sp, "matcher"));
 builder.Services.AddHttpClient<OpenRouterFoodNamer>(c =>
 {
     OpenRouterClient(c);
     // The namer cancels each call after 5 s itself; this is only a backstop.
     c.Timeout = TimeSpan.FromSeconds(10);
-});
+}).AddHttpMessageHandler(sp => AiUsageRecorder.For(sp, "namer"));
 builder.Services.AddHttpClient<OpenRouterOnboardingAssistant>(c =>
 {
     OpenRouterClient(c);
     c.Timeout = TimeSpan.FromSeconds(40);
-});
+}).AddHttpMessageHandler(sp => AiUsageRecorder.For(sp, "onboarding"));
 builder.Services.AddHttpClient<OpenRouterWeeklySummaryWriter>(c =>
 {
     OpenRouterClient(c);
     c.Timeout = TimeSpan.FromSeconds(50);
-});
+}).AddHttpMessageHandler(sp => AiUsageRecorder.For(sp, "weekly"));
 builder.Services.AddHttpClient<OpenRouterLabelReader>(c =>
 {
     OpenRouterClient(c);
     c.Timeout = TimeSpan.FromSeconds(50);
-});
+}).AddHttpMessageHandler(sp => AiUsageRecorder.For(sp, "label"));
 builder.Services.AddScoped<OpenRouterSettings>();
 
 // OpenRouter when a key is set (in Settings or OPENROUTER_API_KEY), otherwise a simple built-in parser.

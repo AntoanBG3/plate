@@ -509,12 +509,44 @@ public static class FeedbackCommand
         o.WriteLine($"Server version {Features.Diagnostics.AppVersion.Current}. Since {When(d.Since)}:");
         o.WriteLine($"  {d.Reports.Count} reports, {d.Errors.Count} errors seen, {d.Parses} parses ({d.Confirmed} saved, {d.Corrected} corrected), ratings {d.RatedUp} up / {d.RatedDown} down");
         o.WriteLine();
+        o.WriteLine("Accounts:");
+        WriteAccounts(o, d);
+        o.WriteLine();
         o.WriteLine("Reports:");
         WriteRows(o, d.Reports);
         o.WriteLine();
         o.WriteLine("Errors:");
         WriteErrors(o, d.Errors, withStack: false);
     }
+
+    /// <summary>Counts and money per account, never contents (SPEC 11, 12).</summary>
+    private static void WriteAccounts(TextWriter o, Digest d)
+    {
+        if (d.Accounts is not { Count: > 0 } accounts)
+        {
+            o.WriteLine("  Nobody logged anything.");
+        }
+        else
+        {
+            foreach (var a in accounts)
+            {
+                var food = a.FoodBySource.Values.Sum();
+                var bySource = food == 0 ? "" : $" ({string.Join(", ", a.FoodBySource.Select(f => $"{f.Key} {f.Value}"))})";
+                var ai = a.Ai.Count == 0 ? "no AI calls"
+                    : $"AI {a.Ai.Sum(x => x.Calls)} calls {Dollars(a.AiCost)} ({string.Join(", ", a.Ai.Select(x => $"{x.Task} {x.Calls}{(x.Failed > 0 ? $" ({x.Failed} failed)" : "")} {Dollars(x.Cost)}"))})";
+                o.WriteLine($"  {a.Name}: {a.DaysActive} {(a.DaysActive == 1 ? "day" : "days")} active; food {food}{bySource}; {a.Sets} sets; {a.WeighIns} weigh-ins; {ai}");
+            }
+
+            o.WriteLine($"  AI total {Dollars(accounts.Sum(a => a.AiCost))}.");
+        }
+
+        if (d.AiRecordedSince is null)
+            o.WriteLine("  No AI calls recorded yet; AI cost before recording started is unknown.");
+        else if (d.AiRecordedSince > d.Since)
+            o.WriteLine($"  AI calls are recorded since {When(d.AiRecordedSince.Value)}; earlier ones in this period are unknown, not free.");
+    }
+
+    private static string Dollars(decimal amount) => "$" + amount.ToString(amount >= 0.1m ? "0.00" : "0.0000", CultureInfo.InvariantCulture);
 
     private static string LabelLine(LabelScanRow s) =>
         $"#{s.Id} {When(s.CreatedAt)} {s.Reporter} {s.Model} {s.LatencyMs} ms "

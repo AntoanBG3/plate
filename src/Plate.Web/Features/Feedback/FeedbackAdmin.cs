@@ -119,8 +119,23 @@ public record EvalLater(
     public LaterEntry Entry() => new(FoodItemId, FoodName, Description, Grams, Per100);
 }
 
+/// <param name="Accounts">What each account did in the period, busiest first; accounts that did nothing are left out.</param>
+/// <param name="AiRecordedSince">When AI calls started being recorded (the first one), or null if none ever was; calls before it are unknown.</param>
 public record Digest(DateTimeOffset Since, IReadOnlyList<FeedbackRow> Reports, IReadOnlyList<ErrorEvent> Errors, int Parses, int Confirmed, int Corrected,
-    int RatedUp, int RatedDown);
+    int RatedUp, int RatedDown, IReadOnlyList<AccountActivity>? Accounts = null, DateTimeOffset? AiRecordedSince = null);
+
+/// <summary>
+/// One account's period in the digest (SPEC 11): counts and money only, never what was logged or typed.
+/// </summary>
+/// <param name="DaysActive">UTC days with a food entry, a set or a weigh-in.</param>
+/// <param name="FoodBySource">Food entries added, by how they were added (Barcode, Search, Ai, Manual, Recent, Quick).</param>
+public record AccountActivity(string Name, int DaysActive, IReadOnlyDictionary<string, int> FoodBySource, int Sets, int WeighIns, IReadOnlyList<AiTaskUse> Ai)
+{
+    public decimal AiCost => Ai.Sum(a => a.Cost);
+}
+
+/// <param name="Cost">US dollars OpenRouter reported; failed calls add nothing.</param>
+public record AiTaskUse(string Task, int Calls, int Failed, decimal Cost);
 
 /// <summary>
 /// Feedback across all accounts, for the CLI and the admin area (SPEC 11, 12). Reads ignore the user filters, so
@@ -349,7 +364,43 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
             await runs.CountAsync(r => r.ConfirmedAt != null, ct),
             await runs.CountAsync(r => r.Corrections != ParseCorrection.None, ct),
             await ratings.CountAsync(f => f.Rating == FeedbackRating.Up, ct),
-            await ratings.CountAsync(f => f.Rating == FeedbackRating.Down, ct));
+            await ratings.CountAsync(f => f.Rating == FeedbackRating.Down, ct),
+            await ActivityAsync(since, ct),
+            await db.AiCalls.IgnoreQueryFilters().MinAsync(c => (DateTimeOffset?)c.At, ct));
+    }
+
+    /// <summary>Per account: active days, food entries by source, sets, weigh-ins and AI calls with their cost (SPEC 11).</summary>
+    public async Task<List<AccountActivity>> ActivityAsync(DateTimeOffset since, CancellationToken ct)
+    {
+        var sinceDay = DateOnly.FromDateTime(since.UtcDateTime);
+        var food = await db.FoodLog.IgnoreQueryFilters().Where(e => e.CreatedAt >= since && e.DeletedAt == null)
+            .Select(e => new { e.UserId, e.CreatedAt, e.Source }).ToListAsync(ct);
+        var sets = await db.Sets.IgnoreQueryFilters().Where(x => x.CompletedAt >= since && x.DeletedAt == null)
+            .Select(x => new { x.SessionExercise.Session.UserId, x.CompletedAt }).ToListAsync(ct);
+        var weighIns = await db.Bodyweights.IgnoreQueryFilters().Where(b => b.Date >= sinceDay)
+            .Select(b => new { b.UserId, b.Date }).ToListAsync(ct);
+        var ai = await db.AiCalls.IgnoreQueryFilters().Where(c => c.At >= since)
+            .GroupBy(c => new { c.UserId, c.Task })
+            .Select(g => new { g.Key.UserId, g.Key.Task, Calls = g.Count(), Failed = g.Count(c => c.Failed), Cost = g.Sum(c => c.Cost ?? 0) })
+            .ToListAsync(ct);
+        var names = await db.Profiles.IgnoreQueryFilters().ToDictionaryAsync(p => p.UserId, p => p.DisplayName, ct);
+
+        return food.Select(e => e.UserId).Concat(sets.Select(x => x.UserId)).Concat(weighIns.Select(b => b.UserId)).Concat(ai.Select(a => a.UserId))
+            .Distinct()
+            .Select(id => new AccountActivity(
+                names.GetValueOrDefault(id) ?? "?",
+                food.Where(e => e.UserId == id).Select(e => DateOnly.FromDateTime(e.CreatedAt.UtcDateTime))
+                    .Concat(sets.Where(x => x.UserId == id).Select(x => DateOnly.FromDateTime(x.CompletedAt.UtcDateTime)))
+                    .Concat(weighIns.Where(b => b.UserId == id).Select(b => b.Date))
+                    .Distinct().Count(),
+                food.Where(e => e.UserId == id).GroupBy(e => e.Source.ToString()).OrderByDescending(g => g.Count()).ThenBy(g => g.Key)
+                    .ToDictionary(g => g.Key, g => g.Count()),
+                sets.Count(x => x.UserId == id),
+                weighIns.Count(b => b.UserId == id),
+                ai.Where(a => a.UserId == id).OrderByDescending(a => a.Cost).ThenBy(a => a.Task)
+                    .Select(a => new AiTaskUse(a.Task, a.Calls, a.Failed, a.Cost)).ToList()))
+            .OrderByDescending(a => a.DaysActive).ThenByDescending(a => a.AiCost).ThenBy(a => a.Name, StringComparer.Ordinal)
+            .ToList();
     }
 
     public async Task<ChangelogEntry> AddChangelogAsync(string textEn, string textBg, int? feedbackId, string? version, CancellationToken ct)

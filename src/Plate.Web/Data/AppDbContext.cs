@@ -29,6 +29,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
     public DbSet<SavedMeal> SavedMeals => Set<SavedMeal>();
     public DbSet<SavedMealItem> SavedMealItems => Set<SavedMealItem>();
     public DbSet<UsualFood> UsualFoods => Set<UsualFood>();
+    public DbSet<AiCall> AiCalls => Set<AiCall>();
     public DbSet<MaintenanceEstimate> MaintenanceEstimates => Set<MaintenanceEstimate>();
     public DbSet<NutritionTargetDay> NutritionTargetDays => Set<NutritionTargetDay>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
@@ -232,6 +233,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUser c
             e.Property(x => x.FiberG).HasPrecision(6, 1);
             e.Property(x => x.SaturatedFatG).HasPrecision(6, 1);
             e.HasQueryFilter(x => x.SavedMeal.UserId == CurrentUserId);
+        });
+
+        builder.Entity<AiCall>(e =>
+        {
+            e.Property(x => x.Task).HasMaxLength(AiCall.MaxTaskLength);
+            e.Property(x => x.Model).HasMaxLength(AiCall.MaxModelLength);
+            e.Property(x => x.Cost).HasPrecision(12, 8);
+            e.HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.UserId, x.At });
+            e.HasIndex(x => x.At);
+            e.HasQueryFilter(x => x.UserId == CurrentUserId);
         });
 
         builder.Entity<UsualFood>(e =>
