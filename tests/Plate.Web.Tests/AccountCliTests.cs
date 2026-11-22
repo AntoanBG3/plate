@@ -168,6 +168,8 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime, IClassFi
                 "shared foods stay, still credited to an account that no longer exists, so others keep seeing it as another user's");
             (await db.LabelScanPhotos.IgnoreQueryFilters().AnyAsync(p => p.LabelScanId == owned.LabelScanId)).Should().BeFalse("label photos go with the account");
             (await db.FoodLogRequests.IgnoreQueryFilters().AnyAsync(r => r.UserId == id)).Should().BeFalse("request receipts go with the account");
+            (await db.Recipes.IgnoreQueryFilters().AnyAsync(r => r.FoodItem.OwnerUserId == id)).Should().BeFalse("recipes go with the account");
+            (await db.RecipeIngredients.IgnoreQueryFilters().AnyAsync(i => i.Recipe.FoodItem.OwnerUserId == id)).Should().BeFalse();
             (await db.AdminAudit.AnyAsync(a => a.Action == AuditActions.UserDelete && a.Target == id && a.Detail == doomed)).Should().BeTrue();
         }
 
@@ -217,7 +219,9 @@ public class AccountCliTests(PostgresFixture fixture) : IAsyncLifetime, IClassFi
             UserId = userId, CreatedAt = DateTimeOffset.UtcNow, Model = "test/label", FoodItemId = sharedFood.Id,
             Photos = [new LabelScanPhoto { ContentType = "image/jpeg", Bytes = [0xFF, 0xD8, 0xFF] }],
         };
-        db.AddRange(feedback, error, new OnboardingChat { UserId = userId }, scan);
+        var recipeFood = new FoodItem { Name = "Family musaka", OwnerUserId = userId, AddedByUserId = userId, Source = FoodSource.Recipe, KcalPer100g = 150 };
+        db.AddRange(feedback, error, new OnboardingChat { UserId = userId }, scan,
+            new Recipe { FoodItem = recipeFood, UpdatedAt = DateTimeOffset.UtcNow, Ingredients = [new RecipeIngredient { Description = "potatoes", Grams = 800, FoodItemId = privateFood.Id, KcalPer100g = 77 }] });
         await db.SaveChangesAsync();
 
         return new Owned([set.Id], [.. session.Exercises.Select(e => e.Id)], [.. template.Exercises.Select(e => e.Id)], feedback.Id, error.Id, sharedFood.Id, scan.Id);

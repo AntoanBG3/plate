@@ -3,7 +3,10 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using FluentAssertions;
 using Plate.Core.Domain;
+using Plate.Core.Nutrition;
+using Plate.Web.Data;
 using Plate.Web.Features.Export;
+using Plate.Web.Features.Food;
 
 namespace Plate.Web.Tests;
 
@@ -62,7 +65,7 @@ public class ExportTests(PostgresFixture fixture) : IClassFixture<PostgresFixtur
         files.Keys.Should().BeEquivalentTo(
             "profile.csv", "bodyweight.csv", "workouts.csv", "sets.csv", "templates.csv",
             "custom_exercises.csv", "food_log.csv", "food_requests.csv", "maintenance_estimates.csv", "nutrition_targets.csv", "weekly_summaries.csv", "feedback.csv", "label_scans.csv", "usual_foods.csv",
-            "private_foods.csv", "saved_meals.csv", "saved_meal_items.csv", "exercise_settings.csv");
+            "private_foods.csv", "saved_meals.csv", "saved_meal_items.csv", "exercise_settings.csv", "recipes.csv", "recipe_ingredients.csv");
         files["bodyweight.csv"].Should().Be("date,weight_kg\r\n2026-10-01,82.4\r\n");
         files["food_log.csv"].Should().StartWith("date,meal,description,status,grams,kcal,protein_g,carbs_g,fat_g,fiber_g,saturated_fat_g,source,ai_model,match_model,created_at_utc\r\n");
         files["food_log.csv"].Should().Contain("2026-10-01,Breakfast,\"Баница, 2 парчета\",,200,640,20,60,35,,,Ai,test,typesafe/jev-1.13-20260917,");
@@ -129,6 +132,22 @@ public class ExportTests(PostgresFixture fixture) : IClassFixture<PostgresFixtur
 
         files["usual_foods.csv"].Should().StartWith("phrase,food_item_id,food,last_used_at_utc\r\n")
             .And.Contain($"банан,{food.Id},");
+    }
+
+    [Fact]
+    public async Task Recipes_and_their_ingredients_are_exported_and_only_the_accounts_own()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        await using var other = new UserScope(fixture, await fixture.CreateUserAsync());
+        RecipeService Recipes(UserScope u) => new(u.Db, new FixedCurrentUser(u.UserId), TimeProvider.System, new Plate.Web.Integrations.FakeFoodParser(), u.Matcher, u.Foods);
+        var food = await Recipes(s).SaveAsync(null, "Леща чорба", 1800, [new("Леща", 300, null, new Per100g(352, 25, 60, 1)), new("Вода", 1500, null, new Per100g(0, 0, 0, 0))], default);
+        await Recipes(other).SaveAsync(null, "Not mine", null, [new("x", 100, null, new Per100g(100, 1, 1, 1))], default);
+
+        var files = Unzip(await new DataExport(s.Db).ZipAsync(default));
+
+        files["recipes.csv"].Should().StartWith("food_item_id,name,weight_when_cooked_g,updated_at_utc\r\n").And.Contain($"{food.Id},Леща чорба,1800,").And.NotContain("Not mine");
+        files["recipe_ingredients.csv"].Should().Contain($"{food.Id},0,,Леща,300,352,25,60,1,,").And.Contain($"{food.Id},1,,Вода,1500,0,0,0,0,,");
+        files["private_foods.csv"].Should().Contain($"{food.Id},Леща чорба,").And.Contain(",Recipe");
     }
 
     /// <summary>File name to text, after checking each file starts with the UTF-8 byte order mark.</summary>

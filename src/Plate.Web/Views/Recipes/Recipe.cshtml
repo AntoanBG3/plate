@@ -1,0 +1,72 @@
+@model RecipeEditorModel
+@{
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    var date = Model.Date.ToString("yyyy-MM-dd", inv);
+    var draft = Model.Draft;
+    var isNew = draft.Id is null;
+    ViewData["Page"] = "food-recipe";
+    ViewData["Title"] = isNew ? L["New recipe"] : draft.Name;
+    ViewData["BackUrl"] = $"/food/add?date={date}&meal={Model.Meal}&tab=recent";
+    ViewData["BackLabel"] = L["Recent"];
+}
+<header class="page-head">
+    <h1 class="large-title">@(isNew ? L["New recipe"] : L["Edit recipe"])</h1>
+    <p class="subhead">@L["Build a dish once from what goes into it, then log it by weight like any food."]</p>
+</header>
+
+@if (Model.Error is not null)
+{
+    <div class="banner is-error" role="alert">@Ui.Icon("alert")<span>@L[Model.Error]</span></div>
+}
+
+<form method="post" asp-antiforgery="true" action="@(isNew ? "/food/recipes" : $"/food/recipes/{draft.Id}")" data-module="recipe-editor" style="margin-top: var(--s-4)">
+    <input type="hidden" name="date" value="@date" />
+    <input type="hidden" name="meal" value="@Model.Meal" />
+    <div class="list">
+        <div class="field-row stacked"><label for="r-name" class="sr-only">@L["Name"]</label><input id="r-name" type="text" name="name" value="@draft.Name" maxlength="@Plate.Core.Nutrition.RecipeMath.MaxNameLength" required placeholder="@L["Recipe name, e.g. Мусака"]" autocomplete="off" /></div>
+    </div>
+
+    <h2 class="section-header" style="margin-top: var(--s-5)">@L["Ingredients"]</h2>
+    <p class="section-footer" data-recipe-empty hidden="@(draft.Items.Count > 0)">@L["Add what goes into the dish: type it, or find each food below. Weigh it raw, before cooking."]</p>
+    <div class="list" id="recipe-rows">
+        @for (var i = 0; i < draft.Items.Count; i++)
+        {
+            <partial name="~/Views/Food/_ReviewRow.cshtml" model="new ReviewRowModel(draft.Items[i], i.ToString(inv), i, Rated: false, IndexField: true)" />
+        }
+    </div>
+
+    <h2 class="section-header" style="margin-top: var(--s-5)">@L["Add ingredients"]</h2>
+    <div class="list">
+        <div class="field-row stacked"><label for="r-text" class="sr-only">@L["Ingredients as text"]</label><textarea id="r-text" class="textarea" name="text" rows="2" maxlength="1000" placeholder="@L["e.g. 500 г картофи, 400 г кайма, 2 яйца"]"></textarea></div>
+    </div>
+    <button type="button" class="btn btn-secondary btn-block" style="margin-top: var(--s-3)" data-recipe-parse
+            hx-post="/food/recipes/parse" hx-target="#recipe-rows" hx-swap="beforeend" hx-disabled-elt="this">@Ui.Icon("text")@L["Add these"]</button>
+    <div class="search-field" style="margin-top: var(--s-4)">
+        @Ui.Icon("search")
+        <input type="search" class="input" name="q" aria-label="@L["Find a food to add"]" placeholder="@L["Find a food to add"]" autocomplete="off" enterkeyhint="search"
+               hx-get="/food/recipes/search" hx-trigger="input changed delay:300ms, search" hx-target="#recipe-search-results" hx-swap="innerHTML" hx-include="this" />
+    </div>
+    <div id="recipe-search-results"></div>
+
+    <h2 class="section-header" style="margin-top: var(--s-5)">@L["The dish"]</h2>
+    <div class="list">
+        <div class="field-row is-optional"><label for="r-yield">@L["Weight when cooked"]</label><input id="r-yield" class="num" type="text" name="yieldGrams" value="@draft.YieldGrams?.Kg()" min="1" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" placeholder="@L["Optional"]" /><span class="unit">@L["g"]</span></div>
+    </div>
+    <p class="section-footer">@L["Weigh the finished dish without the pot. Left empty, the raw weights are used."]</p>
+    <p class="footnote num" data-recipe-summary aria-live="polite" style="margin: var(--s-3) var(--s-4) 0"></p>
+
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Save recipe"]</button>
+</form>
+
+@if (!isNew)
+{
+    <form method="post" asp-antiforgery="true" action="/food/recipes/@draft.Id/delete" data-confirm="@L["Delete this recipe? Food you logged from it stays."]" style="margin-top: var(--s-3)">
+        <input type="hidden" name="date" value="@date" />
+        <input type="hidden" name="meal" value="@Model.Meal" />
+        <button type="submit" class="btn btn-plain btn-block destructive">@L["Delete recipe"]</button>
+    </form>
+}
+
+@section Overlays {
+    <partial name="~/Views/Food/_ChangeFoodSheet.cshtml" />
+}

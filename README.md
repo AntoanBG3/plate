@@ -53,6 +53,8 @@ node tools/foods/add-fiber.mjs          # fiber and saturated fat for the produc
 
 Dishes have no fiber or saturated fat: the pages they come from don't give them, so the app treats them as unknown.
 
+Home dishes are better entered as recipes (Recent tab → Recipes → New recipe): the ingredients typed or found once, with the dish's weight after cooking, give its values per 100 g, fiber included when the ingredients have it, and it is then logged by weight like any food. Recipes are private to the account.
+
 ### Language and theme
 
 Each account chooses its language (English or Bulgarian) and theme (dark, light or match phone) in Settings. Interface text goes through `L["English text"]` in views and `LocalText` in code; Bulgarian lives in `src/Plate.Web/Resources/strings.bg.json`. `CatalogueTests` fails when a string has no translation. To add translations:
@@ -326,6 +328,6 @@ The build also fails when a NuGet package has a known high or critical advisory;
 
 Open `https://plate.peychev.uk` in Safari, sign in, then Share → Add to Home Screen. Open it from the home screen icon from then on; the login lasts 30 days and renews with use.
 
-Settings → Export all data downloads a ZIP of CSV files readable in Excel or Numbers. It includes private foods, saved meals with their ingredients, exercise notes and bar settings, and profile preferences. Saved meal and food IDs link the files.
+Settings → Export all data downloads a ZIP of CSV files readable in Excel or Numbers. It includes private foods, saved meals with their ingredients, recipes with theirs, exercise notes and bar settings, and profile preferences. Saved meal and food IDs link the files.
 
 Food forms carry a new request ID each time they are rendered. Resending the same form after a lost response returns its first successful result without adding food twice. Check the log after an uncertain-save warning; open a new form to add another entry. Food-request receipts are included in the export and removed with the account.

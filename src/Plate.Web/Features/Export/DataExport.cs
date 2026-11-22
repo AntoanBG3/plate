@@ -33,6 +33,8 @@ public class DataExport(AppDbContext db)
             ["saved_meal_items.csv"] = await SavedMealItemsAsync(ct),
             ["exercise_settings.csv"] = await ExerciseSettingsAsync(ct),
             ["usual_foods.csv"] = await UsualFoodsAsync(ct),
+            ["recipes.csv"] = await RecipesAsync(ct),
+            ["recipe_ingredients.csv"] = await RecipeIngredientsAsync(ct),
         };
 
         using var stream = new MemoryStream();
@@ -167,6 +169,27 @@ public class DataExport(AppDbContext db)
         {
             csv.Row(f.Id, f.Name, f.NameBg, f.Brand, f.Barcode, f.KcalPer100g, f.ProteinPer100g, f.CarbsPer100g,
                 f.FatPer100g, f.FiberPer100g, f.SaturatedFatPer100g, f.DefaultServingGrams, f.Source);
+        }
+        return csv;
+    }
+
+    /// <summary>Recipes by their food's id; the food itself, with the values per 100 g, is in private_foods.csv.</summary>
+    private async Task<Csv> RecipesAsync(CancellationToken ct)
+    {
+        var csv = new Csv("food_item_id", "name", "weight_when_cooked_g", "updated_at_utc");
+        foreach (var r in await db.Recipes.AsNoTracking().Include(r => r.FoodItem).OrderBy(r => r.FoodItemId).ToListAsync(ct))
+            csv.Row(r.FoodItemId, r.FoodItem.Name, r.YieldGrams, r.UpdatedAt);
+        return csv;
+    }
+
+    private async Task<Csv> RecipeIngredientsAsync(CancellationToken ct)
+    {
+        var csv = new Csv("recipe_food_item_id", "position", "food_item_id", "description", "grams", "kcal_per_100g", "protein_per_100g",
+            "carbs_per_100g", "fat_per_100g", "fiber_per_100g", "saturated_fat_per_100g");
+        foreach (var i in await db.RecipeIngredients.AsNoTracking().OrderBy(i => i.RecipeFoodItemId).ThenBy(i => i.SortOrder).ToListAsync(ct))
+        {
+            csv.Row(i.RecipeFoodItemId, i.SortOrder, i.FoodItemId, i.Description, i.Grams, i.KcalPer100g, i.ProteinPer100g, i.CarbsPer100g,
+                i.FatPer100g, i.FiberPer100g, i.SaturatedFatPer100g);
         }
         return csv;
     }

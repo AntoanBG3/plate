@@ -1,0 +1,14 @@
+@* Change food: search the database and put another food on a row (site.js). Used by Check foods and the recipe editor. *@
+<div class="sheet" id="change-food-sheet" hidden>
+    <div class="sheet-scrim"></div>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="change-food-title">
+        <div class="sheet-grabber" aria-hidden="true"></div>
+        <div class="sheet-head"><span></span><span class="sheet-title" id="change-food-title">@L["Change food"]</span><button type="button" class="sheet-close" data-sheet-close>@L["Cancel"]</button></div>
+        <div class="search-field">
+            @Ui.Icon("search")
+            <input type="search" class="input" name="q" aria-label="@L["Search foods"]" autocomplete="off" data-change-search
+                   hx-get="/food/candidates" hx-trigger="input changed delay:300ms, search" hx-target="#change-food-results" hx-swap="innerHTML" />
+        </div>
+        <div id="change-food-results" class="change-food-results scroll-fade scroll-fade-y"></div>
+    </div>
+</div>

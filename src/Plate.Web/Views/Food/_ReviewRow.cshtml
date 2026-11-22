@@ -1,0 +1,80 @@
+@model ReviewRowModel
+@using Plate.Web.Features.Food
+@* One food row as Check foods shows it, and the recipe editor's ingredient row: site.js handles Change food and the
+   cooked-or-dry choice on both. Recipe rows have keys rather than positions, with items.Index for the model binder. *@
+@{
+    var item = Model.Item;
+    var key = Model.Key;
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    var (chip, label) = item.Usual ? ("good", L["Your usual"]) : item.Confidence switch
+    {
+        Confidence.High => ("good", L["Database"]),
+        Confidence.Medium => ("check", L["Check match"]),
+        _ => ("ai", L["AI estimate"]),
+    };
+    var status = L.Status(item.Status, item.State, item.Description);
+}
+@* A counted amount ("две закуски") goes with the row, so its grams follow when another food is picked (site.js). *@
+<div class="result portion" data-row="@key" data-per100="@item.Per100.Kcal.Kg(),@item.Per100.Protein.Kg()" style="animation-delay: @(Model.Position * 70)ms"
+     data-amount-count="@item.Count?.Units.ToString(inv)" data-amount-of="@item.Count?.Of.ToString().ToLowerInvariant()" data-amount-grams="@(item.Count is null ? null : item.Grams.ToString(inv))">
+    @if (Model.IndexField)
+    {
+        <input type="hidden" name="items.Index" value="@key" />
+    }
+    <div class="result-head">
+        <input type="checkbox" class="check-input" name="items[@key].Include" value="true" checked aria-label="@L["Include {0}", item.Description]" />
+        @* Grows to fit a long food name (field-sizing); Enter doesn't add a line (site.js). *@
+        <textarea class="input name-input" name="items[@key].Description" rows="1" maxlength="200" aria-label="@L["Description"]" data-one-line required>@item.Description</textarea>
+        <span class="chip status-chip" data-status @(status is null ? "hidden" : null)>@status</span>
+        <span class="chip @chip" data-chip>@label</span>
+        @if (Model.Rated)
+        {
+            <button type="button" class="rate-btn" data-rate="Down" data-item="@key" aria-pressed="false" aria-label="@L["{0} is wrong", item.Description]" hidden>@Ui.Icon("thumb-down")</button>
+        }
+    </div>
+    <div class="result-amount">
+        <label class="grams"><input type="text" name="items[@key].Grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
+        <span class="footnote num" data-totals>@L["{0} kcal · {1} g protein", Math.Round(item.Per100.Kcal * item.Grams / 100), (item.Per100.Protein * item.Grams / 100).ToString("0.0", inv)]</span>
+    </div>
+    @if (item.Choice is { } choice && item.FoodItemId is { } choiceId)
+    {
+        @* A weighed staple without a state: the same food cooked and dry, one tap apart (site.js). *@
+        var options = new[] { new ChoiceFood(choiceId, item.MatchedName ?? item.Description, item.Per100, choice.Current), choice.Other }
+            .OrderBy(o => o.State == Plate.Core.Nutrition.FoodState.Cooked);
+        <div class="state-choice" data-state-choice>
+            <span class="footnote" id="state-q-@key">@L["When did you weigh it?"]</span>
+            <div class="segmented" role="group" aria-labelledby="state-q-@key">
+                @foreach (var o in options)
+                {
+                    var on = o.State == choice.Current;
+                    <button type="button" class="segment@(on ? " is-active" : "")" aria-pressed="@(on ? "true" : "false")" data-choice-food="@o.Id" data-state="@o.State.ToString().ToLowerInvariant()"
+                            data-name="@o.Name" data-status="@L.State(o.State, item.Description)" data-kcal="@o.Per100.Kcal.ToString(inv)" data-protein="@o.Per100.Protein.ToString(inv)"
+                            data-carbs="@o.Per100.Carbs.ToString(inv)" data-fat="@o.Per100.Fat.ToString(inv)" data-fiber="@o.Per100.Fiber?.ToString(inv)" data-satfat="@o.Per100.SaturatedFat?.ToString(inv)">@(o.State == Plate.Core.Nutrition.FoodState.Raw ? L["Before cooking"] : L["After cooking"])</button>
+                }
+            </div>
+        </div>
+    }
+    <div class="result-notes footnote">
+        @* The full database name under the short one, so it's clear which food the numbers are. *@
+        <span data-using @(item.MatchedName is null ? "hidden" : null)>@(item.MatchedName is null ? "" : L["Database: {0}", item.MatchedName])</span>
+        @foreach (var note in item.Notes)
+        {
+            <span data-note>@L[note]</span>
+        }
+        <button type="button" class="btn btn-plain btn-small change-food" data-change-food="@key" data-query="@(item.Typed is { Length: > 0 } typed ? typed : item.Description)">@L["Change food"]</button>
+    </div>
+    <details>
+        <summary>@L["Per 100 g values"]</summary>
+        <div class="per100">
+            <label>@L["kcal"]<input class="input num" type="text" name="items[@key].Kcal" value="@item.Per100.Kcal.Kg()" min="0" max="900" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+            <label>@L["Protein"]<input class="input num" type="text" name="items[@key].Protein" value="@item.Per100.Protein.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+            <label>@L["Carbs"]<input class="input num" type="text" name="items[@key].Carbs" value="@item.Per100.Carbs.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+            <label>@L["Fat"]<input class="input num" type="text" name="items[@key].Fat" value="@item.Per100.Fat.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+            <label>@L["Fiber"]<input class="input num" type="text" name="items[@key].Fiber" value="@item.Per100.Fiber?.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+            <label>@L["Saturated fat"]<input class="input num" type="text" name="items[@key].SaturatedFat" value="@item.Per100.SaturatedFat?.Kg()" min="0" max="100" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" /></label>
+        </div>
+    </details>
+    <input type="hidden" name="items[@key].FoodItemId" value="@item.FoodItemId" />
+    <input type="hidden" name="items[@key].MatchModel" value="@item.MatchModel" />
+    <input type="hidden" name="items[@key].Status" value="@status" />
+</div>
