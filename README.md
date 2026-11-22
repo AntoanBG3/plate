@@ -197,20 +197,38 @@ The `keys` folder and `docker/.env` are still copied by the rsync, so a restore 
 cd ~/docker/plate
 docker compose -f docker/docker-compose.yml stop app
 docker exec plate-db sh -c 'dropdb -U "$POSTGRES_USER" "$POSTGRES_DB" && createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
-docker run --rm -v /mnt/storage:/s:ro alpine cat /s/backups/latest/plate-db.dump \
+docker run --rm -v /mnt/storage:/mnt/storage:ro alpine cat /mnt/storage/backups/latest/plate-db.dump \
     | docker exec -i plate-db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner'
 docker compose -f docker/docker-compose.yml start app
 ```
 
 ### Restore drill
 
-`tools/restore-drill.sh` restores a dump into a throwaway `postgres:18` container with no network and compares row counts per table with the live database. It touches nothing live. Both modes reject missing/extra tables or different column definitions. An immediate dump must also match live row counts; nightly counts may differ because the live data has changed. This checks compatibility with the current schema, so a nightly dump from before a schema migration can be rejected even when its archive is valid. It does not verify backup-time row counts, indexes, constraints or every stored value. Run it on wizard after changing the backup or database setup, and now and then to check the nightly archive:
+`tools/restore-drill.sh` restores a dump into a throwaway `postgres:18` container on an internal-only Docker network and compares row counts per table with the live database. It touches nothing live. Both modes reject missing/extra tables or different column definitions. An immediate dump must also match live row counts; nightly counts may differ because the live data has changed. This checks compatibility with the current schema, so a nightly dump from before a schema migration can be rejected even when its archive is valid. It does not verify backup-time row counts, indexes, constraints or every stored value. Run it on wizard after changing the backup or database setup, and now and then to check the nightly archive:
 
 ```sh
 cd ~/docker/plate
-tools/restore-drill.sh            # dumps the live database now, the same way the nightly backup does
-tools/restore-drill.sh nightly    # uses /mnt/storage/backups/latest/plate-db.dump
+tools/restore-drill.sh                 # dumps the live database now, the same way the nightly backup does
+tools/restore-drill.sh nightly         # uses /mnt/storage/backups/latest/plate-db.dump
+tools/restore-drill.sh nightly --app   # also brings the app back from that snapshot and signs in
 ```
+
+`--app` proves the snapshot is enough to bring Plate back, not only that the dump restores. After the table checks (made before the app's startup migrations change the copy), it copies the Data Protection keys from the same snapshot, says whether they are identical to the live ones, and starts the `plate-app` image already on wizard (no build) against the restored database, on the drill's internal network, with nothing from `.env`: no Telegram or OpenRouter. A `curlimages/curl` container on that network stands in for Cloudflare's proxy. The drill creates a throwaway account in the copy and signs in with it; then it signs in again with an antiforgery cookie and token fetched from plate.peychev.uk, which only works when the backed-up keys decrypt what the live keys encrypted (sign-in cookies use the same keys). It fails if the app doesn't start, if either sign-in fails, or if the app writes a new key. Every container, the network and the temporary files are removed at the end, pass or fail.
+
+Last run, 2026-11-22, on the 2026-11-22 snapshot: tables and columns matched, the keys were identical to the live ones, version 9c5ad06 started on the copy, and both sign-ins worked. With an empty key ring instead, the live-token sign-in failed as it should.
+
+### Checks that need sudo or the PC
+
+The drill reads the backups but can't judge the disks or the PC copy. Run these on wizard now and then (the boot SSD is the Kingston SA400 `sda`, holding `/` and with it `~/docker/plate/db` and `keys`; the backups are on the WD HDD `sdb` at `/mnt/storage`):
+
+```sh
+sudo smartctl -H -A /dev/sda    # SSD: overall health, reallocated/pending sectors, wear, power-on hours
+sudo smartctl -H -A /dev/sdb    # backup HDD
+sudo smartctl -l error /dev/sda # errors the SSD has logged
+sudo tail -5 /mnt/storage/backups/backup.log   # the last nightly runs
+```
+
+On the PC, check that the backup pull task's newest archive has the date `ssh wizard ~/bin/export-latest-backup name` prints, and that it opens (`tar -tzf <archive> | grep plate-db.dump`).
 
 ### Memory limits
 
