@@ -245,6 +245,14 @@ tools/deploy.sh
 
 It dumps the live database to `~/plate-pre-<commit>-<time>.dump` on wizard, runs the rsync above, builds on wizard with `APP_VERSION` set to the commit (feedback reports and errors record it), and waits until `plate.peychev.uk` serves that commit. Building on wizard directly works too; the version then shows as `unknown`.
 
+To measure how long the site is unavailable during a deploy (P17 in `docs/plans/2026-11-05-performance-plan.md`), start the probe in a second terminal first and stop it with Ctrl-C once the deploy has finished:
+
+```sh
+node tools/perf/deploy-probe.mjs --out /private/tmp/deploy-probe.json --ssh wizard
+```
+
+It requests the sign-in page once a second, anonymously and one request at a time, and records each status, time to first byte and served version, plus the containers' start times before and after. The summary gives the longest stretch without a 200 and the versions seen. It changes nothing on wizard. The first sample of a deploy without migrations sets the baseline; the plan proposes under 5 seconds as the goal.
+
 ### Deploying from anywhere
 
 Away from home, `ssh wizard` (and so the deploy script, rsync and the feedback commands) goes through the Cloudflare Tunnel. The Mac's `~/.ssh/config` has, above `Host wizard`:
