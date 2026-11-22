@@ -57,10 +57,12 @@ public class RecipesController(RecipeService recipes, FoodItemService foods) : C
     }
 
     [HttpPost("")]
+    [HandlesInvalidNumbers]
     public Task<IActionResult> Create(DateOnly date, Meal meal, string? name, decimal? yieldGrams, List<FoodController.ConfirmRow> items, CancellationToken ct) =>
         SaveAsync(null, date, meal, name, yieldGrams, items, ct);
 
     [HttpPost("{id:int}")]
+    [HandlesInvalidNumbers]
     public Task<IActionResult> Update(int id, DateOnly date, Meal meal, string? name, decimal? yieldGrams, List<FoodController.ConfirmRow> items, CancellationToken ct) =>
         SaveAsync(id, date, meal, name, yieldGrams, items, ct);
 
@@ -77,6 +79,12 @@ public class RecipesController(RecipeService recipes, FoodItemService foods) : C
         var included = items.Where(i => i.Include).ToList();
         try
         {
+            // A number that didn't read ("abc", a lone ".") would otherwise save as nothing or 0: the editor comes back.
+            if (ModelState.Values.Any(field => field.Errors.Any(e => e.ErrorMessage == DecimalModelBinder.InvalidNumber)))
+            {
+                throw new ValidationException(DecimalModelBinder.InvalidNumber);
+            }
+
             await recipes.SaveAsync(id, name, yieldGrams,
                 included.Select(i => new RecipeIngredientInput(i.Description ?? "", i.Grams, i.FoodItemId, i.Per100)).ToList(), ct);
         }

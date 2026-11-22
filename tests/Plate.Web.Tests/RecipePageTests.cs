@@ -57,6 +57,26 @@ public class RecipePageTests(PostgresFixture fixture) : IClassFixture<PostgresFi
         html.Should().Contain("The cooked weight should be between 100 and 1500 g for these ingredients.").And.Contain("Леща").And.Contain("Морков").And.NotContain("Unticked");
     }
 
+    [Theory]
+    [InlineData("yieldGrams", "abc")]
+    [InlineData("items[b7].Kcal", ".")]
+    [InlineData("items[a1].Grams", "1,2,3")]
+    public async Task A_number_that_does_not_read_is_refused_with_the_rows_kept(string field, string value)
+    {
+        await using var app = new AppFactory(fixture);
+        var (client, _) = await app.SignedInClientAsync();
+        var token = await AppFactory.TokenAsync(client, Editor);
+        var name = "Bad number " + Guid.NewGuid().ToString("N")[..6];
+        var fields = Recipe(name).Where(f => f.Key != field).Append(new(field, value));
+
+        var refused = await SubmitAsync(client, "/food/recipes", token, fields);
+
+        refused.StatusCode.Should().Be(HttpStatusCode.OK);
+        WebUtility.HtmlDecode(await refused.Content.ReadAsStringAsync()).Should().Contain("Enter a valid number").And.Contain("Морков");
+        await using var db = fixture.CreateContext(null);
+        (await db.FoodItems.IgnoreQueryFilters().AnyAsync(f => f.Name == name)).Should().BeFalse("nothing is saved with a guessed number");
+    }
+
     [Fact]
     public async Task Another_account_gets_a_404_for_a_recipe_it_does_not_own()
     {
