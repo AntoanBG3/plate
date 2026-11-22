@@ -122,9 +122,10 @@ public record EvalLater(
 /// <param name="Accounts">What each account did in the period, busiest first; accounts that did nothing are left out.</param>
 /// <param name="AiRecordedSince">When AI calls started being recorded (the first one), or null if none ever was; calls before it are unknown.</param>
 /// <param name="ParseTimes">The whole parse's time over the period's runs that recorded it, or null when none did.</param>
+/// <param name="ErrorsInPeriod">How often each listed error group happened in the period, from the day counts (P10).</param>
 public record Digest(DateTimeOffset Since, IReadOnlyList<FeedbackRow> Reports, IReadOnlyList<ErrorEvent> Errors, int Parses, int Confirmed, int Corrected,
     int RatedUp, int RatedDown, IReadOnlyList<AccountActivity>? Accounts = null, DateTimeOffset? AiRecordedSince = null,
-    ParseTimes? ParseTimes = null);
+    ParseTimes? ParseTimes = null, IReadOnlyDictionary<int, int>? ErrorsInPeriod = null);
 
 /// <summary>
 /// One account's period in the digest (SPEC 11): counts and money only, never what was logged or typed.
@@ -371,7 +372,10 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
     public async Task<Digest> DigestAsync(DateTimeOffset since, CancellationToken ct)
     {
         var reports = await ListAsync(null, since, null, includeRatings: false, ct);
-        var errors = await db.ErrorEvents.AsNoTracking().Where(e => e.LastSeenAt >= since).OrderByDescending(e => e.Count).ToListAsync(ct);
+        var seen = await db.ErrorEvents.AsNoTracking().Where(e => e.LastSeenAt >= since).ToListAsync(ct);
+        var inPeriod = await ErrorCountsSinceAsync(seen.Select(e => e.Id), since, ct);
+        // Most frequent in the period first; the lifetime count breaks ties.
+        var errors = seen.OrderByDescending(e => inPeriod.GetValueOrDefault(e.Id)).ThenByDescending(e => e.Count).ToList();
         var runs = db.ParseRuns.IgnoreQueryFilters().Where(r => r.CreatedAt >= since);
         var ratings = AllFeedback.Where(f => f.Source == FeedbackSource.ParseRating && f.CreatedAt >= since);
         return new Digest(since, reports, errors,
@@ -382,7 +386,8 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
             await ratings.CountAsync(f => f.Rating == FeedbackRating.Down, ct),
             await ActivityAsync(since, ct),
             await db.AiCalls.IgnoreQueryFilters().MinAsync(c => (DateTimeOffset?)c.At, ct),
-            ParseTimes.Of(await runs.Where(r => r.TotalMs != null).Select(r => r.TotalMs!.Value).ToListAsync(ct)));
+            ParseTimes.Of(await runs.Where(r => r.TotalMs != null).Select(r => r.TotalMs!.Value).ToListAsync(ct)),
+            inPeriod);
     }
 
     /// <summary>Per account: active days, food entries by source, sets, weigh-ins and AI calls with their cost (SPEC 11).</summary>
@@ -417,6 +422,21 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
                     .Select(a => new AiTaskUse(a.Task, a.Calls, a.Failed, a.Cost)).ToList()))
             .OrderByDescending(a => a.DaysActive).ThenByDescending(a => a.AiCost).ThenBy(a => a.Name, StringComparer.Ordinal)
             .ToList();
+    }
+
+    /// <summary>
+    /// How often each of these error groups happened since a time, added up from the day counts (P10). Whole UTC
+    /// days: the first day counts from its midnight, not from the time given. Occurrences from before the day
+    /// counts existed are not included.
+    /// </summary>
+    public async Task<Dictionary<int, int>> ErrorCountsSinceAsync(IEnumerable<int> ids, DateTimeOffset since, CancellationToken ct)
+    {
+        var list = ids.ToList();
+        var day = DateOnly.FromDateTime(since.UtcDateTime);
+        return list.Count == 0 ? []
+            : await db.ErrorEventDays.Where(d => list.Contains(d.ErrorEventId) && d.Day >= day)
+                .GroupBy(d => d.ErrorEventId).Select(g => new { g.Key, Count = g.Sum(d => d.Count) })
+                .ToDictionaryAsync(x => x.Key, x => x.Count, ct);
     }
 
     public async Task<ChangelogEntry> AddChangelogAsync(string textEn, string textBg, int? feedbackId, string? version, CancellationToken ct)

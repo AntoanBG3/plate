@@ -361,6 +361,24 @@ namespace Plate.Web.Data.Migrations
                     b.ToTable("ErrorEvents");
                 });
 
+            modelBuilder.Entity("Plate.Core.Domain.ErrorEventDay", b =>
+                {
+                    b.Property<int>("ErrorEventId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ErrorEventId", "Day");
+
+                    b.HasIndex("Day");
+
+                    b.ToTable("ErrorEventDays");
+                });
+
             modelBuilder.Entity("Plate.Core.Domain.Exercise", b =>
                 {
                     b.Property<int>("Id")
@@ -1834,6 +1852,15 @@ namespace Plate.Web.Data.Migrations
                         .WithMany()
                         .HasForeignKey("FeedbackId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Plate.Core.Domain.ErrorEventDay", b =>
+                {
+                    b.HasOne("Plate.Core.Domain.ErrorEvent", null)
+                        .WithMany()
+                        .HasForeignKey("ErrorEventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Plate.Core.Domain.Exercise", b =>

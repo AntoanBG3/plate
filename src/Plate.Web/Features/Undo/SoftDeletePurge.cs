@@ -68,6 +68,8 @@ public sealed class SoftDeletePurge(IServiceScopeFactory scopes, TimeProvider ti
         var errorCutoff = now - KeepErrors;
         var linked = db.Feedback.IgnoreQueryFilters().Where(f => f.ErrorEventId != null).Select(f => f.ErrorEventId);
         count += await db.ErrorEvents.Where(e => e.LastSeenAt < errorCutoff && !linked.Contains(e.Id)).ExecuteDeleteAsync(ct);
+        // A day's count goes with its group (cascade), and on its own once it is older than the groups' 90 days.
+        count += await db.ErrorEventDays.Where(d => d.Day < DateOnly.FromDateTime(errorCutoff.UtcDateTime)).ExecuteDeleteAsync(ct);
         count += await db.AdminAudit.Where(a => a.At < now - KeepAdminAudit).ExecuteDeleteAsync(ct);
         var photoCutoff = now - KeepLabelPhotos;
         count += await db.LabelScanPhotos.IgnoreQueryFilters().Where(p => p.LabelScan.CreatedAt < photoCutoff).ExecuteDeleteAsync(ct);

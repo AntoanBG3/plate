@@ -173,14 +173,16 @@ public static class FeedbackCommand
                     return await PilotEvaluation.RunAsync(scope.ServiceProvider, rest, o, input ?? Console.In, json, ct);
 
                 case "errors":
-                    var errors = await admin.ErrorsAsync(Since(Option(rest, "--since"), TimeSpan.FromDays(7))!.Value, ct);
+                    var errorsSince = Since(Option(rest, "--since"), TimeSpan.FromDays(7))!.Value;
+                    var errors = await admin.ErrorsAsync(errorsSince, ct);
+                    var inPeriod = await admin.ErrorCountsSinceAsync(errors.Select(e => e.Id), errorsSince, ct);
                     if (json)
                     {
-                        WriteJson(o, errors);
+                        WriteJson(o, errors.Select(e => new { error = e, inPeriod = inPeriod.GetValueOrDefault(e.Id) }));
                     }
                     else
                     {
-                        WriteErrors(o, errors, withStack: true);
+                        WriteErrors(o, errors, withStack: true, inPeriod);
                     }
 
                     return 0;
@@ -486,7 +488,8 @@ public static class FeedbackCommand
         }
     }
 
-    private static void WriteErrors(TextWriter o, IReadOnlyList<ErrorEvent> errors, bool withStack)
+    /// <param name="inPeriod">Occurrences in the period, from the day counts (P10); null where they don't apply (one error's page).</param>
+    private static void WriteErrors(TextWriter o, IReadOnlyList<ErrorEvent> errors, bool withStack, IReadOnlyDictionary<int, int>? inPeriod = null)
     {
         if (errors.Count == 0)
         {
@@ -496,7 +499,8 @@ public static class FeedbackCommand
 
         foreach (var e in errors)
         {
-            o.WriteLine($"Error #{e.Id} [{e.Origin}] {e.Type} ×{e.Count}, first {When(e.FirstSeenAt)} ({e.FirstVersion ?? "?"}), last {When(e.LastSeenAt)} ({e.LastVersion ?? "?"})");
+            var period = inPeriod is null ? "" : $" ({inPeriod.GetValueOrDefault(e.Id)} in this period)";
+            o.WriteLine($"Error #{e.Id} [{e.Origin}] {e.Type} ×{e.Count}{period}, first {When(e.FirstSeenAt)} ({e.FirstVersion ?? "?"}), last {When(e.LastSeenAt)} ({e.LastVersion ?? "?"})");
             o.WriteLine($"  {e.Path}: {FirstLine(e.Message, 200)}");
             if (withStack && e.Stack is not null)
             {
@@ -508,7 +512,7 @@ public static class FeedbackCommand
     private static void WriteDigest(TextWriter o, Digest d)
     {
         o.WriteLine($"Server version {Features.Diagnostics.AppVersion.Current}. Since {When(d.Since)}:");
-        o.WriteLine($"  {d.Reports.Count} reports, {d.Errors.Count} errors seen, {d.Parses} parses ({d.Confirmed} saved, {d.Corrected} corrected), ratings {d.RatedUp} up / {d.RatedDown} down");
+        o.WriteLine($"  {d.Reports.Count} reports, {d.Errors.Count} errors seen{(d.ErrorsInPeriod is { } n ? $" ({n.Values.Sum()} times)" : "")}, {d.Parses} parses ({d.Confirmed} saved, {d.Corrected} corrected), ratings {d.RatedUp} up / {d.RatedDown} down");
         if (d.ParseTimes is { } times)
         {
             o.WriteLine($"  Parse time, start to Check foods: median {times.MedianMs} ms, 95th percentile {times.P95Ms} ms, over {times.Runs} of {d.Parses} parses"
@@ -522,7 +526,7 @@ public static class FeedbackCommand
         WriteRows(o, d.Reports);
         o.WriteLine();
         o.WriteLine("Errors:");
-        WriteErrors(o, d.Errors, withStack: false);
+        WriteErrors(o, d.Errors, withStack: false, d.ErrorsInPeriod);
     }
 
     /// <summary>Counts and money per account, never contents (SPEC 11, 12).</summary>

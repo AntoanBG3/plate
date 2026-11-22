@@ -194,6 +194,17 @@ public class ErrorEvent
 }
 
 /// <summary>A What's new line shown to every user once, in their language.</summary>
+/// <summary>
+/// How often an error group happened on one UTC day (P10), so a period's total can be added up; the group's own
+/// <see cref="ErrorEvent.Count"/> is the lifetime total. Counted from when this table was added.
+/// </summary>
+public class ErrorEventDay
+{
+    public int ErrorEventId { get; set; }
+    public DateOnly Day { get; set; }
+    public int Count { get; set; }
+}
+
 public class ChangelogEntry
 {
     public const int MaxTextLength = 300;
