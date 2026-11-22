@@ -79,6 +79,7 @@ public static class MatchBenchmark
 
         var models = list.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(m => m != AiTasks.Off).Distinct().ToList();
         var repeats = int.TryParse(Option(args, "--repeat"), out var r) && r is > 0 and <= 10 ? r : 3;
+        if (models.Count == 0) repeats = 1;
         var timeout = TimeSpan.FromSeconds(int.TryParse(Option(args, "--timeout"), out var t) && t is > 0 and <= 60 ? t : 10);
         var cases = new List<BenchCase>();
         while (input.ReadLine() is { } line)

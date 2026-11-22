@@ -50,6 +50,7 @@ public class MatchBenchmarkTests(PostgresFixture fixture) : IClassFixture<Postgr
         text.Should().Contain("3 cases, 3 items (1 with no right food in the catalogue")
             .And.MatchRegex(@"off\s+\d+\.\d")
             .And.Contain("final by category")
+            .And.Contain("1 repeat")
             .And.Contain("Selected correctly")
             .And.Contain("Required matches declined 1/2")
             .And.Contain("missing/1: first acceptable rank - of 0; no candidates");
