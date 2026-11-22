@@ -37,7 +37,7 @@ Test environment:
 - Use async EF calls with `CancellationToken` throughout.
 - Do not add NuGet packages or front-end libraries beyond those in SPEC.md without a clear reason stated in the commit message.
 - Mobile-first: test layouts at 390 px width. Touch targets at least 44 px.
-- No CDNs. Front-end libraries are pinned copies in `wwwroot/lib`, precached by the service worker. A new script in `_Layout.cshtml` also goes in `sw.js`'s `PRECACHE`, with the cache name bumped.
+- No CDNs. Front-end libraries are pinned copies in `wwwroot/lib`, precached by the service worker. A new script in `_Layout.cshtml` also goes in `sw.js`'s `PRECACHE`, with the cache name bumped. Changing anything under `wwwroot/lib` also bumps `LIB` in `sw.js` (then `UPDATE_SW_LIB=1 node --test tests/js/sw-lib.test.cjs`).
 - All persistent data uses bind mounts under the stack folder, never Docker named volumes.
 - Anything on wizard that needs sudo (the backup script, system config) is written up as an exact command for Antoan to run.
 
