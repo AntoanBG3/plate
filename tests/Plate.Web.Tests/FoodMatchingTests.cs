@@ -111,6 +111,22 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
         item.MatchModel.Should().BeNull("Rank decided");
     }
 
+    [Theory]
+    [InlineData(null, 0.5, "ranking: after unsure decider none")]
+    [InlineData(null, 0.95, "estimate: decider none")]
+    [InlineData(-1, 0.97, "decider pick")]
+    public async Task The_inspection_names_the_path_that_chose_the_row(int? pick, double confidence, string outcome)
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, pick is null ? null : q[0].Candidates[0].Id, (decimal)confidence);
+        var inspection = new List<RankingInspection>();
+
+        await s.Matcher.ResolveAsync("chicken", [Parsed("chicken breast", 200, FoodState.Raw)], default, inspectRanking: inspection);
+
+        inspection.Single().Outcome.Should().Be(outcome);
+        inspection.Single().Pool.Should().NotBeEmpty();
+    }
+
     [Fact]
     public async Task A_pick_below_the_floor_with_a_weak_ranking_uses_the_ai_estimate()
     {

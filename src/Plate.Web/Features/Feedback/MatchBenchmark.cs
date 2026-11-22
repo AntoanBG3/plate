@@ -52,7 +52,7 @@ public record BenchItem(
 /// <param name="Pick">The decider's raw answer: a food id, 0 for "none", null for no answer (timeout, error, or not asked).</param>
 /// <param name="Final">The row's food after the matcher's floors, or null for an AI estimate.</param>
 public record BenchOutcome(string Model, int Repeat, string CaseId, int Item, int? Pick, decimal? Confidence, bool PickRight, int? Final, bool FinalRight,
-    bool FinalRightAt3s, decimal? KcalError, long Ms, bool Failed, int? Tokens, decimal? Cost, int? PoolSize, int? FirstAcceptableRank, string? RankingReason);
+    bool FinalRightAt3s, decimal? KcalError, long Ms, bool Failed, int? Tokens, decimal? Cost, int? PoolSize, int? FirstAcceptableRank, string? RankingReason, string? Outcome = null);
 
 /// <summary>
 /// <c>feedback matchbench</c>: compares decision models on a labelled set of parsed items against the live catalogue.
@@ -149,7 +149,7 @@ public static class MatchBenchmark
             foreach (var c in cases)
             {
                 var recorder = new Recorder(asker);
-                List<RankingInspection>? ranking = asker is null ? [] : null;
+                var ranking = new List<RankingInspection>();
                 var rows = await new FoodMatcher(service, recorder).ResolveAsync(c.Text, c.Items.Select(i => i.Parsed()).ToList(), ct, inspectRanking: ranking);
                 var ids = rows.Select(x => x.FoodItemId).Concat(recorder.Questions.SelectMany(q => q.Candidates.Select(x => (int?)x.Id))).OfType<int>().Distinct().Where(id => !foods.ContainsKey(id)).ToList();
                 foreach (var f in await db.FoodItems.IgnoreQueryFilters().Where(f => ids.Contains(f.Id)).Select(f => new { f.Id, f.Name, f.NameBg, f.KcalPer100g }).ToListAsync(ct))
@@ -171,14 +171,14 @@ public static class MatchBenchmark
                     var pickRight = pick switch { null => false, 0 => noneRight, var id => Right(id.Value) };
                     var final = rows[n].FoodItemId;
                     var finalRight = final is { } fid ? Right(fid) : item.NoneOk || item.Accept is null;
-                    var inspection = ranking?[n];
+                    var inspection = ranking.ElementAtOrDefault(n);
                     var firstRank = inspection?.Pool.Select((food, i) => new { Food = food, Rank = i + 1 })
                         .FirstOrDefault(x => item.Right(x.Food.Name, x.Food.NameBg, x.Food.KcalPer100g))?.Rank;
                     var slow = recorder.Ms > ProductionMs || recorder.Failed;
                     var at3s = asker is null || !slow ? finalRight : baselineRight!.GetValueOrDefault((c.Id, n));
                     outcomes.Add(new BenchOutcome(model, rep, c.Id, n, pick, decision?.Confidence, pickRight, final, finalRight, at3s,
                         KcalError(item, final, finalRight, shortlist, foods), recorder.Ms, recorder.Failed && asker is not null, recorder.Decisions?.InputTokens, recorder.Decisions?.Cost,
-                        inspection?.Pool.Count, firstRank, inspection?.Reason));
+                        inspection?.Pool.Count, firstRank, inspection?.Reason, inspection?.Outcome));
                 }
             }
         }
@@ -293,10 +293,20 @@ public static class MatchBenchmark
             var m = s.Selection;
             o.WriteLine($"{s.Model}: Selected correctly {m.CorrectSelections}/{m.Selected} ({P(m.Precision ?? double.NaN)}%); selected {m.Selected}/{m.Items} ({P(m.Coverage ?? double.NaN)}%); absent declined {m.AbsentDeclined}/{m.Absent} ({P(m.AbsentRejection ?? double.NaN)}%); Required matches declined {m.RequiredDeclined}/{m.Required}.");
         }
+        o.WriteLine();
+        o.WriteLine("How rows were chosen (path: items, right):");
+        foreach (var s in report)
+        {
+            var paths = outcomes.Where(x => x.Model == s.Model && x.Outcome is not null).GroupBy(x => x.Outcome!).OrderByDescending(g => g.Count())
+                .Select(g => $"{g.Key}: {g.Count()}, {g.Count(x => x.FinalRight)} right");
+            o.WriteLine($"  {s.Model}: {string.Join("; ", paths)}");
+        }
+
+        o.WriteLine();
         o.WriteLine("Deterministic ranking by item (before any cooked-or-dry substitution):");
         foreach (var x in outcomes.Where(x => x.Model == "off").OrderBy(x => x.CaseId).ThenBy(x => x.Item))
         {
-            o.WriteLine($"  {x.CaseId}/{x.Item + 1}: first acceptable rank {x.FirstAcceptableRank?.ToString() ?? "-"} of {x.PoolSize}; {x.RankingReason}");
+            o.WriteLine($"  {x.CaseId}/{x.Item + 1}: first acceptable rank {x.FirstAcceptableRank?.ToString() ?? "-"} of {x.PoolSize}; {x.RankingReason}; {x.Outcome}; {(x.FinalRight ? "right" : "wrong")}");
         }
         o.WriteLine();
         var categories = report.SelectMany(s => s.ByCategory.Keys).Distinct().OrderBy(x => x).ToList();

@@ -66,7 +66,11 @@ public record CountedAmount(
 /// <param name="DeciderModel">The decision model that answered for this parse, even where its answer was not used.</param>
 public record MatchTrace(IReadOnlyList<TraceCandidate> Top, bool Asked, int? DeciderPick, decimal? DeciderConfidence, string? DeciderModel = null);
 
-public record RankingInspection(IReadOnlyList<FoodMatch> Pool, string Reason);
+/// <summary>
+/// What the matcher saw for one item, for the benchmark: Rank's whole grouped pool, what the ranking says about its top
+/// food (<paramref name="Reason"/>), and which path chose the row (<paramref name="Outcome"/>).
+/// </summary>
+public record RankingInspection(IReadOnlyList<FoodMatch> Pool, string Reason, string Outcome);
 
 public record TraceCandidate(int Id, string Name, double Score, bool Own);
 
@@ -152,8 +156,9 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             trace?.Add(new MatchTrace(
                 row.Ranked.Take(TraceSize).Select(t => new TraceCandidate(t.Food.Id, t.Food.DisplayName, Math.Round(t.Score, 3), t.Food.Own)).ToList(),
                 row.Shortlist.Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence, decisions?.Model));
-            inspectRanking?.Add(new RankingInspection(row.Ranked.Select(t => t.Food).ToList(), row.RankingReason));
-            result.Add(Choose(row, decision, decisions?.Model));
+            var (chosen, outcome) = Choose(row, decision, decisions?.Model);
+            inspectRanking?.Add(new RankingInspection(row.Ranked.Select(t => t.Food).ToList(), row.RankingReason, outcome));
+            result.Add(chosen);
         }
         await OfferStatesAsync(items, result, ct);
         if (repeat is not null) await UseLastAmountsAsync(items, result, ct);
@@ -240,7 +245,8 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         return new(item, null, ranked, Shortlist(found, Typed(item)));
     }
 
-    private static ConfirmItem Choose(Candidates candidates, MatchDecision? decision, string? model)
+    /// <returns>The row, and which path chose it (reported by the benchmark).</returns>
+    private static (ConfirmItem Row, string Outcome) Choose(Candidates candidates, MatchDecision? decision, string? model)
     {
         var item = candidates.Item;
         var notes = new List<LocalText>();
@@ -251,22 +257,30 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
 
         if (candidates.Usual is { } mine)
         {
-            return Matched(item, mine, Portion(item, mine, notes), Confidence.High, notes, null) with { Usual = true };
+            return (Matched(item, mine, Portion(item, mine, notes), Confidence.High, notes, null) with { Usual = true }, "usual food");
         }
 
         if (decision is { FoodItemId: not null } && decision.Confidence < PickFloor && candidates.Best is not { Score: >= UnsurePickFallbackFloor })
         {
-            return Estimate(item, notes, model);
+            return (Estimate(item, notes, model), "estimate: unsure decider pick, weak ranking");
         }
         if (decision is { FoodItemId: { } id } && decision.Confidence >= PickFloor && candidates.Shortlist.FirstOrDefault(c => c.Id == id) is { } pick)
         {
             var confidence = decision.Confidence >= JevHighConfidence ? Confidence.High : Confidence.Medium;
-            return Matched(item, pick, Portion(item, pick, notes), confidence, notes, model);
+            return (Matched(item, pick, Portion(item, pick, notes), confidence, notes, model), "decider pick");
         }
         if (decision is { FoodItemId: null } && (decision.Confidence >= NoneGate || candidates.Best is not { Score: >= NoneFallbackFloor }))
         {
-            return Estimate(item, notes, model);
+            return (Estimate(item, notes, model), decision.Confidence >= NoneGate ? "estimate: decider none" : "estimate: unsure decider none, weak ranking");
         }
+        var path = decision switch
+        {
+            null when candidates.Shortlist.Count > 0 => "ranking: no decider answer",
+            null => "ranking",
+            { FoodItemId: null } => "ranking: after unsure decider none",
+            { Confidence: < PickFloor } => "ranking: after unsure decider pick",
+            _ => "ranking: decider pick not offered",
+        };
         if (candidates.Best is { } best)
         {
             // "Database" (High) only for a close match whose main food word is one the user wrote; otherwise the
@@ -274,9 +288,9 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             var english = best.Food.NameBg is null || string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase);
             var confidence = best.Score >= HighConfidence && HeadMatches(best.Food, english ? item.NameEn : item.NameOriginal, !english)
                 ? Confidence.High : Confidence.Medium;
-            return Matched(item, best.Food, Portion(item, best.Food, notes), confidence, notes, null);
+            return (Matched(item, best.Food, Portion(item, best.Food, notes), confidence, notes, null), path);
         }
-        return Estimate(item, notes, null);
+        return (Estimate(item, notes, null), "estimate: no candidates");
     }
 
 

@@ -53,6 +53,7 @@ public class MatchBenchmarkTests(PostgresFixture fixture) : IClassFixture<Postgr
             .And.Contain("1 repeat")
             .And.Contain("Selected correctly")
             .And.Contain("Required matches declined 1/2")
-            .And.Contain("missing/1: first acceptable rank - of 0; no candidates");
+            .And.Contain("How rows were chosen")
+            .And.Contain("missing/1: first acceptable rank - of 0; no candidates; estimate: no candidates; wrong");
     }
 }

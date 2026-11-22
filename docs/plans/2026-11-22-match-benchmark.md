@@ -17,4 +17,6 @@ for corpus in cases held-out-families; do
 done
 ```
 
-The development baseline scored 84/107 overall. It made 106 database selections, of which 83 were correct, and declined one of ten absent foods. The family holdout has eight items and is a smoke check. Its six catalogue foods and two absent foods were all correct at baseline.
+The development baseline scored 84/107 overall. It made 106 database selections, of which 83 were correct, and declined one of ten absent foods.
+
+The family holdout has 39 items from families the development file doesn't use: Bulgarian plurals and inflected forms, transliterated Bulgarian, English variants (fat level, flavour), brands and eight absent dishes. It was written after the matcher branches, so neither was tuned on it; keep it that way. Baseline: 33/39, 26 of 30 selections right, 7 of 8 absent foods declined, and 2 of 31 catalogue foods declined because the transliterated "boza" and "lukanka" don't reach the Cyrillic names.
