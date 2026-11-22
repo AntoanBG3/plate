@@ -208,11 +208,19 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
             .Select(e => new { e.Id, e.Meal, e.Date, e.CreatedAt, e.Description, e.FoodItemId, e.Grams, e.Unit, e.Kcal, e.ProteinG, e.CarbsG, e.FatG, e.FiberG, e.SaturatedFatG })
             .ToListAsync(ct);
         var byId = rows.ToDictionary(r => r.Id);
+        // A recipe can be edited, so Recent offers its values now, not the ones its last entry was logged with.
+        var foodIds = rows.Select(r => r.FoodItemId).OfType<int>().Distinct().ToList();
+        var recipes = await db.FoodItems.Where(f => foodIds.Contains(f.Id) && f.Source == FoodSource.Recipe).ToDictionaryAsync(f => f.Id, ct);
 
         return RecentOrder.For(rows.Select(r => new RecentUse(r.Id, r.FoodItemId, r.Description, r.Meal, r.Date, r.CreatedAt, r.Grams)), meal, today)
             .Select(g =>
             {
                 var last = byId[g.LastEntryId];
+                if (last.FoodItemId is { } recipeId && recipes.TryGetValue(recipeId, out var recipe))
+                {
+                    return new RecentFood(last.Description, last.FoodItemId, last.Grams, recipe.Per100(), g.Times);
+                }
+
                 var f = 100m / last.Grams;
                 return new RecentFood(last.Description, last.FoodItemId, last.Grams,
                     new Per100g(Math.Round(last.Kcal * f, 1), Math.Round(last.ProteinG * f, 2), Math.Round(last.CarbsG * f, 2), Math.Round(last.FatG * f, 2),

@@ -186,10 +186,12 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     private async Task OfferStatesAsync(List<ParsedFoodItem> items, List<ConfirmItem> result, CancellationToken ct)
     {
         var found = new Dictionary<(string, FoodState), FoodMatch?>();
+        // A recipe named after a staple ("Ориз с пиле") is a dish, not rice that was weighed cooked or dry.
+        var recipes = await foods.RecipeIdsAsync(result.Select(r => r.FoodItemId).OfType<int>(), ct);
         for (var n = 0; n < result.Count; n++)
         {
             var (item, row) = (items[n], result[n]);
-            if (!item.GramsStated || row.FoodItemId is not { } id || FoodStates.Stated(item.NameOriginal + " " + item.Preparation)
+            if (!item.GramsStated || row.FoodItemId is not { } id || recipes.Contains(id) || FoodStates.Stated(item.NameOriginal + " " + item.Preparation)
                 || (FoodStates.Staple(item.NameEn) ?? FoodStates.Staple(item.NameOriginal)) is not { } staple)
             {
                 continue;

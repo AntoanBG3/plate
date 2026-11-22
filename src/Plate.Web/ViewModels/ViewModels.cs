@@ -188,7 +188,18 @@ public record FoodAddViewModel(
     IReadOnlyList<SavedMeal> SavedMeals,
     bool LabelAvailable = false,
     IReadOnlyDictionary<int, decimal>? LastGrams = null,
-    ManualFoodFormModel? Manual = null);
+    ManualFoodFormModel? Manual = null,
+    IReadOnlyList<Plate.Web.Features.Food.RecipeSummary>? Recipes = null);
+
+/// <summary>The recipe editor (SPEC 7 Food): a new recipe when the draft has no id.</summary>
+public record RecipeEditorModel(DateOnly Date, Meal Meal, Plate.Web.Features.Food.RecipeDraft Draft, Plate.Core.Text.LocalText? Error = null);
+
+/// <summary>One food row on Check foods or in the recipe editor (_ReviewRow).</summary>
+/// <param name="Key">The row's index in the posted list: its position on Check foods, a random key in the recipe editor.</param>
+/// <param name="Rated">The row has its own thumbs down (a recorded parse).</param>
+/// <param name="IndexField">Write items.Index, so rows added and removed in any order still bind.</param>
+/// <param name="Millilitres">The row's food counts in ml (SPEC 4): its amount shows ml.</param>
+public record ReviewRowModel(Plate.Web.Features.Food.ConfirmItem Item, string Key, int Position, bool Rated, bool IndexField = false, bool Millilitres = false);
 
 /// <param name="MillilitreFoods">The rows' foods counted in ml (SPEC 4); their amounts show ml. Read when the page is shown.</param>
 public record ConfirmViewModel(DateOnly Date, Meal Meal, string Text, string? AiModel, IReadOnlyList<Plate.Web.Features.Food.ConfirmItem> Items, Plate.Core.Text.LocalText? Warning, int? ParseRunId = null, Guid RequestId = default,

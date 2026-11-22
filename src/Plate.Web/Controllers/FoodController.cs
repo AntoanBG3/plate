@@ -21,6 +21,7 @@ public class FoodController(
     LabelScanService labels,
     ManualFoodService manualFoods,
     ParseRunService parseRuns,
+    RecipeService recipes,
     NutritionTargets targets,
     ProfileService profiles,
     UserTime userTime,
@@ -77,9 +78,10 @@ public class FoodController(
         var offResults = tab == "search" && off && !string.IsNullOrWhiteSpace(q) ? await foods.SearchOpenFoodFactsAsync(q, ct) : null;
         var recents = tab == "recent" ? await log.RecentsAsync(today, m, ct) : [];
         var saved = tab == "recent" ? await savedMeals.ListAsync(ct) : [];
+        var recipeList = tab == "recent" ? await recipes.ListAsync(ct) : null;
         var labelAvailable = tab is "manual" or "barcode" && await labels.IsAvailableAsync(ct);
         var lastGrams = local.Count > 0 ? await repeat.LastAmountsAsync(local.Select(f => f.Id).ToList(), ct) : null;
-        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved, labelAvailable, lastGrams));
+        return View(new FoodAddViewModel(d, m, tab, null, null, q, local, offResults, recents, saved, labelAvailable, lastGrams, Recipes: recipeList));
     }
 
     [HttpPost("parse")]
@@ -355,6 +357,7 @@ public class FoodController(
                 ViewData["MatchedName"] = Plate.Web.Features.Localization.FoodNames.DisplayName(food);
                 ViewData["FoodState"] = FoodStates.FromName(food.Name, food.NameBg);
                 ViewData["AddedByAnother"] = FoodItemService.AddedByAnother(food, currentUser.UserId);
+                ViewData["RecipeId"] = food.Source == FoodSource.Recipe ? food.Id : null;
             }
         }
 

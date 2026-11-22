@@ -1094,6 +1094,82 @@ namespace Plate.Web.Data.Migrations
                     b.ToTable("ParseRuns");
                 });
 
+            modelBuilder.Entity("Plate.Core.Domain.Recipe", b =>
+                {
+                    b.Property<int>("FoodItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("YieldGrams")
+                        .HasPrecision(7, 1)
+                        .HasColumnType("numeric(7,1)");
+
+                    b.HasKey("FoodItemId");
+
+                    b.ToTable("Recipes");
+                });
+
+            modelBuilder.Entity("Plate.Core.Domain.RecipeIngredient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("CarbsPer100g")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("FatPer100g")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<decimal?>("FiberPer100g")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<int?>("FoodItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Grams")
+                        .HasPrecision(7, 1)
+                        .HasColumnType("numeric(7,1)");
+
+                    b.Property<decimal>("KcalPer100g")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("numeric(7,2)");
+
+                    b.Property<decimal>("ProteinPer100g")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<int>("RecipeFoodItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("SaturatedFatPer100g")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FoodItemId");
+
+                    b.HasIndex("RecipeFoodItemId");
+
+                    b.ToTable("RecipeIngredients");
+                });
+
             modelBuilder.Entity("Plate.Core.Domain.SavedMeal", b =>
                 {
                     b.Property<int>("Id")
@@ -2010,6 +2086,33 @@ namespace Plate.Web.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Plate.Core.Domain.Recipe", b =>
+                {
+                    b.HasOne("Plate.Core.Domain.FoodItem", "FoodItem")
+                        .WithOne()
+                        .HasForeignKey("Plate.Core.Domain.Recipe", "FoodItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FoodItem");
+                });
+
+            modelBuilder.Entity("Plate.Core.Domain.RecipeIngredient", b =>
+                {
+                    b.HasOne("Plate.Core.Domain.FoodItem", null)
+                        .WithMany()
+                        .HasForeignKey("FoodItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Plate.Core.Domain.Recipe", "Recipe")
+                        .WithMany("Ingredients")
+                        .HasForeignKey("RecipeFoodItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Recipe");
+                });
+
             modelBuilder.Entity("Plate.Core.Domain.SavedMeal", b =>
                 {
                     b.HasOne("Plate.Web.Data.AppUser", null)
@@ -2165,6 +2268,11 @@ namespace Plate.Web.Data.Migrations
             modelBuilder.Entity("Plate.Core.Domain.LabelScan", b =>
                 {
                     b.Navigation("Photos");
+                });
+
+            modelBuilder.Entity("Plate.Core.Domain.Recipe", b =>
+                {
+                    b.Navigation("Ingredients");
                 });
 
             modelBuilder.Entity("Plate.Core.Domain.SavedMeal", b =>

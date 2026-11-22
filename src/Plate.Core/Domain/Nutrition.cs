@@ -9,6 +9,9 @@ public enum FoodSource
 
     /// <summary>Bulgarian foods and dishes compiled from public tables (tools/foods), shared.</summary>
     Reference,
+
+    /// <summary>A home dish the user built from its ingredients (SPEC 5.12): always private, never shared or scanned.</summary>
+    Recipe,
 }
 
 /// <summary>What a food's amounts are counted in. Its per-100 values are per 100 of this unit (SPEC 4, 6.6).</summary>
@@ -155,6 +158,44 @@ public class UsualFood
     public string Phrase { get; set; } = "";
     public int FoodItemId { get; set; }
     public DateTimeOffset LastUsedAt { get; set; }
+}
+
+/// <summary>
+/// A home dish built from its ingredients (SPEC 4, 5.12). Its values live on its <see cref="FoodItem"/>, a private
+/// food with <see cref="FoodSource.Recipe"/> that is logged like any other; the food's owner owns the recipe.
+/// Entries keep the totals they were logged with, so editing a recipe changes only later entries.
+/// </summary>
+public class Recipe
+{
+    public int FoodItemId { get; set; }
+    public FoodItem FoodItem { get; set; } = null!;
+
+    /// <summary>The finished dish's weight; null means the ingredients' raw weight is used.</summary>
+    public decimal? YieldGrams { get; set; }
+
+    public DateTimeOffset UpdatedAt { get; set; }
+    public List<RecipeIngredient> Ingredients { get; set; } = [];
+}
+
+/// <summary>One ingredient as weighed into a recipe, with the per-100 g values used then (a snapshot, like a saved meal item).</summary>
+public class RecipeIngredient
+{
+    public int Id { get; set; }
+    public int RecipeFoodItemId { get; set; }
+    public Recipe Recipe { get; set; } = null!;
+    public int SortOrder { get; set; }
+    public string Description { get; set; } = "";
+    public decimal Grams { get; set; }
+
+    /// <summary>The database food it was; null for a model's estimate, or once that food is deleted.</summary>
+    public int? FoodItemId { get; set; }
+
+    public decimal KcalPer100g { get; set; }
+    public decimal ProteinPer100g { get; set; }
+    public decimal CarbsPer100g { get; set; }
+    public decimal FatPer100g { get; set; }
+    public decimal? FiberPer100g { get; set; }
+    public decimal? SaturatedFatPer100g { get; set; }
 }
 
 /// <summary>A named group of foods logged together often, copied from a logged meal.</summary>

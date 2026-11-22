@@ -80,6 +80,7 @@ builder.Services.AddScoped<FoodMatcher>();
 builder.Services.AddScoped<RepeatLoggingService>();
 builder.Services.AddScoped<FoodLogService>();
 builder.Services.AddScoped<SavedMealService>();
+builder.Services.AddScoped<RecipeService>();
 builder.Services.AddScoped<Plate.Web.Features.Feedback.ParseRunService>();
 builder.Services.AddScoped<Plate.Web.Features.Feedback.FeedbackService>();
 builder.Services.AddScoped<Plate.Web.Features.Feedback.FeedbackSnapshots>();

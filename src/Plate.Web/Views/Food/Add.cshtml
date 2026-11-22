@@ -201,8 +201,33 @@
                     }
                 </div>
             </section>
-            <h2 class="section-header" style="margin-top: var(--s-6)">@L["Recent"]</h2>
         }
+        @* Recipes (SPEC 5.12): logged by weight like any food, edited on their own page. *@
+        <section class="section" style="margin-top: @(Model.SavedMeals.Count > 0 ? "var(--s-6)" : "0")" data-recipes>
+            <h2 class="section-header">@L["Recipes"]</h2>
+            <div class="list">
+                @foreach (var r in Model.Recipes ?? [])
+                {
+                    <form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/log-item" class="portion" data-per100="@r.Per100.Kcal.Kg(),@r.Per100.Protein.Kg()">
+                        <input type="hidden" name="date" value="@date" />
+                        <input type="hidden" name="meal" value="@Model.Meal" />
+                        <input type="hidden" name="foodItemId" value="@r.Id" />
+                        <input type="hidden" name="source" value="Recent" />
+                        <div class="row-title headline">@r.Name <a class="footnote" href="/food/recipes/@r.Id?date=@date&amp;meal=@Model.Meal" style="margin-left: var(--s-2)">@L["Edit"]</a></div>
+                        <div class="row-sub">@L["{0} kcal, {1} g protein per 100 g", Math.Round(r.Per100.Kcal), r.Per100.Protein.Kg(1)] · @L.Count(r.Ingredients, "1 ingredient", "{0} ingredients")</div>
+                        <div class="portion-line">
+                            <label class="grams"><input type="text" name="grams" value="300" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" aria-label="@L["Grams"]" required /><span class="footnote">@L["g"]</span></label>
+                            <span class="footnote num" data-totals>@L["{0} kcal · {1} g protein", Math.Round(r.Per100.Kcal * 3), (r.Per100.Protein * 3).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)]</span>
+                            <button type="submit" class="btn btn-tinted btn-small">@L["Add"]</button>
+                        </div>
+                    </form>
+                }
+                <a class="row row-link" href="/food/recipes/new?date=@date&amp;meal=@Model.Meal" style="color: var(--accent-text)">
+                    @Ui.Icon("plus", "icon-sm")<span class="row-main">@L["New recipe"]</span>
+                </a>
+            </div>
+        </section>
+        <h2 class="section-header" style="margin-top: var(--s-6)">@L["Recent"]</h2>
         @if (Model.Recents.Count == 0)
         {
             <div class="card empty">

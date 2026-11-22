@@ -1,0 +1,7 @@
+@model IReadOnlyList<Plate.Web.Features.Food.ConfirmItem>
+@* Ingredient rows added to the recipe editor; each gets its own key, so rows bind in any order (items.Index). *@
+@for (var i = 0; i < Model.Count; i++)
+{
+    var key = Guid.NewGuid().ToString("N")[..8];
+    <partial name="~/Views/Food/_ReviewRow.cshtml" model="new ReviewRowModel(Model[i], key, i, Rated: false, IndexField: true)" />
+}

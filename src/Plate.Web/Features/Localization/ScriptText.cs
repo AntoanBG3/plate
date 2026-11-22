@@ -9,6 +9,7 @@ public static class ScriptText
     public static readonly string[] Keys =
     [
         // site.js
+        "{0} kcal and {1} g protein per 100 g, {2} kcal in all",
         "Something went wrong ({0}). Try again.",
         "Couldn't load the page. That change may have been saved. Check before trying again.",
         "{0} kcal · {1} g protein",

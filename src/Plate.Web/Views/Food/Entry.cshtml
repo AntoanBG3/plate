@@ -34,6 +34,14 @@
             <span class="row-main">@L["Added by another user"]</span>
         </div>
     }
+    @if (ViewData["RecipeId"] is int recipeId)
+    {
+        @* Editing the recipe changes later entries, not this one (SPEC 5.12). *@
+        <a class="row row-link" href="/food/recipes/@recipeId?date=@Model.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)&amp;meal=@Model.Meal">
+            <span class="row-main">@L["Edit recipe"]</span>
+            @Ui.Icon("chevron", "row-chevron")
+        </a>
+    }
 </div></div>
 
 @if (Model.Source != EntrySource.Quick)

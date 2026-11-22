@@ -584,6 +584,68 @@
         } catch {}
     });
 
+    // The recipe editor (SPEC 7 Food): its rows are Check foods rows, so Change food and the cooked-or-dry choice work
+    // as there. Here: the dish's values per 100 g as the rows and the cooked weight change, the typed ingredients
+    // cleared once they are rows, and Enter in the food search searching rather than saving the recipe.
+    window.gymModule("recipe-editor", (form) => {
+        const rows = form.querySelector("#recipe-rows");
+        const summary = form.querySelector("[data-recipe-summary]");
+        const empty = form.querySelector("[data-recipe-empty]");
+        const number = (value) => Number(String(value || "").replace(",", "."));
+        function update() {
+            let grams = 0;
+            let kcal = 0;
+            let protein = 0;
+            rows.querySelectorAll(".result").forEach((row) => {
+                if (!row.querySelector('input[name$=".Include"]').checked) return;
+                const g = number(row.querySelector('input[name$=".Grams"]').value);
+                const [k, p] = (row.dataset.per100 || "0,0").split(",").map(Number);
+                if (!(g > 0)) return;
+                grams += g;
+                kcal += k * g / 100;
+                protein += p * g / 100;
+            });
+            empty.hidden = rows.querySelector(".result") !== null;
+            const cooked = number(form.elements.yieldGrams.value);
+            const weight = cooked > 0 ? cooked : grams;
+            summary.textContent = weight > 0
+                ? t("{0} kcal and {1} g protein per 100 g, {2} kcal in all", String(Math.round(kcal * 100 / weight)), (protein * 100 / weight).toFixed(1), String(Math.round(kcal)))
+                : "";
+        }
+        const onInput = () => update();
+        const onSwap = (event) => {
+            if (event.detail.target === rows) {
+                const elt = event.detail.requestConfig?.elt;
+                if (elt?.matches("[data-recipe-parse]")) form.elements.text.value = "";
+                // A food picked from the search is now a row: the search is done.
+                if (elt?.matches("[data-recipe-add]")) {
+                    form.elements.q.value = "";
+                    form.querySelector("#recipe-search-results").replaceChildren();
+                }
+                update();
+            }
+        };
+        const onKey = (event) => {
+            if (event.key === "Enter" && event.target.matches('input[name="q"]')) {
+                event.preventDefault();
+                window.htmx?.trigger(event.target, "search");
+            }
+        };
+        form.addEventListener("input", onInput);
+        form.addEventListener("change", onInput);
+        form.addEventListener("keydown", onKey);
+        // Another food from the Change food sheet (outside the form) or the other state changes a row's values without
+        // an input event.
+        const onClick = () => setTimeout(update);
+        document.addEventListener("click", onClick);
+        document.addEventListener("htmx:afterSwap", onSwap);
+        update();
+        return () => {
+            document.removeEventListener("click", onClick);
+            document.removeEventListener("htmx:afterSwap", onSwap);
+        };
+    });
+
     // Native Back can restore an old document without asking the server whether this review was saved.
     window.addEventListener("pageshow", event => {
         if (event.persisted && document.querySelector('[data-module="food-review"]')) location.reload();
