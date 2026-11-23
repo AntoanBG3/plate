@@ -83,7 +83,10 @@ public class ConfirmSheetTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.Page.Locator("[data-sheet-open='quick-sheet']").First.TapAsync();
         var save = phone.Page.Locator("#quick-sheet button[type=submit]");
         await save.WaitForAsync();
-        await phone.Page.WaitForFunctionAsync("() => document.querySelector('#quick-sheet').contains(document.activeElement)");
+        // htmx focuses the form's autofocus field when the swap settles, 20 ms after the content appears. Moving focus
+        // before then lost it to that field on CI; the empty panel already holds focus as the sheet opens, so "focus is
+        // in the sheet" was true too early.
+        await phone.Page.WaitForFunctionAsync("() => document.activeElement?.id === 'quick-kcal'");
         await save.FocusAsync();
         await phone.Page.Keyboard.PressAsync("Tab");
         (await phone.Page.EvaluateAsync<bool>("() => document.activeElement.matches('#quick-sheet [data-sheet-close]')")).Should().BeTrue();
