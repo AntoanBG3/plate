@@ -93,6 +93,9 @@ body.no-tabs .page { padding-bottom: calc(env(safe-area-inset-bottom) + var(--s-
 /* Until the title shows, it takes no room, so the back label isn't cut short beside an invisible title ("‹ Настрой…"
    under "Вход и сигурност"); once the large title scrolls away, the label gives way to it, as on iOS. */
 .topbar:not(.is-compact):not(.always-title) .topbar-title { max-width: 0; }
+/* Nor does the label need to leave the trailing side half the bar while there is no title to centre: it takes all the
+   room the trailing actions don't ("‹ Започни отначало" was cut short at 390 px in a wider font). */
+.topbar:not(.is-compact):not(.always-title) { grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, max-content); }
 .topbar-leading { justify-self: start; display: flex; min-width: 0; max-width: 100%; }
 .topbar-trailing { justify-self: end; display: flex; align-items: center; gap: var(--s-1); }
 .topbar-back {
