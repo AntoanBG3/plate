@@ -40,4 +40,13 @@ demo-password-123
 EOF
 python3 tools/perf/generate.py --days "$days" > /private/tmp/plate-perf-seed.sql
 docker exec -i plate-perf-db psql -U gym -d gym_perf -v ON_ERROR_STOP=1 < /private/tmp/plate-perf-seed.sql
+# Fresh statistics, as production has: without them the planner scans every food for a search the trigram index
+# answers in a fifth of the time, and autovacuum may only analyze later, in the middle of a measurement.
+docker exec plate-perf-db psql -U gym -d gym_perf -v ON_ERROR_STOP=1 -c 'ANALYZE'
+# The database must have no CPU cap, like production's. A capped one made five concurrent searches ten times slower
+# than one in the 2026-11-05 audit (docs/perf/2026-11-23-c5-slowdown.md).
+if [ "$(docker inspect plate-perf-db --format '{{.HostConfig.NanoCpus}}')" != 0 ]; then
+    echo "plate-perf-db has a CPU cap; production's database has none, so timings would mislead. Recreate it without one." >&2
+    exit 1
+fi
 bash tools/perf/serve.sh
