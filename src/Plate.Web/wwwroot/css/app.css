@@ -251,7 +251,10 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .check-input:checked::after { transform: translateY(-1px) rotate(45deg) scale(1); opacity: 1; }
 
 /* Segmented control. When the same page comes back with another segment selected, the thumb glides to it. */
-.segmented { display: flex; padding: 2px; border-radius: 9px; background: var(--fill); gap: 2px; }
+/* Segments share the width, and a label may take two lines. A single word that can't fit its share pushes the last
+   segment onto a line of its own instead of out of the control ("Качване на маса" was cut off at 320 px in a wider
+   font, beside "Отслабване" and "Поддържане"). */
+.segmented { display: flex; flex-wrap: wrap; padding: 2px; border-radius: 9px; background: var(--fill); gap: 2px; }
 .segment {
     position: relative; flex: 1; min-height: 40px; display: grid; place-items: center; padding: 0 var(--s-2);
     border-radius: 7px; color: var(--label); font-size: var(--text-footnote); font-weight: var(--weight-semibold); text-align: center; line-height: 1.15;
