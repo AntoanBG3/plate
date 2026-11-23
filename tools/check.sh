@@ -86,7 +86,9 @@ if [ "$run_js" = true ]; then
 fi
 for project in "$@"; do
     dotnet restore "$project"
-    dotnet build "$project" --configuration Release --no-restore
+    # Compiler and analyzer warnings fail the checks; NuGet's audit warnings (NU1901-NU1904) don't, so an advisory
+    # published for a package doesn't block an unrelated deploy. GitHub's dependency check reports those.
+    dotnet build "$project" --configuration Release --no-restore -warnaserror -warnnotaserror:NU1901,NU1902,NU1903,NU1904
     if [ "$install_browser_deps" = true ] && [ "$project" = tests/Plate.E2E.Tests ]; then
         pwsh tests/Plate.E2E.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium webkit
     fi
