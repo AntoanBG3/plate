@@ -44,6 +44,10 @@ ssh wizard "cd ~/docker/plate && APP_VERSION=$VERSION docker compose -f docker/d
 for _ in $(seq 60); do
     if curl -fsS --max-time 10 https://plate.peychev.uk/account/login 2>/dev/null | grep -q "data-version=\"$VERSION\""; then
         echo "plate.peychev.uk is serving $VERSION. Pre-deploy dump: ~/$DUMP on wizard."
+        # Older pre-deploy dumps move to ~/predeploy-dumps-archive (P13); the deploy has worked, so a failure here
+        # is only reported.
+        ssh wizard "bash ~/docker/plate/tools/prune-predeploy-dumps.sh --apply" \
+            || echo "Moving old pre-deploy dumps failed; run tools/prune-predeploy-dumps.sh on wizard to see why." >&2
         exit 0
     fi
     sleep 5

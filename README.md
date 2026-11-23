@@ -247,6 +247,13 @@ tools/deploy.sh
 
 It dumps the live database to `~/plate-pre-<commit>-<time>.dump` on wizard, runs the rsync above, builds on wizard with `APP_VERSION` set to the commit (feedback reports and errors record it), and waits until `plate.peychev.uk` serves that commit. Building on wizard directly works too; the version then shows as `unknown`.
 
+Once the new version is served it runs `tools/prune-predeploy-dumps.sh --apply` on wizard, which keeps the newest 5 pre-deploy dumps and every one from the last 30 days, and moves older ones (`plate-pre-*.dump` and the earlier `gymtracker-pre-*.dump`, directly in `~`) into `~/predeploy-dumps-archive`. It moves nothing if the newest dump doesn't read with `pg_restore --list`, never overwrites an archived file, and never deletes. Run it without `--apply` to see what it would move. The nightly backups keep their own 14 days. Emptying the archive is your call, after checking what's in it:
+
+```sh
+ssh wizard 'ls -la ~/predeploy-dumps-archive'
+ssh wizard 'rm ~/predeploy-dumps-archive/*.dump'
+```
+
 To measure how long the site is unavailable during a deploy (P17 in `docs/plans/2026-11-05-performance-plan.md`), start the probe in a second terminal first and stop it with Ctrl-C once the deploy has finished:
 
 ```sh
