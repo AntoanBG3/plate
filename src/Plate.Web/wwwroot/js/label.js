@@ -1,6 +1,7 @@
 // Label photos for the manual food form (SPEC 6.6): shrink the photos on the phone, look for a barcode in them, send
-// them to /food/label and swap in the form the server filled. One photo reads at once; with the extra slots open, up to
-// three are read together when the user asks. Only the latest read's answer is used; nothing is saved until the form is.
+// them to /food/label and swap in the form the server filled. One photo reads at once; the filled form offers extra slots
+// holding the photos just read, and up to three are read together when the user asks. Only the latest read's answer is
+// used; nothing is saved until the form is.
 window.gymModule("label", (root) => {
     "use strict";
 
@@ -10,7 +11,8 @@ window.gymModule("label", (root) => {
     let detector = null;
     const SHRINK = { maxSide: 2000, quality: 0.85, maxBytes: 2 * 1024 * 1024, steps: [[2000, 0.7], [1600, 0.7], [1200, 0.6]] };
 
-    // Photos picked into the extra slots, by panel (the Scan tab and the form that opens under it each have one).
+    // Photos in the extra slots, by panel. Each is { blob, width, height, url }, plus read: true for one the panel's form
+    // was filled from, so Read waits for a new photo.
     const picks = new WeakMap();
 
     function pickedIn(panel) {
@@ -47,19 +49,23 @@ window.gymModule("label", (root) => {
             slot.querySelector("[data-label-slot-photo]").disabled = reading;
         });
         panel.querySelector("[data-label-less]").disabled = reading;
-        panel.querySelector("[data-label-read]").disabled = reading || !navigator.onLine || !list.some(Boolean);
+        panel.querySelector("[data-label-read]").disabled = reading || !navigator.onLine || !list.some((shot) => shot && !shot.read);
     }
 
     function drawPanels() {
         root.querySelectorAll("[data-label-panel]").forEach(drawPanel);
     }
 
+    // Closing drops the photos picked since the form was filled and keeps the ones it was filled from. The list is
+    // replaced, so a photo still shrinking for the old one is dropped too (pickInto).
     function setMore(scope, open) {
         scope.classList.toggle("is-more", open);
         scope.querySelector("[data-label-more]").setAttribute("aria-expanded", String(open));
         const panel = scope.querySelector("[data-label-panel]");
         if (!open) {
-            forget(panel);
+            const list = pickedIn(panel);
+            list.forEach((shot) => shot && !shot.read && URL.revokeObjectURL(shot.url));
+            picks.set(panel, list.map((shot) => shot && shot.read ? shot : null));
         }
         drawPanel(panel);
     }
@@ -111,6 +117,15 @@ window.gymModule("label", (root) => {
         } catch {
             return null;
         }
+    }
+
+    // What the user typed in a field. A value an earlier read filled in and nobody changed is left out, so a read with
+    // more photos can replace it (a name from the front of the pack beats the one the table gave).
+    function typed(input) {
+        if (!input || (input.dataset.fromLabel === "true" && input.value === input.defaultValue)) {
+            return "";
+        }
+        return input.value.trim();
     }
 
     function toast(text) {
@@ -167,7 +182,7 @@ window.gymModule("label", (root) => {
             });
             data.set("date", form ? form.elements.date.value : slot.dataset.date);
             data.set("meal", form ? form.elements.meal.value : slot.dataset.meal);
-            const typedName = form ? form.elements.name.value.trim() : "";
+            const typedName = typed(form && form.elements.name);
             if (typedName) {
                 data.set("name", typedName);
             }
@@ -176,7 +191,7 @@ window.gymModule("label", (root) => {
             data.set("barcodeField", String(barcodeField));
             // Amounts typed before the photo stay; the label's serving only fills an empty "You ate".
             for (const field of ["grams", "servingGrams"]) {
-                const value = form && form.elements[field] ? form.elements[field].value.trim() : "";
+                const value = typed(form && form.elements[field]);
                 if (value) {
                     data.set(field, value.replace(",", "."));
                 }
@@ -230,10 +245,14 @@ window.gymModule("label", (root) => {
             } else {
                 host.replaceWith(placed);
             }
-            // A read from the slots closes them: on the manual form they went with the old form; on the Scan tab they stay above.
-            const scope = trigger.closest("[data-label-photos]");
-            if (scope && trigger.matches("[data-label-read]")) {
-                setMore(scope, false);
+            // The new form's slots start with the photos it was filled from, so "Add more photos" adds to them.
+            const panel = placed.querySelector("[data-label-panel]");
+            if (panel) {
+                const list = pickedIn(panel);
+                shots.slice(0, list.length).forEach((shot, i) => {
+                    list[i] = { blob: shot.blob, width: shot.width, height: shot.height, url: URL.createObjectURL(shot.blob), read: true };
+                });
+                drawPanel(panel);
             }
             // The barcode, typed or found in the photo, may already be a food (SPEC 7); scanner.js offers it again in the
             // new form, unless the user already said this code is a different food.

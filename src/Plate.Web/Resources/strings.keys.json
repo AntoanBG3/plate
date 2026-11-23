@@ -461,6 +461,7 @@
   ],
   "Cancel": [
     "src/Plate.Web/Views/Food/_ChangeFoodSheet.cshtml",
+    "src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml",
     "src/Plate.Web/Views/Food/_QuickAddForm.cshtml",
     "src/Plate.Web/Views/Food/_SaveMealForm.cshtml",
     "src/Plate.Web/Views/Food/_SavedMeal.cshtml",
@@ -2699,9 +2700,6 @@
   ],
   "Upright row": [
     "exercise"
-  ],
-  "Use one photo": [
-    "src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml"
   ],
   "Use the form instead": [
     "src/Plate.Web/Views/Onboarding/Index.cshtml"
