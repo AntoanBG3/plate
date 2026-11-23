@@ -4,6 +4,20 @@ Review plan only. Baseline `462ef118827b00839941eab87cceb2a106c93065`, branch `p
 
 The priority is reliable set logging and avoiding duplicate food or a misleading recovery result, followed by the measured food-search bottleneck. Keep the stack. Two-year history does not justify an analytics rewrite: local warm Today is 6.8 ms HTTP median, Progress 17.3 ms, and cached barcode 2.1 ms. Search is the exception: 89.6 ms median alone, 912.7 ms at five callers; a three-food parse with the fake parser takes 550.1 ms alone and 6,105.3 ms at five callers. Those are native arm64 local measurements, not wizard or iPhone timings.
 
+## Status — 2026-11-23
+
+Everything below this section is the plan as approved in November; this table is where each item stands now.
+
+| Item | Status |
+|---|---|
+| P1, P2, P3, P4, P6, P7, P11, P14 | Merged and deployed 2026-11-07 (3c2adf6). |
+| P5, P8 | Done by the 2026-11-21 project audit fixes: 239b937 (shortlists skipped for unusable matches) and e1e0549 (batched workout history); deployed as 2959a40. |
+| P9, P10, P12, P17 | Deployed 2026-11-22 as 6b80fdc. P12 was built narrower than planned, a separate library cache instead of a hash manifest ([measurements](../perf/2026-11-22-precache-reuse.md)). P17's probe measured that deploy at 2 s unavailable. |
+| P13 | Built on `changes/p13-dump-retention`: old pre-deploy dumps move to `~/predeploy-dumps-archive` after each deploy. |
+| P15 | Open. |
+| P16 | Restore proven: `tools/restore-drill.sh nightly --app` brought the app back from the nightly snapshot on 2026-11-22. The SMART checks and moving off the failing SSD remain Antoan's. |
+| c5 slowdown | Explained 2026-11-23: a CPU-capped test database, not the app ([write-up](../perf/2026-11-23-c5-slowdown.md)). |
+
 ## Approved review corrections — 2026-11-06
 
 P1 is implemented as eb16cc7 on changes/p1-set-send-deadline and remains unmerged.
