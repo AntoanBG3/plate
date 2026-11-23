@@ -202,7 +202,8 @@ public class VisualTests(E2EFixture app) : IClassFixture<E2EFixture>
         await phone.GoAsync($"/food/add?date={Today}&meal=Dinner&tab=recent");
         await Check(phone, "add-recent");
 
-        problems.Should().BeEmpty();
+        // BeEmpty's message names only the first item, which hid three more problems behind one on CI.
+        problems.Should().BeEmpty("none should be found, and these were: {0}", string.Join(" | ", problems));
     }
 
     [Fact]
