@@ -60,7 +60,9 @@ function drill(options = {}) {
         const result = spawnSync("bash", [path.resolve(__dirname, "../../tools/restore-drill.sh"), ...args], {
             env: { ...process.env, PATH: root + path.delimiter + process.env.PATH,
                 DRILL_CONFIG: JSON.stringify(config), DRILL_TRACE: trace, DRILL_STATE: path.join(root, "state") },
-            encoding: "utf8", timeout: 10000,
+            // Only a guard against a hang. Waiting for an app that never starts makes 60 mocked docker calls, which took
+            // just over 10 s while the whole JS suite ran at once on 2026-11-23.
+            encoding: "utf8", timeout: 30000,
         });
         assert.ifError(result.error);
         const calls = fs.readFileSync(trace, "utf8").trim().split("\n").map(JSON.parse);
