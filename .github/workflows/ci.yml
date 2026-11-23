@@ -2,10 +2,19 @@ name: Checks
 
 on:
   push:
+    # Dependabot's branches run as pull requests; a push run as well would only double the minutes.
+    branches-ignore: ['dependabot/**']
   pull_request:
 
 permissions:
   contents: read
+
+# A newer push to a branch cancels the run for the older one. On main every commit gets a group of its own: deploy.sh
+# reads the run of the exact commit it deploys, and in a shared group GitHub cancels a pending run when a third one
+# arrives, even without cancel-in-progress, which would refuse a commit that never failed.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -20,8 +29,10 @@ jobs:
         include:
           - name: JavaScript, Core and Web
             mode: --ci-core-web
+            artifact: core-web
           - name: Browser (Chromium and WebKit)
             mode: --ci-browser
+            artifact: browser
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -30,6 +41,12 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
+      # No packages.lock.json, so setup-dotnet's own cache can't be used; the project files key it instead.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
       - uses: actions/setup-node@v7
         if: matrix.mode == '--ci-core-web'
         with:
@@ -37,4 +54,31 @@ jobs:
       - name: Build and test
         env:
           CHECK_MODE: ${{ matrix.mode }}
+          CHECK_RESULTS_DIR: ${{ runner.temp }}/test-results
         run: bash tools/check.sh "$CHECK_MODE"
+      # The .trx files name every failed test with its message and output; on the browser job, a test that failed its
+      # retry too leaves a Playwright trace per phone (npx playwright show-trace <zip>). Kept 5 days.
+      - name: Keep the test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.artifact }}
+          path: ${{ runner.temp }}/test-results
+          if-no-files-found: ignore
+          # A failed browser run uploads about 60 MB, against 500 MB of artifact storage on the free plan.
+          retention-days: 5
+
+  # The deploy builds this image on wizard; a Dockerfile that no longer builds (a project it doesn't copy, a base image
+  # digest that's gone) would otherwise surface only there, after the database dump.
+  docker:
+    name: Docker image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Build the image
+        env:
+          APP_VERSION: ${{ github.sha }}
+        run: docker build --file docker/Dockerfile --build-arg APP_VERSION="${APP_VERSION::7}" --tag plate:ci .

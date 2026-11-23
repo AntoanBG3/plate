@@ -102,6 +102,7 @@ internal sealed class StubJev(HttpStatusCode status = HttpStatusCode.OK, string?
     public Uri? SentUri { get; private set; }
     public string? SentKey { get; private set; }
     public JsonNode? SentBody { get; private set; }
+    public bool Cancelled { get; private set; }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
@@ -111,7 +112,15 @@ internal sealed class StubJev(HttpStatusCode status = HttpStatusCode.OK, string?
         SentBody = JsonNode.Parse(await request.Content!.ReadAsStringAsync(ct));
         if (delay is { } d)
         {
-            await Task.Delay(d, ct);
+            try
+            {
+                await Task.Delay(d, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                Cancelled = true;
+                throw;
+            }
         }
 
         return new HttpResponseMessage(status) { Content = new StringContent(body ?? BananaPick, System.Text.Encoding.UTF8, "application/json") };
@@ -157,13 +166,16 @@ public class JevCallTests
     [Fact]
     public async Task A_slow_answer_returns_null_after_the_timeout()
     {
-        var stub = new StubJev(delay: TimeSpan.FromSeconds(2));
+        // The stub would answer after 30 s. The bound on elapsed time is loose on purpose: a shared CI
+        // runner can take over a second for the first HTTP call, and the cancelled stub is the real proof.
+        var stub = new StubJev(delay: TimeSpan.FromSeconds(30));
         var decider = stub.Decider();
         decider.Timeout = TimeSpan.FromMilliseconds(200);
 
         var clock = System.Diagnostics.Stopwatch.StartNew();
         (await decider.DecideAsync("a banana", [Banana], "sk-or-v1-key", JevFoodMatchDecider.Jev113, default)).Should().BeNull();
-        clock.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(1));
+        stub.Cancelled.Should().BeTrue("the decider should give up on the request, not wait for the answer");
+        clock.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(10));
     }
 
     [Theory]

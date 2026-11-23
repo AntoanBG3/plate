@@ -19,6 +19,8 @@ public sealed class HistoryAsOf(AppDbContext db, ICurrentUser currentUser, DateT
     /// <summary>Usual foods unused this long are removed (SPEC 11, retention).</summary>
     public static readonly TimeSpan Retention = TimeSpan.FromDays(180);
 
+    // Assigned rather than captured: the base class captures db as well, and two captures warn (CS9107).
+    private readonly AppDbContext dbContext = db;
     private Dictionary<string, int>? usual;
 
     protected override async Task<Dictionary<string, int>> UsualFoodIdsAsync(IReadOnlyCollection<string> phrases, CancellationToken ct)
@@ -30,7 +32,7 @@ public sealed class HistoryAsOf(AppDbContext db, ICurrentUser currentUser, DateT
     private async Task<Dictionary<string, int>> RebuildAsync(CancellationToken ct)
     {
         var since = asOf - Retention;
-        var runs = await db.ParseRuns.AsNoTracking() // the owner filter keeps this to the account
+        var runs = await dbContext.ParseRuns.AsNoTracking() // the owner filter keeps this to the account
             .Where(r => r.ConfirmedAt != null && r.ConfirmedAt < asOf && r.ConfirmedAt >= since && r.Saved != null)
             .OrderBy(r => r.ConfirmedAt)
             .Select(r => new { r.Parsed, r.Saved })

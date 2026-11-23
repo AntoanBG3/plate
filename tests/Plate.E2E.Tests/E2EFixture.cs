@@ -141,6 +141,10 @@ public sealed class E2EFixture : IAsyncLifetime
             Locale = locale,
             ColorScheme = ColorScheme.Dark,
         });
+        if (Phone.TraceDirectory is not null)
+        {
+            await context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true });
+        }
         var page = await context.NewPageAsync();
         return new Phone(this, browserName, context, page);
     }

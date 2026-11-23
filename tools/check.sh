@@ -30,17 +30,29 @@ case "${1:-}" in
     *) echo "Usage: $0 [--browser-deps | --ci-core-web | --ci-browser]" >&2; exit 2 ;;
 esac
 
+# CHECK_RESULTS_DIR, when set (CI sets it), receives a .trx result file per test run, and on the browser job the
+# Playwright traces of retried tests; CI uploads it when a job fails.
+results_dir=${CHECK_RESULTS_DIR:-}
+
 # Runs a project's tests. On CI's browser job, up to five failed tests are run once more and count as passed if they
 # then pass: on GitHub's runners WebKit now and then misses a tap or a page's load event (a different test on most
 # runs on 2026-11-15, none of them reproducible here). More failures than that are not a flake and fail at once.
-# Locally and in the deploy gate nothing is retried.
+# Locally and in the deploy gate nothing is retried. The retry records a Playwright trace of each test
+# (PLATE_E2E_TRACE_DIR): only there, since tracing every test would slow the whole suite on runners already short of
+# cores.
 run_tests() {
     local project=$1 results filter
     if [ "$retry_failed" != true ]; then
-        dotnet test "$project" --configuration Release --no-build --no-restore ${test_settings:+-- $test_settings}
+        if [ -n "$results_dir" ]; then
+            dotnet test "$project" --configuration Release --no-build --no-restore \
+                --logger "trx;LogFileName=$(basename "$project").trx" --results-directory "$results_dir" \
+                ${test_settings:+-- $test_settings}
+        else
+            dotnet test "$project" --configuration Release --no-build --no-restore ${test_settings:+-- $test_settings}
+        fi
         return
     fi
-    results=$(mktemp -d)
+    results=${results_dir:-$(mktemp -d)}
     if dotnet test "$project" --configuration Release --no-build --no-restore \
         --logger "trx;LogFileName=first.trx" --results-directory "$results" ${test_settings:+-- $test_settings}; then
         return 0
@@ -61,7 +73,9 @@ print("|".join("FullyQualifiedName=" + name for name in failed))
 PY
     ) || { echo "The failed tests can't be retried: none or more than five failed, or there is no result file." >&2; return 1; }
     echo "Retrying once: ${filter//FullyQualifiedName=/}"
-    dotnet test "$project" --configuration Release --no-build --no-restore --filter "$filter" ${test_settings:+-- $test_settings}
+    PLATE_E2E_TRACE_DIR="$results/traces" dotnet test "$project" --configuration Release --no-build --no-restore \
+        --filter "$filter" --logger "trx;LogFileName=retry.trx" --results-directory "$results" \
+        ${test_settings:+-- $test_settings}
 }
 
 # The integration and browser tests start Postgres through Testcontainers; without Docker every one of them fails.
@@ -72,7 +86,9 @@ if [ "$run_js" = true ]; then
 fi
 for project in "$@"; do
     dotnet restore "$project"
-    dotnet build "$project" --configuration Release --no-restore
+    # Compiler and analyzer warnings fail the checks; NuGet's audit warnings (NU1901-NU1904) don't, so an advisory
+    # published for a package doesn't block an unrelated deploy. GitHub's dependency check reports those.
+    dotnet build "$project" --configuration Release --no-restore -warnaserror -warnnotaserror:NU1901,NU1902,NU1903,NU1904
     if [ "$install_browser_deps" = true ] && [ "$project" = tests/Plate.E2E.Tests ]; then
         pwsh tests/Plate.E2E.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium webkit
     fi

@@ -7,7 +7,7 @@ const { spawnSync } = require("node:child_process");
 
 // Runs tools/check.sh with every command stubbed. The first `dotnet test` fails the tests named in `failed` and
 // writes them to the result file it was asked for; a retry (a run with --filter) exits with `retryExit`.
-function check(mode, failed = [], retryExit = 0) {
+function check(mode, failed = [], retryExit = 0, env = {}) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "plate-ci-retry-"));
     const bin = path.join(root, "bin");
     const trace = path.join(root, "trace");
@@ -16,7 +16,7 @@ function check(mode, failed = [], retryExit = 0) {
     fs.copyFileSync(path.resolve(__dirname, "../../tools/check.sh"), path.join(root, "tools/check.sh"));
     const script = `#!/bin/bash
 name=$(basename "$0")
-echo "$name $*" >> "$TRACE"
+echo "$name $*\${PLATE_E2E_TRACE_DIR:+ trace=$PLATE_E2E_TRACE_DIR}" >> "$TRACE"
 [ "$name $1" = "dotnet test" ] || exit 0
 dir=""; filter=""
 while [ $# -gt 0 ]; do
@@ -40,7 +40,8 @@ exit 1
     }
     try {
         const result = spawnSync("/bin/bash", [path.join(root, "tools/check.sh"), mode], {
-            env: { ...process.env, PATH: bin + path.delimiter + process.env.PATH, TRACE: trace, FAILED: failed.join(","), RETRY_EXIT: String(retryExit) },
+            // CI's own CHECK_RESULTS_DIR (and a trace directory) must not leak in; a test passes them in `env`.
+            env: { ...process.env, CHECK_RESULTS_DIR: "", PLATE_E2E_TRACE_DIR: "", PATH: bin + path.delimiter + process.env.PATH, TRACE: trace, FAILED: failed.join(","), RETRY_EXIT: String(retryExit), ...env },
             // Only a guard against a hang (see deploy-gate.test.cjs).
             encoding: "utf8", timeout: 30000,
         });
@@ -84,4 +85,25 @@ test("nothing is retried outside the CI browser job", () => {
         assert.equal(result.runs.length, 1, mode);
         assert.equal(result.runs.some((c) => c.includes("--filter") || c.includes("--logger")), false, mode);
     }
+});
+
+test("only the retry records Playwright traces, next to its results", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "plate-ci-results-"));
+    try {
+        const result = check("--ci-browser", ["Ns.Flaky.Loads"], 0, { CHECK_RESULTS_DIR: dir });
+        assert.equal(result.status, 0);
+        assert.equal(result.runs[0].includes("trace="), false);
+        assert.ok(result.runs[0].includes(`--results-directory ${dir}`));
+        assert.ok(result.runs[1].includes(`trace=${dir}/traces`));
+        assert.ok(result.runs[1].includes("LogFileName=retry.trx"));
+    } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test("with CHECK_RESULTS_DIR set, every test run writes a result file there", () => {
+    const result = check("--ci-core-web", [], 0, { CHECK_RESULTS_DIR: "/ci/results" });
+    assert.equal(result.status, 0);
+    assert.deepEqual(result.runs.map((c) => /LogFileName=([^ ]+)/.exec(c)?.[1]), ["Plate.Core.Tests.trx", "Plate.Web.Tests.trx"]);
+    assert.ok(result.runs.every((c) => c.includes("--results-directory /ci/results")));
 });
