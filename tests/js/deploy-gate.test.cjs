@@ -5,7 +5,10 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
-function deploy(fail = "", dryRun = false, changeCheckout = false, failMatch = "") {
+// `ci` sets what the stubbed gh reports: `head` is the CI run of the deployed commit ("success", "failure",
+// "in_progress", or "" for an unpushed commit), `last` the latest finished run on main, `watch` the exit of gh run watch,
+// `args` extra deploy.sh arguments.
+function deploy(fail = "", dryRun = false, changeCheckout = false, failMatch = "", ci = {}) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "gym-deploy-gate-"));
     const bin = path.join(root, "bin");
     const trace = path.join(root, "trace");
@@ -30,15 +33,37 @@ if [ -n "$FAIL_MATCH" ] && case "$name $*" in *"$FAIL_MATCH"*) true ;; *) false 
     for (const name of ["git", "docker", "node", "dotnet", "ssh", "rsync", "curl"]) {
         fs.writeFileSync(path.join(bin, name), script, { mode: 0o755 });
     }
+    const gh = `#!/bin/bash
+echo "gh $*" >> "$TRACE"
+case "$1 $2" in
+  "run list")
+    case " $* " in
+      *" --commit "*)
+        case "$GH_HEAD" in
+          "") ;;
+          in_progress) echo "7 in_progress https://ci/7 " ;;
+          *) echo "7 completed https://ci/7 $GH_HEAD" ;;
+        esac ;;
+      *) [ -z "$GH_LAST" ] || echo "$GH_LAST 0123456789abcdef https://ci/6" ;;
+    esac ;;
+  "run watch") exit "$GH_WATCH" ;;
+esac
+`;
+    fs.writeFileSync(path.join(bin, "gh"), gh, { mode: 0o755 });
     try {
-        const result = spawnSync("/bin/bash", [path.join(root, "tools/deploy.sh"), ...(dryRun ? ["--dry-run"] : [])], {
-            env: { ...process.env, PATH: bin + path.delimiter + process.env.PATH, TRACE: trace, FAIL_STAGE: fail, FAIL_MATCH: failMatch, CHANGE_CHECKOUT: changeCheckout ? "1" : "0" },
+        const args = [...(dryRun ? ["--dry-run"] : []), ...(ci.args ?? [])];
+        const result = spawnSync("/bin/bash", [path.join(root, "tools/deploy.sh"), ...args], {
+            env: {
+                ...process.env, PATH: bin + path.delimiter + process.env.PATH, TRACE: trace, FAIL_STAGE: fail, FAIL_MATCH: failMatch,
+                CHANGE_CHECKOUT: changeCheckout ? "1" : "0",
+                GH_HEAD: ci.head ?? "success", GH_LAST: ci.last ?? "success", GH_WATCH: String(ci.watch ?? 0),
+            },
             // Only a guard against a hang. macOS checks each freshly written stub on its first run, which took
             // up to 5 s for a whole script on a busy Mac and failed the gate on 2026-11-15.
             encoding: "utf8", timeout: 30000,
         });
         assert.ifError(result.error);
-        return { status: result.status, calls: fs.readFileSync(trace, "utf8").trim().split("\n") };
+        return { status: result.status, calls: fs.existsSync(trace) ? fs.readFileSync(trace, "utf8").trim().split("\n") : [], stderr: result.stderr };
     } finally {
         fs.rmSync(root, { recursive: true, force: true });
     }
@@ -83,6 +108,64 @@ test("changes made while checks run block deployment of an untested checkout", (
 test("a dry run only previews the copy and skips builds and remote mutations", () => {
     const result = deploy("", true);
     assert.equal(result.status, 0);
-    assert.equal(result.calls.some((c) => /^(docker|dotnet|node|ssh) /.test(c)), false);
+    assert.equal(result.calls.some((c) => /^(docker|dotnet|node|ssh|gh) /.test(c)), false);
     assert.ok(result.calls.some((c) => c.startsWith("rsync ") && c.includes("--dry-run")));
+});
+
+const remote = (result) => result.calls.some((c) => /^(ssh|rsync|curl) /.test(c));
+
+test("a failed CI run for the commit blocks the deploy before the local checks", () => {
+    const result = deploy("", false, false, "", { head: "failure" });
+    assert.equal(result.status, 1);
+    assert.equal(remote(result), false);
+    assert.equal(result.calls.some((c) => c.startsWith("dotnet ")), false, "it fails before the slow checks");
+    assert.match(result.stderr, /CI ended in failure/);
+});
+
+test("a cancelled CI run for the commit blocks the deploy", () => {
+    const result = deploy("", false, false, "", { head: "cancelled" });
+    assert.equal(result.status, 1);
+    assert.equal(remote(result), false);
+});
+
+test("a CI run still going is waited for after the local checks, and its failure blocks the deploy", () => {
+    const result = deploy("", false, false, "", { head: "in_progress", watch: 1 });
+    assert.equal(result.status, 1);
+    assert.equal(remote(result), false);
+    const tests = result.calls.findIndex((c) => c.startsWith("dotnet test "));
+    const watch = result.calls.findIndex((c) => c.startsWith("gh run watch 7 "));
+    assert.ok(tests >= 0 && watch > tests);
+});
+
+test("a CI run still going that then passes lets the deploy go on", () => {
+    const result = deploy("", false, false, "", { head: "in_progress" });
+    assert.equal(result.status, 0);
+    assert.ok(result.calls.some((c) => c.startsWith("gh run watch 7 ")));
+    assert.ok(remote(result));
+});
+
+test("an unpushed commit deploys when the latest CI run on main passed", () => {
+    const result = deploy("", false, false, "", { head: "", last: "success" });
+    assert.equal(result.status, 0);
+    assert.ok(remote(result));
+});
+
+test("an unpushed commit doesn't deploy while CI on main is red", () => {
+    const result = deploy("", false, false, "", { head: "", last: "failure" });
+    assert.equal(result.status, 1);
+    assert.equal(remote(result), false);
+    assert.match(result.stderr, /CI on main last ended in failure/);
+});
+
+test("--skip-ci deploys without asking GitHub", () => {
+    const result = deploy("", false, false, "", { head: "failure", args: ["--skip-ci"] });
+    assert.equal(result.status, 0);
+    assert.equal(result.calls.some((c) => c.startsWith("gh ")), false);
+    assert.ok(remote(result));
+});
+
+test("an unknown argument deploys nothing", () => {
+    const result = deploy("", false, false, "", { args: ["--force"] });
+    assert.equal(result.status, 2);
+    assert.equal(remote(result), false);
 });
