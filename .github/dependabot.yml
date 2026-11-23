@@ -11,6 +11,11 @@ updates:
       nuget:
         patterns: ['*']
     open-pull-requests-limit: 3
+    ignore:
+      # 8.0 moved from Apache 2.0 to Xceed's licence, free only for non-commercial use; 7.x does everything the
+      # tests need.
+      - dependency-name: FluentAssertions
+        versions: ['>= 8']
 
   - package-ecosystem: github-actions
     directory: /
@@ -29,3 +34,8 @@ updates:
     groups:
       images:
         patterns: ['*']
+    ignore:
+      # Dependabot reads the 10.0 tag as a version and offered sdk:11.0, while global.json, CI and the runtime image
+      # stay on .NET 10 (LTS). Moving to a new .NET is its own change.
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']
