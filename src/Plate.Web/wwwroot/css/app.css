@@ -210,10 +210,11 @@ a.section-aside { color: var(--accent-text) !important; }
 .btn-plain { background: none; color: var(--accent-text); padding: 0 var(--s-2); min-height: var(--tap); }
 .btn-destructive { background: var(--fill); color: var(--destructive); }
 .btn-small { min-height: var(--tap); padding: 0 var(--s-4); font-size: var(--text-subhead); }
-/* Full width, so the label is centred anyway and the side padding only decides when it wraps: 16 px instead of 20
-   keeps "Search Open Food Facts" on one line at 320 px in a wider font (it wrapped and sat 13 px off centre). */
+/* Full width, so the label is centred anyway and the side padding only decides when it wraps: 12 px instead of 20
+   keeps "Search Open Food Facts" and "Търси в Open Food Facts" on one line at 320 px in a wider font (they wrapped
+   and sat 13 px off centre). */
 .btn-block { display: flex; width: 100%; }
-.btn-block:not(.btn-plain) { padding-inline: var(--s-4); }
+.btn-block:not(.btn-plain) { padding-inline: var(--s-3); }
 .btn .icon { width: 20px; height: 20px; }
 .btn:disabled { opacity: 0.4; }
 .btn-row { display: flex; gap: var(--s-3); }
