@@ -2,10 +2,18 @@ name: Checks
 
 on:
   push:
+    # Dependabot's branches run as pull requests; a push run as well would only double the minutes.
+    branches-ignore: ['dependabot/**']
   pull_request:
 
 permissions:
   contents: read
+
+# A newer push to a branch cancels the run for the older one. Not on main: deploy.sh reads the run of the exact commit
+# it deploys, and a cancelled run there would refuse a commit that never failed.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   test:
@@ -32,6 +40,12 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
+      # No packages.lock.json, so setup-dotnet's own cache can't be used; the project files key it instead.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
       - uses: actions/setup-node@v7
         if: matrix.mode == '--ci-core-web'
         with:
