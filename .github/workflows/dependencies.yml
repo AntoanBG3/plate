@@ -1,0 +1,43 @@
+name: Dependencies
+
+# Kept apart from Checks (ci.yml), which deploy.sh's CI gate reads: an advisory published for a package says nothing
+# about the commit being deployed and shouldn't block it. A weekly run reports advisories published since the last
+# push; GitHub emails a failed scheduled run to the repository owner.
+on:
+  push:
+    branches: [main]
+    paths: ['**/*.csproj', 'dotnet-tools.json', 'global.json', '.github/workflows/dependencies.yml']
+  pull_request:
+    paths: ['**/*.csproj', 'dotnet-tools.json', 'global.json', '.github/workflows/dependencies.yml']
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vulnerable:
+    name: Vulnerable NuGet packages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: List vulnerable packages, direct and transitive
+        run: |
+          dotnet restore Plate.slnx
+          dotnet list Plate.slnx package --vulnerable --include-transitive --format json > "$RUNNER_TEMP/vulnerable.json"
+          # dotnet list exits 0 whether or not it finds anything; a project with findings has a "frameworks" list.
+          if jq -e '[.projects[] | select(.frameworks)] | length > 0' "$RUNNER_TEMP/vulnerable.json" > /dev/null; then
+            jq -r '.projects[] | select(.frameworks) | (.path | split("/") | last) as $p | .frameworks[]
+              | ((.topLevelPackages // []) + (.transitivePackages // []))[]
+              | "\($p): \(.id) \(.resolvedVersion) (\([.vulnerabilities[].severity] | unique | join(", ")))"' \
+              "$RUNNER_TEMP/vulnerable.json" | sort -u
+            exit 1
+          fi
+          echo "No known vulnerable packages."

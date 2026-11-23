@@ -1,0 +1,31 @@
+# Monthly update PRs, one per ecosystem, each run through CI like any other PR. Front-end libraries are pinned copies
+# in wwwroot/lib (no package manager) and stay manual; see AGENTS.md for bumping LIB in sw.js when they change.
+version: 2
+updates:
+  # Every project through Plate.slnx, plus dotnet-ef in dotnet-tools.json.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      nuget:
+        patterns: ['*']
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+
+  # The SDK and runtime images are pinned by digest; this refreshes the digests, which README's "Updating base images"
+  # otherwise asks for by hand each month.
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: monthly
+    groups:
+      images:
+        patterns: ['*']
