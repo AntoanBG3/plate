@@ -93,6 +93,9 @@ body.no-tabs .page { padding-bottom: calc(env(safe-area-inset-bottom) + var(--s-
 /* Until the title shows, it takes no room, so the back label isn't cut short beside an invisible title ("‹ Настрой…"
    under "Вход и сигурност"); once the large title scrolls away, the label gives way to it, as on iOS. */
 .topbar:not(.is-compact):not(.always-title) .topbar-title { max-width: 0; }
+/* Nor does the label need to leave the trailing side half the bar while there is no title to centre: it takes all the
+   room the trailing actions don't ("‹ Започни отначало" was cut short at 390 px in a wider font). */
+.topbar:not(.is-compact):not(.always-title) { grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, max-content); }
 .topbar-leading { justify-self: start; display: flex; min-width: 0; max-width: 100%; }
 .topbar-trailing { justify-self: end; display: flex; align-items: center; gap: var(--s-1); }
 .topbar-back {
@@ -207,7 +210,11 @@ a.section-aside { color: var(--accent-text) !important; }
 .btn-plain { background: none; color: var(--accent-text); padding: 0 var(--s-2); min-height: var(--tap); }
 .btn-destructive { background: var(--fill); color: var(--destructive); }
 .btn-small { min-height: var(--tap); padding: 0 var(--s-4); font-size: var(--text-subhead); }
+/* Full width, so the label is centred anyway and the side padding only decides when it wraps: 12 px instead of 20
+   keeps "Search Open Food Facts" and "Търси в Open Food Facts" on one line at 320 px in a wider font (they wrapped
+   and sat 13 px off centre). */
 .btn-block { display: flex; width: 100%; }
+.btn-block:not(.btn-plain) { padding-inline: var(--s-3); }
 .btn .icon { width: 20px; height: 20px; }
 .btn:disabled { opacity: 0.4; }
 .btn-row { display: flex; gap: var(--s-3); }
@@ -244,7 +251,10 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-app
 .check-input:checked::after { transform: translateY(-1px) rotate(45deg) scale(1); opacity: 1; }
 
 /* Segmented control. When the same page comes back with another segment selected, the thumb glides to it. */
-.segmented { display: flex; padding: 2px; border-radius: 9px; background: var(--fill); gap: 2px; }
+/* Segments share the width, and a label may take two lines. A single word that can't fit its share pushes the last
+   segment onto a line of its own instead of out of the control ("Качване на маса" was cut off at 320 px in a wider
+   font, beside "Отслабване" and "Поддържане"). */
+.segmented { display: flex; flex-wrap: wrap; padding: 2px; border-radius: 9px; background: var(--fill); gap: 2px; }
 .segment {
     position: relative; flex: 1; min-height: 40px; display: grid; place-items: center; padding: 0 var(--s-2);
     border-radius: 7px; color: var(--label); font-size: var(--text-footnote); font-weight: var(--weight-semibold); text-align: center; line-height: 1.15;
@@ -727,15 +737,17 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
 [data-swipe-row] .set-delete-form { position: absolute; inset: 0 0 0 auto; width: 88px; margin: 0; }
 [data-swipe-row] .set-delete-form .set-delete { position: static; width: 100%; height: 100%; }
 [data-swipe-row].is-open .set-delete, [data-swipe-row].is-swiping .set-delete { visibility: visible; }
-.ex-actions { display: flex; border-top: 0.5px solid var(--separator); }
 /* Each action as wide as its label, the room left shared out, and never wrapped: three equal columns made "Добави
-   серия" wrap at 390 px, leaving its + alone at the side (2026-11-23 audit). Narrow phones get the footnote size. */
-.ex-actions > * { flex: 1 1 auto; display: flex; }
+   серия" wrap at 390 px, leaving its + alone at the side (2026-11-23 audit). Narrow phones get the footnote size.
+   When the labels still don't fit on one line (a wider font at 320 px cut "Дискове" off), the last action moves to a
+   line of its own. Each action draws the separators above and to the left of it; the row starts a pixel outside the
+   card, so .ex-body clips the separator at its left edge. */
+.ex-actions { display: flex; flex-wrap: wrap; margin-left: -1px; }
+.ex-actions > * { flex: 1 1 auto; display: flex; border-top: 0.5px solid var(--separator); border-left: 0.5px solid var(--separator); }
 .ex-actions button { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--tap); padding: 0 var(--s-2); color: var(--accent-text); font-size: var(--text-subhead); white-space: nowrap; }
 @media (max-width: 359px) {
     .ex-actions button { font-size: var(--text-footnote); gap: 4px; padding: 0 var(--s-1); }
 }
-.ex-actions > * + * { border-left: 0.5px solid var(--separator); }
 .ex-actions .icon { width: 18px; height: 18px; }
 @keyframes done-pop { from { transform: scale(0.88); } to { transform: scale(1); } }
 
