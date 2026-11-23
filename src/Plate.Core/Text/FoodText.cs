@@ -21,6 +21,18 @@ public static partial class FoodText
         return rest.Length == 0 ? text : rest;
     }
 
+    /// <summary>
+    /// The name as a food diary shows it: the first letter upper case ("голям дюнер" becomes "Голям дюнер"), the rest as
+    /// written, so brands and abbreviations keep their case.
+    /// </summary>
+    public static string Capitalize(string text)
+    {
+        var trimmed = text.TrimStart();
+        return trimmed.Length == 0 || !char.IsLower(trimmed[0])
+            ? text
+            : string.Concat(char.ToUpperInvariant(trimmed[0]).ToString(), trimmed.AsSpan(1));
+    }
+
     [GeneratedRegex(@"^\s*\d+(?:[.,]\d+)?\s*(?:kg|g|grams?|gr\.?|ml|l|кг|г\.?|гр\.?|грама?|мл|л)(?=\s|$)\s*(?:of\s+|от\s+)?", RegexOptions.IgnoreCase)]
     private static partial Regex LeadingAmount();
 }

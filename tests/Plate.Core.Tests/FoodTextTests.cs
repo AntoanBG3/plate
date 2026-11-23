@@ -27,4 +27,14 @@ public class FoodTextTests
     [InlineData("200 g")] // nothing would be left
     public void Anything_else_is_kept(string text) =>
         FoodText.StripAmount(text).Should().Be(text);
+
+    [Theory]
+    [InlineData("голям дюнер", "Голям дюнер")]
+    [InlineData("slice of pizza", "Slice of pizza")]
+    [InlineData("kebab with BBQ sauce", "Kebab with BBQ sauce")]
+    [InlineData("Кроасан", "Кроасан")]
+    [InlineData("7 Days croissant", "7 Days croissant")]
+    [InlineData("", "")]
+    public void A_name_starts_with_a_capital(string text, string expected) =>
+        FoodText.Capitalize(text).Should().Be(expected);
 }

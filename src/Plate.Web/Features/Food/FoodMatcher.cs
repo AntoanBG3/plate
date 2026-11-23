@@ -576,7 +576,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     private static CountedAmount? Counted(ParsedFoodItem item) =>
         !item.GramsStated && item.Units is { } units && units > 0 ? new CountedAmount(units, item.CountOf ?? CountUnit.Piece) : null;
 
-    /// <summary>No database food: the parser's own numbers, marked Low.</summary>
+    /// <summary>No database food: the parser's own numbers, marked Low. The name is what the user typed, starting with a capital like the database names.</summary>
     private static ConfirmItem Estimate(ParsedFoodItem item, List<LocalText> notes, string? matchModel)
     {
         notes.Add(new LocalText("No database match, so these numbers are the AI's estimate."));
@@ -586,7 +586,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         }
 
         var typed = Description(item);
-        return new ConfirmItem(typed, item.Grams, item.Estimated, null, null, Confidence.Low, notes, matchModel, Typed: typed, State: item.State,
+        return new ConfirmItem(FoodText.Capitalize(typed), item.Grams, item.Estimated, null, null, Confidence.Low, notes, matchModel, Typed: typed, State: item.State,
             Status: FoodNaming.AcceptStatus(item.Preparation, item.State), Count: Counted(item));
     }
 

@@ -70,7 +70,7 @@ public class RecipeService(AppDbContext db, ICurrentUser currentUser, TimeProvid
             if (row.FoodItemId is { } id && recipes.Contains(id))
             {
                 var parsed = result.Items[n];
-                return new ConfirmItem(parsed.NameOriginal, row.Grams, parsed.Estimated, null, null, Confidence.Low, [], Typed: row.Typed);
+                return new ConfirmItem(FoodText.Capitalize(parsed.NameOriginal), row.Grams, parsed.Estimated, null, null, Confidence.Low, [], Typed: row.Typed);
             }
 
             if (row is { Choice: { Current: FoodState.Cooked, Other: { State: FoodState.Raw } dry } choice, FoodItemId: { } cookedId })
