@@ -9,11 +9,12 @@ on:
 permissions:
   contents: read
 
-# A newer push to a branch cancels the run for the older one. Not on main: deploy.sh reads the run of the exact commit
-# it deploys, and a cancelled run there would refuse a commit that never failed.
+# A newer push to a branch cancels the run for the older one. On main every commit gets a group of its own: deploy.sh
+# reads the run of the exact commit it deploys, and in a shared group GitHub cancels a pending run when a third one
+# arrives, even without cancel-in-progress, which would refuse a commit that never failed.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -56,7 +57,7 @@ jobs:
           CHECK_RESULTS_DIR: ${{ runner.temp }}/test-results
         run: bash tools/check.sh "$CHECK_MODE"
       # The .trx files name every failed test with its message and output; on the browser job, a test that failed its
-      # retry too leaves a Playwright trace per phone (npx playwright show-trace <zip>).
+      # retry too leaves a Playwright trace per phone (npx playwright show-trace <zip>). Kept 5 days.
       - name: Keep the test results
         if: failure()
         uses: actions/upload-artifact@v7
@@ -64,7 +65,8 @@ jobs:
           name: test-results-${{ matrix.artifact }}
           path: ${{ runner.temp }}/test-results
           if-no-files-found: ignore
-          retention-days: 14
+          # A failed browser run uploads about 60 MB, against 500 MB of artifact storage on the free plan.
+          retention-days: 5
 
   # The deploy builds this image on wizard; a Dockerfile that no longer builds (a project it doesn't copy, a base image
   # digest that's gone) would otherwise surface only there, after the database dump.
