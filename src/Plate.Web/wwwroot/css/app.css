@@ -733,15 +733,17 @@ form[data-status-near] .autosave-status, form[data-status-near] .field-error { p
 [data-swipe-row] .set-delete-form { position: absolute; inset: 0 0 0 auto; width: 88px; margin: 0; }
 [data-swipe-row] .set-delete-form .set-delete { position: static; width: 100%; height: 100%; }
 [data-swipe-row].is-open .set-delete, [data-swipe-row].is-swiping .set-delete { visibility: visible; }
-.ex-actions { display: flex; border-top: 0.5px solid var(--separator); }
 /* Each action as wide as its label, the room left shared out, and never wrapped: three equal columns made "Добави
-   серия" wrap at 390 px, leaving its + alone at the side (2026-11-23 audit). Narrow phones get the footnote size. */
-.ex-actions > * { flex: 1 1 auto; display: flex; }
+   серия" wrap at 390 px, leaving its + alone at the side (2026-11-23 audit). Narrow phones get the footnote size.
+   When the labels still don't fit on one line (a wider font at 320 px cut "Дискове" off), the last action moves to a
+   line of its own. Each action draws the separators above and to the left of it; the row starts a pixel outside the
+   card, so .ex-body clips the separator at its left edge. */
+.ex-actions { display: flex; flex-wrap: wrap; margin-left: -1px; }
+.ex-actions > * { flex: 1 1 auto; display: flex; border-top: 0.5px solid var(--separator); border-left: 0.5px solid var(--separator); }
 .ex-actions button { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--tap); padding: 0 var(--s-2); color: var(--accent-text); font-size: var(--text-subhead); white-space: nowrap; }
 @media (max-width: 359px) {
     .ex-actions button { font-size: var(--text-footnote); gap: 4px; padding: 0 var(--s-1); }
 }
-.ex-actions > * + * { border-left: 0.5px solid var(--separator); }
 .ex-actions .icon { width: 18px; height: 18px; }
 @keyframes done-pop { from { transform: scale(0.88); } to { transform: scale(1); } }
 
