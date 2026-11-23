@@ -40,7 +40,8 @@ exit 1
     }
     try {
         const result = spawnSync("/bin/bash", [path.join(root, "tools/check.sh"), mode], {
-            env: { ...process.env, PATH: bin + path.delimiter + process.env.PATH, TRACE: trace, FAILED: failed.join(","), RETRY_EXIT: String(retryExit), ...env },
+            // CI's own CHECK_RESULTS_DIR (and a trace directory) must not leak in; a test passes them in `env`.
+            env: { ...process.env, CHECK_RESULTS_DIR: "", PLATE_E2E_TRACE_DIR: "", PATH: bin + path.delimiter + process.env.PATH, TRACE: trace, FAILED: failed.join(","), RETRY_EXIT: String(retryExit), ...env },
             // Only a guard against a hang (see deploy-gate.test.cjs).
             encoding: "utf8", timeout: 30000,
         });
