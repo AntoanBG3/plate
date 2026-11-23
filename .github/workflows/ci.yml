@@ -20,8 +20,10 @@ jobs:
         include:
           - name: JavaScript, Core and Web
             mode: --ci-core-web
+            artifact: core-web
           - name: Browser (Chromium and WebKit)
             mode: --ci-browser
+            artifact: browser
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -37,4 +39,15 @@ jobs:
       - name: Build and test
         env:
           CHECK_MODE: ${{ matrix.mode }}
+          CHECK_RESULTS_DIR: ${{ runner.temp }}/test-results
         run: bash tools/check.sh "$CHECK_MODE"
+      # The .trx files name every failed test with its message and output; on the browser job, a test that failed its
+      # retry too leaves a Playwright trace per phone (npx playwright show-trace <zip>).
+      - name: Keep the test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.artifact }}
+          path: ${{ runner.temp }}/test-results
+          if-no-files-found: ignore
+          retention-days: 14

@@ -177,5 +177,21 @@ public sealed class Phone : IAsyncDisposable
     public void ShouldHaveNoErrors() => Errors.Should().BeEmpty(
         $"the {Browser} console should stay clean (failed responses: {string.Join(", ", Responses.Where(r => r[0] is '4' or '5'))})");
 
-    public async ValueTask DisposeAsync() => await Context.CloseAsync();
+    /// <summary>Where each phone saves a Playwright trace when it closes; set only on CI's retry of failed tests
+    /// (tools/check.sh), so a test that fails twice can be replayed with <c>npx playwright show-trace</c>.</summary>
+    public static readonly string? TraceDirectory =
+        Environment.GetEnvironmentVariable("PLATE_E2E_TRACE_DIR") is { Length: > 0 } dir ? dir : null;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (TraceDirectory is not null)
+        {
+            var path = Page.IsClosed ? "closed" : new Uri(Page.Url).AbsolutePath.Trim('/').Replace('/', '-');
+            await Context.Tracing.StopAsync(new()
+            {
+                Path = System.IO.Path.Combine(TraceDirectory, $"{Browser}-{path}-{Guid.NewGuid().ToString("N")[..8]}.zip"),
+            });
+        }
+        await Context.CloseAsync();
+    }
 }
