@@ -51,3 +51,18 @@ jobs:
           path: ${{ runner.temp }}/test-results
           if-no-files-found: ignore
           retention-days: 14
+
+  # The deploy builds this image on wizard; a Dockerfile that no longer builds (a project it doesn't copy, a base image
+  # digest that's gone) would otherwise surface only there, after the database dump.
+  docker:
+    name: Docker image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Build the image
+        env:
+          APP_VERSION: ${{ github.sha }}
+        run: docker build --file docker/Dockerfile --build-arg APP_VERSION="${APP_VERSION::7}" --tag plate:ci .
