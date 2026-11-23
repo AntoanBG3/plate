@@ -61,7 +61,8 @@ public partial class ParseRunTests(PostgresFixture fixture) : IClassFixture<Post
         chicken.Typed.Should().Be("chicken breast raw");
         chicken.State.Should().Be(FoodState.Raw);
         outcome.Items[1].FoodItemId.Should().BeNull();
-        outcome.Items[1].Description.Should().Be("zzqx");
+        outcome.Items[1].Description.Should().Be("Zzqx", "an estimate is named as typed, starting with a capital");
+        outcome.Items[1].Typed.Should().Be("zzqx");
         s.Namer.Calls.Should().ContainSingle().Which.Should().ContainSingle("only matched rows are named")
             .Which.DatabaseName.Should().Be(chicken.MatchedName);
     }

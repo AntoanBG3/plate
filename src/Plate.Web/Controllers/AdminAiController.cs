@@ -117,6 +117,10 @@ public class AdminAiController(OpenRouterSettings openRouter, AiAdmin ai, ModelA
         {
             Report(await ai.TestWeeklyAsync(ct), "Model saved: the weekly summary works.", "Model saved, but it doesn't work yet: {0}");
         }
+        else if (t == AiTask.Estimator)
+        {
+            Report(await ai.TestEstimatorAsync(ct), "Model saved: food estimates work.", "Model saved, but it doesn't work yet: {0}");
+        }
         else
         {
             Report(await ai.TestLabelAsync(ct), "Model saved: label reading works.", "Model saved, but it doesn't work yet: {0}");

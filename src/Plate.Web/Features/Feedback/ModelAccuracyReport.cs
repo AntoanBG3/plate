@@ -17,6 +17,12 @@ public class ModelAccuracyReport(AppDbContext db, TimeProvider time)
     public async Task<Dictionary<string, ModelStats>> ForAsync(AiTask task, CancellationToken ct)
     {
         var since = time.GetUtcNow() - Window;
+        if (task == AiTask.Estimator)
+        {
+            // Parse runs record the estimator per row, not per run; no rates yet.
+            return [];
+        }
+
         if (task == AiTask.Label)
         {
             // For labels: "corrected" is a saved scan with any value changed, "rated down" a read that failed.

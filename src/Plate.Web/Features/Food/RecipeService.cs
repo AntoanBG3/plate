@@ -20,7 +20,8 @@ public record RecipeDraft(int? Id, string Name, decimal? YieldGrams, IReadOnlyLi
 /// Home dishes built from their ingredients (SPEC 5.12). A recipe is a private food with
 /// <see cref="FoodSource.Recipe"/>, so search, Recent and text parsing find it like any other of the account's foods.
 /// </summary>
-public class RecipeService(AppDbContext db, ICurrentUser currentUser, TimeProvider time, IFoodParser parser, FoodMatcher matcher, FoodItemService foods)
+public class RecipeService(AppDbContext db, ICurrentUser currentUser, TimeProvider time, IFoodParser parser, FoodMatcher matcher, FoodItemService foods,
+    IFoodEstimator? estimator = null)
 {
     private const string BeforeCookingNote = "Counted as weighed before cooking.";
 
@@ -53,7 +54,8 @@ public class RecipeService(AppDbContext db, ICurrentUser currentUser, TimeProvid
     /// Ingredients typed as text, through the parser and matcher onto editor rows. Nothing is recorded as a parse run:
     /// these are ingredients, not a meal (the run counts and model accuracy stay about meals). A weighed staple whose
     /// state the words don't give starts on the dry or raw food, since a recipe weighs what goes into the pot.
-    /// A recipe can't be an ingredient, so a row matched to one falls back to the parser's estimate.
+    /// A recipe can't be an ingredient, so a row matched to one falls back to the parser's estimate. Rows with no database
+    /// food get the estimator's values, as on Check foods.
     /// </summary>
     public async Task<(IReadOnlyList<ConfirmItem> Items, LocalText? Error)> ParseIngredientsAsync(string text, CancellationToken ct)
     {
@@ -63,14 +65,15 @@ public class RecipeService(AppDbContext db, ICurrentUser currentUser, TimeProvid
             return ([], result.Error ?? "Couldn't read that.");
         }
 
-        var rows = await matcher.ResolveAsync(text, result.Items, ct);
+        var nearby = new List<IReadOnlyList<NearbyFood>>();
+        var rows = await FoodEstimation.ApplyAsync(estimator, text, result.Items, await matcher.ResolveAsync(text, result.Items, ct, nearby: nearby), nearby, ct);
         var recipes = await foods.RecipeIdsAsync(rows.Select(r => r.FoodItemId).OfType<int>(), ct);
         var items = rows.Select((row, n) =>
         {
             if (row.FoodItemId is { } id && recipes.Contains(id))
             {
                 var parsed = result.Items[n];
-                return new ConfirmItem(parsed.NameOriginal, row.Grams, parsed.Estimated, null, null, Confidence.Low, [], Typed: row.Typed);
+                return new ConfirmItem(FoodText.Capitalize(parsed.NameOriginal), row.Grams, parsed.Estimated, null, null, Confidence.Low, [], Typed: row.Typed);
             }
 
             if (row is { Choice: { Current: FoodState.Cooked, Other: { State: FoodState.Raw } dry } choice, FoodItemId: { } cookedId })

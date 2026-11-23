@@ -126,6 +126,8 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
 
     public OpenRouterFoodNamer Namer() => new(Client(), Catalog(), NullLogger<OpenRouterFoodNamer>.Instance);
 
+    public OpenRouterFoodEstimator Estimator() => new(Client(), Catalog(), NullLogger<OpenRouterFoodEstimator>.Instance);
+
     public OpenRouterLabelReader Label() => new(Client(), Catalog(), NullLogger<OpenRouterLabelReader>.Instance);
 
     /// <summary>A chat completion whose content is <paramref name="json"/>.</summary>

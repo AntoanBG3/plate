@@ -17,8 +17,8 @@ public static class AiCommand
     private const string Usage = """
         Usage: ai <command>
           show
-          set-model parser|matcher|onboarding|weekly|label <model id>
-          set-effort parser|onboarding|weekly|label <effort>|lowest
+          set-model parser|matcher|onboarding|weekly|label|estimator <model id>
+          set-effort parser|onboarding|weekly|label|estimator <effort>|lowest
           set-key                         reads the key from standard input
           clear-key
           test [label]
@@ -127,6 +127,8 @@ public static class AiCommand
         o.WriteLine(weekly is null ? "Weekly: works or off." : $"Weekly: {localizer[weekly]}");
         var label = await ai.TestLabelAsync(ct);
         o.WriteLine(label is null ? "Label: works or off." : $"Label: {localizer[label]}");
-        return parser is null && matcher is null && onboarding is null && weekly is null && label is null ? 0 : 1;
+        var estimator = await ai.TestEstimatorAsync(ct);
+        o.WriteLine(estimator is null ? "Estimator: works or off." : $"Estimator: {localizer[estimator]}");
+        return parser is null && matcher is null && onboarding is null && weekly is null && label is null && estimator is null ? 0 : 1;
     }
 }

@@ -29,7 +29,7 @@ public sealed class UserScope : IAsyncDisposable
         SavedMeals = new Plate.Web.Features.Food.SavedMealService(Db, currentUser, TimeProvider.System);
         Undo = new Plate.Web.Features.Undo.UndoService(Db, TimeProvider.System);
         ParseRuns = new Plate.Web.Features.Feedback.ParseRunService(Db, currentUser, new Plate.Web.Integrations.FakeFoodParser(), Matcher, Namer, TimeProvider.System,
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<Plate.Web.Features.Feedback.ParseRunService>.Instance, cache, Repeat);
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<Plate.Web.Features.Feedback.ParseRunService>.Instance, cache, Repeat, Estimator);
     }
 
     public Plate.Web.Features.Feedback.ParseRunService ParseRuns { get; }
@@ -41,6 +41,9 @@ public sealed class UserScope : IAsyncDisposable
 
     /// <summary>Names nothing unless a test scripts it, so rows keep their database names as without a key.</summary>
     public StubFoodNamer Namer { get; } = new();
+
+    /// <summary>Estimates nothing unless a test scripts it, so unmatched rows keep the parser's values as without a key.</summary>
+    public StubFoodEstimator Estimator { get; } = new();
     public Plate.Web.Features.Food.FoodItemService Foods { get; }
     public Plate.Web.Features.Food.RepeatLoggingService Repeat { get; }
     public Plate.Web.Features.Food.FoodMatcher Matcher { get; }

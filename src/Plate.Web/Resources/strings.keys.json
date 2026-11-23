@@ -2334,6 +2334,9 @@
   "That isn't a valid EAN or UPC barcode.": [
     "src/Plate.Web/Features/Food/FoodItemService.cs"
   ],
+  "That model can't estimate food.": [
+    "src/Plate.Web/Integrations/OpenRouterSettings.cs"
+  ],
   "That model can't match food.": [
     "src/Plate.Web/Integrations/OpenRouterSettings.cs"
   ],
@@ -2490,6 +2493,9 @@
   ],
   "The list changed while you were reordering. Try again.": [
     "src/Plate.Web/Features/Training/TemplateService.cs"
+  ],
+  "The model gave no usable estimate for a sample food.": [
+    "src/Plate.Web/Integrations/OpenRouterFoodEstimator.cs"
   ],
   "The model misread the sample label (read {0} kcal, expected {1}).": [
     "src/Plate.Web/Integrations/OpenRouterLabelReader.cs"

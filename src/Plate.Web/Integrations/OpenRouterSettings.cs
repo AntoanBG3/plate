@@ -61,14 +61,14 @@ public class OpenRouterSettings(
     }
 
     /// <summary>
-    /// The model picked for a task in Settings, else its default: the parser's from configuration, the setup chat
-    /// the parser's model (any chat model with structured output will do), the matcher off.
+    /// The model picked for a task in Settings, else its default: the parser's from configuration, the setup chat,
+    /// weekly summary and estimator the parser's model (any chat model with structured output will do), the matcher off.
     /// </summary>
     public async Task<string> GetModelAsync(AiTask task, CancellationToken ct) =>
         await StoredAsync(AiTasks.SettingName(task), ct) ?? task switch
         {
             AiTask.Parser => string.IsNullOrWhiteSpace(options.Value.Model) ? OpenRouterOptions.DefaultModel : options.Value.Model.Trim(),
-            AiTask.Onboarding or AiTask.Weekly => await GetModelAsync(AiTask.Parser, ct),
+            AiTask.Onboarding or AiTask.Weekly or AiTask.Estimator => await GetModelAsync(AiTask.Parser, ct),
             AiTask.Label => AiTasks.DefaultLabelModel,
             _ => AiTasks.Off,
         };
@@ -116,6 +116,7 @@ public class OpenRouterSettings(
         AiTask.Onboarding => await catalog.ListAsync(ct) is { } models ? [AiTasks.OnboardingOff, .. models] : null,
         AiTask.Weekly => await catalog.ListAsync(ct) is { } weekly ? [AiTasks.WeeklyOff, .. weekly] : null,
         AiTask.Label => await catalog.ListAsync(ct) is { } vision ? [AiTasks.LabelOff, .. vision.Where(m => m.AcceptsImages)] : null,
+        AiTask.Estimator => await catalog.ListAsync(ct) is { } estimators ? [AiTasks.EstimatorOff, .. estimators] : null,
         _ => await catalog.ListDecisionsAsync(ct) is { } decisions ? [AiTasks.MatcherOff, .. decisions] : null,
     };
 
@@ -147,6 +148,7 @@ public class OpenRouterSettings(
                 AiTask.Matcher => "That model can't match food.",
                 AiTask.Weekly => "That model can't write the weekly summary.",
                 AiTask.Label => "That model can't read labels.",
+                AiTask.Estimator => "That model can't estimate food.",
                 _ => "That model can't run the setup chat.",
             });
         }
@@ -229,5 +231,23 @@ public class SwitchingMatchDecider(OpenRouterSettings settings, IServiceProvider
         }
 
         return await services.GetRequiredService<JevFoodMatchDecider>().DecideAsync(text, questions, key, model, ct);
+    }
+}
+
+/// <summary>
+/// Estimates unmatched foods with the estimator model when there is a key and it isn't off; otherwise no answer, so the
+/// parser's own guesses stand (SPEC 6.1 step 6).
+/// </summary>
+public class SwitchingFoodEstimator(OpenRouterSettings settings, IServiceProvider services) : Plate.Core.Nutrition.IFoodEstimator
+{
+    public async Task<Plate.Core.Nutrition.FoodEstimates?> EstimateAsync(string text, IReadOnlyList<Plate.Core.Nutrition.EstimateRequest> items, CancellationToken ct)
+    {
+        var model = await settings.GetModelAsync(AiTask.Estimator, ct);
+        if (model == AiTasks.Off || await settings.GetKeyAsync(ct) is not { } key)
+        {
+            return null;
+        }
+
+        return await services.GetRequiredService<OpenRouterFoodEstimator>().EstimateAsync(text, items, key, model, ct, await settings.GetEffortAsync(AiTask.Estimator, ct));
     }
 }
