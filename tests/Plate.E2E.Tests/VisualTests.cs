@@ -120,7 +120,7 @@ public class VisualTests(E2EFixture app) : IClassFixture<E2EFixture>
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     /// <summary>Labels that wrap on purpose: two-line segment captions, the rest timer's label over its time.</summary>
-    private static bool MayWrap(Button b) => b.Path.EndsWith(".segment") || b.Path.Contains("label.segment") || b.Path.Contains("rest-open") || b.Path.Contains("row");
+    private static bool MayWrap(Button b) => b.Path.Split(" > ")[^1].Split('.').Contains("segment") || b.Path.Contains("rest-open") || b.Path.Contains("row");
 
     private static List<string> Problems(string name, Page p, int width)
     {
