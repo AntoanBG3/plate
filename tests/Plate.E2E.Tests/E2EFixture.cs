@@ -125,18 +125,19 @@ public sealed class E2EFixture : IAsyncLifetime
         return await type.LaunchAsync(new() { Headless = true });
     }
 
-    /// <summary>A phone-sized page (390 px unless given), in English unless <paramref name="locale"/> says otherwise.</summary>
-    public async Task<Phone> PhoneAsync(string browserName, int width = 390, string locale = "en-GB", bool ai = false)
+    /// <summary>A phone-sized page (390 px unless given), in English unless <paramref name="locale"/> says otherwise.
+    /// <paramref name="desktop"/> makes it a desktop browser instead: a mouse, no touch, no mobile viewport.</summary>
+    public async Task<Phone> PhoneAsync(string browserName, int width = 390, string locale = "en-GB", bool ai = false, bool desktop = false)
     {
         var browser = await BrowserAsync(browserName);
         var context = await browser.NewContextAsync(new()
         {
             BaseURL = ai ? AiBaseUrl : BaseUrl,
             ViewportSize = new() { Width = width, Height = 844 },
-            DeviceScaleFactor = 3,
+            DeviceScaleFactor = desktop ? 2 : 3,
             // Chromium and WebKit both support mobile emulation (meta viewport, touch events).
-            IsMobile = true,
-            HasTouch = true,
+            IsMobile = !desktop,
+            HasTouch = !desktop,
             Locale = locale,
             ColorScheme = ColorScheme.Dark,
         });
