@@ -22,6 +22,7 @@ public record ReviewDestination(
 
 /// <summary>One suggested row as stored in <see cref="ParseRun.Resolved"/>.</summary>
 /// <param name="Proposed">The namer's answer as it came back, kept even when it was rejected.</param>
+/// <param name="EstimateModel">The estimator model whose values the row has; null for a database food or the parser's own estimate.</param>
 public record ResolvedRow(string Description, decimal Grams, Per100g Per100, int? FoodItemId, string? MatchedName, Confidence Confidence,
     IReadOnlyList<string> Notes, string? MatchModel, MatchTrace? Match, FoodName? Proposed = null, string? Status = null, bool Usual = false,
     [property: JsonPropertyName("typed")] string? Typed = null,
@@ -29,7 +30,8 @@ public record ResolvedRow(string Description, decimal Grams, Per100g Per100, int
     [property: JsonPropertyName("reviewNotes")] IReadOnlyList<LocalText>? ReviewNotes = null,
     [property: JsonPropertyName("review")] ReviewDestination? Review = null,
     [property: JsonPropertyName("count")] CountedAmount? Count = null,
-    [property: JsonPropertyName("stateChoice")] StateChoice? Choice = null);
+    [property: JsonPropertyName("stateChoice")] StateChoice? Choice = null,
+    [property: JsonPropertyName("estimateModel")] string? EstimateModel = null);
 
 /// <summary>One submitted row as stored in <see cref="ParseRun.Saved"/>.</summary>
 public record SavedRow(bool Included, string Description, decimal Grams, Per100g Per100, int? FoodItemId, ParseCorrection Corrections);
@@ -39,7 +41,7 @@ public record SavedRow(bool Included, string Description, decimal Grams, Per100g
 /// saved and how it differs (SPEC 11). Recording never gets in the way of logging food.
 /// </summary>
 public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodParser parser, FoodMatcher matcher, IFoodNamer namer, TimeProvider time, ILogger<ParseRunService> log,
-    IMemoryCache cache, RepeatLoggingService? repeat = null)
+    IMemoryCache cache, RepeatLoggingService? repeat = null, IFoodEstimator? estimator = null)
 {
     public async Task<ConfirmViewModel> CreateReviewAsync(DateOnly date, Meal meal, string text, CancellationToken ct)
     {
@@ -65,8 +67,11 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
         if (result.Items.Count > 0)
         {
             clock.Restart();
-            items = await matcher.ResolveAsync(text, result.Items, ct, trace);
+            var nearby = new List<IReadOnlyList<NearbyFood>>();
+            items = await matcher.ResolveAsync(text, result.Items, ct, trace, nearby: nearby);
             matchMs = (int)clock.ElapsedMilliseconds;
+            // The rows with no database food get the estimator's values; the namer below handles the matched ones.
+            items = await FoodEstimation.ApplyAsync(estimator, text, result.Items, items, nearby, ct);
         }
 
         clock.Restart();
@@ -94,7 +99,8 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             Parsed = FeedbackJson.Write(result.Items),
             Resolved = FeedbackJson.Write(items.Select((item, n) => new ResolvedRow(item.Description, item.Grams, item.Per100, item.FoodItemId,
                 item.MatchedName, item.Confidence, item.Notes.Select(n => n.ToString()).ToList(), item.MatchModel, trace.ElementAtOrDefault(n), proposed[n], item.Status, item.Usual,
-                item.Typed, item.State, item.Notes, n == 0 && review is not null ? review with { Warning = result.Error } : null, item.Count, item.Choice)).ToList()),
+                item.Typed, item.State, item.Notes, n == 0 && review is not null ? review with { Warning = result.Error } : null, item.Count, item.Choice,
+                item.EstimateModel)).ToList()),
         };
 
         try
@@ -125,7 +131,7 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
         if (rows?.FirstOrDefault()?.Review is not { } destination || destination.Id != id) return null;
         var items = rows.Select(r => new ConfirmItem(r.Description, r.Grams, r.Per100, r.FoodItemId,
             r.MatchedName, r.Confidence, r.ReviewNotes ?? [], r.MatchModel, r.Typed ?? "", r.State,
-            Status: r.Status, Usual: r.Usual, Count: r.Count, Choice: r.Choice)).ToList();
+            Status: r.Status, Usual: r.Usual, Count: r.Count, Choice: r.Choice, EstimateModel: r.EstimateModel)).ToList();
         return new(destination.Date, destination.Meal, run!.Text, run.AiModel, items, destination.Warning, runId, id);
     }
 

@@ -8,7 +8,7 @@ namespace Plate.Web.Features.Admin;
 /// Changes to the shared OpenRouter key and AI models, for the admin area and the CLI (SPEC 12). Every change is
 /// audited, and a key change also sends a Telegram alert. The key is never returned, logged or audited.
 /// </summary>
-public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, JevFoodMatchDecider matcher, OpenRouterOnboardingAssistant onboarding, OpenRouterWeeklySummaryWriter weekly, OpenRouterLabelReader label, AdminAuditLog audit, IFeedbackNotifier notifier)
+public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, JevFoodMatchDecider matcher, OpenRouterOnboardingAssistant onboarding, OpenRouterWeeklySummaryWriter weekly, OpenRouterLabelReader label, OpenRouterFoodEstimator estimator, AdminAuditLog audit, IFeedbackNotifier notifier)
 {
     public async Task SetKeyAsync(string key, CancellationToken ct)
     {
@@ -45,6 +45,7 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
         AiTask.Matcher => TestMatcherAsync(ct),
         AiTask.Onboarding => TestOnboardingAsync(ct),
         AiTask.Weekly => TestWeeklyAsync(ct),
+        AiTask.Estimator => TestEstimatorAsync(ct),
         _ => TestLabelAsync(ct),
     };
 
@@ -134,6 +135,25 @@ public class AiAdmin(OpenRouterSettings settings, OpenRouterFoodParser parser, J
 
         var error = await label.TestAsync(key, model, ct, await settings.GetEffortAsync(AiTask.Label, ct));
         await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Label), error is null ? "works" : "fails", ct);
+        return error;
+    }
+
+    /// <summary>Estimates a sample pastry with the estimator model: null when it gives possible values or the estimator is off.</summary>
+    public async Task<LocalText?> TestEstimatorAsync(CancellationToken ct)
+    {
+        var model = await settings.GetModelAsync(AiTask.Estimator, ct);
+        if (model == AiTasks.Off)
+        {
+            return null;
+        }
+
+        if (await settings.GetKeyAsync(ct) is not { } key)
+        {
+            return new LocalText("No OpenRouter key is set.");
+        }
+
+        var error = await estimator.TestAsync(key, model, ct, await settings.GetEffortAsync(AiTask.Estimator, ct));
+        await audit.WriteAsync(AuditActions.KeyTest, AiTasks.Slug(AiTask.Estimator), error is null ? "works" : "fails", ct);
         return error;
     }
 }

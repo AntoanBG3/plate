@@ -102,6 +102,7 @@ For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key 
 
 - Food parser: picked from OpenRouter's catalog (default `openai/gpt-6-luna`, or `OPENROUTER_MODEL`).
 - Food matcher: Off (the database ranking picks a food when the name identifies it and uses the estimate otherwise, the default) or TypeSafe's Jev 1.13, a decision model that chooses which database food each item is, or says none fits. It uses the same key and costs about $0.0002 per entry. Picking it runs a test decision. Entries record which Jev version chose their match (`match_model` in the export); `docker logs plate-app | grep "Jev "` shows each call's latency and cost.
+- Food estimator: the model that estimates values for foods no database food matches, with the closest database foods as reference (default the parser's model). Off keeps the parser's own guesses. It runs only on parses with an unmatched food; `docker logs plate-app | grep "Food estimator"` shows each call.
 
 Add an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
 

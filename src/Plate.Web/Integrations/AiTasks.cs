@@ -17,6 +17,9 @@ public enum AiTask
 
     /// <summary>Reads nutrition labels from photos (OpenRouter vision models, SPEC 6.6).</summary>
     Label,
+
+    /// <summary>Estimates values per 100 g for foods with no database match (OpenRouter chat models, SPEC 6.1 step 6).</summary>
+    Estimator,
 }
 
 public static class AiTasks
@@ -64,6 +67,9 @@ public static class AiTasks
     /// <summary>Label photos can be turned off for every account.</summary>
     public static readonly OpenRouterModel LabelOff = new(Off, "Plate", "Off: no label photos", 0, 0, false, null);
 
+    /// <summary>The estimator can be turned off, which leaves the parser's own guesses on unmatched foods.</summary>
+    public static readonly OpenRouterModel EstimatorOff = new(Off, "Plate", "Off: the parser's own estimates", 0, 0, false, null);
+
     /// <summary>The label model until one is picked: a cheap vision model that reads Cyrillic well (SPEC 6.6).</summary>
     public const string DefaultLabelModel = "google/gemini-3.5-flash-lite";
 
@@ -74,6 +80,7 @@ public static class AiTasks
         AiTask.Matcher => "Food matcher",
         AiTask.Onboarding => "Setup chat",
         AiTask.Label => "Label reader",
+        AiTask.Estimator => "Food estimator",
         _ => "Weekly summary",
     };
 
@@ -83,6 +90,7 @@ public static class AiTasks
         AiTask.Onboarding => "Off: setup form only",
         AiTask.Weekly => "Off: no weekly summary",
         AiTask.Label => "Off: no label photos",
+        AiTask.Estimator => "Off: the parser's own estimates",
         _ => "Off: database ranking only",
     };
 
@@ -94,6 +102,7 @@ public static class AiTasks
         AiTask.Onboarding => "OpenRouter:Model:Onboarding",
         AiTask.Weekly => "OpenRouter:Model:Weekly",
         AiTask.Label => "OpenRouter:Model:Label",
+        AiTask.Estimator => "OpenRouter:Model:Estimator",
         _ => throw new ArgumentOutOfRangeException(nameof(task)),
     };
 

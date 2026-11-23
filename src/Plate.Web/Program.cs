@@ -147,6 +147,12 @@ builder.Services.AddHttpClient<OpenRouterFoodNamer>(c =>
     // The namer cancels each call after 5 s itself; this is only a backstop.
     c.Timeout = TimeSpan.FromSeconds(10);
 }).AddHttpMessageHandler(sp => AiUsageRecorder.For(sp, "namer"));
+builder.Services.AddHttpClient<OpenRouterFoodEstimator>(c =>
+{
+    OpenRouterClient(c);
+    // The estimator cancels each call after 12 s itself; this is only a backstop.
+    c.Timeout = TimeSpan.FromSeconds(20);
+}).AddHttpMessageHandler(sp => AiUsageRecorder.For(sp, "estimator"));
 builder.Services.AddHttpClient<OpenRouterOnboardingAssistant>(c =>
 {
     OpenRouterClient(c);
@@ -170,6 +176,8 @@ builder.Services.AddScoped<IFoodParser, SwitchingFoodParser>();
 builder.Services.AddScoped<IFoodMatchDecider, SwitchingMatchDecider>();
 // Short names for matched foods with the parser's model when a key is set; otherwise the database names.
 builder.Services.AddScoped<IFoodNamer, SwitchingFoodNamer>();
+// Values for foods with no database match from the estimator model when a key is set and it isn't off; otherwise the parser's guesses.
+builder.Services.AddScoped<IFoodEstimator, SwitchingFoodEstimator>();
 // The setup chat's model when a key is set and it isn't off; otherwise the setup page shows only the form.
 builder.Services.AddScoped<Plate.Core.Onboarding.IOnboardingAssistant, SwitchingOnboardingAssistant>();
 builder.Services.AddScoped<Plate.Web.Features.Onboarding.OnboardingService>();

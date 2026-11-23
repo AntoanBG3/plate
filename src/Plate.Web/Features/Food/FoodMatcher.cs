@@ -24,6 +24,7 @@ public enum Confidence
 /// <param name="Count">
 /// The count the text gave instead of a weight, kept so the row's grams can follow when another food is picked for it.
 /// </param>
+/// <param name="EstimateModel">The estimator model whose values the row has; null for a database food or the parser's own estimate.</param>
 public record ConfirmItem(
     string Description,
     decimal Grams,
@@ -40,7 +41,8 @@ public record ConfirmItem(
     bool Usual = false,
     CountedAmount? Count = null,
     StateChoice? Choice = null,
-    bool Own = false);
+    bool Own = false,
+    string? EstimateModel = null);
 
 /// <summary>
 /// The cooked-or-dry question for a weighed staple (SPEC 6.1 step 4): the row's food is in <paramref name="Current"/> state,
@@ -140,8 +142,9 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     }
 
     /// <param name="trace">When given, receives one <see cref="MatchTrace"/> per item.</param>
+    /// <param name="nearby">When given, receives the closest database foods per item, for the estimator (SPEC 6.1 step 6).</param>
     public async Task<List<ConfirmItem>> ResolveAsync(string text, IEnumerable<ParsedFoodItem> parsed, CancellationToken ct, List<MatchTrace>? trace = null,
-        List<RankingInspection>? inspectRanking = null)
+        List<RankingInspection>? inspectRanking = null, List<IReadOnlyList<NearbyFood>>? nearby = null)
     {
         var items = parsed.ToList();
         var usual = repeat is null ? [] : await repeat.UsualMatchesAsync(items, ct);
@@ -149,7 +152,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         var candidates = new List<Candidates>(items.Count);
         for (var i = 0; i < items.Count; i++)
         {
-            candidates.Add(await FindCandidatesAsync(items[i], usual.GetValueOrDefault(i), inspectRanking is not null ? int.MaxValue : trace is null ? 2 : TraceSize, askModel, ct));
+            candidates.Add(await FindCandidatesAsync(items[i], usual.GetValueOrDefault(i), inspectRanking is not null ? int.MaxValue : trace is null && nearby is null ? 2 : TraceSize, askModel, ct));
         }
 
         // Every item is context for the model, including foods already decided locally.
@@ -166,6 +169,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
                 row.Shortlist.Count > 0 && decisions is not null, decision?.FoodItemId, decision?.Confidence, decisions?.Model));
             var (chosen, outcome) = Choose(row, decision, decisions?.Model);
             inspectRanking?.Add(new RankingInspection(row.Ranked.Select(t => t.Food).ToList(), row.RankingReason, outcome));
+            nearby?.Add(row.Ranked.Take(TraceSize).Select(t => new NearbyFood(t.Food.DisplayName, t.Food.Per100)).ToList());
             result.Add(chosen);
         }
         await OfferStatesAsync(items, result, ct);
@@ -576,7 +580,12 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     private static CountedAmount? Counted(ParsedFoodItem item) =>
         !item.GramsStated && item.Units is { } units && units > 0 ? new CountedAmount(units, item.CountOf ?? CountUnit.Piece) : null;
 
-    /// <summary>No database food: the parser's own numbers, marked Low. The name is what the user typed, starting with a capital like the database names.</summary>
+    private const string MacrosNote = "The calories don't add up from the macros.";
+
+    /// <summary>
+    /// No database food: the parser's own numbers, marked Low, until the estimator replaces them (<see cref="WithEstimate"/>).
+    /// The name is what the user typed, starting with a capital like the database names.
+    /// </summary>
     private static ConfirmItem Estimate(ParsedFoodItem item, List<LocalText> notes, string? matchModel)
     {
         notes.Add(new LocalText("No database match, so these numbers are the AI's estimate."));
@@ -589,6 +598,14 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         return new ConfirmItem(FoodText.Capitalize(typed), item.Grams, item.Estimated, null, null, Confidence.Low, notes, matchModel, Typed: typed, State: item.State,
             Status: FoodNaming.AcceptStatus(item.Preparation, item.State), Count: Counted(item));
     }
+
+    /// <summary>An estimate row with the estimator's values instead of the parser's; the macros note follows the new values.</summary>
+    public static ConfirmItem WithEstimate(ConfirmItem row, Per100g values, string model) => row with
+    {
+        Per100 = values,
+        EstimateModel = model,
+        Notes = [.. row.Notes.Where(n => n.Format != MacrosNote), .. FoodMath.MacrosDisagree(values) ? [new LocalText("The calories don't add up from the macros.")] : Array.Empty<LocalText>()],
+    };
 
     /// <summary>
     /// Trigram similarity ties often (many USDA names contain "chicken" and "breast"), so the ranking adds:
