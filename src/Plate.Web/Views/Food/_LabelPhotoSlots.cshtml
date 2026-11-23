@@ -1,7 +1,6 @@
-@model bool
 @using Plate.Core.Domain
-@* Up to three photos read together (SPEC 6.6). Closed until "Add more photos"; then the single photo button gives way to
-   the slots and nothing is sent until "Read the label". The model is true on the Scan tab, where the filled form opens below. *@
+@* Up to three photos read together (SPEC 6.6). Only in a form filled from a photo, closed until "Add more photos"; then the
+   photo button gives way to the slots, label.js puts the photos already read in them, and nothing is sent until "Read the label". *@
 <button type="button" class="btn btn-plain btn-block label-more" data-label-more aria-expanded="false">@Ui.Icon("plus")@L["Add more photos"]</button>
 <div class="label-panel" data-label-panel>
     <div class="label-slots">
@@ -18,6 +17,6 @@
         }
     </div>
     <p class="section-footer">@L["Add the front or another side of the pack if the table doesn't show the name or serving."]</p>
-    <button type="button" class="btn btn-primary btn-block" data-label-read data-label-start="@(Model ? "" : null)" disabled>@L["Read the label"]</button>
-    <button type="button" class="btn btn-plain btn-block" data-label-less>@L["Use one photo"]</button>
+    <button type="button" class="btn btn-primary btn-block" data-label-read disabled>@L["Read the label"]</button>
+    <button type="button" class="btn btn-plain btn-block" data-label-less>@L["Cancel"]</button>
 </div>

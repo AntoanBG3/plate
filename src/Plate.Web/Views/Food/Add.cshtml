@@ -51,21 +51,15 @@
         break;
 
     case "barcode":
-        @* One label module holds the photo button and the slot the filled form opens in (SPEC 6.6). *@
+        @* One label module holds the photo button and the slot the filled form opens in, with "Add more photos" (SPEC 6.6). *@
         <div data-module="label">
-        <div data-label-photos>
-            <div class="btn-stack">
-                <button type="button" class="btn btn-primary" data-start>@Ui.Icon("barcode")@L["Scan a barcode"]</button>
-                @if (Model.LabelAvailable)
-                {
-                    <label class="btn btn-secondary" data-label-button data-label-single>@Ui.Icon("photo")@L["Photograph a label"]
-                        <input type="file" accept="image/*" class="sr-only" data-label-photo data-label-start />
-                    </label>
-                }
-            </div>
+        <div class="btn-stack">
+            <button type="button" class="btn btn-primary" data-start>@Ui.Icon("barcode")@L["Scan a barcode"]</button>
             @if (Model.LabelAvailable)
             {
-                <partial name="_LabelPhotoSlots" model="true" />
+                <label class="btn btn-secondary" data-label-button>@Ui.Icon("photo")@L["Photograph a label"]
+                    <input type="file" accept="image/*" class="sr-only" data-label-photo data-label-start />
+                </label>
             }
         </div>
         @if (Model.LabelAvailable)

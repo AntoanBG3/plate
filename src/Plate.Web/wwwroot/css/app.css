@@ -457,11 +457,9 @@ body:has(#rest-timer:not([hidden])) .toast { bottom: calc(env(safe-area-inset-bo
 .label-pick.is-busy .thinking, [data-module="label"].is-busy > .thinking { display: flex; }
 .field-row input.is-converted { color: var(--accent-text); }
 .field-row input.is-missing { box-shadow: inset 0 -1.5px 0 var(--warning); }
-/* Extra label photos (SPEC 6.6): closed until asked for, then they replace the single photo button. */
+/* Extra label photos (SPEC 6.6): in a form filled from a photo, closed until asked for, then they replace the photo button. */
 [data-label-photos]:not(.is-more) .label-panel, [data-label-photos].is-more [data-label-single], [data-label-photos].is-more .label-more { display: none; }
 .label-more { margin-top: var(--s-2); min-height: var(--tap); }
-/* On the Scan tab the slots follow "Scan a barcode". */
-.btn-stack ~ .label-panel { margin-top: var(--s-3); }
 .label-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
 .label-slot { position: relative; }
 .label-slot-pick { position: relative; display: grid; place-items: center; aspect-ratio: 1; min-height: var(--tap); border: 1.5px dashed var(--separator); border-radius: var(--r-md); overflow: hidden; color: var(--label-2); font-size: var(--text-footnote); text-align: center; cursor: pointer; }

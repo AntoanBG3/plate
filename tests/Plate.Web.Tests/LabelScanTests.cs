@@ -518,7 +518,7 @@ public class LabelScanTests(PostgresFixture fixture) : IClassFixture<PostgresFix
     }
 
     [Fact]
-    public async Task The_extra_photo_slots_are_there_but_closed_until_asked_for()
+    public async Task The_extra_photo_slots_come_only_with_a_form_filled_from_a_photo()
     {
         var (app, _) = NewApp();
         await using var _app = app;
@@ -526,10 +526,18 @@ public class LabelScanTests(PostgresFixture fixture) : IClassFixture<PostgresFix
 
         foreach (var path in new[] { AddPage, "/food/add?date=2026-10-05&meal=Lunch&tab=barcode" })
         {
-            var html = WebUtility.HtmlDecode(await a.Client.GetStringAsync(path));
-            html.Should().Contain("data-label-more").And.Contain("Add more photos").And.Contain("Nutrition table");
-            System.Text.RegularExpressions.Regex.Matches(html, "data-label-slot-photo").Count.Should().Be(3, path);
-            html.Should().MatchRegex("data-label-read[^>]*disabled");
+            var page = WebUtility.HtmlDecode(await a.Client.GetStringAsync(path));
+            page.Should().Contain("data-label-photo").And.NotContain("data-label-more", path).And.NotContain("data-label-slot-photo", path);
         }
+
+        var html = WebUtility.HtmlDecode(await (await ReadAsync(a, Jpeg(100))).Content.ReadAsStringAsync());
+        html.Should().Contain("data-label-more").And.Contain("Add more photos").And.Contain("Nutrition table");
+        System.Text.RegularExpressions.Regex.Matches(html, "data-label-slot-photo").Count.Should().Be(3);
+        html.Should().MatchRegex("data-label-read[^>]*disabled");
+        // What the read filled in is marked, so a read with more photos can replace it.
+        html.Should().MatchRegex("name=\"name\"[^>]*data-from-label=\"true\"").And.MatchRegex("name=\"grams\"[^>]*data-from-label=\"true\"");
+
+        var typed = WebUtility.HtmlDecode(await (await ReadAsync(a, Jpeg(100), name: "Моето мляко", grams: "150")).Content.ReadAsStringAsync());
+        typed.Should().Contain("value=\"Моето мляко\"").And.NotContain("data-from-label=\"true\"");
     }
 }

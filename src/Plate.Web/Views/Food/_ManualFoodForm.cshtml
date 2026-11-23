@@ -5,6 +5,10 @@
     var date = Model.Date.ToString("yyyy-MM-dd", inv);
     var hasBarcode = Model.Barcode is not null || !string.IsNullOrEmpty(Model.BarcodeValue);
     var label = Model.Label;
+    // Values the label filled in rather than the user, so a read with more photos may replace them (label.js). Razor
+    // writes a data- attribute even for false or null, hence the explicit value.
+    var nameFromLabel = Model.Name is null && label?.Name is not null;
+    var gramsFromLabel = Model.TypedGrams is null && label?.ServingGrams is not null;
     // Numbers are written with a dot in both languages (SPEC 8), or the inputs' pattern rejects them on iOS.
     string? Value(string field, decimal? v) => Model.Submitted
         ? ViewData.ModelState[field]?.AttemptedValue : v?.ToString("0.#", inv);
@@ -21,7 +25,10 @@
             <label class="btn btn-secondary btn-block" data-label-button data-label-single>@Ui.Icon("photo")@L["Read the label from a photo"]
                 <input type="file" accept="image/*" class="sr-only" data-label-photo />
             </label>
-            <partial name="_LabelPhotoSlots" model="false" />
+            @if (label is not null)
+            {
+                <partial name="_LabelPhotoSlots" />
+            }
             <p class="section-footer">@L["The photo is sent to an AI model through OpenRouter and kept for 30 days so misreads can be checked."]</p>
             <p class="thinking" role="status"><i></i><i></i><i></i><span>@L["Reading the label…"]</span></p>
         </div>
@@ -48,7 +55,7 @@
             <input type="hidden" name="labelScanId" value="@scanId" />
         }
         <div class="list">
-            <div class="field-row stacked"><label for="m-name" class="sr-only">@L["Name"]</label><input id="m-name" aria-invalid="@(Model.InvalidField == "name" ? "true" : null)" autofocus="@(Model.InvalidField == "name")" type="text" name="name" value="@(Model.Name ?? label?.Name)" maxlength="200" required placeholder="@L["Food name, e.g. Кисело мляко 2%"]" /></div>
+            <div class="field-row stacked"><label for="m-name" class="sr-only">@L["Name"]</label><input id="m-name" aria-invalid="@(Model.InvalidField == "name" ? "true" : null)" autofocus="@(Model.InvalidField == "name")" type="text" name="name" value="@(Model.Name ?? label?.Name)" data-from-label="@(nameFromLabel ? "true" : "false")" maxlength="200" required placeholder="@L["Food name, e.g. Кисело мляко 2%"]" /></div>
             @if (Model.BarcodeField)
             {
                 <div class="field-row"><label for="m-barcode">@L["Barcode"]</label><input id="m-barcode" class="num" type="text" name="barcode" value="@Model.BarcodeValue" inputmode="numeric" pattern="[0-9 \-]{8,16}" autocomplete="off" placeholder="@L["Optional"]" data-barcode-input /><button type="button" class="icon-btn" data-scan-into aria-label="@L["Scan the barcode"]">@Ui.Icon("barcode")</button></div>
@@ -76,7 +83,7 @@
         <h2 class="section-header" style="margin-top: var(--s-5)">@L["Portion"]</h2>
         <div class="list">
             <div class="field-row is-optional"><label for="m-serving">@L["One serving"]</label><input id="m-serving" class="num" type="text" name="servingGrams" aria-invalid="@(Model.InvalidField == "servingGrams" ? "true" : null)" autofocus="@(Model.InvalidField == "servingGrams")" value="@Value("servingGrams", label?.ServingGrams ?? Model.TypedServing)" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" placeholder="@L["Optional"]" />@Ui.UnitWords(L)</div>
-            <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="text" name="grams" aria-invalid="@(Model.InvalidField == "grams" ? "true" : null)" autofocus="@(Model.InvalidField == "grams")" value="@Value("grams", Model.TypedGrams ?? label?.ServingGrams)" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required />@Ui.UnitWords(L)</div>
+            <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="text" name="grams" aria-invalid="@(Model.InvalidField == "grams" ? "true" : null)" autofocus="@(Model.InvalidField == "grams")" value="@Value("grams", Model.TypedGrams ?? label?.ServingGrams)" data-from-label="@(gramsFromLabel ? "true" : "false")" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required />@Ui.UnitWords(L)</div>
         </div>
         @* Shown only with a barcode: others find a shared food by scanning it (SPEC 4). Without one the server keeps it private. *@
         <div class="list" data-share style="margin-top: var(--s-5)" hidden="@(!hasBarcode)">
