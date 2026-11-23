@@ -45,8 +45,9 @@ public class ParseLatencyTests(PostgresFixture fixture) : IClassFixture<Postgres
             .ParseAsync("1 banana", default);
 
         var run = await s.Db.ParseRuns.SingleAsync(r => r.Id == outcome.RunId);
-        run.ParserMs.Should().BeGreaterThanOrEqualTo(300);
-        run.NamerMs.Should().BeGreaterThanOrEqualTo(100);
+        // Task.Delay can end a millisecond before the stopwatch's whole milliseconds reach the delay (299 for 300 in a deploy gate).
+        run.ParserMs.Should().BeGreaterThanOrEqualTo(295);
+        run.NamerMs.Should().BeGreaterThanOrEqualTo(95);
         run.TotalMs.Should().BeGreaterThanOrEqualTo(run.ParserMs + run.MatchMs + run.NamerMs!.Value);
     }
 
