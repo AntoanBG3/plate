@@ -130,6 +130,9 @@
     "src/Plate.Web/Views/Shared/ExercisePicker.cshtml",
     "wwwroot/js"
   ],
+  "Add Plate to your Home Screen": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
   "Add a passkey": [
     "src/Plate.Web/Views/Settings/Security.cshtml"
   ],
@@ -175,6 +178,10 @@
   ],
   "Add these": [
     "src/Plate.Web/Views/Recipes/Recipe.cshtml"
+  ],
+  "Add to Home Screen": [
+    "src/Plate.Web/Views/Settings/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Install.cshtml"
   ],
   "Add to breakfast": [
     "src/Plate.Web/Views/Food/Add.cshtml",
@@ -268,7 +275,8 @@
     "src/Plate.Web/Controllers/TrainController.cs"
   ],
   "Another food already shares this barcode, so this one is kept for you only.": [
-    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml"
+    "src/Plate.Web/Views/Food/_KnownBarcode.cshtml",
+    "src/Plate.Web/Views/Food/_ManualFoodForm.cshtml"
   ],
   "Anything else?": [
     "src/Plate.Web/Views/Food/Confirm.cshtml"
@@ -459,6 +467,9 @@
   "Camera access was refused. Type the digits or take a photo instead.": [
     "wwwroot/js"
   ],
+  "Can't find it? Open this page in Safari and follow the steps there. The Home Screen app keeps its own sign-in, so you may need to sign in once more there.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
   "Cancel": [
     "src/Plate.Web/Views/Food/_ChangeFoodSheet.cshtml",
     "src/Plate.Web/Views/Food/_LabelPhotoSlots.cshtml",
@@ -528,6 +539,9 @@
   ],
   "Confirm it's you with one of this account's passkeys. The admin area stays open for 30 minutes after the last page, and 4 hours at most.": [
     "src/Plate.Web/Views/AdminUnlock/Unlock.cshtml"
+  ],
+  "Confirm, then open Plate from the new icon.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
   ],
   "Copied 1 item.": [
     "src/Plate.Web/Controllers/FoodController.cs"
@@ -1084,9 +1098,18 @@
   "Idea": [
     "src/Plate.Web/Features/Feedback/FeedbackText.cs"
   ],
+  "In Safari": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
   "In progress · {0}": [
     "src/Plate.Web/Views/Today/Index.cshtml",
     "src/Plate.Web/Views/Train/Index.cshtml"
+  ],
+  "In this browser": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
+  "In your browser": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
   ],
   "Inactive": [
     "enum"
@@ -1115,6 +1138,12 @@
   "Ingredients as text": [
     "src/Plate.Web/Views/Recipes/Recipe.cshtml"
   ],
+  "Install": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
+  "Install Plate": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
   "Inverted row": [
     "exercise"
   ],
@@ -1126,6 +1155,9 @@
   ],
   "It goes straight to the developer. The answer shows under Your feedback in Settings.": [
     "src/Plate.Web/Views/Feedback/New.cshtml"
+  ],
+  "It opens from its own icon, full screen, like any other app.": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
   ],
   "It's too late to undo that.": [
     "src/Plate.Web/Features/Undo/UndoService.cs"
@@ -1496,6 +1528,9 @@
     "src/Plate.Web/Views/Food/Barcode.cshtml",
     "src/Plate.Web/Views/Home/Error.cshtml"
   ],
+  "Not now": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
+  ],
   "Not saved yet. It tries again when you have signal.": [
     "src/Plate.Web/Views/Settings/_AutosaveStatus.cshtml",
     "src/Plate.Web/Views/Templates/_TemplateExerciseForm.cshtml",
@@ -1589,6 +1624,9 @@
   ],
   "Open Food Facts knows this product but not its nutrition. Enter it from the label once and it's saved for everyone.": [
     "src/Plate.Web/Views/Food/Barcode.cshtml"
+  ],
+  "Open Plate on your phone to add it to its Home Screen. On a computer, Chrome and Edge offer Install in the address bar or the menu.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
   ],
   "Open the rest timer": [
     "src/Plate.Web/Views/Train/Session.cshtml"
@@ -1695,6 +1733,12 @@
   ],
   "Plate calculator": [
     "src/Plate.Web/Features/Feedback/FeedbackText.cs"
+  ],
+  "Plate is on your Home Screen now. Open it from there.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
+  "Plate then opens from its own icon, full screen and without the browser's address bar, like any other app.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
   ],
   "Plate weights must be from the list.": [
     "src/Plate.Core/Domain/ProfileRules.cs"
@@ -2124,6 +2168,7 @@
     "src/Plate.Web/Views/Settings/General.cshtml",
     "src/Plate.Web/Views/Settings/Goal.cshtml",
     "src/Plate.Web/Views/Settings/Index.cshtml",
+    "src/Plate.Web/Views/Settings/Install.cshtml",
     "src/Plate.Web/Views/Settings/Profile.cshtml",
     "src/Plate.Web/Views/Settings/Security.cshtml",
     "src/Plate.Web/Views/Settings/Training.cshtml",
@@ -2148,6 +2193,9 @@
   ],
   "Show": [
     "src/Plate.Web/Views/Progress/Index.cshtml"
+  ],
+  "Show me how": [
+    "src/Plate.Web/Views/Today/Index.cshtml"
   ],
   "Side plank": [
     "exercise"
@@ -2287,6 +2335,24 @@
   "Take a photo instead": [
     "src/Plate.Web/Views/Food/_ScannerSheet.cshtml"
   ],
+  "Tap Add to Home Screen. You may need to scroll or tap More first.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
+  "Tap Add to Home screen or Install app.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
+  "Tap Add, then open Plate from the new icon.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
+  "Tap Share in the toolbar. If you don't see it, tap ⋯ next to the address first.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
+  "Tap Share. In Chrome it's in the address bar; in other browsers, look in the menu.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
+  "Tap the menu ⋮ in the corner of your browser.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
+  ],
   "Target": [
     "src/Plate.Web/Views/Progress/Index.cshtml",
     "wwwroot/js"
@@ -2393,6 +2459,9 @@
   "That's the end of the chat. Check the summary and save, or use the form.": [
     "src/Plate.Web/Features/Onboarding/OnboardingService.cs",
     "src/Plate.Web/Views/Onboarding/Index.cshtml"
+  ],
+  "The Home Screen app keeps its own sign-in, so you may need to sign in once more there.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
   ],
   "The OpenRouter account is out of credits.": [
     "src/Plate.Web/Integrations/JevFoodMatchDecider.cs"
@@ -2573,6 +2642,9 @@
   ],
   "This meal has nothing logged yet.": [
     "src/Plate.Web/Features/Food/SavedMealService.cs"
+  ],
+  "This page is open inside another app, which can't add it to the Home Screen. Open it in Safari or Chrome first, usually with Open in browser in that app's ⋯ menu.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
   ],
   "This product isn't in Open Food Facts. Enter it from the label once and it's saved for everyone.": [
     "src/Plate.Web/Views/Food/Barcode.cshtml"
@@ -2898,6 +2970,9 @@
   ],
   "You're all set.": [
     "src/Plate.Web/Controllers/OnboardingController.cs"
+  ],
+  "You're already using Plate from your Home Screen.": [
+    "src/Plate.Web/Views/Settings/Install.cshtml"
   ],
   "You're losing about {0}% of your weight a week, faster than planned. Fast cuts cost more muscle; your target will adjust, or lower the rate in Settings.": [
     "src/Plate.Web/Views/Today/Index.cshtml"

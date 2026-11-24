@@ -1,0 +1,69 @@
+@{
+    ViewData["Title"] = L["Add to Home Screen"];
+    ViewData["BackUrl"] = "/settings";
+    ViewData["BackLabel"] = L["Settings"];
+
+    void Step(string icon, string text)
+    {
+        <div class="row">
+            <span class="row-icon neutral">@Ui.Icon(icon)</span>
+            <span class="row-main">@text</span>
+        </div>
+    }
+}
+<header class="page-head">
+    <h1 class="large-title">@L["Add to Home Screen"]</h1>
+    <p class="subhead">@L["Plate then opens from its own icon, full screen and without the browser's address bar, like any other app."]</p>
+</header>
+
+@* install.js shows the section for this browser; all start hidden. *@
+<div data-module="install-guide">
+    <section class="section" data-platform="ios-safari" hidden>
+        <h2 class="section-title">@L["In Safari"]</h2>
+        <div class="list">
+            @{ Step("share", L["Tap Share in the toolbar. If you don't see it, tap ⋯ next to the address first."]); }
+            @{ Step("add-home", L["Tap Add to Home Screen. You may need to scroll or tap More first."]); }
+            @{ Step("check", L["Tap Add, then open Plate from the new icon."]); }
+        </div>
+        <p class="section-footer">@L["The Home Screen app keeps its own sign-in, so you may need to sign in once more there."]</p>
+    </section>
+
+    <section class="section" data-platform="ios-other" hidden>
+        <h2 class="section-title">@L["In this browser"]</h2>
+        <div class="list">
+            @{ Step("share", L["Tap Share. In Chrome it's in the address bar; in other browsers, look in the menu."]); }
+            @{ Step("add-home", L["Tap Add to Home Screen. You may need to scroll or tap More first."]); }
+            @{ Step("check", L["Tap Add, then open Plate from the new icon."]); }
+        </div>
+        <p class="section-footer">@L["Can't find it? Open this page in Safari and follow the steps there. The Home Screen app keeps its own sign-in, so you may need to sign in once more there."]</p>
+    </section>
+
+    <section class="section" data-platform="in-app" hidden>
+        <div class="banner is-info" role="status">@Ui.Icon("info")<span>@L["This page is open inside another app, which can't add it to the Home Screen. Open it in Safari or Chrome first, usually with Open in browser in that app's ⋯ menu."]</span></div>
+    </section>
+
+    <section class="section" data-platform="android" hidden>
+        <button type="button" class="btn btn-primary btn-block" data-install-prompt hidden>@Ui.Icon("add-home")@L["Install Plate"]</button>
+        <div data-install-fallback>
+            <h2 class="section-title">@L["In your browser"]</h2>
+            <div class="list">
+                @{ Step("more", L["Tap the menu ⋮ in the corner of your browser."]); }
+                @{ Step("add-home", L["Tap Add to Home screen or Install app."]); }
+                @{ Step("check", L["Confirm, then open Plate from the new icon."]); }
+            </div>
+        </div>
+    </section>
+
+    <section class="section" data-platform="other" hidden>
+        <button type="button" class="btn btn-primary btn-block" data-install-prompt hidden>@Ui.Icon("add-home")@L["Install Plate"]</button>
+        <p class="subhead" data-install-fallback>@L["Open Plate on your phone to add it to its Home Screen. On a computer, Chrome and Edge offer Install in the address bar or the menu."]</p>
+    </section>
+
+    <section class="section" data-platform="standalone" hidden>
+        <div class="banner is-success" role="status">@Ui.Icon("check")<span>@L["You're already using Plate from your Home Screen."]</span></div>
+    </section>
+
+    <section class="section" data-platform="standalone-now" hidden>
+        <div class="banner is-success" role="status">@Ui.Icon("check")<span>@L["Plate is on your Home Screen now. Open it from there."]</span></div>
+    </section>
+</div>

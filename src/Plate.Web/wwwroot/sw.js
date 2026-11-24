@@ -1,7 +1,7 @@
 // Caches static files only (SPEC section 8). Pages and data always come from the server;
 // when a page can't be fetched, the offline page is shown instead. Static files carry ?v=<hash>,
 // so a cached copy of the exact URL is served without revalidating.
-const CACHE = "gym-static-v33";
+const CACHE = "gym-static-v34";
 // The pinned libraries under /lib (the barcode reader's 1.1 MB WASM, Chart.js, htmx, fonts) live in a cache of their
 // own that survives a CACHE bump, so a deploy doesn't download them again: Safari refetched all of them on every bump
 // (P12, docs/perf/2026-11-22-precache-reuse.md). Bump LIB whenever a file under /lib changes; tests/js/sw-lib.test.cjs
@@ -28,6 +28,7 @@ const PRECACHE = [
     "/js/session.js",
     "/js/passkey.js",
     "/js/nav.js",
+    "/js/install.js",
     "/js/offline.js",
     "/js/progress.js",
     "/js/scanner.js",

@@ -54,6 +54,7 @@
     <div class="list">
         @{ Row("/settings/general", "settings", L["General"], general); }
         @{ Row("/settings/security", "lock", L["Sign-in & security"], passkeys == 0 ? L["Password only"] : L.Count(passkeys, "1 passkey", "{0} passkeys")); }
+        @{ Row("/settings/install", "add-home", L["Add to Home Screen"], null); }
     </div>
 </section>
 

@@ -53,7 +53,7 @@ public class LayoutTests(E2EFixture app) : IClassFixture<E2EFixture>
         var rows = await phone.Page.EvaluateAsync<double[]>("() => [...document.querySelectorAll('main .row-link')].map((r) => r.getBoundingClientRect().height)");
         rows.Should().NotBeEmpty().And.OnlyContain(h => h >= 44, "every row is a full touch target");
 
-        foreach (var page in new[] { "profile", "goal", "training", "general", "security" })
+        foreach (var page in new[] { "profile", "goal", "training", "general", "security", "install" })
         {
             await phone.NavigateByAsync(() => phone.Page.Locator($"main a[href='/settings/{page}']").TapAsync());
             var overflow = await phone.Page.EvaluateAsync<double>("() => document.documentElement.scrollWidth - window.innerWidth");
