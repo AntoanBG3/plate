@@ -203,6 +203,71 @@ public class BarcodeFieldTests(E2EFixture app) : IClassFixture<E2EFixture>
     [Theory]
     [InlineData(E2EFixture.Chromium)]
     [InlineData(E2EFixture.WebKit)]
+    public async Task Rejecting_a_shared_match_while_a_label_is_read_still_saves(string browser)
+    {
+        // The read sent "share" before the tap, so the form it brought back had sharing ticked and offered the card
+        // again; saving was refused as "already shared".
+        var code = NewEan();
+        await using (var other = await app.SignedInPhoneAsync(browser))
+        {
+            await other.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+            await SaveManualAsync(other, "Shared fiocchi e2e", code, share: true);
+        }
+
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await phone.Page.FillAsync("#m-name", "slow");
+        await ScanIntoFieldAsync(phone, code);
+        await phone.Page.Locator("[data-known-food]").WaitForAsync();
+        await phone.Page.Locator("[data-label-form] [data-label-photo]").SetInputFilesAsync(Fixture("label.jpg"));
+        await phone.Page.Locator("[data-label].is-busy").WaitForAsync();
+        await phone.Page.Locator("[data-known-reject]").TapAsync();
+        await phone.Page.Locator(".banner", new() { HasText = "Read from the photo" }).WaitForAsync();
+        await phone.Page.WaitForTimeoutAsync(1000);
+
+        (await phone.Page.Locator("[data-known-food]").CountAsync()).Should().Be(0);
+        (await phone.Page.Locator("[data-known]").InnerTextAsync()).Should().Contain("kept for you only");
+        (await phone.Page.Locator("form input.switch[name=share]").IsCheckedAsync()).Should().BeFalse();
+        (await phone.Page.Locator("form [data-share]").First.IsVisibleAsync()).Should().BeFalse();
+        await phone.Page.FillAsync("#m-grams", "150");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/items'] button[type=submit]").TapAsync(), "/food");
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
+    public async Task Rejecting_your_own_match_while_a_label_is_read_keeps_the_barcode_cleared(string browser)
+    {
+        // The read sent the barcode before the tap cleared it, and the form it brought back had it again, with the card.
+        var code = NewEan();
+        await using var phone = await app.SignedInPhoneAsync(browser, ai: true);
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await SaveManualAsync(phone, "Own ayran e2e", code, share: false);
+        await phone.GoAsync($"/food/add?date={Today}&meal=Lunch&tab=manual");
+        await phone.Page.FillAsync("#m-name", "slow");
+        await ScanIntoFieldAsync(phone, code);
+        await phone.Page.Locator("[data-known-food]").WaitForAsync();
+        await phone.Page.Locator("[data-label-form] [data-label-photo]").SetInputFilesAsync(Fixture("label.jpg"));
+        await phone.Page.Locator("[data-label].is-busy").WaitForAsync();
+        await phone.Page.Locator("[data-known-reject]").TapAsync();
+        await phone.Page.Locator(".banner", new() { HasText = "Read from the photo" }).WaitForAsync();
+        await phone.Page.WaitForTimeoutAsync(1000);
+
+        (await phone.Page.InputValueAsync("#m-barcode")).Should().BeEmpty();
+        (await phone.Page.Locator("[data-known-food]").CountAsync()).Should().Be(0);
+        (await phone.Page.Locator("[data-known]").InnerTextAsync()).Should().Contain("saved without it");
+        (await phone.Page.Locator("form [data-share]").First.IsVisibleAsync()).Should().BeFalse();
+        await phone.Page.FillAsync("#m-grams", "150");
+        await phone.NavigateByAsync(() => phone.Page.Locator("form[action='/food/items'] button[type=submit]").TapAsync(), "/food");
+        new Uri(phone.Page.Url).AbsolutePath.Should().Be("/food");
+        phone.ShouldHaveNoErrors();
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
     public async Task Without_the_barcode_reader_the_scan_buttons_say_so(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);

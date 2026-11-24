@@ -11,7 +11,7 @@
             : L["Another food already shares this barcode, so this one is kept for you only."];
 }
 @* Offered when the manual form's barcode is already a food (SPEC 7). Rejecting is handled in scanner.js. *@
-<div class="card known-food" role="status" data-known-food data-own="@(Model.Own ? "true" : "false")" data-reject-note="@note">
+<div class="card card-pad known-food" role="status" data-known-food data-own="@(Model.Own ? "true" : "false")" data-reject-note="@note">
     <p class="footnote">@L["Already in the app"]</p>
     <p class="headline">@item.DisplayName()</p>
     @if (Model.AddedByAnother)

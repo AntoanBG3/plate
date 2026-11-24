@@ -220,6 +220,7 @@ public record BarcodeViewModel(DateOnly Date, Meal Meal, string Code, Plate.Web.
 /// <param name="Share">The share choice, kept when a label photo redraws the form.</param>
 /// <param name="TypedGrams">"You ate" as typed before a label photo; it wins over the label's serving.</param>
 /// <param name="TypedServing">"One serving" as typed before a label photo; used when the label prints none.</param>
+/// <param name="DeclinedBarcode">A code whose shared food the user turned down; while the field holds it the food stays private.</param>
 public record ManualFoodFormModel(
     DateOnly Date,
     Meal Meal,
@@ -235,7 +236,8 @@ public record ManualFoodFormModel(
     decimal? TypedServing = null,
     string? InvalidField = null,
     bool Submitted = false,
-    FoodUnit? Unit = null);
+    FoodUnit? Unit = null,
+    string? DeclinedBarcode = null);
 
 /// <summary>A food the app already has for a barcode in the manual form, offered instead of a new one (SPEC 7).</summary>
 /// <param name="Own">The user's own private food; rejecting it clears the barcode, since one account can't have two foods with it.</param>

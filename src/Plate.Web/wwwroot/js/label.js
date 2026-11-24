@@ -196,11 +196,13 @@ window.gymModule("label", (root) => {
                     data.set(field, value.replace(",", "."));
                 }
             }
-            // "No, it's different" on the known-barcode card (scanner.js) holds for this code in the new form too.
-            const declined = !!(form && form.querySelector("[data-known-declined]"));
             const share = form && form.querySelector("input[type=checkbox][name=share]");
             if (share) {
                 data.set("share", String(share.checked));
+            }
+            const declinedField = form && form.querySelector("[data-known-declined] input[name=declinedBarcode]");
+            if (declinedField) {
+                data.set("declinedBarcode", declinedField.value);
             }
             let found = knownBarcode;
             if (!found && barcodeField) {
@@ -238,6 +240,11 @@ window.gymModule("label", (root) => {
                 toast(t("Couldn't read the label. Enter the values by hand."));
                 return;
             }
+            // "No, it's different" may have been tapped while the photo was read, after the request went out: take the
+            // barcode field and the decline as they stand now into the new form. Rejecting the user's own food cleared
+            // the field; scanner.js keeps a declined shared code private.
+            const declinedNow = form && form.querySelector("[data-known-declined]");
+            const fieldNow = form && form.querySelector("[data-barcode-input]");
             const placed = document.importNode(fresh, true);
             (slot || host).querySelectorAll("[data-label-panel]").forEach(forget);
             if (slot) {
@@ -254,10 +261,21 @@ window.gymModule("label", (root) => {
                 });
                 drawPanel(panel);
             }
-            // The barcode, typed or found in the photo, may already be a food (SPEC 7); scanner.js offers it again in the
-            // new form, unless the user already said this code is a different food.
-            const code = placed.querySelector("[data-barcode-input]")?.value.replace(/\D/g, "") || "";
-            if (code && !(declined && code === knownBarcode.replace(/\D/g, ""))) {
+            // The barcode, typed or found in the photo, may already be a food (SPEC 7); scanner.js offers it in the new
+            // form, or keeps it private when the user already said this code is a different food.
+            const freshField = placed.querySelector("[data-barcode-input]");
+            if (freshField && fieldNow && fieldNow.value.trim() !== knownBarcode) {
+                freshField.value = fieldNow.value;
+                freshField.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            const code = freshField?.value.replace(/\D/g, "") || "";
+            const knownSlot = placed.querySelector("[data-known]");
+            const declinedFor = declinedNow ? declinedNow.querySelector("input[name=declinedBarcode]")?.value ?? "" : null;
+            if (knownSlot && declinedFor === code) {
+                knownSlot.replaceChildren(declinedNow);
+                knownSlot.hidden = false;
+            }
+            if (code) {
                 placed.dispatchEvent(new CustomEvent("label:barcode", { bubbles: true }));
             }
             setOnline();

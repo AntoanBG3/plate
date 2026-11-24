@@ -4,6 +4,8 @@
     var inv = System.Globalization.CultureInfo.InvariantCulture;
     var date = Model.Date.ToString("yyyy-MM-dd", inv);
     var hasBarcode = Model.Barcode is not null || !string.IsNullOrEmpty(Model.BarcodeValue);
+    // "No, it's different" on a shared food, carried through a label read or an error: the food stays private (SPEC 7).
+    var declined = Model.BarcodeField && Plate.Web.Features.Food.ManualFoodService.Declined(Model.BarcodeValue, Model.DeclinedBarcode);
     var label = Model.Label;
     // Values the label filled in rather than the user, so a read with more photos may replace them (label.js). Razor
     // writes a data- attribute even for false or null, hence the explicit value.
@@ -63,7 +65,12 @@
         </div>
         @if (Model.BarcodeField)
         {
-            <div data-known hidden></div>
+            <div data-known hidden="@(!declined)">
+                @if (declined)
+                {
+                    <p class="section-footer" data-known-declined>@L["Another food already shares this barcode, so this one is kept for you only."]<input type="hidden" name="declinedBarcode" value="@(new string(Model.BarcodeValue!.Where(char.IsAsciiDigit).ToArray()))" /></p>
+                }
+            </div>
         }
         <h2 class="section-header" style="margin-top: var(--s-5)">@L["From the label"]</h2>
         <div class="segmented-wrap">
@@ -86,14 +93,14 @@
             <div class="field-row"><label for="m-grams">@L["You ate"]</label><input id="m-grams" class="num" type="text" name="grams" aria-invalid="@(Model.InvalidField == "grams" ? "true" : null)" autofocus="@(Model.InvalidField == "grams")" value="@Value("grams", Model.TypedGrams ?? label?.ServingGrams)" data-from-label="@(gramsFromLabel ? "true" : "false")" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required />@Ui.UnitWords(L)</div>
         </div>
         @* Shown only with a barcode: others find a shared food by scanning it (SPEC 4). Without one the server keeps it private. *@
-        <div class="list" data-share style="margin-top: var(--s-5)" hidden="@(!hasBarcode)">
+        <div class="list" data-share style="margin-top: var(--s-5)" hidden="@(!hasBarcode || declined)">
             <label class="field-row switch-row">
                 <span>@L["Share with other users"]</span>
-                <input type="checkbox" class="switch" name="share" value="true" checked="@Model.Share" />
+                <input type="checkbox" class="switch" name="share" value="true" checked="@(Model.Share && !declined)" />
                 <input type="hidden" name="share" value="false" />
             </label>
         </div>
-        <p class="section-footer" data-share hidden="@(!hasBarcode)">@L["Others who scan this barcode get this food instead of entering it again. Your name isn't shown."]</p>
+        <p class="section-footer" data-share hidden="@(!hasBarcode || declined)">@L["Others who scan this barcode get this food instead of entering it again. Your name isn't shown."]</p>
         <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-5)">@L["Save and add"]</button>
     </form>
 </div>
