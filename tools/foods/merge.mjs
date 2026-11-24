@@ -147,7 +147,7 @@ for (const fix of readCsv(path.join(seedDir, "reference-fixes.csv"))) {
 }
 
 // Hand-curated foods with their own sources, kept as they are.
-for (const curated of ["lidl-bakery.csv"]) {
+for (const curated of ["lidl-bakery.csv", "mixed-drinks.csv"]) {
     out.push(...readCsv(path.join(here, curated)));
 }
 

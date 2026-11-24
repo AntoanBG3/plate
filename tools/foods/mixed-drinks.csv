@@ -1,0 +1,2 @@
+kind,barcode,name_bg,name_en,brand,kcal,protein,carbs,fat,serving_g,source,fiber,satfat,piece_g,basis
+generic,,Кафе с мляко,Coffee with milk,,12.8,0.75,0.93,0.66,150,"Computed per 100 g from 80 g USDA FoodData Central ""Beverages, coffee, brewed, prepared with tap water"" (FDC 171890) and 20 g ""Milk, whole, 3.25% milkfat, with added vitamin D"" (FDC 322892), see tools/foods/mixed-drinks.csv",0,0.37,,estimate

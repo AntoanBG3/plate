@@ -452,4 +452,29 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
     [InlineData("кафе", "кафета", true)]
     public void Bulgarian_word_forms_meet_across_number(string typed, string named, bool meet) =>
         FoodMatcher.Forms(named).Contains(FoodMatcher.Stem(typed)).Should().Be(meet);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Coffee_with_milk_is_offered_as_itself(bool decider)
+    {
+        // QA 2026-11-24: "кафе с мляко" became a sweetened bottled coffee drink (71 kcal per 100 g, 2 of 3 runs) or soy
+        // coffee; nothing in the database was plain coffee with milk.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Enabled = decider;
+        var coffee = await s.Db.FoodItems.SingleAsync(f => f.Source == Plate.Core.Domain.FoodSource.Reference && f.NameBg == "Кафе с мляко");
+        var item = new ParsedFoodItem("coffee with milk", "кафе с мляко", 150, FoodState.NotApplicable, null, null, new Per100g(40, 1.5m, 4, 1.5m));
+
+        var row = (await s.Matcher.ResolveAsync("кафе с мляко", [item], default)).Single();
+
+        if (decider)
+        {
+            s.MatchDecider.Calls.Single()[0].Candidates[0].Id.Should().Be(coffee.Id, "the decider leans to the first option");
+        }
+        else
+        {
+            row.FoodItemId.Should().Be(coffee.Id);
+            row.Notes.Should().Contain(n => n.Format.StartsWith("These values are estimated"));
+        }
+    }
 }
