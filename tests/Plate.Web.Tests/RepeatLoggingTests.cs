@@ -173,6 +173,34 @@ public class RepeatLoggingTests(PostgresFixture fixture) : IClassFixture<Postgre
         (await s.Db.UsualFoods.CountAsync()).Should().Be(1);
     }
 
+    [Theory]
+    [InlineData(0.5, Confidence.Medium, false)]
+    [InlineData(0.97, Confidence.High, true)]
+    public async Task A_suggested_food_saved_unchanged_is_remembered_only_when_the_app_was_sure(double pickConfidence, Confidence shown, bool remembered)
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, q[0].Candidates[0].Id, (decimal)pickConfidence);
+        var suggested = (await s.ParseRuns.ParseAsync("200г извара", default)).Items[0];
+        suggested.Confidence.Should().Be(shown);
+
+        await ConfirmAsync(s, "200г извара", suggested.FoodItemId!.Value);
+
+        (await s.Db.UsualFoods.CountAsync()).Should().Be(remembered ? 1 : 0,
+            "a \"Check this\" row saved as it came is not the user choosing that food");
+    }
+
+    [Fact]
+    public async Task Another_food_picked_on_a_check_this_row_is_remembered()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Answer = q => StubMatchDecider.First(q, q[0].Candidates[0].Id, 0.5m);
+        var picked = await HandPickedAsync(s);
+
+        await ConfirmAsync(s, "200г извара", picked);
+
+        (await s.Db.UsualFoods.SingleAsync()).FoodItemId.Should().Be(picked);
+    }
+
     [Fact]
     public async Task An_unticked_row_writes_nothing()
     {

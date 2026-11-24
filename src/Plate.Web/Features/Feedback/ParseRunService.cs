@@ -207,9 +207,10 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             }
 
             var parsed = FeedbackJson.Read<List<ParsedFoodItem>>(run.Parsed) ?? [];
+            var resolved = FeedbackJson.Read<List<ResolvedRow>>(run.Resolved) ?? [];
             var pairs = saved.Take(parsed.Count)
-                .Select((s, n) => (Saved: s, Typed: parsed[n].NameOriginal))
-                .Where(x => x.Saved.Included && x.Saved.FoodItemId is not null)
+                .Select((s, n) => (Saved: s, Typed: parsed[n].NameOriginal, Suggested: resolved.ElementAtOrDefault(n)))
+                .Where(x => x.Saved.Included && x.Saved.FoodItemId is not null && !Unconfirmed(x.Suggested, x.Saved.FoodItemId))
                 .Select(x => (x.Typed, x.Saved.FoodItemId!.Value))
                 .ToList();
             await repeat.RememberAsync(pairs, ct);
@@ -219,6 +220,14 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             log.LogWarning(ex, "Could not remember usual foods.");
         }
     }
+
+    /// <summary>
+    /// A row saved on the food the app suggested while it marked it "Check this" (Medium confidence): the app was unsure
+    /// and the user didn't choose, so it says nothing about what these words mean. Remembered, it would come back as
+    /// "Your usual" without the warning (QA 2026-11-24: "кафе с мляко" as a sweetened bottled coffee).
+    /// </summary>
+    internal static bool Unconfirmed(ResolvedRow? suggested, int? savedFoodItemId) =>
+        suggested is { Confidence: Confidence.Medium, Usual: false } && suggested.FoodItemId == savedFoodItemId;
 
     private static string? Trim(string? value, int max = 100) => value is { Length: > 0 } v && v.Length > max ? v[..max] : value;
 }
