@@ -68,7 +68,7 @@
             <div data-known hidden="@(!declined)">
                 @if (declined)
                 {
-                    <p class="section-footer" data-known-declined>@L["Another food already shares this barcode, so this one is kept for you only."]<input type="hidden" name="declinedBarcode" value="@Barcodes.Normalize(Model.BarcodeValue)" /></p>
+                    <p class="section-footer" data-known-declined>@L["Another food already shares this barcode, so this one is kept for you only."]<input type="hidden" name="declinedBarcode" value="@(new string(Model.BarcodeValue!.Where(char.IsAsciiDigit).ToArray()))" /></p>
                 }
             </div>
         }

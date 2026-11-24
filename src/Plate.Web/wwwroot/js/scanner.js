@@ -94,7 +94,8 @@ window.gymModule("scanner", (root) => {
         const code = document.createElement("input");
         code.type = "hidden";
         code.name = "declinedBarcode";
-        code.value = card.dataset.code;
+        // The field's own digits, as toggleShare and label.js compare them; the server normalises both sides.
+        code.value = form.querySelector("[data-barcode-input]").value.replace(/\D/g, "");
         note.append(code);
         card.replaceWith(note);
         keepPrivate(form);

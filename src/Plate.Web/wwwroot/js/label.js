@@ -241,8 +241,10 @@ window.gymModule("label", (root) => {
                 return;
             }
             // "No, it's different" may have been tapped while the photo was read, after the request went out: take the
-            // decline as it stands now into the new form (scanner.js keeps that code private).
+            // barcode field and the decline as they stand now into the new form. Rejecting the user's own food cleared
+            // the field; scanner.js keeps a declined shared code private.
             const declinedNow = form && form.querySelector("[data-known-declined]");
+            const fieldNow = form && form.querySelector("[data-barcode-input]");
             const placed = document.importNode(fresh, true);
             (slot || host).querySelectorAll("[data-label-panel]").forEach(forget);
             if (slot) {
@@ -261,9 +263,15 @@ window.gymModule("label", (root) => {
             }
             // The barcode, typed or found in the photo, may already be a food (SPEC 7); scanner.js offers it in the new
             // form, or keeps it private when the user already said this code is a different food.
-            const code = placed.querySelector("[data-barcode-input]")?.value.replace(/\D/g, "") || "";
+            const freshField = placed.querySelector("[data-barcode-input]");
+            if (freshField && fieldNow && fieldNow.value.trim() !== knownBarcode) {
+                freshField.value = fieldNow.value;
+                freshField.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            const code = freshField?.value.replace(/\D/g, "") || "";
             const knownSlot = placed.querySelector("[data-known]");
-            if (code && knownSlot && declinedNow?.querySelector("input[name=declinedBarcode]")?.value === code) {
+            const declinedFor = declinedNow ? declinedNow.querySelector("input[name=declinedBarcode]")?.value ?? "" : null;
+            if (knownSlot && declinedFor === code) {
                 knownSlot.replaceChildren(declinedNow);
                 knownSlot.hidden = false;
             }
