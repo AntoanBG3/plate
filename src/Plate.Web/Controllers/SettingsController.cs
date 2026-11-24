@@ -165,6 +165,10 @@ public class SettingsController(
         return Redirect("/settings/general");
     }
 
+    /// <summary>How to add Plate to the Home Screen; install.js shows the steps for this browser.</summary>
+    [HttpGet("install")]
+    public IActionResult Install() => View();
+
     [HttpGet("export")]
     public async Task<IActionResult> Export(CancellationToken ct)
     {

@@ -362,7 +362,7 @@ The build also fails when a NuGet package has a known high or critical advisory;
 
 ## Installing on iPhone
 
-Open `https://plate.peychev.uk` in Safari, sign in, then Share → Add to Home Screen. Open it from the home screen icon from then on; the login lasts 30 days and renews with use.
+Open `https://plate.peychev.uk` in Safari, sign in, then Share → Add to Home Screen (on iOS 26, Share is under ⋯ next to the address). Today shows a card pointing new users there until they install it or tap Not now, and Settings → Add to Home Screen has the steps for each browser. Open it from the home screen icon from then on; the login lasts 30 days and renews with use.
 
 Settings → Export all data downloads a ZIP of CSV files readable in Excel or Numbers. It includes private foods, saved meals with their ingredients, recipes with theirs, exercise notes and bar settings, and profile preferences. Saved meal and food IDs link the files.
 

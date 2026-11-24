@@ -47,6 +47,20 @@
     </section>
 }
 
+@* Shown by install.js on a phone browser until dismissed; never in the installed app. *@
+<section class="card card-pad install-card" data-module="install-card" hidden>
+    <span class="row-icon">@Ui.Icon("add-home")</span>
+    <div class="install-card-main">
+        <h2 class="section-title" style="margin: 0">@L["Add Plate to your Home Screen"]</h2>
+        <p>@L["It opens from its own icon, full screen, like any other app."]</p>
+        <div class="install-card-actions">
+            <button type="button" class="btn btn-primary" data-install-prompt hidden>@L["Install"]</button>
+            <a class="btn btn-primary" href="/settings/install" data-install-fallback>@L["Show me how"]</a>
+            <button type="button" class="btn btn-plain" data-install-dismiss>@L["Not now"]</button>
+        </div>
+    </div>
+</section>
+
 <a class="card tap" href="/food" aria-label="@L["Food today"]">
     @if (t.Kcal is { } kcal && t.ProteinG is { } protein)
     {

@@ -1033,6 +1033,10 @@ html.is-navigating #main { opacity: 0.72; transition: opacity 160ms var(--ease-o
 .shot-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .whats-new { display: grid; gap: var(--s-2); }
 .whats-new ul { margin: 0; padding-left: var(--s-5); display: grid; gap: var(--s-1); }
+.install-card { display: flex; gap: var(--s-3); align-items: flex-start; margin-bottom: var(--s-5); }
+.install-card-main { display: grid; gap: var(--s-2); min-width: 0; }
+.install-card-main p { margin: 0; color: var(--label-2); }
+.install-card-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-1); }
 
 /* ---------- admin (SPEC 12) ---------- */
 .admin-nav { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0 0 var(--s-5); }
