@@ -11,6 +11,16 @@ public class LayoutTests(E2EFixture app) : IClassFixture<E2EFixture>
     {
         // Both keep their place in the bar whether or not the title is showing yet (it fades in once scrolled).
         await phone.Page.EvaluateAsync("() => window.scrollTo(0, 400)");
+        // motion.js compacts the bar from an IntersectionObserver, which reports after the scroll. Measured before it
+        // ran, the back label could be boxed in the wide layout and the title in the compact one, a pairing never on
+        // screen (2026-11-24: 3 of 6 runs at 320 px in Bulgarian). Wait for the bar to match the scroll first.
+        await phone.Page.WaitForFunctionAsync("""
+            () => {
+              const bar = document.querySelector('[data-topbar]');
+              const title = document.querySelector('.large-title');
+              return !title || bar.classList.contains('is-compact') === (title.getBoundingClientRect().bottom < bar.offsetHeight);
+            }
+            """);
         await phone.AnimationsDoneAsync(".topbar");
         var back = await Phone.BoxAsync(phone.Page.Locator(".topbar-back"));
         var title = await Phone.BoxAsync(phone.Page.Locator(".topbar-title"));
