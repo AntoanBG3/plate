@@ -42,7 +42,8 @@ public class SharedFoodTests(PostgresFixture fixture) : IClassFixture<PostgresFi
         return new Account(client, email, id);
     }
 
-    private static async Task<HttpResponseMessage> SaveManualAsync(Account a, string name, string? barcode, bool? share, string grams = "150", string date = "2026-10-05")
+    private static async Task<HttpResponseMessage> SaveManualAsync(Account a, string name, string? barcode, bool? share, string grams = "150", string date = "2026-10-05",
+        params KeyValuePair<string, string>[] extra)
     {
         var token = await AppFactory.TokenAsync(a.Client, "/food/add?date=2026-10-05&meal=Lunch&tab=manual");
         var fields = new List<KeyValuePair<string, string>>
@@ -69,6 +70,7 @@ public class SharedFoodTests(PostgresFixture fixture) : IClassFixture<PostgresFi
             fields.Add(new("share", "false"));
         }
 
+        fields.AddRange(extra);
         fields.Add(new("requestId", Guid.NewGuid().ToString()));
         return await a.Client.PostAsync("/food/items", new FormUrlEncodedContent(fields));
     }
@@ -294,6 +296,47 @@ public class SharedFoodTests(PostgresFixture fixture) : IClassFixture<PostgresFi
         var response = await SaveManualAsync(b, Unique("Second qsf"), code, share: true);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         (await response.Content.ReadAsStringAsync()).Should().Contain("A food with that barcode is already shared. Scan it again to use it.");
+    }
+
+    [Fact]
+    public async Task A_declined_shared_barcode_is_saved_privately_even_with_sharing_ticked()
+    {
+        // "No, it's different" sends the code back with the form. Sharing can still arrive ticked (a label read that
+        // started before the tap redraws the form with it), and must not be refused as already shared.
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        await SaveManualAsync(a, Unique("Shared fiocchi qsf"), code, share: true);
+
+        var name = Unique("My fiocchi qsf");
+        var response = await SaveManualAsync(b, name, code, share: true, extra: [new("declinedBarcode", code)]);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        await using var db = fixture.CreateContext(null);
+        var mine = await db.FoodItems.IgnoreQueryFilters().SingleAsync(f => f.Name == name);
+        mine.OwnerUserId.Should().Be(b.UserId);
+        mine.Barcode.Should().Be(code);
+    }
+
+    [Fact]
+    public async Task A_form_sent_back_with_an_error_keeps_the_decline_and_hides_sharing()
+    {
+        await using var app = NewApp();
+        var a = await SignInAsync(app);
+        var b = await SignInAsync(app);
+        var code = NewEan();
+        await SaveManualAsync(a, Unique("Shared burrata qsf"), code, share: true);
+
+        var response = await SaveManualAsync(b, Unique("My burrata qsf"), code, share: true, grams: "5000",
+            extra: [new("barcodeField", "true"), new("declinedBarcode", code)]);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var html = await response.Content.ReadAsStringAsync();
+        html.Should().Contain($"name=\"declinedBarcode\" value=\"{code}\"")
+            .And.Contain("Another food already shares this barcode, so this one is kept for you only.")
+            .And.Contain("name=\"share\" value=\"true\" />")
+            .And.Contain("data-share style=\"margin-top: var(--s-5)\" hidden=\"hidden\"");
     }
 
     [Fact]

@@ -7,14 +7,30 @@
 window.gymModule("scanner", (root) => {
     "use strict";
 
-    // Others find a shared food by its barcode, so the share choice shows only once there is one (SPEC 4).
+    // The code whose shared food the user turned down ("No, it's different"), kept in the form so a label read or the
+    // server honours it too (SPEC 7).
+    function declinedCode(form) {
+        return form?.querySelector("[data-known-declined] input[name=declinedBarcode]")?.value || "";
+    }
+
+    // Others find a shared food by its barcode, so the share choice shows only once there is one (SPEC 4). After
+    // "No, it's different" the food stays private for that code, so the choice is hidden rather than offered again.
     function toggleShare(form) {
         const input = form && form.querySelector("[data-barcode-input]");
         if (!input) {
             return;
         }
-        const show = input.value.replace(/\D/g, "").length >= 8;
+        const digits = input.value.replace(/\D/g, "");
+        const show = digits.length >= 8 && digits !== declinedCode(form);
         form.querySelectorAll("[data-share]").forEach((el) => { el.hidden = !show; });
+    }
+
+    function keepPrivate(form) {
+        const share = form.querySelector("input[type=checkbox][name=share]");
+        if (share) {
+            share.checked = false;
+        }
+        toggleShare(form);
     }
 
     const onInput = (event) => {
@@ -63,22 +79,25 @@ window.gymModule("scanner", (root) => {
     function reject(button) {
         const card = button.closest("[data-known-food]");
         const form = card.closest("form");
+        const note = document.createElement("p");
+        note.className = "section-footer";
+        note.dataset.knownDeclined = "";
+        note.textContent = card.dataset.rejectNote;
         if (card.dataset.own === "true") {
+            card.replaceWith(note);
             const input = form.querySelector("[data-barcode-input]");
             input.value = "";
             input.dispatchEvent(new Event("input", { bubbles: true }));
-        } else {
-            const share = form.querySelector("input[type=checkbox][name=share]");
-            if (share) {
-                share.checked = false;
-            }
+            return;
         }
-        const note = document.createElement("p");
-        note.className = "section-footer";
-        // label.js reads this so a label read doesn't offer the same food again.
-        note.dataset.knownDeclined = "";
-        note.textContent = card.dataset.rejectNote;
+        // Sent with the form: the server keeps the food private for this code even if sharing comes back ticked.
+        const code = document.createElement("input");
+        code.type = "hidden";
+        code.name = "declinedBarcode";
+        code.value = card.dataset.code;
+        note.append(code);
         card.replaceWith(note);
+        keepPrivate(form);
     }
 
     const onChange = (event) => {
@@ -92,9 +111,16 @@ window.gymModule("scanner", (root) => {
             reject(button);
         }
     };
+    // A label read redrew the form. A code the user already turned down stays private; any other is checked.
     const onLabelBarcode = (event) => {
         const input = event.target.querySelector("[data-barcode-input]");
-        if (input && input.value) {
+        if (!input || !input.value) {
+            return;
+        }
+        const form = input.closest("form");
+        if (input.value.replace(/\D/g, "") === declinedCode(form)) {
+            keepPrivate(form);
+        } else {
             checkKnown(input);
         }
     };

@@ -213,7 +213,7 @@ public class FoodController(
     [HttpPost("items")]
     [IdempotentFoodPost]
     [HandlesInvalidNumbers]
-    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string? name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, bool barcodeField, CancellationToken ct, FoodUnit unit = FoodUnit.Grams)
+    public async Task<IActionResult> CreateItem(DateOnly date, Meal meal, string? name, string? barcode, decimal kcal, decimal protein, decimal carbs, decimal fat, decimal? fiber, decimal? saturatedFat, decimal? servingGrams, decimal grams, bool share, int? labelScanId, bool barcodeField, string? declinedBarcode, CancellationToken ct, FoodUnit unit = FoodUnit.Grams)
     {
         // Hidden routing and scan fields cannot be corrected in the form. Never reuse their binding defaults.
         if (ModelState.Values.Any(field => field.Errors.Any(e => e.ErrorMessage != DecimalModelBinder.InvalidNumber)))
@@ -223,14 +223,14 @@ public class FoodController(
             if (ModelState.FirstOrDefault(pair => pair.Value?.Errors.Count > 0).Key is { } field)
                 throw new ValidationException(DecimalModelBinder.InvalidNumber, field);
 
-            await manualFoods.SaveAndLogAsync(date, meal, name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, grams, share, labelScanId, ct, unit);
+            await manualFoods.SaveAndLogAsync(date, meal, name, barcode, new Per100g(kcal, protein, carbs, fat, fiber, saturatedFat), servingGrams, grams, share, labelScanId, ct, unit, declinedBarcode);
         }
         catch (ValidationException ex) when (!Request.Headers.ContainsKey("HX-Request"))
         {
             var available = await labels.IsAvailableAsync(ct);
             var manual = new ManualFoodFormModel(date, meal, barcodeField ? null : barcode, name, barcodeField,
                 LabelScanId: labelScanId, LabelAvailable: available, BarcodeValue: barcode, Share: share,
-                InvalidField: ex.Field, Submitted: true, Unit: unit);
+                InvalidField: ex.Field, Submitted: true, Unit: unit, DeclinedBarcode: declinedBarcode);
             if (!barcodeField && barcode is not null) ViewData["Page"] = "food-barcode";
             return View("Add", new FoodAddViewModel(date, meal, "manual", null, ex.Text, null, [], null, [], [],
                 available, Manual: manual));
@@ -244,7 +244,7 @@ public class FoodController(
     [EnableRateLimiting(RateLimits.AiLabel)]
     // The one endpoint above the 1 MB request limit (SPEC 9): up to three photos the phone shrank to under 2 MB each.
     [RequestSizeLimit(7 * 1024 * 1024)]
-    public async Task<IActionResult> Label(DateOnly date, Meal meal, string? barcode, bool barcodeField, string? name, bool? share, decimal? grams, decimal? servingGrams,
+    public async Task<IActionResult> Label(DateOnly date, Meal meal, string? barcode, bool barcodeField, string? name, bool? share, string? declinedBarcode, decimal? grams, decimal? servingGrams,
         List<int> width, List<int> height, List<IFormFile> photo, CancellationToken ct)
     {
         if (!await labels.IsAvailableAsync(ct))
@@ -285,7 +285,8 @@ public class FoodController(
         barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim();
         return PartialView("_ManualFoodForm", new ManualFoodFormModel(date, meal, barcodeField ? null : barcode, string.IsNullOrWhiteSpace(name) ? null : name.Trim(), barcodeField,
             Label: result.Values, LabelScanId: result.ScanId, LabelAvailable: true,
-            BarcodeValue: barcodeField ? barcode : null, Share: share ?? true, TypedGrams: grams, TypedServing: servingGrams));
+            BarcodeValue: barcodeField ? barcode : null, Share: share ?? true, TypedGrams: grams, TypedServing: servingGrams,
+            DeclinedBarcode: declinedBarcode));
     }
 
     [HttpPost("log-recent")]
