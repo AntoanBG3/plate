@@ -131,6 +131,44 @@ public class FoodSeedTests(PostgresFixture fixture) : IClassFixture<PostgresFixt
     }
 
     [Fact]
+    public async Task A_retired_product_still_at_its_old_energy_is_removed_and_its_entries_keep_their_totals()
+    {
+        var userId = await fixture.CreateUserAsync();
+        var (bad, corrected) = ("38" + Random.Shared.NextInt64(10_000_000_000, 99_999_999_999), "38" + Random.Shared.NextInt64(10_000_000_000, 99_999_999_999));
+        await using (var db = fixture.CreateContext(null))
+        {
+            var muesli = new FoodItem { Name = "Мюсли", NameBg = "Мюсли", Barcode = bad, Source = FoodSource.OpenFoodFacts, KcalPer100g = 134, ProteinPer100g = 5, CarbsPer100g = 15, FatPer100g = 5.4m };
+            db.FoodItems.AddRange(muesli,
+                new FoodItem { Name = "Мюсли", NameBg = "Мюсли", Barcode = corrected, Source = FoodSource.OpenFoodFacts, KcalPer100g = 372, ProteinPer100g = 9, CarbsPer100g = 75, FatPer100g = 4 });
+            db.FoodLog.Add(new FoodLogEntry { UserId = userId, Date = new DateOnly(2026, 11, 22), Description = "Мюсли", Grams = 50, Kcal = 67, ProteinG = 2.5m, FoodItem = muesli, CreatedAt = DateTimeOffset.UtcNow });
+            await db.SaveChangesAsync();
+        }
+
+        var retired = TempCsv("barcode,kcal,reason", $"{bad},134,per-portion values", $"{corrected},134,a row fixed since keeps its values");
+        await using (var db = fixture.CreateContext(null))
+        {
+            await DataFixups.RunAsync(db, default, retiredProducts: retired);
+            await DataFixups.RunAsync(db, default, retiredProducts: retired); // a second start finds nothing to change
+        }
+
+        await using var check = fixture.CreateContext(null);
+        (await check.FoodItems.IgnoreQueryFilters().AnyAsync(f => f.Barcode == bad)).Should().BeFalse();
+        (await check.FoodItems.IgnoreQueryFilters().AnyAsync(f => f.Barcode == corrected)).Should().BeTrue("it isn't at the retired energy");
+        var entry = await check.FoodLog.IgnoreQueryFilters().SingleAsync(e => e.UserId == userId);
+        (entry.FoodItemId, entry.Kcal, entry.Grams).Should().Be(((int?)null, 67m, 50m));
+    }
+
+    [Fact]
+    public void The_retired_products_are_not_in_the_seed()
+    {
+        var seed = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "bg-foods.csv"));
+        foreach (var line in File.ReadLines(DataFixups.RetiredProductsPath).Skip(1))
+        {
+            seed.Should().NotContain("product," + line.Split(',')[0] + ",");
+        }
+    }
+
+    [Fact]
     public async Task USDA_foods_seeded_earlier_get_their_Bulgarian_names_once()
     {
         var tag = Guid.NewGuid().ToString("N")[..8];

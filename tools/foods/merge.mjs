@@ -18,7 +18,10 @@ const seedDir = path.join(repo, "src/Plate.Web/Data/Seed");
 const usda = readCsv(path.join(seedDir, "usda-foods.csv")).map((r) => ({ ...r, id: "u" + r.fdc_id }));
 const tables = readCsv(path.join(raw, "tables.csv")).map((r) => ({ ...r, sources: 1, origin: "table" }));
 const dishes = fs.existsSync(path.join(raw, "dishes.csv")) ? readCsv(path.join(raw, "dishes.csv")).map((r) => ({ ...r, origin: "dish" })) : [];
-const off = readCsv(path.join(raw, "off-bg.csv"));
+// Products whose Open Food Facts values are wrong and that would stand for a whole name (src/Plate.Web/Data/Seed/
+// retired-products.csv); the app removes them from databases seeded before (DataFixups).
+const retired = new Set(readCsv(path.join(seedDir, "retired-products.csv")).map((r) => r.barcode));
+const off = readCsv(path.join(raw, "off-bg.csv")).filter((p) => !retired.has(p.barcode));
 
 const generic = [...dishes, ...tables].map((r, i) => ({ ...r, id: "b" + i }));
 console.log(`generic ${generic.length} (dishes ${dishes.length}, tables ${tables.length}), products ${off.length}, usda ${usda.length}`);

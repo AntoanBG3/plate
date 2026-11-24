@@ -27,9 +27,13 @@ public static class DataFixups
     /// <summary>Corrections to Bulgarian reference foods from the 2026-11-21 audit (reports/reference-foods-audit.md).</summary>
     public static readonly string ReferenceFixesPath = Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "reference-fixes.csv");
 
-    public static async Task RunAsync(AppDbContext db, CancellationToken ct, string? referenceFixes = null)
+    /// <summary>Open Food Facts products whose values were wrong enough to retire (2026-11-24 QA).</summary>
+    public static readonly string RetiredProductsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "retired-products.csv");
+
+    public static async Task RunAsync(AppDbContext db, CancellationToken ct, string? referenceFixes = null, string? retiredProducts = null)
     {
         await FixReferenceFoodsAsync(db, referenceFixes ?? ReferenceFixesPath, ct);
+        await RetireProductsAsync(db, retiredProducts ?? RetiredProductsPath, ct);
 
         // Quick entries left unnamed were stored as "Quick add" in the language of the moment, so the other
         // language showed it untranslated; they are now stored empty and named when shown (Phase 11).
@@ -64,6 +68,31 @@ public static class DataFixups
             await db.FoodItems.IgnoreQueryFilters()
                 .Where(f => f.Source == FoodSource.Usda && f.Name == name && f.NameBg != bg)
                 .ExecuteUpdateAsync(s => s.SetProperty(f => f.NameBg, bg), ct);
+        }
+    }
+
+    /// <summary>
+    /// Shared Open Food Facts products whose values are wrong for what they are, listed by barcode with the energy they
+    /// were cached with: a 134 kcal "Мюсли" stood for every typed muesli, since same-named products go in as one food.
+    /// Only a row still at that energy is removed, so one corrected since stays. Logged entries keep the totals they were
+    /// saved with (their link is cleared), and words remembered for the product are forgotten. The seed no longer has
+    /// them, so a later start doesn't add them back; a scan of the barcode asks Open Food Facts again.
+    /// </summary>
+    private static async Task RetireProductsAsync(AppDbContext db, string path, CancellationToken ct)
+    {
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        foreach (var line in File.ReadLines(path).Skip(1).Where(l => l.Trim().Length > 0))
+        {
+            // barcode,kcal,reason
+            var f = UsdaSeed.ParseCsvLine(line);
+            var (barcode, kcal) = (f[0], decimal.Parse(f[1], System.Globalization.CultureInfo.InvariantCulture));
+            await db.FoodItems.IgnoreQueryFilters()
+                .Where(x => x.OwnerUserId == null && x.Source == FoodSource.OpenFoodFacts && x.Barcode == barcode && x.KcalPer100g == kcal)
+                .ExecuteDeleteAsync(ct);
         }
     }
 
