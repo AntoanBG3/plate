@@ -10,8 +10,8 @@ namespace Plate.Web.Features.Feedback;
 /// An account's usual foods and last amounts as they stood at one moment, for replaying an old parse (SPEC 11, feedback
 /// eval): nothing learned after the meal may help the replay. Last amounts come from entries made before then. Usual
 /// foods are rebuilt from the parses confirmed before then, the way confirming writes them (the latest save of the
-/// words wins), since the stored rows only keep the latest food; words not used for the usual-food retention before then
-/// are forgotten, as the cleanup job would have.
+/// words wins, and a "Check this" row saved as suggested teaches nothing), since the stored rows only keep the latest
+/// food; words not used for the usual-food retention before then are forgotten, as the cleanup job would have.
 /// </summary>
 public sealed class HistoryAsOf(AppDbContext db, ICurrentUser currentUser, DateTimeOffset asOf)
     : RepeatLoggingService(db, currentUser, new FixedTime(asOf), NullLogger<RepeatLoggingService>.Instance)
@@ -35,16 +35,18 @@ public sealed class HistoryAsOf(AppDbContext db, ICurrentUser currentUser, DateT
         var runs = await dbContext.ParseRuns.AsNoTracking() // the owner filter keeps this to the account
             .Where(r => r.ConfirmedAt != null && r.ConfirmedAt < asOf && r.ConfirmedAt >= since && r.Saved != null)
             .OrderBy(r => r.ConfirmedAt)
-            .Select(r => new { r.Parsed, r.Saved })
+            .Select(r => new { r.Parsed, r.Resolved, r.Saved })
             .ToListAsync(ct);
         var result = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var run in runs)
         {
             var parsed = FeedbackJson.Read<List<ParsedFoodItem>>(run.Parsed) ?? [];
+            var resolved = FeedbackJson.Read<List<ResolvedRow>>(run.Resolved) ?? [];
             var saved = FeedbackJson.Read<List<SavedRow>>(run.Saved) ?? [];
             for (var n = 0; n < Math.Min(parsed.Count, saved.Count); n++)
             {
-                if (saved[n] is { Included: true, FoodItemId: { } food } && UsualFoods.Key(parsed[n].NameOriginal) is { } key)
+                if (saved[n] is { Included: true, FoodItemId: { } food } && !ParseRunService.Unconfirmed(resolved.ElementAtOrDefault(n), food)
+                    && UsualFoods.Key(parsed[n].NameOriginal) is { } key)
                 {
                     result[key] = food;
                 }
