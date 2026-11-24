@@ -126,6 +126,52 @@ public class NavigationTests(E2EFixture app) : IClassFixture<E2EFixture>
     [Theory]
     [InlineData(E2EFixture.Chromium)]
     [InlineData(E2EFixture.WebKit)]
+    public async Task A_form_sent_back_with_an_error_scrolls_to_the_message(string browser)
+    {
+        // The page keeps its place after a post, which left the error banner above the screen while the user looked
+        // at the Save button they had just pressed.
+        await using var phone = await app.SignedInPhoneAsync(browser);
+        // A phone with the keyboard up: Save sits well below the top of the form.
+        await phone.Page.SetViewportSizeAsync(390, 500);
+        var today = Plate.Core.Time.UserClock.Today(DateTimeOffset.UtcNow, Plate.Core.Domain.UserProfile.DefaultTimeZoneId).ToString("yyyy-MM-dd");
+        // Refused by the server: the barcode is already shared and this form shares it too.
+        var code = BarcodeFieldTests.NewEan();
+        await using (var other = await app.SignedInPhoneAsync(browser))
+        {
+            await other.GoAsync($"/food/add?date={today}&meal=Lunch&tab=manual");
+            await FillManualAsync(other, "Shared kefir e2e", code);
+            await other.NavigateByAsync(() => other.Page.Locator("form[action='/food/items'] button[type=submit]").TapAsync(), "/food");
+        }
+        await phone.GoAsync($"/food/add?date={today}&meal=Lunch&tab=manual");
+        await FillManualAsync(phone, "My kefir e2e", code);
+        var save = phone.Page.Locator("form[action='/food/items'] button[type=submit]");
+        await phone.Page.EvaluateAsync("() => window.scrollTo(0, document.body.scrollHeight)");
+        (await phone.Page.EvaluateAsync<double>("() => scrollY")).Should().BeGreaterThan(300);
+
+        await phone.NavigateByAsync(() => save.TapAsync());
+
+        var banner = phone.Page.Locator("#main .banner.is-error");
+        await banner.WaitForAsync();
+        (await banner.EvaluateAsync<bool>("el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }"))
+            .Should().BeTrue("the error is on screen");
+        phone.ShouldHaveNoErrors();
+    }
+
+    private static async Task FillManualAsync(Phone phone, string name, string code)
+    {
+        await phone.Page.FillAsync("#m-name", name);
+        await phone.Page.FillAsync("#m-barcode", code);
+        await phone.Page.FillAsync("#m-kcal", "60");
+        await phone.Page.FillAsync("#m-protein", "3");
+        await phone.Page.FillAsync("#m-carbs", "4");
+        await phone.Page.FillAsync("#m-fat", "3");
+        await phone.Page.FillAsync("#m-grams", "150");
+        await phone.Page.Locator("form input.switch[name=share]").SetCheckedAsync(true);
+    }
+
+    [Theory]
+    [InlineData(E2EFixture.Chromium)]
+    [InlineData(E2EFixture.WebKit)]
     public async Task Removing_the_last_exercise_of_a_long_template_keeps_the_place(string browser)
     {
         await using var phone = await app.SignedInPhoneAsync(browser);

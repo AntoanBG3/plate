@@ -176,6 +176,19 @@
     }
     scrollToFocus();
 
+    // A form sent back with an error keeps the user's place (keepScroll), which can leave the message above the
+    // screen while they look at the Save button, as if nothing happened. Bring the first visible error into view.
+    function revealError() {
+        const alert = Array.from(document.querySelectorAll("#main [role=alert]")).find((el) => el.getClientRects().length > 0);
+        if (!alert) {
+            return;
+        }
+        const r = alert.getBoundingClientRect();
+        if (r.top < 60 || r.bottom > window.innerHeight - 60) {
+            alert.scrollIntoView({ block: "center" });
+        }
+    }
+
     async function swapIn(doc, finalUrl, { push, isBack, scrollY, instant, same, swap, posted, isCurrent }) {
         if (!isCurrent()) {
             return;
@@ -231,6 +244,9 @@
             }
             window.scrollTo(0, scrollY || 0);
             scrollToFocus();
+            if (posted) {
+                revealError();
+            }
             htmx.process(document.querySelector(".app-scale"));
             htmx.process(document.getElementById("overlays"));
             // A form sent back with an error marks the field to fix with autofocus, which a swap doesn't apply by itself.
