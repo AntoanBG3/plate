@@ -329,7 +329,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             // Use the same food identity wording as candidate retrieval.
             var wanted = IdentityWords(FoodWords(query));
             if (wanted.Count == 0) continue;
-            var available = IdentityWords(name);
+            var available = IdentityWords(name, allForms: true);
             // Brand can complete the requested name only when the product itself supplied evidence.
             if (food.Brand is { } brand && wanted.Overlaps(available.Except(IdentityWords(brand))))
                 available.UnionWith(IdentityWords(brand));
@@ -346,11 +346,36 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             ? IdentityEvidence.PartialWithLead : IdentityEvidence.Insufficient;
     }
 
-    private static HashSet<string> IdentityWords(string name) =>
+    /// <param name="allForms">Every form the word may meet (<see cref="Forms"/>), for the food's side of a comparison.</param>
+    private static HashSet<string> IdentityWords(string name, bool allForms = false) =>
         Words(name).Where(w => w.Any(char.IsLetter) && !Descriptors.Contains(w) && !FoodStates.Stated(w))
             .Select(w => w switch { "yoghurt" => "yogurt", "aubergine" => "eggplant", "courgette" => "zucchini", _ => w })
-            .Select(Stem)
+            .SelectMany(w => allForms ? Forms(w) : [Stem(w)])
             .ToHashSet();
+
+    /// <summary>
+    /// The stems a word may meet: its own (<see cref="Stem"/>) and, for Bulgarian, the other side of the "-е" / "-ета"
+    /// plural, which <see cref="Stem"/> alone leaves apart: "кюфтета" and "Кюфте", "кебапчета" and "Кебапче" (QA
+    /// 2026-11-24: "кюфтета" never reached the "Кюфте" food and became elk patties). The typed side keeps one stem per
+    /// word, so a count of matched words stays a count of the user's words.
+    /// </summary>
+    internal static IEnumerable<string> Forms(string word)
+    {
+        yield return Stem(word);
+        if (!word.Any(c => c is >= 'а' and <= 'я'))
+        {
+            yield break;
+        }
+
+        if (word.Length >= 6 && word.EndsWith("ета", StringComparison.Ordinal))
+        {
+            yield return Stem(word[..^2]);
+        }
+        else if (word.Length >= 4 && word.EndsWith('е'))
+        {
+            yield return Stem(word + "та");
+        }
+    }
 
     private static readonly string[] BulgarianEndings = ["ове", "еве", "ът", "ят", "и", "а", "о", "е", "я"];
 
@@ -620,20 +645,30 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         var raw = nameState == FoodState.Raw;
         var score = food.Score + (food.Own ? 0.15 : 0);
 
-        var queryWords = Words(query).ToHashSet();
-        if (queryWords.Count > 0 && Words(name).ToHashSet().SetEquals(queryWords))
+        // Bulgarian words are compared by stem and plural form (Forms), so "кюфтета" meets "Кюфте" and "ябълки" "Ябълка".
+        var queryWords = (bulgarian ? Words(query).Select(Stem) : Words(query)).ToHashSet();
+        var nameWords = Words(name).ToList();
+        bool Meets(string nameWord) => bulgarian ? Forms(nameWord).Any(queryWords.Contains) : queryWords.Contains(nameWord);
+        bool Named(string queryWord) => nameWords.Any(w => bulgarian ? Forms(w).Contains(queryWord) : w == queryWord);
+        if (queryWords.Count > 0 && nameWords.All(Meets) && queryWords.All(Named))
         {
             score += 0.3; // exactly the food the user named, e.g. "Боб чорба" for "боб чорба"
         }
 
         var head = Head(name);
-        if (head.Count > 0 && head.All(queryWords.Contains))
+        if (head.Count > 0 && head.All(Meets))
         {
             score += 0.2;
         }
-        else if (head.Count > 0 && queryWords.Contains(head[0]))
+        else if (head.Count > 0 && Meets(head[0]))
         {
             score += 0.1;
+        }
+        else if (bulgarian && head.Count > 0 && !head.Any(Meets) && nameWords.Any(Meets))
+        {
+            // The user's word is only a detail of another food: "кюфтета" in "Еленско месо, кайма, кюфтета, печени"
+            // (USDA's elk patties) is not the кюфте the user ate.
+            score -= 0.2;
         }
 
         // USDA writes brands in capitals ("UNCLE BENS"); a brand nobody wrote is not the plain food.
@@ -644,10 +679,9 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         }
 
         // A word in the main food name the user didn't write is a variety they didn't ask for: "wild rice" for "rice".
-        score -= head.Count(w => !queryWords.Contains(w)) > 0 && head.Any(queryWords.Contains) ? 0.15 : 0;
+        score -= head.Count(w => !Meets(w)) > 0 && head.Any(Meets) ? 0.15 : 0;
 
-        var nameWords = Words(name).ToHashSet();
-        score += queryWords.Count == 0 ? 0 : 0.2 * queryWords.Count(nameWords.Contains) / queryWords.Count;
+        score += queryWords.Count == 0 ? 0 : 0.2 * queryWords.Count(Named) / queryWords.Count;
         // A niche word the user didn't write (asking for "dried apricots" is fine) counts against the entry.
         var q = query.ToLowerInvariant();
         score -= Niche.Count(n => name.Contains(n) && !q.Contains(n.Trim())) * 0.15;

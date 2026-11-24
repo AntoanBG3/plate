@@ -425,4 +425,31 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
             ["long"] = new string('x', 100),
         });
     }
+
+    [Fact]
+    public async Task A_Bulgarian_plural_finds_its_singular_food_over_one_that_only_mentions_it()
+    {
+        // QA 2026-11-24: "кюфтета 4 броя" became USDA's elk patties, whose Bulgarian name "Еленско месо, кайма, кюфтета,
+        // печени" holds the plural word, while the "Кюфте" reference food never made the top five.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Enabled = false;
+        var kyufte = await s.Db.FoodItems.SingleAsync(f => f.Source == Plate.Core.Domain.FoodSource.Reference && f.NameBg == "Кюфте");
+        var item = new ParsedFoodItem("meatballs, beef and pork, cooked", "кюфтета", 300, FoodState.Cooked, null, null, new Per100g(250, 15, 5, 20));
+        var trace = new List<MatchTrace>();
+
+        var row = (await s.Matcher.ResolveAsync("кюфтета 4 броя", [item], default, trace)).Single();
+
+        row.FoodItemId.Should().Be(kyufte.Id);
+        trace.Single().Top.Should().NotContain(t => t.Name.StartsWith("Elk"));
+    }
+
+    [Theory]
+    [InlineData("кюфтета", "кюфте", true)]
+    [InlineData("кебапчета", "кебапче", true)]
+    [InlineData("котлета", "котлет", true)]
+    [InlineData("ябълки", "ябълка", true)]
+    [InlineData("суши", "круши", false)]
+    [InlineData("кафе", "кафета", true)]
+    public void Bulgarian_word_forms_meet_across_number(string typed, string named, bool meet) =>
+        FoodMatcher.Forms(named).Contains(FoodMatcher.Stem(typed)).Should().Be(meet);
 }
