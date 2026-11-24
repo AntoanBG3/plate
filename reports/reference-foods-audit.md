@@ -95,3 +95,15 @@ All 38 rows and one more without a USDA twin ("Грозде - бяло" at 38 kc
 | BBQ Sauce - OstroVit | 7 → 7 | English link removed (a product with its own label values): Sauce, barbecue → (none) |
 
 Unverified: the rapa whelk values (90 kcal raw and stewed) have no second source, and stewed should be higher than raw; Сметана now uses heavy whipping cream (36% fat), the commonest Bulgarian cream, though shops also sell 20% and 32%.
+
+## Addendum, 2026-11-24
+
+The food logging QA (`docs/qa/2026-11-24-food-logging-qa.md`, H2) found three more generic rows with wrong values that the energy-only audit can't see, because two of them have about the right energy. They were corrected the same way and added to `reference-fixes.csv`.
+
+| Bulgarian name | Before | After | Source of the new values |
+|-|-|-|-|
+| Туршия | 121 kcal, 1.5 g protein, 26.6 g carbs, 0.9 g fat (USDA sweet chow-chow relish) | 28 kcal, 1 g protein, 6 g carbs, 0 g fat | the two "Мешана туршия" labels in the seed (Брей!, Реколта) |
+| Броколи | 33 kcal, 4.4 g protein, 1.8 g carbs, 1 g fat | 32 kcal, 2.57 g protein, 6.29 g carbs, 0.34 g fat | its USDA twin "Broccoli, raw" |
+| Протеини | 400 kcal, 100 g protein, 0 g carbs, 0 g fat | 385 kcal, 66.67 g protein, 17.95 g carbs, 5.13 g fat | USDA "Beverages, ABBOTT, EAS whey protein powder" (FDC 173167) |
+
+Comparing protein, carbs and fat with the USDA twin, not just energy, flags 15 more rows, mostly small fruit and vegetable differences: Кисело мляко 3.6%, Аспержи, Гъби, Карфиол, Кумкуат, Къпини, Лимони, Лук пресен, Маруля, Сини сливи, Сушени смокини, Свинско филе, Миди - Ядка (Задушени), Лефер and Херинга. Some are real local differences, such as Bulgarian yogurt and local fish. They are left for a separate pass.
