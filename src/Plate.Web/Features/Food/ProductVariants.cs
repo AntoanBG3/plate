@@ -44,10 +44,12 @@ internal static partial class ProductVariants
     // Compare a branded product on its remaining food words. A matching manufacturer alone cannot identify the item.
     internal static bool Compatible(string name, string? brand, string query)
     {
-        if (!NamedBrand(brand, query)) return true;
+        var typedBrand = BrandWords(brand, query);
+        if (typedBrand.Count == 0) return true;
         var brandWords = Words(brand!);
         var identity = Words(Percentage().Replace(query, " "));
         identity.ExceptWith(brandWords);
+        identity.ExceptWith(typedBrand);
         identity.ExceptWith(NonIdentity);
         identity.RemoveWhere(w => Variants.Any(variant => variant.IsMatch(w)) || Plate.Core.Nutrition.FoodStates.Stated(w));
         var food = Words(name);
@@ -57,9 +59,36 @@ internal static partial class ProductVariants
     private static readonly HashSet<string> NonIdentity =
         ["from", "with", "by", "of", "and", "от", "с", "със", "и", "на", "plain", "натурално"];
 
-    private static bool NamedBrand(string? brand, string query) =>
-        !string.IsNullOrWhiteSpace(brand) && Normalise(brand) is { Length: > 0 } key
-        && (" " + Normalise(query) + " ").Contains(" " + key + " ", StringComparison.Ordinal);
+    /// <summary>
+    /// The query names the brand, spaces aside: "кроасан 7days" names "7 Days" and "7 days" names "7Days" (QA 2026-11-24
+    /// M3: the 7 Days croissants got no brand credit for "7days").
+    /// </summary>
+    internal static bool NamedBrand(string? brand, string query) => BrandWords(brand, query).Count > 0;
+
+    /// <summary>The query's words that write the brand, together or apart; none when it doesn't name it.</summary>
+    private static HashSet<string> BrandWords(string? brand, string query)
+    {
+        if (string.IsNullOrWhiteSpace(brand) || Normalise(brand).Replace(" ", "") is not { Length: > 0 } key)
+        {
+            return [];
+        }
+
+        var words = Normalise(query).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        for (var i = 0; i < words.Length; i++)
+        {
+            var run = "";
+            for (var j = i; j < words.Length && run.Length < key.Length; j++)
+            {
+                run += words[j];
+                if (run == key)
+                {
+                    return words[i..(j + 1)].ToHashSet();
+                }
+            }
+        }
+
+        return [];
+    }
 
     // Every explicitly named brand includes a whole query token. The brand GIN index supports %> in this direction.
     internal static string[] BrandTokens(string query) => Words(query).ToArray();

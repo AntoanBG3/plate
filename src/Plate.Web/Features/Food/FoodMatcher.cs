@@ -469,7 +469,6 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     {
         var seen = new HashSet<int>();
         var unique = items.Where(i => seen.Add(food(i).Id)).ToList();
-        var words = " " + Key(typed) + " ";
         var groups = unique.Select(food)
             .Where(Mergeable)
             .GroupBy(f => Key(f.NameBg!))
@@ -477,7 +476,7 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
             {
                 var products = g.Count(IsProduct);
                 return (products > 1 || (products == 1 && g.Count() == 2))
-                    && !g.Any(f => f.Brand is { } brand && Key(brand) is { Length: >= 2 } b && words.Contains(" " + b + " ", StringComparison.Ordinal));
+                    && !g.Any(f => f.Brand is { } brand && Key(brand).Length >= 2 && ProductVariants.NamedBrand(brand, typed));
             })
             .ToDictionary(g => g.Key, g => Representative(g.ToList()));
 

@@ -69,4 +69,22 @@ public class ProductVariantTests(PostgresFixture fixture) : IClassFixture<Postgr
         FoodMatcher.Rank(Match(wanted), query, FoodState.NotApplicable)
             .Should().BeGreaterThan(FoodMatcher.Rank(Match(other), query, FoodState.NotApplicable));
     }
+
+    [Theory]
+    [InlineData("7 Days", "кроасан 7days", true)]
+    [InlineData("7days", "кроасан 7 days", true)]
+    [InlineData("7 days", "кроасан 7 Days", true)]
+    [InlineData("Coca-Cola", "coca cola zero", true)]
+    [InlineData("7 Days", "кроасан", false)]
+    [InlineData("Days", "7days", false)]
+    public void A_brand_is_named_with_or_without_its_spaces(string brand, string query, bool named) =>
+        ProductVariants.NamedBrand(brand, query).Should().Be(named);
+
+    [Fact]
+    public void A_brand_written_together_earns_the_brand_bonus()
+    {
+        // QA 2026-11-24 M3: "кроасан 7days" gave the 7 Days croissants no brand credit, so a USDA apple croissant won.
+        ProductVariants.Adjustment("Кроасан с крем брюле", "7 Days", "кроасан 7days").Should().Be(0.45);
+        ProductVariants.Adjustment("Кроасан с крем брюле", "7 Days", "кроасан 7 days").Should().Be(0.45);
+    }
 }

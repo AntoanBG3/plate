@@ -471,6 +471,20 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
             .Should().Contain(c => c.NameBg != null && c.NameBg.StartsWith("Боза", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public async Task A_brand_written_without_its_space_steers_the_match_to_its_products()
+    {
+        // QA 2026-11-24 M3: "кроасан 7days" became USDA's apple croissant (254 kcal) over eleven 7 Days croissants.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Enabled = false;
+        var item = new ParsedFoodItem("croissant", "кроасан 7days", 60, FoodState.NotApplicable, null, null, new Per100g(400, 8, 45, 21));
+
+        var row = (await s.Matcher.ResolveAsync("кроасан 7days, капучино", [item], default)).Single();
+
+        var food = await s.Db.FoodItems.SingleAsync(f => f.Id == row.FoodItemId);
+        food.Brand.Should().BeEquivalentTo("7 Days");
+    }
+
     [Theory]
     [InlineData("кюфтета", "кюфте", true)]
     [InlineData("кебапчета", "кебапче", true)]
