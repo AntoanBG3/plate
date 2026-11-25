@@ -79,11 +79,13 @@ public class RepeatLoggingTests
     }
 
     [Fact]
-    public void Entries_group_by_food_and_name_ignoring_case()
+    public void Entries_group_by_food_whatever_their_names_and_estimates_by_name()
     {
-        var uses = Uses(1, "Skyr", Meal.Lunch, 1).Concat(Uses(1, "skyr", Meal.Lunch, 1)).Concat(Uses(1, "Skyr vanilla", Meal.Lunch, 1)).ToList();
+        // QA 2026-11-24 L4: "Banana fruit" from a parse and "Bananas, raw" from Search were two rows of one food.
+        var uses = Uses(1, "Banana fruit", Meal.Lunch, 1).Concat(Uses(1, "Bananas, raw", Meal.Lunch, 2))
+            .Concat(Uses(null, "Боза", Meal.Lunch, 1)).Concat(Uses(null, "боза", Meal.Lunch, 1)).Concat(Uses(null, "Баница", Meal.Lunch, 1)).ToList();
 
-        RecentOrder.For(uses, Meal.Lunch, Today).Select(g => g.Times).Should().BeEquivalentTo([2, 1]);
+        RecentOrder.For(uses, Meal.Lunch, Today).Select(g => g.Times).Should().BeEquivalentTo([3, 2, 1]);
     }
 
     [Theory]
