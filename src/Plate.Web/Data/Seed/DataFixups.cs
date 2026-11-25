@@ -30,10 +30,14 @@ public static class DataFixups
     /// <summary>Open Food Facts products whose values were wrong enough to retire (2026-11-24 QA).</summary>
     public static readonly string RetiredProductsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "retired-products.csv");
 
-    public static async Task RunAsync(AppDbContext db, CancellationToken ct, string? referenceFixes = null, string? retiredProducts = null)
+    /// <summary>Piece weights for shared USDA foods and products that had none (2026-11-24 QA, L5).</summary>
+    public static readonly string PieceWeightsPath = Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "piece-weights.csv");
+
+    public static async Task RunAsync(AppDbContext db, CancellationToken ct, string? referenceFixes = null, string? retiredProducts = null, string? pieceWeights = null)
     {
         await FixReferenceFoodsAsync(db, referenceFixes ?? ReferenceFixesPath, ct);
         await RetireProductsAsync(db, retiredProducts ?? RetiredProductsPath, ct);
+        await AddPieceWeightsAsync(db, pieceWeights ?? PieceWeightsPath, ct);
 
         // Quick entries left unnamed were stored as "Quick add" in the language of the moment, so the other
         // language showed it untranslated; they are now stored empty and named when shown (Phase 11).
@@ -93,6 +97,32 @@ public static class DataFixups
             await db.FoodItems.IgnoreQueryFilters()
                 .Where(x => x.OwnerUserId == null && x.Source == FoodSource.OpenFoodFacts && x.Barcode == barcode && x.KcalPer100g == kcal)
                 .ExecuteDeleteAsync(ct);
+        }
+    }
+
+    /// <summary>
+    /// Piece weights for foods counted in pieces that had none, so a Snickers or a banana from Search starts at one piece,
+    /// not 100 g (QA 2026-11-24 L5). Each row names a shared USDA food by its English name ("usda") or a product by its
+    /// barcode ("barcode"), with its source. Only a missing weight is filled, so one set by hand stays and a start after
+    /// the fix writes nothing.
+    /// </summary>
+    private static async Task AddPieceWeightsAsync(AppDbContext db, string path, CancellationToken ct)
+    {
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        foreach (var line in File.ReadLines(path).Skip(1).Where(l => l.Trim().Length > 0))
+        {
+            // match,key,piece_g,source
+            var f = UsdaSeed.ParseCsvLine(line);
+            var (match, key, piece) = (f[0], f[1], decimal.Parse(f[2], System.Globalization.CultureInfo.InvariantCulture));
+            var foods = db.FoodItems.IgnoreQueryFilters().Where(x => x.OwnerUserId == null && x.PieceGrams == null);
+            foods = match == "usda"
+                ? foods.Where(x => x.Source == FoodSource.Usda && x.Name == key)
+                : foods.Where(x => x.Source == FoodSource.OpenFoodFacts && x.Barcode == key);
+            await foods.ExecuteUpdateAsync(s => s.SetProperty(x => x.PieceGrams, piece), ct);
         }
     }
 

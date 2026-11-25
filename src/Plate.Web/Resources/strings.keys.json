@@ -2708,6 +2708,9 @@
   "Too many photos for now. Try again in a few minutes.": [
     "wwwroot/js"
   ],
+  "Total": [
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml"
+  ],
   "Train": [
     "src/Plate.Web/Views/Shared/_Layout.cshtml",
     "src/Plate.Web/Views/Templates/Index.cshtml",
@@ -3235,6 +3238,7 @@
     "src/Plate.Web/Views/Food/Index.cshtml",
     "src/Plate.Web/Views/Food/_KnownBarcode.cshtml",
     "src/Plate.Web/Views/Food/_ReviewRow.cshtml",
+    "src/Plate.Web/Views/Food/_SavedMeal.cshtml",
     "wwwroot/js"
   ],
   "{0} kcal, {1} g protein per 100 g": [

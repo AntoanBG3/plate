@@ -6,19 +6,25 @@
 <form asp-food-request="true" method="post" asp-antiforgery="true" action="/food/saved-meals/@Model.Meal.Id/log">
     <input type="hidden" name="date" value="@date" />
     <input type="hidden" name="meal" value="@Model.LogTo" />
-    <div class="list">
+    @* Each item's numbers and the meal's total follow the grams as they are typed (QA 2026-11-24 L6). *@
+    <div class="list" data-meal-totals>
         @foreach (var item in Model.Meal.Items)
         {
             @if (item.Grams > 0)
             {
-                <div class="field-row"><label for="g-@item.Id">@L.Entry(item.Description)</label><input id="g-@item.Id" class="num" type="text" name="grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L.Unit(item.Unit)</span></div>
+                var per100 = string.Join(",", new[] { item.Kcal, item.ProteinG }.Select(v => (v * 100 / item.Grams).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)));
+                <div class="field-row saved-meal-item" data-per100="@per100">
+                    <label for="g-@item.Id">@L.Entry(item.Description)<span class="footnote num" data-totals>@L["{0} kcal · {1} g protein", Math.Round(item.Kcal), item.ProteinG.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)]</span></label>
+                    <input id="g-@item.Id" class="num" type="text" name="grams" value="@item.Grams.Kg()" min="1" max="3000" step="any" inputmode="decimal" pattern="([0-9]+([.,][0-9]*)?|[.,][0-9]+)" autocomplete="off" required /><span class="unit">@L.Unit(item.Unit)</span>
+                </div>
             }
             else
             {
                 <input type="hidden" name="grams" value="" />
-                <div class="row"><span class="row-main">@L.Entry(item.Description)</span><span class="row-value num">@L["{0} kcal", Math.Round(item.Kcal)]</span></div>
+                <div class="row" data-fixed-kcal="@item.Kcal.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-fixed-protein="@item.ProteinG.ToString(System.Globalization.CultureInfo.InvariantCulture)"><span class="row-main">@L.Entry(item.Description)</span><span class="row-value num">@L["{0} kcal", Math.Round(item.Kcal)]</span></div>
             }
         }
+        <div class="row"><span class="row-main">@L["Total"]</span><span class="row-value num" data-meal-total>@L["{0} kcal · {1} g protein", Math.Round(Model.Meal.Items.Sum(i => i.Kcal)), Model.Meal.Items.Sum(i => i.ProteinG).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)]</span></div>
     </div>
     <button type="submit" class="btn btn-primary btn-block" style="margin-top: var(--s-4)">@L[AddTo[Model.LogTo]]</button>
 </form>

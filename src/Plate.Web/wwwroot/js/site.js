@@ -499,6 +499,37 @@
             const f = grams / 100;
             out.textContent = t("{0} kcal · {1} g protein", Math.round(per[0] * f), (per[1] * f).toFixed(1));
         }
+        // A saved meal's total follows its items.
+        const meal = row.closest("[data-meal-totals]");
+        const total = meal && meal.querySelector("[data-meal-total]");
+        if (total) {
+            let kcal = 0, protein = 0;
+            meal.querySelectorAll("[data-per100]").forEach(item => {
+                const g = parseFloat((item.querySelector('input[name="grams"]').value || "").replace(",", ".")) || 0;
+                const [k, p] = item.dataset.per100.split(",").map(Number);
+                kcal += k * g / 100;
+                protein += p * g / 100;
+            });
+            meal.querySelectorAll("[data-fixed-kcal]").forEach(item => {
+                kcal += Number(item.dataset.fixedKcal) || 0;
+                protein += Number(item.dataset.fixedProtein) || 0;
+            });
+            total.textContent = t("{0} kcal · {1} g protein", Math.round(kcal), protein.toFixed(1));
+        }
+    });
+
+    // An entry's numbers follow its amount before Save: they scale with it, as Save does (QA 2026-11-24 L6).
+    document.addEventListener("input", (event) => {
+        const stats = event.target.matches('input[name="grams"]') && document.querySelector("[data-entry-stats]");
+        if (!stats || !event.target.closest('form[action^="/food/entries/"]')) {
+            return;
+        }
+        const grams = parseFloat((event.target.value || "").replace(",", "."));
+        const was = Number(stats.dataset.grams);
+        const f = grams > 0 && was > 0 ? grams / was : 1;
+        stats.querySelectorAll("[data-stat]").forEach(stat => {
+            stat.textContent = String(Math.round(Number(stat.dataset.stat) * f));
+        });
     });
 
     // Puts a food's id, values, name and state into a confirmation row's fields.

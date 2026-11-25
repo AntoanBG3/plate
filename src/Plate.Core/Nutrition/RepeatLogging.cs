@@ -39,7 +39,9 @@ public static class RecentOrder
         var since = today.AddDays(-Days);
         return uses
             .Where(u => u.Date >= since && u.Grams > 0)
-            .GroupBy(u => (u.FoodItemId, Key: u.Description.ToLowerInvariant()))
+            // One row per food, whatever each entry called it ("Banana fruit" from a parse, "Bananas, raw" from Search:
+            // QA 2026-11-24 L4); entries without a food (estimates) by name.
+            .GroupBy(u => (u.FoodItemId, Key: u.FoodItemId is null ? u.Description.ToLowerInvariant() : ""))
             .Select(g =>
             {
                 var last = g.OrderByDescending(u => u.Date).ThenByDescending(u => u.CreatedAt).First();

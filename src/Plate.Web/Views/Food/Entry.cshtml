@@ -15,11 +15,12 @@
     }
 </header>
 
-<div class="card stat-grid stat-grid-4">
-    <div class="stat"><div class="stat-value num">@Math.Round(Model.Kcal)</div><div class="stat-label">@L["kcal"]</div></div>
-    <div class="stat"><div class="stat-value num">@Model.ProteinG.Kg(0)<small> @L["g"]</small></div><div class="stat-label">@L["protein"]</div></div>
-    <div class="stat"><div class="stat-value num">@Model.CarbsG.Kg(0)<small> @L["g"]</small></div><div class="stat-label">@L["carbs"]</div></div>
-    <div class="stat"><div class="stat-value num">@Model.FatG.Kg(0)<small> @L["g"]</small></div><div class="stat-label">@L["fat"]</div></div>
+@* The numbers follow the amount as it is typed, before Save (QA 2026-11-24 L6); a quick entry has no amount. *@
+<div class="card stat-grid stat-grid-4" @(Model.Source != EntrySource.Quick && Model.Grams > 0 ? Html.Raw($"data-entry-stats data-grams=\"{Model.Grams.ToString(System.Globalization.CultureInfo.InvariantCulture)}\"") : "")>
+    <div class="stat"><div class="stat-value num"><span data-stat="@Model.Kcal.ToString(System.Globalization.CultureInfo.InvariantCulture)">@Math.Round(Model.Kcal)</span></div><div class="stat-label">@L["kcal"]</div></div>
+    <div class="stat"><div class="stat-value num"><span data-stat="@Model.ProteinG.ToString(System.Globalization.CultureInfo.InvariantCulture)">@Model.ProteinG.Kg(0)</span><small> @L["g"]</small></div><div class="stat-label">@L["protein"]</div></div>
+    <div class="stat"><div class="stat-value num"><span data-stat="@Model.CarbsG.ToString(System.Globalization.CultureInfo.InvariantCulture)">@Model.CarbsG.Kg(0)</span><small> @L["g"]</small></div><div class="stat-label">@L["carbs"]</div></div>
+    <div class="stat"><div class="stat-value num"><span data-stat="@Model.FatG.ToString(System.Globalization.CultureInfo.InvariantCulture)">@Model.FatG.Kg(0)</span><small> @L["g"]</small></div><div class="stat-label">@L["fat"]</div></div>
 </div>
 
 @* Where the numbers come from: the database food it was matched to, or that there is none (Phase 11). *@
