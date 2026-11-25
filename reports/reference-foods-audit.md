@@ -107,3 +107,28 @@ The food logging QA (`docs/qa/2026-11-24-food-logging-qa.md`, H2) found three mo
 | Протеини | 400 kcal, 100 g protein, 0 g carbs, 0 g fat | 385 kcal, 66.67 g protein, 17.95 g carbs, 5.13 g fat | USDA "Beverages, ABBOTT, EAS whey protein powder" (FDC 173167) |
 
 Comparing protein, carbs and fat with the USDA twin, not just energy, flags 15 more rows, mostly small fruit and vegetable differences: Кисело мляко 3.6%, Аспержи, Гъби, Карфиол, Кумкуат, Къпини, Лимони, Лук пресен, Маруля, Сини сливи, Сушени смокини, Свинско филе, Миди - Ядка (Задушени), Лефер and Херинга. Some are real local differences, such as Bulgarian yogurt and local fish. They are left for a separate pass.
+
+
+## Second addendum, 2026-11-25
+
+The 15 rows left for a separate pass on 2026-11-24 are corrected. Their values came from spidersport.com and macroscope.top, and several were plainly rounded or incomplete (kumquat with no protein, plums with 5 g of carbs, dried figs with 0.7 g of protein against USDA's 3.3). Each now takes its USDA twin's values, as Броколи did. Bulgarian yogurt is the exception: its USDA twin is an American whole-milk yogurt at 77 kcal, so it takes the median of the seven "Кисело мляко 3.6%" labels in the seed instead. The bluefish (лефер) and herring rows stay on USDA: they are the same species, and no Bulgarian table with a better source was at hand. Values are kcal / protein / carbs / fat per 100 g.
+
+| Bulgarian name | Before | After | Source of the new values |
+|-|-|-|-|
+| Кисело мляко 3.6% | 60 / 3.2 / 2.5 / 3.6 | 62 / 3.2 / 4.2 / 3.6 | median of the seed's seven "Кисело мляко 3.6%" labels |
+| Аспержи | 25 / 3 / 2 / 0.6 | 20 / 2.2 / 3.88 / 0.12 | USDA "Asparagus, raw" |
+| Гъби | 13.5 / 1.8 / 0.4 / 0.5 | 22 / 3.09 / 3.26 / 0.34 | USDA "Mushrooms, white, raw" |
+| Карфиол | 34 / 3.6 / 3 / 1 | 22.9 / 1.64 / 4.72 / 0.24 | USDA "Cauliflower, raw" |
+| Кумкуат | 60 / 0 / 15 / 0 | 71 / 1.88 / 15.9 / 0.86 | USDA "Kumquats, raw" |
+| Къпини | 56 / 0.7 / 14 / 0 | 43 / 1.39 / 9.61 / 0.49 | USDA "Blackberries, raw" |
+| Лимони | 19 / 1 / 3 / 0 | 29 / 1.1 / 9.32 / 0.3 | USDA "Lemons, raw, without peel" |
+| Лук пресен | 23 / 2 / 3 / 0.5 | 32 / 1.83 / 7.34 / 0.19 | USDA "Onions, spring or scallions (includes tops and bulb), raw" |
+| Маруля | 14 / 0.8 / 1.7 / 0.5 | 17 / 1.24 / 3.24 / 0.26 | USDA "Lettuce, cos or romaine, raw" |
+| Сини сливи | 35 / 0.5 / 5 / 0 | 46 / 0.7 / 11.42 / 0.28 | USDA "Plums, raw" |
+| Сушени смокини | 227 / 0.7 / 52 / 0 | 249 / 3.3 / 63.9 / 0.92 | USDA "Figs, dried, uncooked" |
+| Свинско филе | 134 / 20.5 / 0 / 5.5 | 109 / 20.95 / 0 / 2.17 | USDA "Pork, fresh, loin, tenderloin, separable lean only, raw" |
+| Миди - Ядка (Задушени) | 140 / 25.6 / 5.1 / 2 | 172 / 23.8 / 7.39 / 4.48 | USDA "Mollusks, mussel, blue, cooked, moist heat" |
+| Лефер | 103 / 19.8 / 0 / 2.5 | 124 / 20.04 / 0 / 4.24 | USDA "Fish, bluefish, raw" |
+| Херинга | 129 / 20.7 / 0 / 4.9 | 158 / 17.96 / 0 / 9.04 | USDA "Fish, herring, Atlantic, raw" |
+
+All 15 are in `reference-fixes.csv`, so databases seeded before the change are corrected at the next start, unless a row was changed by hand since. Logged entries keep the totals they were saved with.
