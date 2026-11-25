@@ -26,6 +26,40 @@ public class FoodSearchTests(PostgresFixture fixture) : IClassFixture<PostgresFi
         results.Should().NotBeEmpty().And.Contain(r => r.Name.StartsWith("Боза", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Theory]
+    [InlineData("банан", "Банани, сурови")]
+    [InlineData("мандарина", "Мандарини, сурови")]
+    [InlineData("кисело мляко", "Кисело мляко")]
+    [InlineData("кафе", "Кафе, варено / филтърно")]
+    public async Task The_plain_food_comes_before_products_and_look_alikes(string query, string first)
+    {
+        // QA 2026-11-24 M5: "банан" listed "Банан нектар" first, "кафе" liqueurs and coffee beans, "мандарина" a
+        // marinade, and "кисело мляко" twenty branded tubs before the plain food.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var results = await s.Foods.SearchForPickerAsync(query, 20, default);
+        results.First().NameBg.Should().Be(first);
+    }
+
+    [Fact]
+    public async Task Plain_rice_comes_before_rice_crackers_and_flour()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var results = await s.Foods.SearchForPickerAsync("rice", 20, default);
+        results.Take(5).Should().OnlyContain(r => r.Name.StartsWith("Rice,"));
+    }
+
+    [Fact]
+    public async Task Espresso_comes_before_coffee_liqueur_and_a_marinade_after_the_mandarins()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var coffee = (await s.Foods.SearchForPickerAsync("кафе", 20, default)).Select(r => r.NameBg).ToList();
+        coffee.IndexOf("Кафе еспресо").Should().BeGreaterThanOrEqualTo(0).And.BeLessThan(coffee.FindIndex(n => n!.StartsWith("Кафе ликьор")));
+
+        var mandarins = (await s.Foods.SearchForPickerAsync("мандарина", 20, default)).Select(r => r.NameBg ?? r.Name).ToList();
+        var marinade = mandarins.FindIndex(n => n.Contains("марина") && !n.Contains("мандарин"));
+        if (marinade >= 0) marinade.Should().BeGreaterThan(mandarins.FindLastIndex(n => n.StartsWith("Мандарин")));
+    }
+
     [Fact]
     public async Task The_same_food_from_two_sources_is_listed_once()
     {

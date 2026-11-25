@@ -137,10 +137,41 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
     private static string[] SearchWords(string text) =>
         text.ToLowerInvariant().Split(text.Where(c => !char.IsLetterOrDigit(c)).Distinct().ToArray(), StringSplitOptions.RemoveEmptyEntries);
 
+    /// <summary>
+    /// The plain food's name for a search, in the forms its last word may take: a USDA or reference name's part before
+    /// the first comma is the food itself ("Bananas" in "Bananas, raw", "Кафе" in "Кафе, варено / филтърно"), and in
+    /// Bulgarian it may be the plural or another ending ("Мандарини" for "мандарина", QA 2026-11-24 M5).
+    /// </summary>
+    internal static string[] HeadForms(string query)
+    {
+        var words = query.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0) return [];
+        var last = words[^1];
+        var prefix = string.Join(' ', words[..^1]);
+        var forms = new HashSet<string> { last };
+        if (last.Any(c => c is >= 'а' and <= 'я'))
+        {
+            foreach (var stem in FoodMatcher.Forms(last).Append(FoodMatcher.Stem(last)))
+                foreach (var ending in new[] { "", "и", "а", "о", "е", "я", "ове", "еве", "ът", "ят", "та", "то", "те", "ета" })
+                    forms.Add(stem + ending);
+        }
+        else
+        {
+            forms.UnionWith([last + "s", last + "es"]);
+            if (last.Length > 3 && last.EndsWith('y')) forms.Add(last[..^1] + "ies");
+        }
+
+        return forms.Select(f => prefix.Length == 0 ? f : prefix + " " + f).ToArray();
+    }
+
     private async Task<List<FoodMatch>> PickAsync(string q, int take, CancellationToken ct)
     {
         var userId = currentUser.UserId ?? "";
         var lower = q.ToLowerInvariant();
+        var heads = HeadForms(q);
+        // A one-word search also ranks names whose first word is one of its forms ("Мандарина без семки") above names
+        // that only contain it ("Сок от портокал и мандарина").
+        var firsts = q.Trim().Contains(' ') ? [] : heads;
         return await WithWordSimilarityAsync(0.3, indexed => db.Database.SqlQuery<FoodMatch>($"""
             WITH m AS (
                 SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
@@ -148,7 +179,11 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
                        (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {userId}) AS "ByOther",
                        f."PieceGrams", f."PackGrams", f."ValuesEstimated", f."Unit" = 'Millilitres' AS "PerMillilitre",
                        GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) AS sim,
-                       starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre
+                       starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre,
+                       starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AND NOT starts_with(lower(f."Name"), {lower}) AS pre_bg,
+                       lower(btrim(split_part(f."Name", ',', 1))) = ANY({heads}) OR lower(btrim(split_part(COALESCE(f."NameBg", ''), ',', 1))) = ANY({heads}) AS head,
+                       lower(split_part(btrim(regexp_replace(f."Name", '[,(/]', ' ', 'g')), ' ', 1)) = ANY({firsts})
+                           OR lower(split_part(btrim(regexp_replace(COALESCE(f."NameBg", ''), '[,(/]', ' ', 'g')), ' ', 1)) = ANY({firsts}) AS first
                 FROM "FoodItems" f
                 WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {userId})
                   AND (NOT {indexed} OR f."Name" %> {q} OR f."NameBg" %> {q})
@@ -158,9 +193,12 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
                    "FiberPer100g", "SaturatedFatPer100g", "DefaultServingGrams", "Own", "ByOther", (sim + CASE WHEN pre THEN 1 ELSE 0 END)::float8 AS "Score",
                    "PieceGrams", "PackGrams", "ValuesEstimated", "PerMillilitre"
             FROM m
-            -- Among names that start with the search, the shortest is the plain food ("Bananas, raw" before
-            -- "Bananas, dehydrated, or banana powder"); the rest by similarity.
-            ORDER BY "Own" DESC, pre DESC, CASE WHEN pre THEN length("Name") END, sim DESC, length("Name")
+            -- The plain food first: its name before the comma is the search ("Bananas, raw", "Банани, сурови" for
+            -- "банан"), above products that only start with it ("Банан нектар") or names that only contain it. Then names
+            -- whose first word is the search, then names that start with it, the shortest first in the search's language
+            -- ("Bananas, raw" before "Bananas, dehydrated, or banana powder", "Кафе еспресо" before "Кафе ликьор, 26.5%");
+            -- the rest by similarity.
+            ORDER BY "Own" DESC, head DESC, first DESC, pre DESC, CASE WHEN pre_bg THEN length("NameBg") WHEN pre THEN length("Name") END, sim DESC, length("Name")
             LIMIT {take * 2}
             """).ToListAsync(ct), ct);
     }
