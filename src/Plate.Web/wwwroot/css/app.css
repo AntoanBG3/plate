@@ -188,6 +188,8 @@ a.section-aside { color: var(--accent-text) !important; }
 /* Room for the "Optional" placeholder, "По желание" in Bulgarian; a typed value stays right-aligned, so nothing moves. */
 .field-row.is-optional input:is([type="number"], [inputmode="decimal"]) { flex-basis: 11ch; }
 .field-row .unit { color: var(--label-2); flex: none; margin-left: -6px; }
+/* A saved meal's item: its numbers under its name, following the grams. */
+.saved-meal-item > label [data-totals] { display: block; color: var(--label-2); }
 .field-row.stacked { flex-direction: column; align-items: stretch; gap: var(--s-1); padding-top: var(--s-3); padding-bottom: var(--s-3); }
 .field-row.stacked input { text-align: left; color: var(--label); flex: none; }
 /* The scan button beside a barcode field: 44 px to tap, reaching into the row's padding so the row keeps its height. */
