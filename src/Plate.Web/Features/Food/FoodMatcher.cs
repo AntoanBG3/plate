@@ -120,6 +120,8 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
 
     // USDA entries that are rarely what someone means by a plain food name.
     private static readonly string[] Niche = ["babyfood", "restaurant", "fast food", "fast foods", "school lunch", "infant", "breaded", "with ", "mix", "flour", "juice", "chips", "glutinous", "dehydrated", "dried", "powder", "canned", "frozen",
+        // Deli and rotisserie meat: "chicken breast, grilled" became a deli roll (QA 2026-11-24 M7).
+        "deli", "luncheon", "prepackaged", "rotisserie", ", roll,",
         ", skin,", "skin only", "peel", // the skin of a potato or fruit, eaten on its own
         "meat and skin", // chicken breast or thigh means the meat unless skin is said
         "plant-based", "vegetarian", "vegan", "meatless", "imitation", "substitute",
@@ -197,25 +199,57 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         for (var n = 0; n < result.Count; n++)
         {
             var (item, row) = (items[n], result[n]);
-            if (!item.GramsStated || row.FoodItemId is not { } id || recipes.Contains(id) || FoodStates.Stated(item.NameOriginal + " " + item.Preparation)
-                || (FoodStates.Staple(item.NameEn) ?? FoodStates.Staple(item.NameOriginal)) is not { } staple)
+            var typed = item.NameOriginal + " " + item.Preparation;
+            var staple = FoodStates.Staple(item.NameEn) ?? FoodStates.Staple(item.NameOriginal);
+            // A poultry cut is weighed raw or cooked as often as rice (QA 2026-11-24 M7). Only a raw word settles it:
+            // "на скара" says how it was made, not when it was weighed.
+            var meat = staple is null ? FoodStates.Meat(item.NameEn) ?? FoodStates.Meat(item.NameOriginal) : null;
+            if (!item.GramsStated || row.FoodItemId is not { } id || recipes.Contains(id)
+                || staple is not null && (FoodStates.Stated(typed) || FoodStates.SaysDry(item.NameEn))
+                || meat is not null && FoodStates.StatesRaw(typed)
+                || (staple ?? meat) is not { } kind)
             {
                 continue;
             }
 
-            // The matched food has to be the staple too: a rice bar matched for "basmati rice" has no cooked version.
-            var current = FoodStates.Staple(row.MatchedNameEn ?? row.MatchedName) == staple || FoodStates.Staple(row.MatchedName) == staple
-                ? FoodStates.OfStaple(row.MatchedNameEn ?? row.MatchedName, row.MatchedName, row.Per100.Kcal)
-                : FoodState.NotApplicable;
+            // The matched food has to be the staple too: a rice bar matched for "basmati rice" has no cooked version, nor
+            // do deli slices of chicken breast.
+            var matchedName = row.MatchedNameEn ?? row.MatchedName;
+            var current = staple is not null
+                ? FoodStates.Staple(matchedName) == staple || FoodStates.Staple(row.MatchedName) == staple
+                    ? FoodStates.OfStaple(matchedName, row.MatchedName, row.Per100.Kcal)
+                    : FoodState.NotApplicable
+                : FoodStates.Meat(matchedName) == meat || FoodStates.Meat(row.MatchedName) == meat
+                    ? FoodStates.OfMeat(matchedName, row.MatchedName)
+                    : FoodState.NotApplicable;
+            if (current == FoodState.NotApplicable && meat is not null && !row.Usual && !row.Own && row.MatchModel is null)
+            {
+                // A plain cut typed ("chicken breast 200g grilled") but the ranking matched a product made from it (a deli
+                // roll): the plain cut in the parser's reading, raw unless it said cooked, is what was meant (QA 2026-11-24
+                // M7). A pick of the matching model's stands: it saw the products and chose.
+                var reading = item.State == FoodState.Cooked ? FoodState.Cooked : FoodState.Raw;
+                if (!found.TryGetValue((kind, reading), out var plain))
+                {
+                    found[(kind, reading)] = plain = await MeatCounterpartAsync(kind, reading, ct);
+                }
+
+                if (plain is not null)
+                {
+                    result[n] = row = Matched(item, plain, row.Grams, Confidence.Medium, row.Notes.ToList(), row.MatchModel);
+                    id = plain.Id;
+                    current = reading;
+                }
+            }
+
             if (current == FoodState.NotApplicable)
             {
                 continue;
             }
 
             var other = current == FoodState.Raw ? FoodState.Cooked : FoodState.Raw;
-            if (!found.TryGetValue((staple, other), out var counterpart))
+            if (!found.TryGetValue((kind, other), out var counterpart))
             {
-                found[(staple, other)] = counterpart = await CounterpartAsync(staple, other, ct);
+                found[(kind, other)] = counterpart = staple is not null ? await CounterpartAsync(staple, other, ct) : await MeatCounterpartAsync(kind, other, ct);
             }
 
             if (counterpart is null)
@@ -245,9 +279,50 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     /// <summary>The plain shared food for a staple in a state: "rice" cooked is a cooked white rice, not a niche variant.</summary>
     private async Task<FoodMatch?> CounterpartAsync(string staple, FoodState state, CancellationToken ct) =>
         (await foods.SearchAsync(staple, 120, MatchThreshold, ct))
-            .Where(f => !f.Own && FoodStates.Staple(f.Name) == staple && HeadMatches(f, staple) && FoodStates.OfStaple(f.Name, f.NameBg, f.KcalPer100g) == state)
+            .Where(f => !f.Own && FoodStates.Staple(f.Name) == staple && NamesStaple(f, staple) && FoodStates.OfStaple(f.Name, f.NameBg, f.KcalPer100g) == state)
             .OrderByDescending(f => Rank(f, staple + (state == FoodState.Cooked ? " cooked" : " raw"), state))
             .FirstOrDefault();
+
+    /// <summary>
+    /// The food's main word is the staple: "Rice, white, ..." for rice. USDA files hot cereals under "Cereals, oats, ...",
+    /// so there the next part counts, which is how oats find their cooked counterpart (QA 2026-11-24 L2).
+    /// </summary>
+    internal static bool NamesStaple(FoodMatch food, string staple)
+    {
+        var parts = food.Name.ToLowerInvariant().Split(',', StringSplitOptions.TrimEntries);
+        bool Names(string part) => Words(part).Any(w => FoodStates.Staple(w) == staple);
+        return Names(parts[0]) || parts[0] == "cereals" && parts.Length > 1 && Names(parts[1]);
+    }
+
+    /// <summary>
+    /// The plain shared poultry cut in a state: the meat alone, roasted when cooked, as USDA's reference rows give it
+    /// ("Chicken, broilers or fryers, breast, meat only, cooked, roasted", 165 kcal), not one with its skin, a solution
+    /// added or a product's own recipe.
+    /// </summary>
+    private async Task<FoodMatch?> MeatCounterpartAsync(string cut, FoodState state, CancellationToken ct) =>
+        // "chicken thigh" alone fills the 120 results with other chicken before the plain roasted thigh, so the plain
+        // cut's own words are searched too.
+        (await foods.SearchAsync(cut, 120, MatchThreshold, ct))
+            .Concat(await foods.SearchAsync(cut + ", meat only, " + (state == FoodState.Cooked ? "cooked, roasted" : "raw"), 120, MatchThreshold, ct))
+            .DistinctBy(f => f.Id)
+            .Where(f => !f.Own && FoodStates.Meat(f.Name) == cut && FoodStates.OfMeat(f.Name, f.NameBg) == state)
+            .OrderByDescending(f => PlainCut(f, state))
+            .ThenByDescending(f => Rank(f, cut + (state == FoodState.Cooked ? " cooked" : " raw"), state))
+            .FirstOrDefault();
+
+    internal static int PlainCut(FoodMatch f, FoodState state)
+    {
+        var name = (f.Name + " | " + f.NameBg).ToLowerInvariant();
+        var score = 0;
+        if (name.Contains("meat only") || name.Contains("skinless") || name.Contains("без кожа")) score += 2;
+        if (name.Contains("meat and skin") || name.Contains("с кожа") || name.Contains("pre-basted") || name.Contains("added solution")
+            || name.Contains("marinated") || name.Contains("маринов") || name.Contains("seasoned")) score -= 3;
+        if (state == FoodState.Cooked && (name.Contains("roasted") || name.Contains("grilled"))) score += 1;
+        if (name.Contains("fried") || name.Contains("пърж")) score -= 1;
+        // A product's name is its Bulgarian name: its own recipe, not the reference cut.
+        if (string.Equals(f.Name, f.NameBg, StringComparison.OrdinalIgnoreCase)) score -= 2;
+        return score;
+    }
 
     private async Task<Candidates> FindCandidatesAsync(ParsedFoodItem item, FoodMatch? usual, int rankDepth, bool askModel, CancellationToken ct)
     {

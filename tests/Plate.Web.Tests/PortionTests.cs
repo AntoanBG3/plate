@@ -175,6 +175,79 @@ public class PortionTests(PostgresFixture fixture) : IClassFixture<PostgresFixtu
     }
 
     [Fact]
+    public async Task Rice_the_English_name_calls_dry_is_not_asked_about()
+    {
+        // QA 2026-11-24 L1: "ориз басмати 80г сух" came back as "ориз басмати" / "basmati rice, dry".
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+
+        var row = (await s.Matcher.ResolveAsync("ориз басмати 80г сух", [Rice("ориз басмати", "raw") with { NameEn = "basmati rice, dry", Grams = 80 }], default)).Single();
+
+        row.Per100.Kcal.Should().BeGreaterThan(300);
+        row.Choice.Should().BeNull("the user said dry");
+    }
+
+    [Fact]
+    public async Task Weighed_oats_are_asked_about_with_USDAs_cooked_oats()
+    {
+        // QA 2026-11-24 L2: USDA files cooked oats as "Cereals, oats, ...", which the counterpart search never took.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var oats = Live("oats", "oats", 60, true, true, null, null) with { State = FoodState.Raw };
+
+        var row = (await s.Matcher.ResolveAsync("oats 60g", [oats], default)).Single();
+
+        row.Choice.Should().NotBeNull();
+        row.Choice!.Current.Should().Be(FoodState.Raw);
+        row.Choice.Other.Name.Should().StartWith("Cereals, oats").And.Contain("cooked");
+    }
+
+    private static ParsedFoodItem Chicken(string nameEn, string original, decimal grams, FoodState state, string? preparation = null) =>
+        Live(nameEn, original, grams, true, true, null, null) with { State = state, Preparation = preparation };
+
+    [Fact]
+    public async Task Grilled_chicken_breast_is_plain_roasted_breast_and_asks_when_it_was_weighed()
+    {
+        // QA 2026-11-24 M7: "chicken breast 200g grilled" became a rotisserie row (and, on this seed, a deli roll),
+        // and nothing asked whether the 200 g was weighed raw or cooked.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+
+        var row = (await s.Matcher.ResolveAsync("chicken breast 200g grilled", [Chicken("chicken breast, grilled", "chicken breast", 200, FoodState.Cooked, "grilled")], default)).Single();
+
+        row.MatchedName.Should().Be("Chicken, broilers or fryers, breast, meat only, cooked, roasted");
+        row.Per100.Kcal.Should().Be(165);
+        row.Choice.Should().NotBeNull();
+        row.Choice!.Current.Should().Be(FoodState.Cooked);
+        row.Choice.Other.State.Should().Be(FoodState.Raw);
+        row.Choice.Other.Name.Should().Contain("skinless").And.Contain("raw");
+    }
+
+    [Theory]
+    [InlineData("chicken breast", "пилешко филе", "breast, meat only, cooked, roasted")]
+    [InlineData("chicken thigh", "пилешко бутче", "thigh, meat only, cooked, roasted")]
+    [InlineData("turkey breast", "пуешко филе", "breast, meat only, cooked, roasted")]
+    public async Task A_weighed_poultry_cut_read_as_raw_offers_the_plain_cooked_cut(string nameEn, string original, string cooked)
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+
+        var row = (await s.Matcher.ResolveAsync(original + " 150г", [Chicken(nameEn, original, 150, FoodState.Raw)], default)).Single();
+
+        row.Choice.Should().NotBeNull();
+        row.Choice!.Current.Should().Be(FoodState.Raw, "meat is read as weighed raw unless the text says otherwise");
+        row.Choice.Other.Name.Should().Contain(cooked);
+    }
+
+    [Fact]
+    public async Task Meat_the_user_called_raw_or_deli_meat_is_not_asked_about()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+
+        var raw = (await s.Matcher.ResolveAsync("пилешко филе сурово 150г", [Chicken("chicken breast, raw", "пилешко филе сурово", 150, FoodState.Raw)], default)).Single();
+        var smoked = (await s.Matcher.ResolveAsync("пушено пилешко филе 50г", [Chicken("smoked chicken breast", "пушено пилешко филе", 50, FoodState.Cooked)], default)).Single();
+
+        raw.Choice.Should().BeNull("the text says raw");
+        smoked.Choice.Should().BeNull("smoked deli chicken is eaten as it is");
+    }
+
+    [Fact]
     public async Task A_food_made_from_the_staple_gets_no_question()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

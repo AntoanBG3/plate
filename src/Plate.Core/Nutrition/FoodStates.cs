@@ -10,7 +10,7 @@ public static class FoodStates
 
     private static readonly HashSet<string> CookedWords =
         ["cooked", "boiled", "roasted", "grilled", "baked", "fried", "broiled", "steamed", "stewed", "braised",
-         "poached", "scrambled", "microwaved", "sauteed"];
+         "poached", "scrambled", "microwaved", "sauteed", "rotisserie", "barbecued", "bbq"];
 
     // Bulgarian adjectives change their ending with gender and number ("варен", "варено", "варени").
     private static readonly string[] RawStemsBg = ["суров"];
@@ -30,6 +30,31 @@ public static class FoodStates
 
     // Words in what the user typed that say the weight is dry, beside the raw ones.
     private static readonly string[] DryWords = ["dry", "uncooked", "сух", "суха", "сухи", "сухо", "неварен", "неварена", "неварени"];
+
+    // Poultry cuts people weigh either before or after cooking, which loses about a quarter of the weight as water:
+    // 200 g of chicken breast is about 240 kcal weighed raw and 330 kcal weighed cooked (QA 2026-11-24 M7).
+    // Each is (the cut, words for the animal, words for the part); Bulgarian ones are word beginnings.
+    private static readonly (string Cut, string[] Animal, string[] Part)[] MeatsEn =
+    [
+        // Thigh first, so a thigh fillet is a thigh.
+        ("chicken thigh", ["chicken"], ["thigh", "thighs"]),
+        ("chicken breast", ["chicken"], ["breast", "breasts", "fillet", "fillets"]),
+        ("turkey breast", ["turkey"], ["breast", "breasts", "fillet", "fillets"]),
+    ];
+
+    private static readonly (string Cut, string[] Animal, string[] Part)[] MeatsBg =
+    [
+        ("chicken thigh", ["пилешк", "пиле"], ["бут"]),
+        ("chicken breast", ["пилешк", "пиле"], ["филе", "гърд"]),
+        ("turkey breast", ["пуешк", "пуйка"], ["филе", "гърд"]),
+    ];
+
+    // Products and dishes made from the cut, which are eaten as they are: deli meat, breaded pieces, sandwiches.
+    private static readonly string[] NotACutEn = ["breaded", "breading", "batter", "flour", "nugget", "nuggets", "patty", "patties", "sandwich", "sub", "salad",
+        "soup", "roll", "deli", "sliced", "luncheon", "smoked", "prepackaged", "sausage", "ham", "frankfurter", "fast", "foods", "babyfood", "pie", "pizza"];
+
+    private static readonly string[] NotACutBg = ["панир", "сандвич", "салата", "супа", "роле", "нарязан", "слайс", "пушен", "шунка", "деликатес", "кренвирш",
+        "наденица", "хапки", "бургер", "трамезини", "пица", "дюнер", "баница", "пай", "крокет", "кюфте"];
 
     /// <summary>The English word that names the staple in <paramref name="name"/> ("rice" for "basmati rice"), or null when it isn't one.</summary>
     public static string? Staple(string? name)
@@ -76,6 +101,61 @@ public static class FoodStates
             : byEnergy == FoodState.NotApplicable || byEnergy == byName ? byName
             : FoodState.NotApplicable;
     }
+
+    /// <summary>
+    /// The poultry cut <paramref name="name"/> is ("chicken breast" for "пилешко филе" or "Chicken, broilers or fryers,
+    /// breast, meat only, cooked, roasted"), or null when it isn't one or is a product made from it (deli slices, breaded
+    /// pieces, a sandwich).
+    /// </summary>
+    public static string? Meat(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        var words = name.ToLowerInvariant().Split([' ', ',', '(', ')', '-', '/', '.', ';', ':'], StringSplitOptions.RemoveEmptyEntries);
+        if (words.Any(NotACutEn.Contains) || words.Any(w => NotACutBg.Any(w.StartsWith)))
+        {
+            return null;
+        }
+
+        foreach (var (cut, animal, part) in MeatsEn)
+        {
+            if (words.Any(animal.Contains) && words.Any(part.Contains))
+            {
+                return cut;
+            }
+        }
+
+        foreach (var (cut, animal, part) in MeatsBg)
+        {
+            if (words.Any(w => animal.Any(w.StartsWith)) && words.Any(w => part.Any(w.StartsWith)))
+            {
+                return cut;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>A poultry cut's state from its names; a plain cut that says neither ("Пилешко филе") is sold raw.</summary>
+    public static FoodState OfMeat(string? name, string? nameBg) =>
+        FromName(name, nameBg) is var state && state != FoodState.NotApplicable ? state : FoodState.Raw;
+
+    /// <summary>
+    /// What the user typed says the meat was weighed raw ("суров", "raw"). A cooking word ("на скара", "grilled") says
+    /// how it was made, not when it was weighed, so it doesn't count.
+    /// </summary>
+    public static bool StatesRaw(string? typed) => Of(typed) == FoodState.Raw;
+
+    /// <summary>
+    /// The parser's English name says the weight is dry ("basmati rice, dry" for "ориз басмати 80г сух"), which it
+    /// sometimes keeps when it drops the word from the original name (QA 2026-11-24 L1). Only dry words count: the parser
+    /// adds its own cooked reading of rice to the English name, so a cooking word there says nothing about the user.
+    /// </summary>
+    public static bool SaysDry(string? nameEn) =>
+        (nameEn ?? "").ToLowerInvariant().Split([' ', ',', '(', ')', '-', '/', '.'], StringSplitOptions.RemoveEmptyEntries).Any(w => w is "dry" or "uncooked");
 
     /// <summary>What the user typed says whether the weight is raw (or dry) or cooked: "150 г сварен ориз", "80 g dry pasta".</summary>
     public static bool Stated(string? typed) =>
