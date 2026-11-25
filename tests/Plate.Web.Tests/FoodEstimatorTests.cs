@@ -103,6 +103,19 @@ public class FoodEstimatorTests(PostgresFixture fixture) : IClassFixture<Postgre
             TimeProvider.System, NullLogger<OpenRouterSettings>.Instance);
 
     [Fact]
+    public async Task The_namer_and_the_estimator_reading_settings_at_once_share_one_query()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var store = Store(s, "sk-or-v1-estimator-test-0123456789", "openai/gpt-x");
+
+        // Two reads before anything is loaded, as the namer and the estimator make them: two queries at once on one
+        // DbContext would throw.
+        var models = await Task.WhenAll(store.GetModelAsync(AiTask.Estimator, default), store.GetModelAsync(AiTask.Parser, default));
+
+        models.Should().HaveCount(2);
+    }
+
+    [Fact]
     public async Task The_estimator_defaults_to_the_parsers_model_and_off_makes_no_call()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

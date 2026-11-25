@@ -64,19 +64,28 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
         var trace = new List<MatchTrace>();
         IReadOnlyList<ConfirmItem> items = [];
         var matchMs = 0;
+        var nearby = new List<IReadOnlyList<NearbyFood>>();
         if (result.Items.Count > 0)
         {
             clock.Restart();
-            var nearby = new List<IReadOnlyList<NearbyFood>>();
             items = await matcher.ResolveAsync(text, result.Items, ct, trace, nearby: nearby);
             matchMs = (int)clock.ElapsedMilliseconds;
-            // The rows with no database food get the estimator's values; the namer below handles the matched ones.
-            items = await FoodEstimation.ApplyAsync(estimator, text, result.Items, items, nearby, ct);
         }
 
-        clock.Restart();
-        var proposed = await NameAsync(items, ct);
-        var namerMs = (int)clock.ElapsedMilliseconds;
+        // The namer names the rows matched to a database food and the estimator fills the rows with none, so neither
+        // needs the other's answer and the user waits for the slower of the two, not both.
+        var matched = items;
+        var naming = TimedAsync(() => NameAsync(matched, ct));
+        var estimating = estimator is not null && FoodEstimation.Needed(matched, result.Items) ? TimedAsync(() => FoodEstimation.ApplyAsync(estimator, text, result.Items, matched, nearby, ct)) : null;
+        await Task.WhenAll(estimating is null ? [naming] : [naming, estimating]);
+        var (proposed, namerMs) = await naming;
+        int? estimateMs = null;
+        if (estimating is not null)
+        {
+            (items, var ms) = await estimating;
+            estimateMs = ms;
+        }
+
         items = items.Select((item, n) => item with
         {
             Description = FoodNaming.Accept(proposed[n]?.Name, item.State) ?? item.Description,
@@ -94,6 +103,7 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
             ParserMs = parserMs,
             MatchMs = matchMs,
             NamerMs = namerMs,
+            EstimateMs = estimateMs,
             TotalMs = (int)total.ElapsedMilliseconds,
             ParserError = result.Error is { } error ? Trim(error.ToString(), 500) : null,
             Parsed = FeedbackJson.Write(result.Items),
@@ -139,6 +149,13 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
     /// Short names and statuses for the rows matched to a database food, by row (null where there is none). A database
     /// name is already on the row, so a failed or missing name changes nothing.
     /// </summary>
+    private static async Task<(T Value, int Ms)> TimedAsync<T>(Func<Task<T>> work)
+    {
+        var clock = Stopwatch.StartNew();
+        var value = await work();
+        return (value, (int)clock.ElapsedMilliseconds);
+    }
+
     private async Task<FoodName?[]> NameAsync(IReadOnlyList<ConfirmItem> items, CancellationToken ct)
     {
         var result = new FoodName?[items.Count];

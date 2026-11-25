@@ -32,9 +32,64 @@ public class ParseLatencyTests(PostgresFixture fixture) : IClassFixture<Postgres
         }
     }
 
-    private static ParseRunService Service(UserScope s, IFoodParser parser, IFoodNamer namer) =>
+    /// <summary>Says it has started, then waits a while for the other side to start too.</summary>
+    private sealed class Meeting(TaskCompletionSource started, TaskCompletionSource other) : IFoodNamer, IFoodEstimator
+    {
+        public bool SawOther { get; private set; }
+
+        public async Task<IReadOnlyList<FoodName?>?> NameAsync(IReadOnlyList<NameRequest> items, CancellationToken ct)
+        {
+            await MeetAsync();
+            return null;
+        }
+
+        public async Task<FoodEstimates?> EstimateAsync(string text, IReadOnlyList<EstimateRequest> items, CancellationToken ct)
+        {
+            await MeetAsync();
+            return null;
+        }
+
+        private async Task MeetAsync()
+        {
+            started.TrySetResult();
+            SawOther = await Task.WhenAny(other.Task, Task.Delay(TimeSpan.FromSeconds(2))) == other.Task;
+        }
+    }
+
+    private static ParseRunService Service(UserScope s, IFoodParser parser, IFoodNamer namer, IFoodEstimator? estimator = null) =>
         new(s.Db, new Plate.Web.Data.FixedCurrentUser(s.UserId), parser, s.Matcher, namer, TimeProvider.System,
-            NullLogger<ParseRunService>.Instance, new MemoryCache(new MemoryCacheOptions()), s.Repeat);
+            NullLogger<ParseRunService>.Instance, new MemoryCache(new MemoryCacheOptions()), s.Repeat, estimator);
+
+    [Fact]
+    public async Task The_namer_and_the_estimator_run_at_the_same_time()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var namerStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var estimatorStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var namer = new Meeting(namerStarted, estimatorStarted);
+        var estimator = new Meeting(estimatorStarted, namerStarted);
+
+        // Chicken breast is matched, so it is named; "zzqx" matches nothing, so it is estimated.
+        var outcome = await Service(s, new FakeFoodParser(), namer, estimator).ParseAsync("200g chicken breast raw, 50g zzqx", default);
+
+        namer.SawOther.Should().BeTrue("the estimator started while the namer was still waiting");
+        estimator.SawOther.Should().BeTrue("the namer started while the estimator was still waiting");
+        var run = await s.Db.ParseRuns.SingleAsync(r => r.Id == outcome.RunId);
+        run.EstimateMs.Should().NotBeNull();
+        run.TotalMs.Should().BeGreaterThanOrEqualTo(run.ParserMs + run.MatchMs + Math.Max(run.NamerMs!.Value, run.EstimateMs!.Value));
+    }
+
+    [Fact]
+    public async Task A_run_with_nothing_to_estimate_has_no_estimator_time()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var estimator = new StubFoodEstimator();
+
+        var outcome = await Service(s, new FakeFoodParser(), new SlowNamer(TimeSpan.Zero), estimator).ParseAsync("200g chicken breast raw", default);
+
+        estimator.Calls.Should().BeEmpty();
+        (await s.Db.ParseRuns.SingleAsync(r => r.Id == outcome.RunId)).EstimateMs.Should().BeNull();
+    }
 
     [Fact]
     public async Task The_total_covers_the_parser_the_matcher_and_the_namer()

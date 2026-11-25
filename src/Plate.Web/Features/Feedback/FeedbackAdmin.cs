@@ -16,7 +16,7 @@ public record FeedbackDetail(FeedbackRow Row, string? Reply, string? FixedInVers
 
 public record ParseRunDetail(int Id, DateTimeOffset CreatedAt, string Reporter, string Text, string? AiModel, string? MatchModel, int ParserMs, int MatchMs,
     string? ParserError, JsonNode? Parsed, JsonNode? Resolved, JsonNode? Saved, ParseCorrection Corrections, DateTimeOffset? ConfirmedAt,
-    IReadOnlyList<(int? Item, FeedbackRating? Rating, ParseReason Reasons, string? Message)> Ratings, int? NamerMs = null, int? TotalMs = null);
+    IReadOnlyList<(int? Item, FeedbackRating? Rating, ParseReason Reasons, string? Message)> Ratings, int? NamerMs = null, int? TotalMs = null, int? EstimateMs = null);
 
 /// <summary>What the user's actions say about one parsed item.</summary>
 public static class EvalVerdict
@@ -267,7 +267,7 @@ public class FeedbackAdmin(AppDbContext db, TimeProvider time, AdminAuditLog aud
             .ToListAsync(ct);
         return new ParseRunDetail(run.Id, run.CreatedAt, await ReporterAsync(run.UserId, ct), run.Text, run.AiModel, run.MatchModel, run.ParserMs, run.MatchMs,
             run.ParserError, JsonNode.Parse(run.Parsed), JsonNode.Parse(run.Resolved), run.Saved is null ? null : JsonNode.Parse(run.Saved),
-            run.Corrections, run.ConfirmedAt, ratings.Select(r => (r.ParseItemIndex, r.Rating, r.Reasons, r.Message)).ToList(), run.NamerMs, run.TotalMs);
+            run.Corrections, run.ConfirmedAt, ratings.Select(r => (r.ParseItemIndex, r.Rating, r.Reasons, r.Message)).ToList(), run.NamerMs, run.TotalMs, run.EstimateMs);
     }
 
     /// <summary>Parse runs since a time, newest first; with <paramref name="flaggedOnly"/>, only those corrected or rated down.</summary>

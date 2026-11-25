@@ -18,7 +18,7 @@ namespace Plate.Web.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
@@ -1044,6 +1044,9 @@ namespace Plate.Web.Data.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("EstimateMs")
+                        .HasColumnType("integer");
 
                     b.Property<string>("MatchModel")
                         .HasMaxLength(100)
