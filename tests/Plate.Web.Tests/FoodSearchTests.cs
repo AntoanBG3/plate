@@ -35,6 +35,24 @@ public class FoodSearchTests(PostgresFixture fixture) : IClassFixture<PostgresFi
     }
 
     [Fact]
+    public async Task A_food_counted_in_pieces_starts_at_one_piece_without_a_serving()
+    {
+        // QA 2026-11-24 L5: a Snickers, a banana and a mandarin all started at 100 g in Search.
+        await using var app = new AppFactory(fixture);
+        var (client, _) = await app.SignedInClientAsync();
+        var tag = Guid.NewGuid().ToString("N")[..8];
+        await using (var db = fixture.CreateContext(null))
+        {
+            db.FoodItems.Add(new Plate.Core.Domain.FoodItem { Name = $"Zzbar {tag}", Source = Plate.Core.Domain.FoodSource.Usda, KcalPer100g = 490, ProteinPer100g = 7, CarbsPer100g = 60, FatPer100g = 24, PieceGrams = 50 });
+            await db.SaveChangesAsync();
+        }
+
+        var html = await client.GetStringAsync($"/food/add?date=2026-09-28&meal=Lunch&tab=search&q=Zzbar%20{tag}");
+
+        html.Should().Contain("name=\"grams\" value=\"50\"");
+    }
+
+    [Fact]
     public async Task The_search_tab_lists_your_foods_and_the_database_apart()
     {
         await using var app = new AppFactory(fixture);

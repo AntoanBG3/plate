@@ -159,6 +159,47 @@ public class FoodSeedTests(PostgresFixture fixture) : IClassFixture<PostgresFixt
     }
 
     [Fact]
+    public async Task A_missing_piece_weight_is_filled_by_USDA_name_or_barcode_and_one_set_by_hand_stays()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..8];
+        var (barcode, kept) = ("38" + Random.Shared.NextInt64(10_000_000_000, 99_999_999_999), "38" + Random.Shared.NextInt64(10_000_000_000, 99_999_999_999));
+        await using (var db = fixture.CreateContext(null))
+        {
+            db.FoodItems.AddRange(
+                new FoodItem { Name = $"Bananas, raw {tag}", Source = FoodSource.Usda, KcalPer100g = 89, ProteinPer100g = 1, CarbsPer100g = 23, FatPer100g = 0.3m },
+                new FoodItem { Name = "Кроасан", NameBg = "Кроасан", Barcode = barcode, Source = FoodSource.OpenFoodFacts, KcalPer100g = 450, ProteinPer100g = 6, CarbsPer100g = 50, FatPer100g = 25 },
+                new FoodItem { Name = "Кроасан", NameBg = "Кроасан", Barcode = kept, Source = FoodSource.OpenFoodFacts, KcalPer100g = 450, ProteinPer100g = 6, CarbsPer100g = 50, FatPer100g = 25, PieceGrams = 60 });
+            await db.SaveChangesAsync();
+        }
+
+        var weights = TempCsv("match,key,piece_g,source", $"usda,\"Bananas, raw {tag}\",118,USDA", $"barcode,{barcode},92,OFF", $"barcode,{kept},92,OFF");
+        await using (var db = fixture.CreateContext(null))
+        {
+            await DataFixups.RunAsync(db, default, pieceWeights: weights);
+            await DataFixups.RunAsync(db, default, pieceWeights: weights); // a second start finds nothing to change
+        }
+
+        await using var check = fixture.CreateContext(null);
+        (await check.FoodItems.IgnoreQueryFilters().SingleAsync(f => f.Name == $"Bananas, raw {tag}")).PieceGrams.Should().Be(118);
+        (await check.FoodItems.IgnoreQueryFilters().SingleAsync(f => f.Barcode == barcode)).PieceGrams.Should().Be(92);
+        (await check.FoodItems.IgnoreQueryFilters().SingleAsync(f => f.Barcode == kept)).PieceGrams.Should().Be(60, "a weight already set stays");
+    }
+
+    [Fact]
+    public void Every_piece_weight_names_a_seeded_food_and_its_source()
+    {
+        var usda = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "usda-foods.csv"));
+        var bg = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "bg-foods.csv"));
+        foreach (var line in File.ReadLines(DataFixups.PieceWeightsPath).Skip(1).Where(l => l.Length > 0))
+        {
+            var f = UsdaSeed.ParseCsvLine(line);
+            (f[0] == "usda" ? usda.Contains($"\"{f[1]}\"") || usda.Contains("," + f[1] + ",") : bg.Contains("," + f[1] + ",")).Should().BeTrue(line);
+            decimal.Parse(f[2], System.Globalization.CultureInfo.InvariantCulture).Should().BeInRange(5, 500, line);
+            f[3].Should().NotBeNullOrWhiteSpace(line);
+        }
+    }
+
+    [Fact]
     public void The_retired_products_are_not_in_the_seed()
     {
         var seed = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "bg-foods.csv"));
