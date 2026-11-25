@@ -11,7 +11,8 @@ namespace Plate.Web.Integrations;
 /// <summary>
 /// Estimates values per 100 g for the foods no database food matched, with a model of its own (SPEC 6.1 step 6). Unlike
 /// the parser, which guesses every food's values before matching, it sees the closest database foods and reasons about
-/// one food at a time. One call per parse, no retry: on any failure the parser's own guesses stand.
+/// one food at a time. One call per parse, no retry: on any failure the parser's own guesses stand, and the answer has no
+/// values, so the rows can say so (<see cref="Plate.Web.Features.Food.FoodEstimation"/>).
 /// </summary>
 public class OpenRouterFoodEstimator(HttpClient http, OpenRouterModels catalog, ILogger<OpenRouterFoodEstimator> log)
 {
@@ -66,13 +67,15 @@ public class OpenRouterFoodEstimator(HttpClient http, OpenRouterModels catalog, 
     {
         var sample = new EstimateRequest("закуска с лютеница и сирене от Лидл", "pastry with lyutenitsa and cheese from Lidl", 90, FoodState.Cooked, "baked", []);
         var answer = await EstimateAsync("закуска с лютеница и сирене от Лидл", [sample], apiKey, model, ct, effort);
-        return FoodEstimating.Accept(answer?.Values.FirstOrDefault()) is null
+        return FoodEstimating.Accept(answer.Values.FirstOrDefault()) is null
             ? new LocalText("The model gave no usable estimate for a sample food.")
             : null;
     }
 
-    public async Task<FoodEstimates?> EstimateAsync(string text, IReadOnlyList<EstimateRequest> items, string apiKey, string model, CancellationToken ct, string? effort = null)
+    /// <returns>One value per item, null where none came back; no values at all when the call failed or timed out.</returns>
+    public async Task<FoodEstimates> EstimateAsync(string text, IReadOnlyList<EstimateRequest> items, string apiKey, string model, CancellationToken ct, string? effort = null)
     {
+        var failed = new FoodEstimates([], model);
         if (items.Count == 0)
         {
             return new FoodEstimates([], model);
@@ -90,24 +93,24 @@ public class OpenRouterFoodEstimator(HttpClient http, OpenRouterModels catalog, 
             if (!response.IsSuccessStatusCode)
             {
                 log.LogWarning("Food estimator: OpenRouter returned {Status} for {Model}", (int)response.StatusCode, model);
-                return null;
+                return failed;
             }
 
             var node = await response.Content.ReadFromJsonAsync<JsonNode>(timeout.Token);
             var usage = node?["usage"] as JsonObject;
             log.LogInformation("Food estimator {Model} estimated {Count} items in {Ms} ms, {Input} input and {Output} output tokens, ${Cost}",
                 model, items.Count, clock.ElapsedMilliseconds, usage?["prompt_tokens"]?.ToString(), usage?["completion_tokens"]?.ToString(), usage?["cost"]?.ToString());
-            return Read(node, items.Count) is { } values ? new FoodEstimates(values, model) : null;
+            return Read(node, items.Count) is { } values ? new FoodEstimates(values, model) : failed;
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             log.LogWarning("Food estimator: {Model} took longer than {Seconds} s", model, Timeout.TotalSeconds);
-            return null;
+            return failed;
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException)
         {
             log.LogWarning(ex, "Food estimator request failed");
-            return null;
+            return failed;
         }
     }
 

@@ -4,7 +4,8 @@ namespace Plate.Web.Features.Food;
 
 /// <summary>
 /// Asks the estimator for the rows no database food matched (SPEC 6.1 step 6) and puts its values on them. Rows it
-/// doesn't answer for, or answers with impossible values, keep the parser's own estimate.
+/// doesn't answer for (a timeout, a failed call, an impossible value) keep the parser's rougher guess and say so; with
+/// the estimator off nothing was asked, and the rows stay as they are.
 /// </summary>
 public static class FoodEstimation
 {
@@ -13,7 +14,7 @@ public static class FoodEstimation
         IReadOnlyList<ConfirmItem> rows, IReadOnlyList<IReadOnlyList<NearbyFood>> nearby, CancellationToken ct)
     {
         var result = rows.ToList();
-        var open = rows.Select((row, n) => (row, n)).Where(x => x.row.FoodItemId is null && x.row.Confidence == Confidence.Low && x.n < parsed.Count).ToList();
+        var open = rows.Select((row, n) => (row, n)).Where(x => Open(x.row, x.n, parsed)).ToList();
         if (estimator is null || open.Count == 0)
         {
             return result;
@@ -24,12 +25,18 @@ public static class FoodEstimation
         var answer = await estimator.EstimateAsync(text, requests, ct);
         for (var i = 0; i < open.Count && answer is not null; i++)
         {
-            if (FoodEstimating.Accept(answer.Values.ElementAtOrDefault(i)) is { } values)
-            {
-                result[open[i].n] = FoodMatcher.WithEstimate(open[i].row, values, answer.Model);
-            }
+            result[open[i].n] = FoodEstimating.Accept(answer.Values.ElementAtOrDefault(i)) is { } values
+                ? FoodMatcher.WithEstimate(open[i].row, values, answer.Model)
+                : FoodMatcher.WithoutEstimate(open[i].row);
         }
 
         return result;
     }
+
+    /// <summary>Some row has no database food, so <see cref="ApplyAsync"/> would ask the estimator.</summary>
+    public static bool Needed(IReadOnlyList<ConfirmItem> rows, IReadOnlyList<ParsedFoodItem> parsed) =>
+        rows.Where((row, n) => Open(row, n, parsed)).Any();
+
+    private static bool Open(ConfirmItem row, int n, IReadOnlyList<ParsedFoodItem> parsed) =>
+        row.FoodItemId is null && row.Confidence == Confidence.Low && n < parsed.Count;
 }

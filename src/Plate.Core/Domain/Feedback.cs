@@ -100,7 +100,13 @@ public class ParseRun
     public int? NamerMs { get; set; }
 
     /// <summary>
-    /// The whole parse as the user waited for it, parser, matcher and namer together, whether it worked, timed out
+    /// The estimator's time (SPEC 6.1 step 6), which runs alongside the namer; null when no row needed an estimate or
+    /// for runs from before it was recorded.
+    /// </summary>
+    public int? EstimateMs { get; set; }
+
+    /// <summary>
+    /// The whole parse as the user waited for it, parser, matcher, estimator and namer together, whether it worked, timed out
     /// or failed; null for runs from before it was recorded (P9).
     /// </summary>
     public int? TotalMs { get; set; }

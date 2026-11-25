@@ -18,6 +18,15 @@ public class FoodSearchTests(PostgresFixture fixture) : IClassFixture<PostgresFi
     }
 
     [Fact]
+    public async Task Bulgarian_typed_in_Latin_letters_finds_its_Cyrillic_products()
+    {
+        // QA 2026-11-24 M4: the "Боза" products have Cyrillic names only.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var results = await s.Foods.SearchForPickerAsync("boza", 20, default);
+        results.Should().NotBeEmpty().And.Contain(r => r.Name.StartsWith("Боза", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task The_same_food_from_two_sources_is_listed_once()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

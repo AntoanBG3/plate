@@ -127,10 +127,12 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         // The same niches in the Bulgarian names (the English ones above don't appear in them).
         "консерв", "замразен", "сушен", "на прах", "бебешк", "ресторант", "панир", "с кожа"];
 
-    private sealed record Candidates(ParsedFoodItem Item, FoodMatch? Usual, List<(FoodMatch Food, double Score)> Ranked, List<FoodMatch> Shortlist)
+    /// <param name="Reading">The Cyrillic reading of a name typed in Latin letters, when it was searched too (<see cref="BulgarianLatin"/>).</param>
+    private sealed record Candidates(ParsedFoodItem Item, FoodMatch? Usual, List<(FoodMatch Food, double Score)> Ranked, List<FoodMatch> Shortlist,
+        string? Reading = null)
     {
         public (FoodMatch Food, double Score)? Best => Ranked.Count == 0 ? null : Ranked[0];
-        private IdentityEvidence Evidence { get; } = Identity(Item, Ranked);
+        private IdentityEvidence Evidence { get; } = Identity(Item, Ranked, Reading);
         public bool Supported => Evidence is IdentityEvidence.Complete or IdentityEvidence.PartialWithLead;
         public string RankingReason => Evidence switch
         {
@@ -249,15 +251,27 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
 
     private async Task<Candidates> FindCandidatesAsync(ParsedFoodItem item, FoodMatch? usual, int rankDepth, bool askModel, CancellationToken ct)
     {
-        var ranked = usual is null || rankDepth >= TraceSize ? await RankAsync(item, rankDepth, ct) : [];
-        var local = new Candidates(item, usual, ranked, []);
+        var rank = usual is null || rankDepth >= TraceSize;
+        var scored = rank ? await ScoreAsync(item, ct) : [];
+        var local = new Candidates(item, usual, rank ? Top(scored, item, rankDepth) : [], []);
+        // Bulgarian typed in Latin letters ("boza") meets no Cyrillic-only product name. When nothing else holds up,
+        // its Cyrillic reading is searched as Bulgarian too (QA 2026-11-24 M4). Only then: an English name read in
+        // Cyrillic is noise, and a supported match needs no help.
+        if (rank && usual is null && !local.Supported && BulgarianLatin.ToCyrillic(item.NameOriginal) is { } reading)
+        {
+            scored.AddRange(await ScoreLanguageAsync(reading, bulgarian: true, item.State, ct));
+            local = new Candidates(item, usual, Top(scored, item, rankDepth, reading), [], reading);
+        }
+
         if (!askModel || usual is not null || local.Supported && local.Best is { Food.Own: true })
             return local;
 
         var found = await foods.SearchAsync(item.NameEn, ShortlistSize, ShortlistThreshold, ct);
         if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
             found.AddRange(await foods.SearchAsync(item.NameOriginal, ShortlistSize, ShortlistThreshold, ct));
-        return local with { Shortlist = Shortlist(found, Typed(item)) };
+        if (local.Reading is { } r)
+            found.AddRange(await foods.SearchAsync(r, ShortlistSize, ShortlistThreshold, ct));
+        return local with { Shortlist = Shortlist(found, Typed(item, local.Reading)) };
     }
 
     /// <returns>The row, and which path chose it (reported by the benchmark).</returns>
@@ -316,13 +330,16 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         ["a", "an", "the", "of", "and", "with", "from", "in", "for", "without", "с", "със", "за", "на", "от", "и", "без",
          "plain", "fresh", "large", "small", "голям", "голяма", "голямо", "малък", "пресен", "прясна", "dry", "dried"];
 
-    internal static IdentityEvidence Identity(ParsedFoodItem item, IReadOnlyList<(FoodMatch Food, double Score)> ranked)
+    /// <param name="reading">The Cyrillic reading of a name typed in Latin letters, compared with the Bulgarian name.</param>
+    internal static IdentityEvidence Identity(ParsedFoodItem item, IReadOnlyList<(FoodMatch Food, double Score)> ranked, string? reading = null)
     {
         if (ranked.Count == 0) return IdentityEvidence.Empty;
         var (food, score) = ranked[0];
         // Compare each rendering separately. The parser's English can bridge a Bulgarian typo or transliteration.
         var evidence = new[] { (item.NameEn, food.Name), (item.NameOriginal, food.NameBg ?? food.Name),
             (item.NameOriginal, food.Name) };
+        if (reading is not null)
+            evidence = [.. evidence, (reading, food.NameBg ?? food.Name)];
         var partial = false;
         foreach (var (query, name) in evidence)
         {
@@ -504,35 +521,42 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
 
     private static MatchCandidate Candidate(FoodMatch f) => new(f.Id, f.Name, f.NameBg, f.Brand, f.Per100);
 
-    /// <summary>Rank's candidates, best first, across the English search and, for text in another language, the original-name search.</summary>
-    private async Task<List<(FoodMatch Food, double Score)>> RankAsync(ParsedFoodItem item, int take, CancellationToken ct)
+    /// <summary>Rank's scores, unsorted, across the English search and, for text in another language, the original-name search.</summary>
+    private async Task<List<(FoodMatch Food, double Score)>> ScoreAsync(ParsedFoodItem item, CancellationToken ct)
     {
-        var ranked = new List<(FoodMatch Food, double Score)>();
-        await AddLanguageAsync(item.NameEn, bulgarian: false);
+        var scored = await ScoreLanguageAsync(item.NameEn, bulgarian: false, item.State, ct);
         if (!string.Equals(item.NameOriginal, item.NameEn, StringComparison.OrdinalIgnoreCase))
-            await AddLanguageAsync(item.NameOriginal, bulgarian: true);
-
-        async Task AddLanguageAsync(string query, bool bulgarian)
-        {
-            var lookup = ProductVariants.LookupName(query);
-            foreach (var food in await foods.SearchAsync(bulgarian ? lookup : FoodWords(query), 120, MatchThreshold, ct, includeBrand: true))
-            {
-                var name = bulgarian ? food.NameBg : food.Name;
-                if (string.IsNullOrWhiteSpace(name) || MatchesOnlyItsUse(food, query, bulgarian)
-                    || !ProductVariants.Compatible(name, food.Brand, query)
-                    || !bulgarian && ProductVariants.MatchesOnlyItsMaker(food.Name, FoodWords(query)))
-                    continue;
-                ranked.Add((food, Rank(food, query, item.State, bulgarian)));
-            }
-        }
-
-        // A stable sort keeps the first of equal scores first, as MaxBy did. Same-named products are grouped before
-        // taking, so Rank's pick is the group's representative, not whichever brand sorted first.
-        return Collapse(ranked.OrderByDescending(x => x.Score).ToList(), x => x.Food, (x, food) => (food, x.Score), Typed(item))
-            .Take(take).ToList();
+            scored.AddRange(await ScoreLanguageAsync(item.NameOriginal, bulgarian: true, item.State, ct));
+        return scored;
     }
 
-    private static string Typed(ParsedFoodItem item) => item.NameOriginal + " " + item.NameEn;
+    private async Task<List<(FoodMatch Food, double Score)>> ScoreLanguageAsync(string query, bool bulgarian, FoodState state, CancellationToken ct)
+    {
+        var scored = new List<(FoodMatch Food, double Score)>();
+        var lookup = ProductVariants.LookupName(query);
+        foreach (var food in await foods.SearchAsync(bulgarian ? lookup : FoodWords(query), 120, MatchThreshold, ct, includeBrand: true))
+        {
+            var name = bulgarian ? food.NameBg : food.Name;
+            if (string.IsNullOrWhiteSpace(name) || MatchesOnlyItsUse(food, query, bulgarian)
+                || !ProductVariants.Compatible(name, food.Brand, query)
+                || !bulgarian && ProductVariants.MatchesOnlyItsMaker(food.Name, FoodWords(query)))
+                continue;
+            scored.Add((food, Rank(food, query, state, bulgarian)));
+        }
+
+        return scored;
+    }
+
+    /// <summary>Rank's candidates, best first.</summary>
+    private static List<(FoodMatch Food, double Score)> Top(List<(FoodMatch Food, double Score)> scored, ParsedFoodItem item, int take, string? reading = null) =>
+        // A stable sort keeps the first of equal scores first, as MaxBy did. Same-named products are grouped before
+        // taking, so Rank's pick is the group's representative, not whichever brand sorted first.
+        Collapse(scored.OrderByDescending(x => x.Score).ToList(), x => x.Food, (x, food) => (food, x.Score), Typed(item, reading))
+            .Take(take).ToList();
+
+    /// <summary>What the user wrote for the item, and its Cyrillic reading when one was searched, so a brand in either counts.</summary>
+    private static string Typed(ParsedFoodItem item, string? reading = null) =>
+        item.NameOriginal + " " + item.NameEn + (reading is null ? "" : " " + reading);
 
     /// <summary>The grams for an item on this food (<see cref="Portions.For"/>), with a note on how they were reached.</summary>
     private static decimal Portion(ParsedFoodItem item, FoodMatch food, List<LocalText> notes)
@@ -630,6 +654,15 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
         Per100 = values,
         EstimateModel = model,
         Notes = [.. row.Notes.Where(n => n.Format != MacrosNote), .. FoodMath.MacrosDisagree(values) ? [new LocalText("The calories don't add up from the macros.")] : Array.Empty<LocalText>()],
+    };
+
+    /// <summary>
+    /// An estimate row the estimator was asked about but gave no usable values for: it keeps the parser's guess, which
+    /// is rougher, and says so (QA 2026-11-24 M2: two timeouts left rows looking estimated as usual).
+    /// </summary>
+    public static ConfirmItem WithoutEstimate(ConfirmItem row) => row with
+    {
+        Notes = [.. row.Notes, new LocalText("The detailed estimate didn't come back, so these are rough numbers. Check them.")],
     };
 
     /// <summary>

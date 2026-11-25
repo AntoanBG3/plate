@@ -65,11 +65,39 @@ public class FoodEstimatorTests(PostgresFixture fixture) : IClassFixture<Postgre
         s.Estimator.Answer = _ => new FoodEstimates([null], "test/estimator");
         var missing = (await s.ParseRuns.ParseAsync(Text, default)).Items[1];
 
-        s.Estimator.Calls.Should().HaveCount(3);
-        impossible.Per100.Should().Be(parsers);
-        impossible.EstimateModel.Should().BeNull();
-        missing.Per100.Should().Be(parsers);
-        missing.EstimateModel.Should().BeNull();
+        s.Estimator.Answer = _ => new FoodEstimates([], "test/estimator");
+        var failed = (await s.ParseRuns.ParseAsync(Text, default)).Items[1];
+
+        s.Estimator.Calls.Should().HaveCount(4);
+        foreach (var row in new[] { impossible, missing, failed })
+        {
+            row.Per100.Should().Be(parsers);
+            row.EstimateModel.Should().BeNull();
+            row.Notes.Select(n => n.Format).Should().Contain(NoEstimateNote);
+        }
+    }
+
+    private const string NoEstimateNote = "The detailed estimate didn't come back, so these are rough numbers. Check them.";
+
+    [Fact]
+    public async Task Only_a_row_the_estimator_was_asked_about_and_did_not_answer_says_so()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+
+        // No answer at all: the estimator is off or has no key, so nothing was asked.
+        s.Estimator.Answer = _ => null;
+        var off = (await s.ParseRuns.ParseAsync(Text, default)).Items[1];
+        s.Estimator.Answer = _ => new FoodEstimates([Kebab], "test/estimator");
+        var answered = (await s.ParseRuns.ParseAsync(Text, default)).Items;
+        s.Estimator.Answer = _ => new FoodEstimates([], "test/estimator");
+        var outcome = await s.ParseRuns.ParseAsync(Text, default);
+
+        off.Notes.Select(n => n.Format).Should().NotContain(NoEstimateNote);
+        answered.SelectMany(r => r.Notes).Select(n => n.Format).Should().NotContain(NoEstimateNote);
+        outcome.Items[0].Notes.Select(n => n.Format).Should().NotContain(NoEstimateNote, "a matched row is never estimated");
+        // The note is stored with the run, so the review reads the same after a reload.
+        var run = await s.Db.ParseRuns.SingleAsync(r => r.Id == outcome.RunId);
+        FeedbackJson.Read<List<ResolvedRow>>(run.Resolved)![1].ReviewNotes!.Select(n => n.Format).Should().Contain(NoEstimateNote);
     }
 
     [Fact]
@@ -101,6 +129,40 @@ public class FoodEstimatorTests(PostgresFixture fixture) : IClassFixture<Postgre
         new(s.Db, new FixedCurrentUser(s.UserId), new EphemeralDataProtectionProvider(),
             Options.Create(new OpenRouterOptions { ApiKey = key, Model = model }), new StubOpenRouter().Catalog(),
             TimeProvider.System, NullLogger<OpenRouterSettings>.Instance);
+
+    [Fact]
+    public async Task The_namer_and_the_estimator_reading_settings_at_once_share_one_query()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var store = Store(s, "sk-or-v1-estimator-test-0123456789", "openai/gpt-x");
+
+        // Two reads before anything is loaded, as the namer and the estimator make them: two queries at once on one
+        // DbContext would throw.
+        var models = await Task.WhenAll(store.GetModelAsync(AiTask.Estimator, default), store.GetModelAsync(AiTask.Parser, default));
+
+        models.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task A_parse_with_the_real_namer_and_estimator_calls_both_at_once()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        // One answer that both readers accept: no names (the database names stay) and the kebab for "zzqx".
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(
+            """{"names":[],"estimates":[{"index":0,"kcal":250,"protein":12,"carbs":22,"fat":12.5,"fiber":1.5,"saturatedFat":4}]}"""));
+        var services = new ServiceCollection().AddSingleton(stub.Namer()).AddSingleton(stub.Estimator()).BuildServiceProvider();
+        // Settings not loaded yet, so the namer and the estimator are the first to ask, at the same time.
+        var store = Store(s, "sk-or-v1-estimator-test-0123456789", "openai/gpt-x");
+        var service = new ParseRunService(s.Db, new FixedCurrentUser(s.UserId), new FakeFoodParser(), s.Matcher, new SwitchingFoodNamer(store, services),
+            TimeProvider.System, NullLogger<ParseRunService>.Instance, new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()),
+            s.Repeat, new SwitchingFoodEstimator(store, services));
+
+        var outcome = await service.ParseAsync(Text, default);
+
+        outcome.Items[0].FoodItemId.Should().NotBeNull();
+        outcome.Items[1].Per100.Should().Be(Kebab);
+        stub.Calls.Should().Be(2, "one namer call and one estimator call");
+    }
 
     [Fact]
     public async Task The_estimator_defaults_to_the_parsers_model_and_off_makes_no_call()
@@ -168,19 +230,19 @@ public class OpenRouterFoodEstimatorTests
     [Theory]
     [InlineData(HttpStatusCode.InternalServerError, "{}")]
     [InlineData(HttpStatusCode.OK, "not json")]
-    public async Task A_failure_gives_no_answer_and_no_retry(HttpStatusCode status, string content)
+    public async Task A_failure_gives_no_values_and_no_retry(HttpStatusCode status, string content)
     {
         var stub = new StubOpenRouter(status, StubOpenRouter.Completion(content));
 
-        (await stub.Estimator().EstimateAsync("x", Two, "k", "openai/gpt-x", default)).Should().BeNull();
+        (await stub.Estimator().EstimateAsync("x", Two, "k", "openai/gpt-x", default)).Values.Should().BeEmpty();
         stub.Calls.Should().Be(1);
     }
 
     [Fact]
-    public async Task A_slow_answer_gives_no_answer()
+    public async Task A_slow_answer_gives_no_values()
     {
         var stub = new StubOpenRouter(completion: StubOpenRouter.Completion("""{"estimates":[]}""")) { Delay = OpenRouterFoodEstimator.Timeout + TimeSpan.FromSeconds(1) };
 
-        (await stub.Estimator().EstimateAsync("x", Two, "k", "openai/gpt-x", default)).Should().BeNull();
+        (await stub.Estimator().EstimateAsync("x", Two, "k", "openai/gpt-x", default)).Values.Should().BeEmpty();
     }
 }

@@ -172,11 +172,15 @@ public class OpenRouterSettings(
         values = null;
     }
 
-    /// <summary>All settings in one query per request: a page asking for the key and several models costs one round trip.</summary>
-    private Dictionary<string, string>? values;
+    /// <summary>
+    /// All settings in one query per request: a page asking for the key and several models costs one round trip. The
+    /// load itself is kept, not just its result, so the namer and the estimator asking at once share one query instead
+    /// of using the request's DbContext at the same time.
+    /// </summary>
+    private Task<Dictionary<string, string>>? values;
 
     private async Task<string?> StoredAsync(string name, CancellationToken ct) =>
-        (values ??= await db.AppSettings.AsNoTracking().ToDictionaryAsync(s => s.Name, s => s.Value, ct)).GetValueOrDefault(name);
+        (await (values ??= db.AppSettings.AsNoTracking().ToDictionaryAsync(s => s.Name, s => s.Value, ct))).GetValueOrDefault(name);
 
     private async Task<(string? Key, KeySource Source)> ResolveKeyAsync(CancellationToken ct)
     {

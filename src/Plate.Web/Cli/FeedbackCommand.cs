@@ -443,6 +443,7 @@ public static class FeedbackCommand
     {
         o.WriteLine($"Parse run {run.Id} by {run.Reporter}, {When(run.CreatedAt)}: \"{run.Text}\"");
         o.WriteLine($"  parser {run.AiModel ?? "-"} {run.ParserMs} ms, matcher {run.MatchModel ?? "ranking"} {run.MatchMs} ms, "
+            + (run.EstimateMs is { } estimate ? $"estimator {estimate} ms, " : "")
             + (run.TotalMs is { } total ? $"namer {run.NamerMs} ms, total {total} ms, " : "total unknown, ")
             + (run.ConfirmedAt is null ? "not saved" : $"saved, corrections: {run.Corrections}"));
         if (run.ParserError is not null)
