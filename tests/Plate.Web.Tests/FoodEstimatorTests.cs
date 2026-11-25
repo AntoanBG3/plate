@@ -144,6 +144,27 @@ public class FoodEstimatorTests(PostgresFixture fixture) : IClassFixture<Postgre
     }
 
     [Fact]
+    public async Task A_parse_with_the_real_namer_and_estimator_calls_both_at_once()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        // One answer that both readers accept: no names (the database names stay) and the kebab for "zzqx".
+        var stub = new StubOpenRouter(completion: StubOpenRouter.Completion(
+            """{"names":[],"estimates":[{"index":0,"kcal":250,"protein":12,"carbs":22,"fat":12.5,"fiber":1.5,"saturatedFat":4}]}"""));
+        var services = new ServiceCollection().AddSingleton(stub.Namer()).AddSingleton(stub.Estimator()).BuildServiceProvider();
+        // Settings not loaded yet, so the namer and the estimator are the first to ask, at the same time.
+        var store = Store(s, "sk-or-v1-estimator-test-0123456789", "openai/gpt-x");
+        var service = new ParseRunService(s.Db, new FixedCurrentUser(s.UserId), new FakeFoodParser(), s.Matcher, new SwitchingFoodNamer(store, services),
+            TimeProvider.System, NullLogger<ParseRunService>.Instance, new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()),
+            s.Repeat, new SwitchingFoodEstimator(store, services));
+
+        var outcome = await service.ParseAsync(Text, default);
+
+        outcome.Items[0].FoodItemId.Should().NotBeNull();
+        outcome.Items[1].Per100.Should().Be(Kebab);
+        stub.Calls.Should().Be(2, "one namer call and one estimator call");
+    }
+
+    [Fact]
     public async Task The_estimator_defaults_to_the_parsers_model_and_off_makes_no_call()
     {
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());

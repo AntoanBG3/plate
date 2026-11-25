@@ -82,7 +82,10 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
     /// <summary>How long each completion takes to answer.</summary>
     public TimeSpan Delay { get; set; }
 
-    public int Calls { get; private set; }
+    private int calls;
+
+    /// <summary>Completion calls; counted atomically, as the namer and the estimator call at the same time.</summary>
+    public int Calls => calls;
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
@@ -103,7 +106,7 @@ internal sealed class StubOpenRouter(HttpStatusCode status = HttpStatusCode.OK, 
                 : Json(HttpStatusCode.OK, request.RequestUri.Query.Contains("output_modalities=decisions") ? DecisionsJson : CatalogJson);
         }
 
-        Calls++;
+        Interlocked.Increment(ref calls);
         SentKey = request.Headers.Authorization?.Parameter;
         SentBody = JsonNode.Parse(await request.Content!.ReadAsStringAsync(ct));
         if (Delay > TimeSpan.Zero)

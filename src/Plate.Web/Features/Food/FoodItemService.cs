@@ -107,9 +107,9 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
 
         var found = await PickAsync(q, take, ct);
         // Bulgarian typed in Latin letters ("boza") meets no Cyrillic-only product name, only look-alikes ("Borage, raw").
-        // When no name starts with what was typed, its Cyrillic reading is searched too (QA 2026-11-24 M4), and its
-        // results go first if one of their names starts with it. A search with such a name is left alone.
-        if (!found.Any(StartsWithQuery) && Plate.Core.Text.BulgarianLatin.ToCyrillic(q) is { } reading)
+        // When no result has every word typed, its Cyrillic reading is searched too (QA 2026-11-24 M4), and its results
+        // go first if one of their names starts with it. A search that finds its words ("chicken breast") is left alone.
+        if (!found.Any(f => HasWords(f, q)) && Plate.Core.Text.BulgarianLatin.ToCyrillic(q) is { } reading)
         {
             var read = await PickAsync(reading, take, ct);
             found = (read.Any(StartsWithQuery) ? read.Concat(found) : found.Concat(read)).DistinctBy(f => f.Id).ToList();
@@ -126,6 +126,16 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
 
     /// <summary>The picker's score adds 1 for a name that starts with the search (see the query below).</summary>
     private static bool StartsWithQuery(FoodMatch f) => f.Score >= 1;
+
+    /// <summary>Every word of the search starts a word of the food's name in either language.</summary>
+    private static bool HasWords(FoodMatch f, string query)
+    {
+        var names = SearchWords(f.Name + " " + f.NameBg);
+        return SearchWords(query).All(w => names.Any(n => n.StartsWith(w, StringComparison.Ordinal)));
+    }
+
+    private static string[] SearchWords(string text) =>
+        text.ToLowerInvariant().Split(text.Where(c => !char.IsLetterOrDigit(c)).Distinct().ToArray(), StringSplitOptions.RemoveEmptyEntries);
 
     private async Task<List<FoodMatch>> PickAsync(string q, int take, CancellationToken ct)
     {
