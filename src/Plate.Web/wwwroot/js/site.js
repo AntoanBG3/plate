@@ -358,6 +358,13 @@
             return;
         }
         const pick = event.target.closest("[data-candidate]");
+        // On an entry's page the pick is saved at once: the entry takes that food at its amount.
+        const entryForm = pick && !changeRow ? document.querySelector("form[data-entry-food]") : null;
+        if (entryForm) {
+            entryForm.elements.foodItemId.value = pick.dataset.candidate;
+            entryForm.requestSubmit();
+            return;
+        }
         if (!pick || !changeRow) {
             return;
         }

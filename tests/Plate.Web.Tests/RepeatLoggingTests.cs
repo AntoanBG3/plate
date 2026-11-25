@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Plate.Core.Domain;
 using Plate.Core.Nutrition;
+using Plate.Web.Features;
 using Plate.Web.Features.Feedback;
 using Plate.Web.Features.Food;
 using Plate.Web.Features.Undo;
@@ -199,6 +200,45 @@ public class RepeatLoggingTests(PostgresFixture fixture) : IClassFixture<Postgre
         await ConfirmAsync(s, "200г извара", picked);
 
         (await s.Db.UsualFoods.SingleAsync()).FoodItemId.Should().Be(picked);
+    }
+
+    [Fact]
+    public async Task Changing_an_entrys_food_keeps_the_amount_and_moves_the_typed_words_to_it()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var suggested = (await s.ParseRuns.ParseAsync("200г извара", default)).Items[0].FoodItemId!.Value;
+        await ConfirmAsync(s, "200г извара", suggested);
+        var entry = await s.Db.FoodLog.SingleAsync();
+        var otherId = await HandPickedAsync(s);
+        var other = await s.Db.FoodItems.SingleAsync(f => f.Id == otherId);
+        entry.Status = "fresh";
+        await s.Db.SaveChangesAsync();
+
+        var previous = await s.FoodLog.ChangeFoodAsync(entry.Id, other.Id, default);
+        await s.ParseRuns.RememberChangedFoodAsync(entry.ParseRunId, previous, entry.Description, other.Id, default);
+
+        await using var check = new UserScope(fixture, s.UserId);
+        var changed = await check.Db.FoodLog.SingleAsync();
+        previous.Should().Be(suggested);
+        (changed.FoodItemId, changed.Grams, changed.Meal, changed.Status).Should().Be(((int?)other.Id, 200m, entry.Meal, (string?)null));
+        changed.Kcal.Should().BeApproximately(other.KcalPer100g * 2, 0.5m);
+        changed.Description.Should().Contain(other.Name);
+        (await check.ParseRuns.ParseAsync("извара", default)).Items.Single().FoodItemId.Should().Be(other.Id, "the typed words now mean the food picked on the entry");
+    }
+
+    [Fact]
+    public async Task Another_accounts_entry_or_private_food_cannot_be_put_on_an_entry()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        await using var other = new UserScope(fixture, await fixture.CreateUserAsync());
+        var shared = await SharedFoodAsync(s, "banana");
+        await s.FoodLog.AddAsync([new NewEntry(Today, Meal.Snack, "Banana", 120, new Per100g(89, 1.1m, 23, 0.3m), shared, EntrySource.Search)], default);
+        var mine = await s.Db.FoodLog.SingleAsync();
+        var hidden = await other.Foods.CreateManualAsync("Тайна храна", null, new Per100g(500, 1, 1, 50), null, share: false, default);
+
+        await other.Invoking(o => o.FoodLog.ChangeFoodAsync(mine.Id, shared, default)).Should().ThrowAsync<NotFoundException>();
+        await s.Invoking(x => x.FoodLog.ChangeFoodAsync(mine.Id, hidden.Id, default)).Should().ThrowAsync<NotFoundException>();
+        (await s.Db.FoodLog.AsNoTracking().SingleAsync()).FoodItemId.Should().Be(shared);
     }
 
     [Fact]

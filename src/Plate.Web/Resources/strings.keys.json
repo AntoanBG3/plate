@@ -62,6 +62,9 @@
   "A name is 1 to {0} characters.": [
     "src/Plate.Web/Features/Training/ExerciseService.cs"
   ],
+  "A quick entry has no food to change; change its calories instead.": [
+    "src/Plate.Web/Features/Food/FoodLogService.cs"
+  ],
   "A recipe can have up to {0} ingredients.": [
     "src/Plate.Core/Nutrition/RecipeMath.cs"
   ],
@@ -498,6 +501,7 @@
     "src/Plate.Web/Features/Food/FoodLogService.cs"
   ],
   "Change food": [
+    "src/Plate.Web/Views/Food/Entry.cshtml",
     "src/Plate.Web/Views/Food/_ChangeFoodSheet.cshtml",
     "src/Plate.Web/Views/Food/_ReviewRow.cshtml"
   ],
@@ -946,6 +950,9 @@
     "src/Plate.Web/Views/Food/Entry.cshtml",
     "src/Plate.Web/Views/Food/Index.cshtml",
     "src/Plate.Web/Views/Shared/_Layout.cshtml"
+  ],
+  "Food changed.": [
+    "src/Plate.Web/Controllers/FoodController.cs"
   ],
   "Food database": [
     "src/Plate.Web/Views/Food/Add.cshtml"
