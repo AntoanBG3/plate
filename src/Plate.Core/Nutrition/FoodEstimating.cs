@@ -11,17 +11,23 @@ public record EstimateRequest(string Typed, string NameEn, decimal Grams, FoodSt
 /// <summary>A database food close to an unmatched one, with its values per 100 g.</summary>
 public record NearbyFood(string Name, Per100g Per100);
 
-/// <summary>The estimator's answer: values per 100 g by request (null where none came back), and the model that gave them.</summary>
+/// <summary>
+/// The estimator's answer: values per 100 g by request (null where none came back, none at all when the call failed or
+/// timed out), and the model that was asked.
+/// </summary>
 public record FoodEstimates(IReadOnlyList<Per100g?> Values, string Model);
 
 /// <summary>
 /// Estimates values per 100 g for foods the matcher found no database food for, with a model of its own (SPEC 6.1
-/// step 6). The parser's own guesses are the fallback, so a failed or missing answer changes nothing.
+/// step 6). The parser's own guesses are the fallback, so a failed or missing answer keeps them, with a note.
 /// </summary>
 public interface IFoodEstimator
 {
     /// <param name="text">Everything the user typed, as context.</param>
-    /// <returns>One answer per request, in order; null when estimating failed, is off or has no key.</returns>
+    /// <returns>
+    /// One answer per request, in order, with null or missing values where it gave none (a failed call gives none at
+    /// all); null when estimating is off or has no key, so nothing was asked.
+    /// </returns>
     Task<FoodEstimates?> EstimateAsync(string text, IReadOnlyList<EstimateRequest> items, CancellationToken ct);
 }
 

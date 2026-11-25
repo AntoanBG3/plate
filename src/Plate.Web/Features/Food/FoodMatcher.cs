@@ -633,6 +633,15 @@ public class FoodMatcher(FoodItemService foods, IFoodMatchDecider decider, Repea
     };
 
     /// <summary>
+    /// An estimate row the estimator was asked about but gave no usable values for: it keeps the parser's guess, which
+    /// is rougher, and says so (QA 2026-11-24 M2: two timeouts left rows looking estimated as usual).
+    /// </summary>
+    public static ConfirmItem WithoutEstimate(ConfirmItem row) => row with
+    {
+        Notes = [.. row.Notes, new LocalText("The detailed estimate didn't come back, so these are rough numbers. Check them.")],
+    };
+
+    /// <summary>
     /// Trigram similarity ties often (many USDA names contain "chicken" and "breast"), so the ranking adds:
     /// the user's own foods first; USDA's main food word (before the first comma) being one the user wrote;
     /// how many of the user's words appear; the right raw or cooked state; and fewer niche variants.
