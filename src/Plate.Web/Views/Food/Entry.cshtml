@@ -34,6 +34,15 @@
             <span class="row-main">@L["Added by another user"]</span>
         </div>
     }
+    @if (Model.Source != EntrySource.Quick)
+    {
+        @* Change food: the same search as on Check foods; a pick posts the food and the entry takes it at this amount (site.js). *@
+        <button type="button" class="row row-link" style="width: 100%; text-align: left; color: var(--accent-text)"
+                data-change-food="" data-query="@Plate.Core.Text.FoodText.StripAmount(L.Entry(Model.Description))">
+            <span class="row-main">@L["Change food"]</span>
+            @Ui.Icon("chevron", "row-chevron")
+        </button>
+    }
     @if (ViewData["RecipeId"] is int recipeId)
     {
         @* Editing the recipe changes later entries, not this one (SPEC 5.12). *@
@@ -46,6 +55,9 @@
 
 @if (Model.Source != EntrySource.Quick)
 {
+    <form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id/food" data-entry-food hidden>
+        <input type="hidden" name="foodItemId" />
+    </form>
     <form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id" class="section">
         <div class="list">
             <div class="field-row"><label for="description">@L["Description"]</label><input id="description" type="text" name="description" value="@Plate.Core.Text.FoodText.StripAmount(Model.Description)" maxlength="200" required /></div>
@@ -97,3 +109,10 @@ else
 <form method="post" asp-antiforgery="true" action="/food/entries/@Model.Id/delete" style="margin-top: var(--s-3)">
     <button type="submit" class="btn btn-destructive btn-block">@L["Delete entry"]</button>
 </form>
+
+@if (Model.Source != EntrySource.Quick)
+{
+    @section Overlays {
+        <partial name="_ChangeFoodSheet" />
+    }
+}

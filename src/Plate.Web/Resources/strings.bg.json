@@ -802,6 +802,8 @@
   "Counted as weighed after cooking.": "Прието: претеглено след готвене.",
   "Counted as weighed before cooking.": "Прието: претеглено преди готвене.",
   "Change food": "Смени храната",
+  "Food changed.": "Храната е сменена.",
+  "A quick entry has no food to change; change its calories instead.": "При бързо добавяне няма храна за смяна; промени калориите.",
   "Nothing matches.": "Нищо не съвпада.",
   "Digits under the barcode": "Цифрите под баркода",
   "EAN-13, EAN-8, UPC-A or UPC-E: 8, 12 or 13 digits.": "EAN-13, EAN-8, UPC-A или UPC-E: 8, 12 или 13 цифри.",

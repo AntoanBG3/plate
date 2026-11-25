@@ -374,6 +374,18 @@ public class FoodController(
         return Redirect($"/food?date={entry.Date:yyyy-MM-dd}");
     }
 
+    /// <summary>Change food on the entry page: the entry takes the picked food's name and values at the same amount.</summary>
+    [HttpPost("entries/{id:int}/food")]
+    public async Task<IActionResult> ChangeEntryFood(int id, int foodItemId, CancellationToken ct)
+    {
+        var before = await log.GetAsync(id, ct);
+        var (runId, description) = (before.ParseRunId, before.Description);
+        var previous = await log.ChangeFoodAsync(id, foodItemId, ct);
+        await parseRuns.RememberChangedFoodAsync(runId, previous, description, foodItemId, ct);
+        TempData.Notice(new LocalText("Food changed."));
+        return Redirect($"/food/entries/{id}");
+    }
+
     [HttpPost("entries/{id:int}/delete")]
     public async Task<IActionResult> DeleteEntry(int id, CancellationToken ct)
     {

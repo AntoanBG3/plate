@@ -188,6 +188,39 @@ public class FoodLogService(AppDbContext db, ICurrentUser currentUser, TimeProvi
         await db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Puts another food on an entry (SPEC 7, Change food on the entry page): the amount, meal and day stay, while the
+    /// name, unit and values follow the new food, as if it had been logged from it. The status chip is cleared, so the
+    /// new food's own raw or cooked shows. Returns the food the entry had, for moving the usual food.
+    /// </summary>
+    public async Task<int?> ChangeFoodAsync(int id, int foodItemId, CancellationToken ct)
+    {
+        var entry = await GetAsync(id, ct);
+        if (entry.Source == EntrySource.Quick)
+        {
+            throw new ValidationException("A quick entry has no food to change; change its calories instead.");
+        }
+
+        // Through the owner filter: the account's own foods and shared ones only.
+        var food = await db.FoodItems.SingleOrDefaultAsync(f => f.Id == foodItemId, ct) ?? throw new NotFoundException("Food not found.");
+        var per100 = food.Per100();
+        if (FoodMath.Validate(entry.Grams, per100) is { } error)
+        {
+            throw new ValidationException(error);
+        }
+
+        var previous = entry.FoodItemId;
+        var totals = FoodMath.For(per100, entry.Grams);
+        entry.FoodItemId = food.Id;
+        entry.Unit = food.Unit;
+        entry.Description = CleanDescription(FoodItemService.EntryDescription(Localization.FoodNames.DisplayName(food), food.Brand));
+        entry.Status = null;
+        (entry.Kcal, entry.ProteinG, entry.CarbsG, entry.FatG) = (totals.Kcal, totals.ProteinG, totals.CarbsG, totals.FatG);
+        (entry.FiberG, entry.SaturatedFatG) = (totals.FiberG, totals.SaturatedFatG);
+        await db.SaveChangesAsync(ct);
+        return previous;
+    }
+
     public async Task<DateOnly> DeleteAsync(int id, CancellationToken ct)
     {
         var entry = await GetAsync(id, ct);

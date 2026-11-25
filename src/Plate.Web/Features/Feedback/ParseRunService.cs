@@ -222,6 +222,43 @@ public class ParseRunService(AppDbContext db, ICurrentUser currentUser, IFoodPar
     }
 
     /// <summary>
+    /// After an entry's food was changed on its page (SPEC 7): the words typed for that entry's row now mean the new food,
+    /// as picking another food on the review would have done. The row is the saved one that had the old food, under this
+    /// entry's name when several did; without a run, or with no such row, nothing is remembered. Like confirming, a failure is logged and dropped.
+    /// </summary>
+    public async Task RememberChangedFoodAsync(int? runId, int? oldFoodItemId, string oldDescription, int newFoodItemId, CancellationToken ct)
+    {
+        try
+        {
+            if (repeat is null || runId is not { } id)
+            {
+                return;
+            }
+
+            var run = await db.ParseRuns.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id, ct);
+            if (run is null)
+            {
+                return;
+            }
+
+            var parsed = FeedbackJson.Read<List<ParsedFoodItem>>(run.Parsed) ?? [];
+            var saved = FeedbackJson.Read<List<SavedRow>>(run.Saved) ?? [];
+            // Several rows can share the old food (or none, for estimates): the one saved under this entry's name wins.
+            var rows = Enumerable.Range(0, saved.Count).Where(i => saved[i].Included && saved[i].FoodItemId == oldFoodItemId).ToList();
+            var n = rows.Cast<int?>().FirstOrDefault(i => string.Equals(saved[i!.Value].Description.Trim(), oldDescription.Trim(), StringComparison.OrdinalIgnoreCase))
+                ?? rows.Cast<int?>().FirstOrDefault() ?? -1;
+            if (n >= 0 && n < parsed.Count)
+            {
+                await repeat.RememberAsync([(parsed[n].NameOriginal, newFoodItemId)], ct);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            log.LogWarning(ex, "Could not remember usual foods.");
+        }
+    }
+
+    /// <summary>
     /// A row saved on the food the app suggested while it marked it "Check this" (Medium confidence): the app was unsure
     /// and the user didn't choose, so it says nothing about what these words mean. Remembered, it would come back as
     /// "Your usual" without the warning (QA 2026-11-24: "кафе с мляко" as a sweetened bottled coffee).
