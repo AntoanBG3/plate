@@ -131,6 +131,8 @@ public class FoodSearchEquivalenceTests(PostgresFixture fixture) : IClassFixture
     private static async Task<List<FoodMatch>> OriginalPickerAsync(UserScope s, string q, int take)
     {
         var lower = q.ToLowerInvariant();
+        var heads = FoodItemService.HeadForms(q);
+        var firsts = q.Trim().Contains(' ') ? [] : heads;
         var found = await s.Db.Database.SqlQuery<FoodMatch>($"""
             WITH m AS (
                 SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
@@ -138,7 +140,11 @@ public class FoodSearchEquivalenceTests(PostgresFixture fixture) : IClassFixture
                        (f."Source" = 'Manual' AND f."OwnerUserId" IS NULL AND f."AddedByUserId" IS NOT NULL AND f."AddedByUserId" <> {s.UserId}) AS "ByOther",
                        f."PieceGrams", f."PackGrams", f."ValuesEstimated", f."Unit" = 'Millilitres' AS "PerMillilitre",
                        GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) AS sim,
-                       starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre
+                       starts_with(lower(f."Name"), {lower}) OR starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AS pre,
+                       starts_with(lower(COALESCE(f."NameBg", '')), {lower}) AND NOT starts_with(lower(f."Name"), {lower}) AS pre_bg,
+                       lower(btrim(split_part(f."Name", ',', 1))) = ANY({heads}) OR lower(btrim(split_part(COALESCE(f."NameBg", ''), ',', 1))) = ANY({heads}) AS head,
+                       lower(split_part(btrim(regexp_replace(f."Name", '[,(/]', ' ', 'g')), ' ', 1)) = ANY({firsts})
+                           OR lower(split_part(btrim(regexp_replace(COALESCE(f."NameBg", ''), '[,(/]', ' ', 'g')), ' ', 1)) = ANY({firsts}) AS first
                 FROM "FoodItems" f
                 WHERE (f."OwnerUserId" IS NULL OR f."OwnerUserId" = {s.UserId})
                   AND GREATEST(word_similarity({q}, f."Name"), word_similarity({q}, COALESCE(f."NameBg", ''))) >= 0.3
@@ -147,7 +153,7 @@ public class FoodSearchEquivalenceTests(PostgresFixture fixture) : IClassFixture
                    "FiberPer100g", "SaturatedFatPer100g", "DefaultServingGrams", "Own", "ByOther", (sim + CASE WHEN pre THEN 1 ELSE 0 END)::float8 AS "Score",
                    "PieceGrams", "PackGrams", "ValuesEstimated", "PerMillilitre"
             FROM m
-            ORDER BY "Own" DESC, pre DESC, CASE WHEN pre THEN length("Name") END, sim DESC, length("Name")
+            ORDER BY "Own" DESC, head DESC, first DESC, pre DESC, CASE WHEN pre_bg THEN length("NameBg") WHEN pre THEN length("Name") END, sim DESC, length("Name")
             LIMIT {take * 2}
             """).ToListAsync();
         var keep = found.GroupBy(f => (f.Own, Name: f.Name.ToLowerInvariant(), Brand: f.Brand?.ToLowerInvariant()))
