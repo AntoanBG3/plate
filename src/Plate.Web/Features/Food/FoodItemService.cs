@@ -105,9 +105,33 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             return [];
         }
 
+        var found = await PickAsync(q, take, ct);
+        // Bulgarian typed in Latin letters ("boza") meets no Cyrillic-only product name, only look-alikes ("Borage, raw").
+        // When no name starts with what was typed, its Cyrillic reading is searched too (QA 2026-11-24 M4), and its
+        // results go first if one of their names starts with it. A search with such a name is left alone.
+        if (!found.Any(StartsWithQuery) && Plate.Core.Text.BulgarianLatin.ToCyrillic(q) is { } reading)
+        {
+            var read = await PickAsync(reading, take, ct);
+            found = (read.Any(StartsWithQuery) ? read.Concat(found) : found.Concat(read)).DistinctBy(f => f.Id).ToList();
+        }
+
+        // The reference tables repeat some USDA foods under the same name with slightly different numbers ("Bananas,
+        // raw" three times); one is shown, the earliest stored, which is USDA's (seeded first). Own foods are kept.
+        var keep = found
+            .GroupBy(f => (f.Own, Name: f.Name.ToLowerInvariant(), Brand: f.Brand?.ToLowerInvariant()))
+            .Select(g => g.MinBy(f => f.Id)!.Id)
+            .ToHashSet();
+        return found.Where(f => keep.Contains(f.Id)).Take(take).ToList();
+    }
+
+    /// <summary>The picker's score adds 1 for a name that starts with the search (see the query below).</summary>
+    private static bool StartsWithQuery(FoodMatch f) => f.Score >= 1;
+
+    private async Task<List<FoodMatch>> PickAsync(string q, int take, CancellationToken ct)
+    {
         var userId = currentUser.UserId ?? "";
         var lower = q.ToLowerInvariant();
-        var found = await WithWordSimilarityAsync(0.3, indexed => db.Database.SqlQuery<FoodMatch>($"""
+        return await WithWordSimilarityAsync(0.3, indexed => db.Database.SqlQuery<FoodMatch>($"""
             WITH m AS (
                 SELECT f."Id", f."Name", f."NameBg", f."Brand", f."KcalPer100g", f."ProteinPer100g", f."CarbsPer100g", f."FatPer100g",
                        f."FiberPer100g", f."SaturatedFatPer100g", f."DefaultServingGrams", f."OwnerUserId" IS NOT NULL AS "Own",
@@ -129,14 +153,6 @@ public class FoodItemService(AppDbContext db, ICurrentUser currentUser, IFoodDat
             ORDER BY "Own" DESC, pre DESC, CASE WHEN pre THEN length("Name") END, sim DESC, length("Name")
             LIMIT {take * 2}
             """).ToListAsync(ct), ct);
-
-        // The reference tables repeat some USDA foods under the same name with slightly different numbers ("Bananas,
-        // raw" three times); one is shown, the earliest stored, which is USDA's (seeded first). Own foods are kept.
-        var keep = found
-            .GroupBy(f => (f.Own, Name: f.Name.ToLowerInvariant(), Brand: f.Brand?.ToLowerInvariant()))
-            .Select(g => g.MinBy(f => f.Id)!.Id)
-            .ToHashSet();
-        return found.Where(f => keep.Contains(f.Id)).Take(take).ToList();
     }
 
     private async Task<List<FoodMatch>> WithWordSimilarityAsync(double minScore, Func<bool, Task<List<FoodMatch>>> read, CancellationToken ct)

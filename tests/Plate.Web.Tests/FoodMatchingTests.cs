@@ -443,6 +443,34 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
         trace.Single().Top.Should().NotContain(t => t.Name.StartsWith("Elk"));
     }
 
+    [Fact]
+    public async Task Bulgarian_typed_in_Latin_letters_finds_its_Cyrillic_product()
+    {
+        // QA 2026-11-24 M4: "boza 1 чаша" found no candidates at all, though nine "Боза" products have Cyrillic names
+        // only, so it became an estimate after the longest wait.
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        s.MatchDecider.Enabled = false;
+        var item = new ParsedFoodItem("boza", "boza", 250, FoodState.NotApplicable, null, null, new Per100g(60, 0.5m, 14, 0.1m));
+
+        var row = (await s.Matcher.ResolveAsync("boza 1 чаша", [item], default)).Single();
+
+        row.FoodItemId.Should().NotBeNull();
+        (await s.Db.FoodItems.SingleAsync(f => f.Id == row.FoodItemId)).NameBg.Should().StartWithEquivalentOf("боза");
+        row.Typed.Should().Be("boza", "the row keeps what the user wrote");
+    }
+
+    [Fact]
+    public async Task The_decider_is_offered_the_Cyrillic_products_for_Latin_Bulgarian()
+    {
+        await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
+        var item = new ParsedFoodItem("boza", "boza", 250, FoodState.NotApplicable, null, null, new Per100g(60, 0.5m, 14, 0.1m));
+
+        await s.Matcher.ResolveAsync("boza 1 чаша", [item], default);
+
+        s.MatchDecider.Calls.Should().ContainSingle().Which.Single().Candidates
+            .Should().Contain(c => c.NameBg != null && c.NameBg.StartsWith("Боза", StringComparison.OrdinalIgnoreCase));
+    }
+
     [Theory]
     [InlineData("кюфтета", "кюфте", true)]
     [InlineData("кебапчета", "кебапче", true)]
