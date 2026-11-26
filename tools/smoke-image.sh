@@ -88,7 +88,7 @@ paths=()
 while read -r path; do
     paths+=("$path")
 done < <(sed -n '/^const PRECACHE = \[/,/^\];/p' src/Plate.Web/wwwroot/sw.js | grep -o '"/[^"]*"' | tr -d '"')
-[ -n "$offline" ] && [ "${#paths[@]}" -gt 10 ] || fail "Couldn't read OFFLINE and PRECACHE from sw.js."
+if [ -z "$offline" ] || [ "${#paths[@]}" -le 10 ]; then fail "Couldn't read OFFLINE and PRECACHE from sw.js."; fi
 missing=0
 for path in /sw.js "$offline" "${paths[@]}"; do
     read -r status size <<< "$(fetch "$path")"

@@ -75,9 +75,11 @@ fi
 
 # No remote side effects until the exact checkout has passed the complete test suite.
 bash tools/check.sh
-[ "$(git branch --show-current)" = main ] && [ -z "$(git status --porcelain)" ] \
-    && [ "$(git rev-parse --short HEAD)" = "$VERSION" ] \
-    || { echo "The checkout changed during checks; run the deployment again." >&2; exit 1; }
+if [ "$(git branch --show-current)" != main ] || [ -n "$(git status --porcelain)" ] \
+    || [ "$(git rev-parse --short HEAD)" != "$VERSION" ]; then
+    echo "The checkout changed during checks; run the deployment again." >&2
+    exit 1
+fi
 if [ -n "$ci_wait" ]; then
     echo "Waiting for CI on $VERSION"
     gh run watch "$ci_wait" --exit-status --interval 30 > /dev/null \
