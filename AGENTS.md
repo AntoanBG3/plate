@@ -1,11 +1,11 @@
 # AGENTS.md
 
-Self-hosted gym and nutrition tracker ("Plate", the same Latin name in Bulgarian) used by Antoan, his father and friends he invites. The full specification is in `SPEC.md`; read it before starting any task and follow its build phases in order.
+Self-hosted gym and nutrition tracker ("Plate", the same Latin name in Bulgarian) used by Antoan, his father and friends he invites. The full specification is in `SPEC.md`; read it before starting any task. Every phase in its build phases is done; a new piece of work that needs one goes after the last.
 
 ## Stack
 .NET 10, ASP.NET Core MVC + Razor + htmx 2.0.x, EF Core + PostgreSQL 18 (Npgsql), ASP.NET Core Identity, OpenRouter API, USDA FoodData Central subset, Open Food Facts API v3, xUnit + FluentAssertions + Testcontainers, Playwright for browser tests, docker-compose. Deployed on the home server "wizard" at `~/docker/plate`, public at `https://plate.peychev.uk` through its Cloudflare Tunnel.
 
-Projects: `src/Plate.Core` (domain and pure calculations), `src/Plate.Web` (MVC app, EF, CLI commands), `tests/Plate.Core.Tests`, `tests/Plate.Web.Tests` (integration, real Postgres), `tests/Plate.E2E.Tests` (Playwright, Chromium and WebKit), `tests/js` (Node tests for the offline queue and the deploy gate).
+Projects: `src/Plate.Core` (domain and pure calculations), `src/Plate.Web` (MVC app, EF, CLI commands), `tests/Plate.Core.Tests`, `tests/Plate.Web.Tests` (integration, real Postgres), `tests/Plate.E2E.Tests` (Playwright, Chromium and WebKit), `tests/js` (Node tests for the offline queue, service worker, scanner, deploy gate and probe, restore drill, dump pruning and seed data).
 
 ## Commands
 - All checks, as CI and `tools/deploy.sh` run them: `bash tools/check.sh` (JS tests, restore, Release build, every .NET test).
