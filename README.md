@@ -369,3 +369,12 @@ Open `https://plate.peychev.uk` in Safari, sign in, then Share → Add to Home S
 Settings → Export all data downloads a ZIP of CSV files readable in Excel or Numbers. It includes private foods, saved meals with their ingredients, recipes with theirs, exercise notes and bar settings, and profile preferences. Saved meal and food IDs link the files.
 
 Food forms carry a new request ID each time they are rendered. Resending the same form after a lost response returns its first successful result without adding food twice. Check the log after an uncertain-save warning; open a new form to add another entry. Food-request receipts are included in the export and removed with the account.
+
+## Licences
+
+The code, the documentation and the data compiled for this project are under the MIT licence (`LICENSE`), except for the following, which keep their own terms:
+
+- `src/Plate.Web/Data/Seed/usda-foods.csv`: from USDA FoodData Central, public domain. The Bulgarian names added to it are covered by `LICENSE`.
+- The `product` rows of `src/Plate.Web/Data/Seed/bg-foods.csv`: from [Open Food Facts](https://world.openfoodfacts.org), © Open Food Facts contributors, under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/). A database made from them stays under the ODbL.
+- The `generic` rows of `bg-foods.csv` compiled from public Bulgarian calorie tables and dish pages: each row's `source` column names the pages its values came from. They are included for the app to work and are not offered under `LICENSE`. The rows from `tools/foods/lidl-bakery.csv` and `tools/foods/mixed-drinks.csv` are this project's own compilation and are covered by `LICENSE`.
+- Libraries in `src/Plate.Web/wwwroot/lib`, each with its licence file next to it: htmx (Zero-Clause BSD), Chart.js (MIT), barcode-detector and zxing-wasm (MIT), and the Fira Sans font (SIL Open Font License 1.1).
