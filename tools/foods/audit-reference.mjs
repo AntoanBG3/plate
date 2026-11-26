@@ -1,10 +1,11 @@
-// Compares the Bulgarian reference foods in the seed with the USDA foods of the same English name. A reference row's
+// Compares the Bulgarian reference foods (the private data/bg-dishes.csv) with the USDA foods of the same English name. A reference row's
 // English name links it to a USDA food (and says raw or cooked); when the two disagree by more than 25% of energy,
 // either the values are wrong (a bad source) or the English name is (another variant or state). The 2026-11-21 audit
 // found 38 such rows, mostly from macroscope.top and spidersport.com; reports/reference-foods-audit.md lists them.
 //   node tools/foods/audit-reference.mjs            prints the conflicts as a Markdown table
 import path from "node:path";
-import { readCsv, repo } from "./lib.mjs";
+import fs from "node:fs";
+import { dishesFile, readCsv, repo } from "./lib.mjs";
 
 const seed = path.join(repo, "src/Plate.Web/Data/Seed");
 
@@ -12,7 +13,7 @@ const seed = path.join(repo, "src/Plate.Web/Data/Seed");
 const head = (name) => name.toLowerCase().split(/[ ,(]/)[0];
 
 /** Reference rows whose energy differs from their USDA twin's by more than 25% and 15 kcal, with nearby USDA variants. */
-export function conflicts(bg = readCsv(path.join(seed, "bg-foods.csv")), usda = readCsv(path.join(seed, "usda-foods.csv"))) {
+export function conflicts(bg = fs.existsSync(dishesFile) ? readCsv(dishesFile) : [], usda = readCsv(path.join(seed, "usda-foods.csv"))) {
     const byName = new Map();
     for (const u of usda) {
         const key = u.name.toLowerCase();

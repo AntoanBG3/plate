@@ -5,13 +5,17 @@ const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
 const repo = path.resolve(__dirname, "../..");
+// The reference foods are compiled from third-party tables and kept out of the repository, so these checks run only
+// where data/bg-dishes.csv exists (the Mac and wizard), not in CI.
+const dishes = path.join(repo, "data/bg-dishes.csv");
+const skip = !fs.existsSync(dishes) && "data/bg-dishes.csv is private and not here";
 
 // A reference food linked by its English name to a USDA food should have about its energy; the 2026-11-21 audit found
 // 38 that don't (reports/reference-foods-audit.md). Those are listed as known; a new one fails, and a fixed one has to
 // leave the list so it can't come back unnoticed.
-test("the seed carries every reference fix", async () => {
+test("the seed carries every reference fix", { skip }, async () => {
     const { readCsv } = await import(pathToFileURL(path.join(repo, "tools/foods/lib.mjs")).href);
-    const seed = readCsv(path.join(repo, "src/Plate.Web/Data/Seed/bg-foods.csv"));
+    const seed = readCsv(dishes);
     const fixes = readCsv(path.join(repo, "src/Plate.Web/Data/Seed/reference-fixes.csv"));
 
     assert.ok(fixes.length >= 39);
@@ -22,7 +26,7 @@ test("the seed carries every reference fix", async () => {
     }
 });
 
-test("no new reference food disagrees with its USDA twin", async () => {
+test("no new reference food disagrees with its USDA twin", { skip }, async () => {
     const { conflicts } = await import(pathToFileURL(path.join(repo, "tools/foods/audit-reference.mjs")).href);
     const known = new Set(fs.readFileSync(path.join(repo, "tools/foods/reference-conflicts.known.txt"), "utf8")
         .split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#")));

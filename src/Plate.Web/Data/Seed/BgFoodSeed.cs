@@ -2,18 +2,27 @@ using Plate.Core.Text;
 using System.Globalization;
 using Plate.Core.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Plate.Web.Data.Seed;
 
 /// <summary>
-/// Imports Data/Seed/bg-foods.csv (built by tools/foods): Bulgarian generic foods and dishes compiled from public
-/// tables, and products sold in Bulgaria from Open Food Facts. Runs on every start and only adds what is missing,
+/// Imports Data/Seed/bg-foods.csv (built by tools/foods): products sold in Bulgaria from Open Food Facts and the
+/// hand-curated foods, and then the private bg-dishes.csv when <c>Seed:DishesPath</c> names one: Bulgarian generic foods
+/// and dishes compiled from public tables, which are not published with the code. Runs on every start and only adds what is missing,
 /// so a newer file adds its new rows: products by barcode, generic foods by Bulgarian name. A generic food seeded before
 /// the file had piece weights and a values basis gets them (<see cref="AddPiecesAndBasisAsync"/>).
 /// </summary>
 public static class BgFoodSeed
 {
     public static readonly string DefaultPath = Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "bg-foods.csv");
+
+    /// <summary>
+    /// The private dishes file from <c>Seed:DishesPath</c>, relative to the content root, or null when none is configured.
+    /// The file has the same columns as bg-foods.csv; without it the app runs with the published foods only.
+    /// </summary>
+    public static string? DishesPath(IConfiguration config, string contentRoot) =>
+        config["Seed:DishesPath"] is { Length: > 0 } path ? Path.GetFullPath(path, contentRoot) : null;
 
     public static async Task SeedAsync(AppDbContext db, string path, CancellationToken ct)
     {

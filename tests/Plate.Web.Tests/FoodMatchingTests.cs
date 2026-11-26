@@ -433,7 +433,14 @@ public class FoodMatchingTests(PostgresFixture fixture) : IClassFixture<Postgres
         // печени" holds the plural word, while the "Кюфте" reference food never made the top five.
         await using var s = new UserScope(fixture, await fixture.CreateUserAsync());
         s.MatchDecider.Enabled = false;
-        var kyufte = await s.Db.FoodItems.SingleAsync(f => f.Source == Plate.Core.Domain.FoodSource.Reference && f.NameBg == "Кюфте");
+        // The reference dishes aren't published with the code (README "Food data"), so the test adds its own, as on wizard.
+        var kyufte = new Plate.Core.Domain.FoodItem
+        {
+            Name = "Bulgarian grilled minced-meat patty (kyufte)", NameBg = "Кюфте", Source = Plate.Core.Domain.FoodSource.Reference,
+            KcalPer100g = 284, ProteinPer100g = 30.2m, CarbsPer100g = 11.5m, FatPer100g = 13,
+        };
+        s.Db.FoodItems.Add(kyufte);
+        await s.Db.SaveChangesAsync();
         var item = new ParsedFoodItem("meatballs, beef and pork, cooked", "кюфтета", 300, FoodState.Cooked, null, null, new Per100g(250, 15, 5, 20));
         var trace = new List<MatchTrace>();
 

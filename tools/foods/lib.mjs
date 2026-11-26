@@ -6,6 +6,8 @@ import path from "node:path";
 export const here = path.dirname(new URL(import.meta.url).pathname);
 export const raw = path.join(here, "raw");
 export const repo = path.resolve(here, "../..");
+/** The Bulgarian generic foods and dishes compiled from third-party tables: private, never committed (README "Food data"). */
+export const dishesFile = path.join(repo, "data/bg-dishes.csv");
 fs.mkdirSync(raw, { recursive: true });
 
 export function openRouterKey() {

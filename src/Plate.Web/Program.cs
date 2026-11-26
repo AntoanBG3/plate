@@ -385,6 +385,18 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ExerciseSeed.SeedAsync(db, CancellationToken.None);
     await UsdaSeed.SeedAsync(db, UsdaSeed.DefaultPath, CancellationToken.None);
     await BgFoodSeed.SeedAsync(db, BgFoodSeed.DefaultPath, CancellationToken.None);
+    if (BgFoodSeed.DishesPath(app.Configuration, app.Environment.ContentRootPath) is { } dishes)
+    {
+        if (File.Exists(dishes))
+        {
+            await BgFoodSeed.SeedAsync(db, dishes, CancellationToken.None);
+        }
+        else
+        {
+            app.Logger.LogWarning("Seed:DishesPath is set but {Path} doesn't exist; no dishes were seeded", dishes);
+        }
+    }
+
     await DataFixups.RunAsync(db, CancellationToken.None);
 }
 

@@ -25,7 +25,7 @@ SHA=$(git rev-parse HEAD)
 
 # The P filters keep wizard's own state out of --delete; without them it removed keys/ on 2026-10-02.
 copy() {
-    rsync -a --delete "$@" --filter='P /db/' --filter='P /keys/' --filter='P /docker/.env' \
+    rsync -a --delete "$@" --filter='P /db/' --filter='P /keys/' --filter='P /data/' --filter='P /docker/.env' \
         --filter=':- .gitignore' --exclude .git ./ wizard:docker/plate/
 }
 

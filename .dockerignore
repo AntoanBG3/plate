@@ -6,6 +6,7 @@
 tests
 db
 keys
+data
 docker/.env
 *.md
 design-samples

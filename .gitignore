@@ -13,6 +13,8 @@ obj/
 docker/.env
 db/
 keys/
+# Bulgarian dishes compiled from third-party tables, kept private (README "Food data")
+/data/
 
 # Local Docker test login
 docker/.local-login.txt

@@ -38,7 +38,7 @@ Nutrition targets are captured by user and day. Changes apply to today's snapsho
 Three sources are imported on start, each only adding what is missing:
 
 - USDA FoodData Central (public domain): `tools/usda/build_usda_subset.py` rebuilds `src/Plate.Web/Data/Seed/usda-foods.csv`. Its `name_bg` column holds Bulgarian names, added by `node tools/foods/translate-usda.mjs` (an LLM through OpenRouter; run it again after a rebuild). Databases seeded before the column existed get the names on the next start. The `fiber` and `satfat` columns are blank where USDA has no value, and are added to older databases the same way.
-- Bulgarian foods and dishes (`Data/Seed/bg-foods.csv`, kind `generic`): compiled by `tools/foods` from public Bulgarian calorie tables and per-dish web pages found with firecrawl. Every row lists the pages its values came from; values from several pages are combined by median. Sites whose terms forbid reuse (BB-Team) are excluded. The file also holds the Lidl Bulgaria bakery range, kept by hand in `tools/foods/lidl-bakery.csv` (sources and method in `tools/foods/lidl-bakery.md`): Lidl's label values where it published them, estimates from the ingredient lists otherwise, with each piece's weight so "две закуски" is two pieces. `merge.mjs` appends that file unchanged, and `tests/js/curated-foods.test.cjs` fails if the seed loses one of its rows.
+- Bulgarian foods and dishes (kind `generic`): compiled by `tools/foods` from public Bulgarian calorie tables and per-dish web pages found with firecrawl. Every row lists the pages its values came from; values from several pages are combined by median. Sites whose terms forbid reuse (BB-Team) are excluded. Those values belong to the sites, so they are not in the repository: they live in `data/bg-dishes.csv` (git-ignored) next to the checkout, on the Mac and on wizard, where the compose file mounts `~/docker/plate/data` at `/data` and sets `Seed__DishesPath`. `appsettings.Development.json` reads the same file for `dotnet run`. Without it the app runs with the other two sources only, which is what CI and the tests do; a test that needs a dish adds its own. The committed `Data/Seed/bg-foods.csv` holds the Lidl Bulgaria bakery range, kept by hand in `tools/foods/lidl-bakery.csv` (sources and method in `tools/foods/lidl-bakery.md`): Lidl's label values where it published them, estimates from the ingredient lists otherwise, with each piece's weight so "две закуски" is two pieces. `merge.mjs` appends that file unchanged, and `tests/js/curated-foods.test.cjs` fails if the seed loses one of its rows.
 - Products sold in Bulgaria from [Open Food Facts](https://world.openfoodfacts.org) (kind `product`), © Open Food Facts contributors, available under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/).
 
 To refresh the Bulgarian data (needs the `firecrawl` CLI and an OpenRouter key in `~/.config/plate/openrouter-key` or `OPENROUTER_API_KEY`; `OPENROUTER_MODEL` overrides the model):
@@ -80,10 +80,10 @@ The repository is checked out at `~/docker/plate`. The database lives in `~/dock
 
 ### First time
 
-Copy the checkout from the Mac. Git-ignored files are not sent, and the `P` filters protect the server's own state from `--delete`. Keep them: the `.gitignore` filter alone does not stop rsync deleting `db/` and `keys/` on wizard (it deleted `keys/` on 2026-10-02 and only failed on `db/` because Postgres owns it).
+Copy the checkout from the Mac. Git-ignored files are not sent (so `data/bg-dishes.csv` goes over once, with `scp`), and the `P` filters protect the server's own state from `--delete`. Keep them: the `.gitignore` filter alone does not stop rsync deleting `db/` and `keys/` on wizard (it deleted `keys/` on 2026-10-02 and only failed on `db/` because Postgres owns it).
 
 ```sh
-rsync -av --delete --filter='P /db/' --filter='P /keys/' --filter='P /docker/.env' \
+rsync -av --delete --filter='P /db/' --filter='P /keys/' --filter='P /data/' --filter='P /docker/.env' \
     --filter=':- .gitignore' --exclude .git ~/Projects/homeserver-gym/ wizard:docker/plate/
 ```
 
@@ -92,6 +92,7 @@ Then on wizard:
 ```sh
 cd ~/docker/plate
 mkdir keys                                   # must exist before the first start so it is owned by antoan
+mkdir data                                   # then copy data/bg-dishes.csv from the Mac into it (Food data)
 cp docker/.env.example docker/.env
 openssl rand -base64 32 | tr -d '/+='        # paste as POSTGRES_PASSWORD in docker/.env
 docker compose -f docker/docker-compose.yml up -d --build
@@ -376,5 +377,5 @@ The code, the documentation and the data compiled for this project are under the
 
 - `src/Plate.Web/Data/Seed/usda-foods.csv`: from USDA FoodData Central, public domain. The Bulgarian names added to it are covered by `LICENSE`.
 - The `product` rows of `src/Plate.Web/Data/Seed/bg-foods.csv`: from [Open Food Facts](https://world.openfoodfacts.org), © Open Food Facts contributors, under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/). A database made from them stays under the ODbL.
-- The `generic` rows of `bg-foods.csv` compiled from public Bulgarian calorie tables and dish pages: each row's `source` column names the pages its values came from. They are included for the app to work and are not offered under `LICENSE`. The rows from `tools/foods/lidl-bakery.csv` and `tools/foods/mixed-drinks.csv` are this project's own compilation and are covered by `LICENSE`.
+- The `generic` rows of `bg-foods.csv`, from `tools/foods/lidl-bakery.csv` and `tools/foods/mixed-drinks.csv`, are this project's own compilation and are covered by `LICENSE`. The dishes compiled from third-party tables are not in the repository (Food data, above).
 - Libraries in `src/Plate.Web/wwwroot/lib`, each with its licence file next to it: htmx (Zero-Clause BSD), Chart.js (MIT), barcode-detector and zxing-wasm (MIT), and the Fira Sans font (SIL Open Font License 1.1).
