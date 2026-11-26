@@ -23,10 +23,12 @@ done
 VERSION=$(git rev-parse --short HEAD)
 SHA=$(git rev-parse HEAD)
 
-# The P filters keep wizard's own state out of --delete; without them it removed keys/ on 2026-10-02.
+# The P filters keep wizard's own state out of --delete; without them it removed keys/ on 2026-10-02. The repository's
+# info/exclude (shared by every worktree) holds this Mac's own untracked files, which stay off wizard too.
+EXCLUDE="$(git rev-parse --git-common-dir)/info/exclude"
 copy() {
     rsync -a --delete "$@" --filter='P /db/' --filter='P /keys/' --filter='P /data/' --filter='P /docker/.env' \
-        --filter=':- .gitignore' --exclude .git ./ wizard:docker/plate/
+        --filter=':- .gitignore' ${EXCLUDE:+--exclude-from="$EXCLUDE"} --exclude .git ./ wizard:docker/plate/
 }
 
 if [ "$dry_run" = true ]; then

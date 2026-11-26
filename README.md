@@ -297,7 +297,7 @@ ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback show 12
 ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback status 12 fixed --reply "Fixed, thanks." --version abc1234
 ```
 
-`feedback help` lists every command. In the coding agent, `/feedback` runs the same commands and the triage workflow in `docs/feedback-triage.md`. Replies show under Settings → Your feedback with a badge, and `feedback changelog add` puts a What's new note on every user's Today page.
+`feedback help` lists every command; `docs/feedback-triage.md` has the triage workflow. Replies show under Settings → Your feedback with a badge, and `feedback changelog add` puts a What's new note on every user's Today page.
 
 For a Telegram message on each new report and each new kind of error, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `docker/.env` (the backup script's bot works) and restart the app. Only a report's number, the reporter's name, kind, area and first 80 characters are sent.
 

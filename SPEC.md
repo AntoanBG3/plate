@@ -689,7 +689,7 @@ HTTPS (required for the camera and PWA install): add the public hostname `plate.
 
 ## 11. Feedback
 
-Users report problems and ideas from their phones, food parsing collects ratings and the corrections people make, and errors are recorded on their own. the agent reads all of it over SSH with a CLI command and writes back a status and a short reply. Nothing is exposed on the public host beyond the app's own authenticated pages.
+Users report problems and ideas from their phones, food parsing collects ratings and the corrections people make, and errors are recorded on their own. The developer reads all of it over SSH with a CLI command and writes back a status and a short reply. Nothing is exposed on the public host beyond the app's own authenticated pages.
 
 ### Data
 

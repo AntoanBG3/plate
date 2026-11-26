@@ -5,7 +5,6 @@ obj/
 .idea/
 .DS_Store
 .firecrawl/
-.agent/
 .remember/
 
 # Runtime state and secrets on the server (see README)

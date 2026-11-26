@@ -17,7 +17,7 @@ Projects: `src/Plate.Core` (domain and pure calculations), `src/Plate.Web` (MVC 
 - Run locally: `docker compose -f docker/docker-compose.dev.yml up -d db`, then `dotnet run --project src/Plate.Web`
 - Full stack (on wizard): `docker compose -f docker/docker-compose.yml up -d --build`
 - Deploy: `tools/deploy.sh` from a clean `main` (it dumps the database, copies the checkout and waits for the new version). It refuses a commit whose GitHub CI run failed and waits for one still running; push `main` first so CI runs on it. `tools/deploy.sh --dry-run` shows what would change; `--skip-ci` skips the GitHub check.
-- Feedback from the app (reports, parse ratings, errors): `ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback digest`; `docs/feedback-triage.md` has the commands and the triage workflow (Codex reads it through `.agents/skills/feedback`, an untracked symlink: `ln -s ../../.agent/skills/feedback .agents/skills/feedback`).
+- Feedback from the app (reports, parse ratings, errors): `ssh wizard docker exec plate-app dotnet Plate.Web.dll feedback digest`; `docs/feedback-triage.md` has the commands and the triage workflow. It has skill frontmatter: an agent that loads skills from a folder gets it as a `feedback` skill through an untracked symlink, `<skills folder>/feedback/SKILL.md` → `docs/feedback-triage.md`.
 - Admin over SSH (SPEC 12): `role grant|revoke|list`, `ai show|set-model|set-key|clear-key|test`, `admin audit` as further `dotnet Plate.Web.dll` commands. The web admin area at `/admin` is for Antoan's phone; agents use the CLI.
 
 Test environment:

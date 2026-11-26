@@ -1,5 +1,5 @@
 feedback parsebench on plate.peychev.uk (c2fac4e), 2026-11-21, 2 repeats, matcher google/gemini-decision-1.
-Known problems in this run: one model failed every call (a schema bug, fixed after the run); the "single" labels
+Known problems in this run: one model failed every call (a schema bug, fixed after the run; left out below); the "single" labels
 expected no count where the single-piece rule asks for one, so every model lost those texts; tencent/hy4-flash and
 qwen/qwen3.8-flash timed out on most calls; the matcher sometimes passed 3 s under the load of 23 models at once.
 
@@ -16,8 +16,6 @@ minimax/minimax-m3.1-flash                     75.0  100.0      0   94.4   92.7 
 xiaomi/mimo-v2.6-flash                         68.5   97.5      0   96.8   89.4     77    31    -31   2479  10120    0  0.000228     388
 z-ai/glm-5.3                                   76.6  100.0      0   96.3   93.8     68    31    -36   2305   5108    0  0.001122     230
 meta/muse-spark-1.3-contributor                79.0  100.0      1   96.9   93.1     70    22    -44   3681   7076    0  0.000129     552
-google/gemini-4-carbon                      3.2    0.0      0      -      -    330   258   -330   1081   1552  120  0.000000       0
-google/gemini-4-carbon                  3.2    0.0      0      -      -    330   258   -330   1106   1592  120  0.000000       0
 deepseek/deepseek-v4-flash                     75.8   98.8      0   98.7   92.4     58    28    -23   2658   5331    0  0.000045     198
 openai/gpt-5.6-luna                            78.2   91.3      0   97.3   93.9     57    19    -21   2295   4378    0  0.000210     153
 upstage/solar-mini4                            60.5   90.0      0   82.6   91.4    114    48     +1   2702   7478    5  0.000084     239
@@ -45,8 +43,6 @@ minimax/minimax-m3.1-flash                       73.1    100.0    100.0     54.5
 xiaomi/mimo-v2.6-flash                           69.2    100.0    100.0     36.4     64.3     20.0     80.0    100.0     90.0
 z-ai/glm-5.3                                     84.6    100.0    100.0     40.9     85.7     20.0    100.0    100.0     90.0
 meta/muse-spark-1.3-contributor                  80.8    100.0    100.0     59.1     85.7     20.0     80.0    100.0    100.0
-google/gemini-4-carbon                        0.0    100.0      0.0      0.0      0.0      0.0      0.0      0.0      0.0
-google/gemini-4-carbon                    0.0    100.0      0.0      0.0      0.0      0.0      0.0      0.0      0.0
 deepseek/deepseek-v4-flash                       84.6    100.0    100.0     45.5     71.4     20.0     80.0    100.0    100.0
 openai/gpt-5.6-luna                              92.3    100.0    100.0     40.9     85.7     20.0     80.0    100.0    100.0
 upstage/solar-mini4                              46.2    100.0     90.0     36.4     35.7     20.0     80.0    100.0     95.0
@@ -61,50 +57,28 @@ openai/gpt-6.1-terra@none                        76.9    100.0    100.0     72.7
 
 Problems in the last repeat, by text:
   p1 [weight] "200 г пилешко филе"
-      google/gemini-4-carbon: missed /chicken|пилешк/
-      google/gemini-4-carbon: missed /chicken|пилешк/
       upstage/solar-mini4: пилешко филе: state Cooked
   p2 [weight] "150g cooked rice"
-      google/gemini-4-carbon: missed /rice|ориз/
-      google/gemini-4-carbon: missed /rice|ориз/
   p3 [weight] "300 г извара"
-      google/gemini-4-carbon: missed /cottage|curd|извара/
-      google/gemini-4-carbon: missed /cottage|curd|извара/
       qwen/qwen3.8-flash: missed /cottage|curd|извара/
       tencent/hy4-flash: missed /cottage|curd|извара/
   p4 [weight] "около 200г басмати ориз"
-      google/gemini-4-carbon: missed /rice|ориз/
-      google/gemini-4-carbon: missed /rice|ориз/
       tencent/hy4-flash: missed /rice|ориз/
   p5 [weight] "about 150 g salmon"
-      google/gemini-4-carbon: missed /salmon|сьомга/
-      google/gemini-4-carbon: missed /salmon|сьомга/
   p6 [weight] "1 литър кефир"
-      google/gemini-4-carbon: missed /kefir|кефир/
-      google/gemini-4-carbon: missed /kefir|кефир/
       qwen/qwen3.8-flash: missed /kefir|кефир/
       tencent/hy4-flash: missed /kefir|кефир/
       xiaomi/mimo-v2.6-flash: кефир: count 1 Pack; кефир: gramsStated False
   p7 [weight] "250 ml orange juice"
-      google/gemini-4-carbon: missed /orange|портокал/
-      google/gemini-4-carbon: missed /orange|портокал/
       tencent/hy4-flash: missed /orange|портокал/
   p8 [weight] "0,5 кг ягоди"
-      google/gemini-4-carbon: missed /strawberr|ягод/
-      google/gemini-4-carbon: missed /strawberr|ягод/
   p9 [weight] "two of those lidl pastries, 165 g total"
-      google/gemini-4-carbon: missed /pastr|закуск|savoury/
-      google/gemini-4-carbon: missed /pastr|закуск|savoury/
       qwen/qwen3.8-flash: missed /pastr|закуск|savoury/
       tencent/hy4-flash: missed /pastr|закуск|savoury/
       z-ai/glm-5.3: закуски от Lidl: 82.5 g, expected 165
       z-ai/glm-5.3-flash: закуска от Lidl: 82.5 g, expected 165
   p10 [weight] "85г протеинов бар"
-      google/gemini-4-carbon: missed /protein|протеин/
-      google/gemini-4-carbon: missed /protein|протеин/
   p11 [count] "две закуски с лютеница и сирене от лидл"
-      google/gemini-4-carbon: missed /закуск|pastr|savoury/
-      google/gemini-4-carbon: missed /закуск|pastr|savoury/
       deepseek/deepseek-v4-flash: закуска с лютеница и сирене от Lidl: amountGiven False
       deepseek/deepseek-v4.1-flash@low: закуска с лютеница и сирене от Lidl: 300 g, expected [140,220]
       meta/muse-spark-1.3-contributor: закуска с лютеница и сирене от лидл: 240 g, expected [140,220]
@@ -118,19 +92,11 @@ Problems in the last repeat, by text:
       upstage/solar-mini4: закуски с лютеница и сирене от лидл: amountGiven False
       z-ai/glm-5.3-flash: закуска с лютеница и сирене от Лидл: 120 g, expected [140,220]; закуска с лютеница и сирене от Лидл: amountGiven False
   p12 [count] "2 eggs"
-      google/gemini-4-carbon: missed /egg|яйц/
-      google/gemini-4-carbon: missed /egg|яйц/
   p13 [count] "три филии хляб"
-      google/gemini-4-carbon: missed /bread|хляб|филии/
-      google/gemini-4-carbon: missed /bread|хляб|филии/
       upstage/solar-mini4: филии хляб: 450 g, expected [75,120]
   p14 [count] "a banana"
-      google/gemini-4-carbon: missed /banana|банан/
-      google/gemini-4-carbon: missed /banana|банан/
       xiaomi/mimo-v2.6-flash: banana: amountGiven True
   p15 [count] "един кроасан"
-      google/gemini-4-carbon: missed /croissant|кроасан/
-      google/gemini-4-carbon: missed /croissant|кроасан/
       deepseek/deepseek-v4.1-flash@low: кроасан: amountGiven True
       meta/muse-ember: кроасан: amountGiven True
       openai/gpt-6-luna: кроасан: amountGiven True
@@ -144,35 +110,23 @@ Problems in the last repeat, by text:
       xiaomi/mimo-v2.6-flash: кроасан: amountGiven True
       xiaomi/mimo-v2.6-pro: кроасан: amountGiven True
   p16 [count] "half a tub of greek yogurt"
-      google/gemini-4-carbon: missed /yogurt|йогурт|кисело/
-      google/gemini-4-carbon: missed /yogurt|йогурт|кисело/
       google/gemma-4-26b-a4b-it: half a tub of greek yogurt: count none; half a tub of greek yogurt: gramsStated True
       qwen/qwen3.8-flash: missed /yogurt|йогурт|кисело/
   p17 [count] "половин кофичка кисело мляко"
-      google/gemini-4-carbon: missed /yogurt|кисело мляко/
-      google/gemini-4-carbon: missed /yogurt|кисело мляко/
       google/gemma-4-26b-a4b-it: кисело мляко: 135 g, expected [150,250]
       qwen/qwen3.8-flash: missed /yogurt|кисело мляко/
       z-ai/glm-5.3: кисело мляко: 125 g, expected [150,250]
       z-ai/glm-5.3-flash: кисело мляко: 75 g, expected [150,250]
   p18 [count] "a can of tuna"
-      google/gemini-4-carbon: missed /tuna|тон/
-      google/gemini-4-carbon: missed /tuna|тон/
   p19 [count] "2 servings of oatmeal"
-      google/gemini-4-carbon: missed /oat|овес/
-      google/gemini-4-carbon: missed /oat|овес/
       upstage/solar-mini4: oatmeal: amountGiven False
   p20 [count] "кутия coca-cola"
-      google/gemini-4-carbon: missed /cola|кола/
-      google/gemini-4-carbon: missed /cola|кола/
       minimax/minimax-m3.1-flash: coca-cola: amountGiven False
       openai/gpt-6-luna@low: coca-cola: amountGiven False
       qwen/qwen3.8-flash: missed /cola|кола/
       upstage/solar-mini4: coca-cola: count 1 Piece; coca-cola: amountGiven False
       z-ai/glm-5.3: кутия coca-cola: amountGiven False
   p21 [count] "3 кебапчета"
-      google/gemini-4-carbon: missed /kebapche|кебапч/
-      google/gemini-4-carbon: missed /kebapche|кебапч/
       deepseek/deepseek-v4.1-flash: кебапчета: 100 g, expected [150,240]; кебапчета: amountGiven False
       deepseek/deepseek-v4.1-flash@low: кебапчета: state Raw
       meta/muse-spark-1.3-contributor: кебапчета: state Raw
@@ -187,13 +141,9 @@ Problems in the last repeat, by text:
       xiaomi/mimo-v2.6-flash: кебапчета: state NotApplicable
       z-ai/glm-5.3-flash: кебапчета: amountGiven False
   p22 [count] "two apples"
-      google/gemini-4-carbon: missed /apple|ябълк/
-      google/gemini-4-carbon: missed /apple|ябълк/
       deepseek/deepseek-v4-flash: apples: 200 g, expected [300,400]; apples: amountGiven False
       z-ai/glm-5.3-flash: apples: amountGiven False
   p23 [count] "една ябълка"
-      google/gemini-4-carbon: missed /apple|ябълк/
-      google/gemini-4-carbon: missed /apple|ябълк/
       deepseek/deepseek-v4.1-flash: ябълка: amountGiven True
       deepseek/deepseek-v4.1-flash@low: ябълка: amountGiven True
       google/gemma-4-26b-a4b-it: ябълка: amountGiven True
@@ -209,17 +159,11 @@ Problems in the last repeat, by text:
       xiaomi/mimo-v2.6-flash: ябълка: amountGiven True
       xiaomi/mimo-v2.6-pro: ябълка: amountGiven True
   p24 [none] "извара"
-      google/gemini-4-carbon: missed /cottage|curd|извара/
-      google/gemini-4-carbon: missed /cottage|curd|извара/
       qwen/qwen3.8-flash: missed /cottage|curd|извара/
       tencent/hy4-flash: missed /cottage|curd|извара/
       upstage/solar-mini4: missed /cottage|curd|извара/
   p25 [none] "some rice"
-      google/gemini-4-carbon: missed /rice|ориз/
-      google/gemini-4-carbon: missed /rice|ориз/
   p26 [none] "кафе"
-      google/gemini-4-carbon: missed /coffee|кафе/
-      google/gemini-4-carbon: missed /coffee|кафе/
       deepseek/deepseek-v4-flash: кафе: count 1 Serving
       deepseek/deepseek-v4.1-flash: кафе: count 1 Serving
       minimax/minimax-m3.1-flash: кафе: count 1 Serving
@@ -230,8 +174,6 @@ Problems in the last repeat, by text:
       xiaomi/mimo-v2.6-flash: кафе: count 1 Piece
       xiaomi/mimo-v2.6-pro: кафе: count 1 Serving
   p27 [none] "a bowl of tarator"
-      google/gemini-4-carbon: missed /tarator|таратор/
-      google/gemini-4-carbon: missed /tarator|таратор/
       deepseek/deepseek-v4.1-flash: таратор: count 1 Serving
       openai/gpt-5.6-luna: tarator: count 1 Serving
       openai/gpt-6-luna: tarator: count 1 Serving
@@ -245,13 +187,9 @@ Problems in the last repeat, by text:
       xiaomi/mimo-v2.6-pro: tarator: count 1 Serving
       z-ai/glm-5.3: tarator: count 1 Serving
   p28 [none] "шопска салата"
-      google/gemini-4-carbon: missed /shopska|шопска|salad|салата/
-      google/gemini-4-carbon: missed /shopska|шопска|salad|салата/
       tencent/hy4-flash: missed /shopska|шопска|salad|салата/
       upstage/solar-mini4: шопска салата: 150 g, expected [200,400]
   p29 [none] "мусака"
-      google/gemini-4-carbon: missed /moussaka|мусака/
-      google/gemini-4-carbon: missed /moussaka|мусака/
       deepseek/deepseek-v4-flash: мусака: state NotApplicable
       deepseek/deepseek-v4.1-flash: мусака: count 1 Serving; мусака: state NotApplicable
       deepseek/deepseek-v4.1-flash@low: мусака: state NotApplicable
@@ -269,12 +207,8 @@ Problems in the last repeat, by text:
       xiaomi/mimo-v2.6-flash: мусака: state NotApplicable
       z-ai/glm-5.3-flash: мусака: state NotApplicable
   p30 [none] "a slice of pizza"
-      google/gemini-4-carbon: missed /pizza|пиц/
-      google/gemini-4-carbon: missed /pizza|пиц/
       qwen/qwen3.8-flash: missed /pizza|пиц/
   p31 [single] "баница със сирене"
-      google/gemini-4-carbon: missed /banitsa|баница/
-      google/gemini-4-carbon: missed /banitsa|баница/
       deepseek/deepseek-v4-flash: баница със сирене: count 1 Piece
       deepseek/deepseek-v4.1-flash: баница със сирене: count 1 Piece
       deepseek/deepseek-v4.1-flash@low: баница със сирене: count 1 Piece
@@ -297,8 +231,6 @@ Problems in the last repeat, by text:
       z-ai/glm-5.3: баница със сирене: count 1 Piece
       z-ai/glm-5.3-flash: баница със сирене: count 1 Piece
   p32 [single] "кроасан с шоколад"
-      google/gemini-4-carbon: missed /croissant|кроасан/
-      google/gemini-4-carbon: missed /croissant|кроасан/
       deepseek/deepseek-v4-flash: кроасан с шоколад: count 1 Piece
       deepseek/deepseek-v4.1-flash: кроасан с шоколад: count 1 Piece
       deepseek/deepseek-v4.1-flash@low: кроасан с шоколад: count 1 Piece
@@ -321,11 +253,7 @@ Problems in the last repeat, by text:
       z-ai/glm-5.3: кроасан с шоколад: count 1 Piece
       z-ai/glm-5.3-flash: кроасан с шоколад: count 1 Piece
   p33 [single] "pizza with ham and mushrooms 300g"
-      google/gemini-4-carbon: missed /pizza|пиц/
-      google/gemini-4-carbon: missed /pizza|пиц/
   p34 [single] "закуска с лютеница и сирене от лидл"
-      google/gemini-4-carbon: missed /закуск|pastr|savoury/
-      google/gemini-4-carbon: missed /закуск|pastr|savoury/
       deepseek/deepseek-v4-flash: закуска с лютеница и сирене от лидл: count 1 Piece
       deepseek/deepseek-v4.1-flash: закуска с лютеница и сирене от Lidl: count 1 Piece
       deepseek/deepseek-v4.1-flash@low: закуска с лютеница и сирене от Lidl: 170 g, expected [80,160]; закуска с лютеница и сирене от Lidl: count 1 Piece
@@ -348,8 +276,6 @@ Problems in the last repeat, by text:
       z-ai/glm-5.3: закуска с лютеница и сирене от лидл: count 1 Piece
       z-ai/glm-5.3-flash: закуска с лютеница и сирене от Лидл: count 1 Piece
   p35 [single] "сандвич с шунка и кашкавал"
-      google/gemini-4-carbon: missed /sandwich|сандвич/
-      google/gemini-4-carbon: missed /sandwich|сандвич/
       deepseek/deepseek-v4-flash: сандвич с шунка и кашкавал: count 1 Piece
       deepseek/deepseek-v4.1-flash: сандвич с шунка и кашкавал: count 1 Piece
       deepseek/deepseek-v4.1-flash@low: сандвич с шунка и кашкавал: count 1 Piece
@@ -372,8 +298,6 @@ Problems in the last repeat, by text:
       z-ai/glm-5.3: сандвич с шунка и кашкавал: count 1 Piece
       z-ai/glm-5.3-flash: сандвич с шунка и кашкавал: count 1 Piece
   p36 [multi] "хляб с масло и сирене"
-      google/gemini-4-carbon: missed /bread|хляб/; missed /butter|масло/; missed /cheese|сирене/
-      google/gemini-4-carbon: missed /bread|хляб/; missed /butter|масло/; missed /cheese|сирене/
       google/gemma-4-26b-a4b-it: missed /butter|масло/; missed /cheese|сирене/
       meta/muse-ember: хляб: count 1 Piece
       meta/muse-spark-1.3-contributor: хляб: count 1 Piece
@@ -388,8 +312,6 @@ Problems in the last repeat, by text:
       xiaomi/mimo-v2.6-flash: хляб: count 1 Piece
       z-ai/glm-5.3: хляб: count 1 Piece
   p37 [multi] "овесени ядки с мляко и банан"
-      google/gemini-4-carbon: missed /oat|овес/; missed /milk|мляко/; missed /banana|банан/
-      google/gemini-4-carbon: missed /oat|овес/; missed /milk|мляко/; missed /banana|банан/
       deepseek/deepseek-v4-flash: овесени ядки: state NotApplicable
       deepseek/deepseek-v4.1-flash: овесени ядки: state NotApplicable
       google/gemma-4-26b-a4b-it: овесени ядки с мляко и банан: 350 g, expected [30,100]; овесени ядки с мляко и банан: state Cooked; missed /milk|мляко/; missed /banana|банан/
@@ -403,11 +325,7 @@ Problems in the last repeat, by text:
       xiaomi/mimo-v2.6-pro: овесени ядки: 250 g, expected [30,100]; овесени ядки: state Cooked
       z-ai/glm-5.3-flash: овесени ядки с мляко: 250 g, expected [30,100]; овесени ядки с мляко: state Cooked; missed /milk|мляко/
   p38 [multi] "200g chicken breast and 150g rice"
-      google/gemini-4-carbon: missed /chicken|пилешк/; missed /rice|ориз/
-      google/gemini-4-carbon: missed /chicken|пилешк/; missed /rice|ориз/
   p39 [multi] "кафе с мляко и две бисквити"
-      google/gemini-4-carbon: missed /coffee|кафе/; missed /biscuit|cookie|бисквит/
-      google/gemini-4-carbon: missed /coffee|кафе/; missed /biscuit|cookie|бисквит/
       google/gemma-4-26b-a4b-it: кафе с мляко: count 1 Piece; бисквити: amountGiven False
       qwen/qwen3.8-flash: missed /coffee|кафе/; missed /biscuit|cookie|бисквит/
       tencent/hy4-flash: missed /coffee|кафе/; missed /biscuit|cookie|бисквит/
@@ -415,16 +333,12 @@ Problems in the last repeat, by text:
       upstage/solar-mini4: missed /coffee|кафе/; бисквити: 60 g, expected [10,40]; бисквити: amountGiven False
       xiaomi/mimo-v2.6-pro: кафе: count 1 Piece
   p40 [multi] "70 грама майонеза, две филии черен хляб, 20 грама шунка"
-      google/gemini-4-carbon: missed /mayo|майонез/; missed /bread|хляб/; missed /ham|шунка/
-      google/gemini-4-carbon: missed /mayo|майонез/; missed /bread|хляб/; missed /ham|шунка/
       qwen/qwen3.8-flash: missed /mayo|майонез/; missed /bread|хляб/; missed /ham|шунка/
       tencent/hy4-flash: missed /mayo|майонез/; missed /bread|хляб/; missed /ham|шунка/
       xiaomi/mimo-v2.6-flash: черен хляб: 120 g, expected [50,90]
       xiaomi/mimo-v2.6-pro: черен хляб: 100 g, expected [50,90]
       z-ai/glm-5.3-flash: черен хляб: 120 g, expected [50,90]
   p41 [multi] "greek yogurt with honey and walnuts"
-      google/gemini-4-carbon: missed /yogurt|кисело/; missed /honey|мед/; missed /walnut|орех/
-      google/gemini-4-carbon: missed /yogurt|кисело/; missed /honey|мед/; missed /walnut|орех/
       google/gemma-4-26b-a4b-it: missed /honey|мед/; missed /walnut|орех/
       openai/gpt-5.6-luna: missed /honey|мед/; missed /walnut|орех/
       qwen/qwen3.8-flash: missed /yogurt|кисело/; missed /honey|мед/; missed /walnut|орех/
@@ -434,8 +348,6 @@ Problems in the last repeat, by text:
       xiaomi/mimo-v2.6-pro: greek yogurt: count 1 Pack
       z-ai/glm-5.3: greek yogurt: count 1 Pack
   p42 [multi] "пилешко филе на скара с ориз и салата"
-      google/gemini-4-carbon: missed /chicken|пилешк/; missed /rice|ориз/; missed /salad|салата/
-      google/gemini-4-carbon: missed /chicken|пилешк/; missed /rice|ориз/; missed /salad|салата/
       deepseek/deepseek-v4-flash: пилешко филе: state Raw; missed /salad|салата/
       deepseek/deepseek-v4.1-flash: пилешко филе: state Raw
       deepseek/deepseek-v4.1-flash@low: пилешко филе: count 1 Piece; пилешко филе: state Raw
@@ -455,8 +367,6 @@ Problems in the last repeat, by text:
       z-ai/glm-5.3: пилешко филе: state Raw
       z-ai/glm-5.3-flash: пилешко филе на скара: state Raw
   p43 [multi] "кебапчета с пържени картофи"
-      google/gemini-4-carbon: missed /kebapche|кебапч/; missed /fries|potato|картоф/
-      google/gemini-4-carbon: missed /kebapche|кебапч/; missed /fries|potato|картоф/
       deepseek/deepseek-v4-flash: кебапчета: count 4 Piece
       deepseek/deepseek-v4.1-flash: кебапчета: state Raw; пържени картофи: state NotApplicable
       deepseek/deepseek-v4.1-flash@low: пържени картофи: state NotApplicable
@@ -479,8 +389,6 @@ Problems in the last repeat, by text:
       z-ai/glm-5.3: кебапчета: 100 g, expected [120,300]; кебапчета: count 1 Piece
       z-ai/glm-5.3-flash: кебапчета: count 1 Piece; кебапчета: state Raw; пържени картофи: state NotApplicable
   p44 [multi] "2 eggs, toast and a coffee"
-      google/gemini-4-carbon: missed /egg|яйц/; missed /toast|bread|хляб/; missed /coffee|кафе/
-      google/gemini-4-carbon: missed /egg|яйц/; missed /toast|bread|хляб/; missed /coffee|кафе/
       deepseek/deepseek-v4-flash: coffee: count 1 Piece
       deepseek/deepseek-v4.1-flash: coffee: count 1 Piece
       google/gemma-4-26b-a4b-it: coffee: count 1 Serving
@@ -492,8 +400,6 @@ Problems in the last repeat, by text:
       z-ai/glm-5.3: coffee: count 1 Serving
       z-ai/glm-5.3-flash: кафе: count 1 Piece
   p45 [multi] "Закуска с лютеница и сирене от лидл Закуска пица от лидл Бут…"
-      google/gemini-4-carbon: missed /лютеница|lyutenitsa|savoury/; missed /пица|pizza/; missed /бутерк|chocolate|шоколад/; missed /kefir|кефир/
-      google/gemini-4-carbon: missed /лютеница|lyutenitsa|savoury/; missed /пица|pizza/; missed /бутерк|chocolate|шоколад/; missed /kefir|кефир/
       deepseek/deepseek-v4-flash: закуска с лютеница и сирене от лидл: count 1 Piece; закуска пица от лидл: count 1 Piece; бутерка с шоколад от лидл: count 1 Piece
       deepseek/deepseek-v4.1-flash: Закуска с лютеница и сирене от лидл: count 1 Piece; Закуска пица от лидл: count 1 Piece; Бутерка с шоколад от лидл: count 1 Piece
       deepseek/deepseek-v4.1-flash@low: Закуска с лютеница и сирене от лидл: count 1 Piece; Закуска пица от лидл: count 1 Piece; Бутерка с шоколад от лидл: count 1 Piece
@@ -516,8 +422,6 @@ Problems in the last repeat, by text:
       z-ai/glm-5.3: Закуска с лютеница и сирене от Lidl: count 1 Piece; Закуска пица от Lidl: count 1 Piece; Бутерка с шоколад от Lidl: count 1 Piece
       z-ai/glm-5.3-flash: закуска с лютеница и сирене: count 1 Piece; закуска с лютеница и сирене: amountGiven True; закуска пица: count 1 Piece; закуска пица: amountGiven True; бутерка с шоколад: count 1 Piece; бутерка с шоколад: amountGiven True
   p46 [multi] "fruit salad: 1 pear, a handful of grapes, 1 banana"
-      google/gemini-4-carbon: missed /pear|круш/; missed /grape|грозде/; missed /banana|банан/
-      google/gemini-4-carbon: missed /pear|круш/; missed /grape|грозде/; missed /banana|банан/
       deepseek/deepseek-v4-flash: grapes: gramsStated True
       google/gemma-4-26b-a4b-it: pear: amountGiven False; banana: amountGiven False
       minimax/minimax-m3.1-flash: grapes: gramsStated True
@@ -529,15 +433,9 @@ Problems in the last repeat, by text:
       tencent/hy4-flash: missed /pear|круш/; missed /grape|грозде/; missed /banana|банан/
       upstage/solar-mini4: 1 pear: amountGiven False; 1 banana: amountGiven False
   p47 [state] "150 г сварен ориз"
-      google/gemini-4-carbon: missed /rice|ориз/
-      google/gemini-4-carbon: missed /rice|ориз/
   p48 [state] "80 g dry pasta"
-      google/gemini-4-carbon: missed /pasta|паста/
-      google/gemini-4-carbon: missed /pasta|паста/
       tencent/hy4: dry pasta: state Cooked
   p49 [state] "250 г телешко на скара"
-      google/gemini-4-carbon: missed /beef|телешк/
-      google/gemini-4-carbon: missed /beef|телешк/
       deepseek/deepseek-v4-flash: телешко: state Raw
       deepseek/deepseek-v4.1-flash: телешко: state Raw
       google/gemma-4-26b-a4b-it: телешко на скара: state Raw
@@ -553,40 +451,18 @@ Problems in the last repeat, by text:
       xiaomi/mimo-v2.6-pro: телешко на скара: state Raw
       z-ai/glm-5.3-flash: телешко на скара: state Raw
   p50 [state] "200g raw chicken thighs"
-      google/gemini-4-carbon: missed /chicken|пилешк/
-      google/gemini-4-carbon: missed /chicken|пилешк/
   p51 [state] "100 г сварена леща"
-      google/gemini-4-carbon: missed /lentil|леща/
-      google/gemini-4-carbon: missed /lentil|леща/
   p52 [measure] "2 супени лъжици зехтин"
-      google/gemini-4-carbon: missed /olive|зехтин/
-      google/gemini-4-carbon: missed /olive|зехтин/
       qwen/qwen3.8-flash: missed /olive|зехтин/
   p53 [measure] "a cup of milk"
-      google/gemini-4-carbon: missed /milk|мляко/
-      google/gemini-4-carbon: missed /milk|мляко/
   p54 [measure] "чаша прясно мляко"
-      google/gemini-4-carbon: missed /milk|мляко/
-      google/gemini-4-carbon: missed /milk|мляко/
       qwen/qwen3.8-flash: missed /milk|мляко/
       tencent/hy4-flash: missed /milk|мляко/
   p55 [measure] "a handful of almonds"
-      google/gemini-4-carbon: missed /almond|бадем/
-      google/gemini-4-carbon: missed /almond|бадем/
       qwen/qwen3.8-flash: missed /almond|бадем/
       tencent/hy4-flash: missed /almond|бадем/
   p56 [measure] "a tablespoon of peanut butter"
-      google/gemini-4-carbon: missed /peanut|фъстъч/
-      google/gemini-4-carbon: missed /peanut|фъстъч/
   p57 [typo] "chickn brest 200g"
-      google/gemini-4-carbon: missed /chick|пилешк/
-      google/gemini-4-carbon: missed /chick|пилешк/
   p58 [typo] "kiselo mlyako 400g"
-      google/gemini-4-carbon: missed /yogurt|kiselo|кисело/
-      google/gemini-4-carbon: missed /yogurt|kiselo|кисело/
   p59 [typo] "kashkaval 50g"
-      google/gemini-4-carbon: missed /kashkaval|кашкавал|cheese/
-      google/gemini-4-carbon: missed /kashkaval|кашкавал|cheese/
   p60 [typo] "2 банана"
-      google/gemini-4-carbon: missed /banana|банан/
-      google/gemini-4-carbon: missed /banana|банан/
