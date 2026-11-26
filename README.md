@@ -2,14 +2,14 @@
 
 Plate is a self-hosted training and nutrition tracker running on the home server "wizard" and used from iPhones as an installed web app at `https://plate.peychev.uk`. See `SPEC.md` for the full specification and build phases.
 
-All five build phases are in place:
+What it does:
 
 - Workouts: templates, sessions with double-progression suggestions, a rest timer, and an offline queue so sets logged on bad signal are never lost.
 - Training charts: estimated 1RM per exercise and weekly sets per muscle.
 - Food: logging by text (parsed by an LLM through OpenRouter, numbers taken from the food database, optionally with a decision model choosing the database food), barcode, search and recents. Text matching considers named brands, preparation, flavour and fat content.
 - Targets: trend weight, a weekly adaptive maintenance estimate, and calorie and protein targets for a cut, maintenance or bulk, with weight and calorie charts. Until there are about three weeks of logs, maintenance comes from the NASEM 2023 energy equations (sex, age, height, weight and activity level).
 - Setup: on first sign-in a short AI chat fills in the profile and ends on an editable summary; without an OpenRouter key it is a plain form.
-- Settings: profile, CSV export of all your data, password change and logging out everywhere.
+- Settings: profile, language and theme, passkeys, password change, logging out everywhere, CSV export of all your data, and feedback with replies. The developer's account also has an admin area for feedback, AI models, invites and users.
 
 ## Local development (Mac)
 
@@ -101,8 +101,10 @@ docker builder prune -f                      # the SDK build cache sits on the b
 For food text parsing, save an [OpenRouter](https://openrouter.ai/keys) API key in the admin area under AI, `/admin/ai` (stored encrypted with the Data Protection keys, shared by all accounts, with a Test button), or put it in `OPENROUTER_API_KEY` in `docker/.env` (without one the app falls back to a simple built-in parser). The same page has one model per AI task:
 
 - Food parser: picked from OpenRouter's catalog (default `openai/gpt-6-luna`, or `OPENROUTER_MODEL`).
-- Food matcher: Off (the database ranking picks a food when the name identifies it and uses the estimate otherwise, the default) or TypeSafe's Jev 1.13, a decision model that chooses which database food each item is, or says none fits. It uses the same key and costs about $0.0002 per entry. Picking it runs a test decision. Entries record which Jev version chose their match (`match_model` in the export); `docker logs plate-app | grep "Jev "` shows each call's latency and cost.
+- Food matcher: Off (the database ranking picks a food when the name identifies it and uses the estimate otherwise, the default) or one of the decision models OpenRouter lists, which chooses which database food each item is, or says none fits. It uses the same key and costs a fraction of a cent per entry. Picking one runs a test decision. Entries record which model chose their match (`match_model` in the export); `docker logs plate-app | grep "Jev "` shows each call's model, latency and cost (the log keeps the name of the first model it used).
 - Food estimator: the model that estimates values for foods no database food matches, with the closest database foods as reference (default the parser's model). Off keeps the parser's own guesses. It runs only on parses with an unmatched food; `docker logs plate-app | grep "Food estimator"` shows each call.
+- Setup chat, weekly summary: chat models for the first sign-in chat and the summary on Today (default the parser's model). Off leaves the setup form, or no summary.
+- Label reader: the vision model that reads nutrition label photos (Label photos, below).
 
 Add an email address in `OFF_CONTACT_EMAIL` for Open Food Facts.
 
@@ -276,7 +278,7 @@ Match host wizard exec "! /usr/bin/nc -z -G 2 <wizard's LAN address> 22 >/dev/nu
     ProxyCommand /opt/homebrew/bin/cloudflared access ssh --hostname %h
 ```
 
-It needs `brew install cloudflared`, and in the Zero Trust dashboard a public hostname on the "wizard" tunnel, `<ssh hostname on the tunnel>` → `ssh://172.30.0.1:22` (sshd on the `tunnel` network's gateway; ufw allows it), with a self-hosted Access application on that hostname allowing only Antoan's email. The first connection, and the first after the Access session ends, opens a browser to sign in. Login is still by SSH key.
+It needs `brew install cloudflared`, and in the Zero Trust dashboard a public hostname on the "wizard" tunnel that points at sshd on the `tunnel` Docker network's gateway (the firewall allows it), with a self-hosted Access application on that hostname allowing only your own email. The first connection, and the first after the Access session ends, opens a browser to sign in. Login is still by SSH key.
 
 Migrations run automatically when the app starts.
 
@@ -313,7 +315,7 @@ The developer's account has an admin area at `/admin` (Settings → Admin): repo
 
    It shows up in a signed-in session within 5 minutes, or at the next sign-in. `role revoke dev --email ...` closes the area at once.
 
-2. Cloudflare Access in front of `/admin`. In the Zero Trust dashboard: Access → Applications → Add an application → Self-hosted. Name it "Plate admin", with the public hostname `plate.peychev.uk` and the path `admin`. Set the session duration to 24 hours. Add a policy "Developer" with the action Allow, and include Emails → `<your account email>`. Use the One-time PIN login method. Save it, then open the application's Overview and copy the Application Audience (AUD) tag. The team domain is under Settings → Custom Pages (`<team>.cloudflareaccess.com`). Put both in `~/docker/plate/docker/.env`:
+2. Cloudflare Access in front of `/admin`. In the Zero Trust dashboard: Access → Applications → Add an application → Self-hosted. Name it "Plate admin", with the public hostname `plate.peychev.uk` and the path `admin`. Set the session duration to 24 hours. Add a policy "Developer" with the action Allow, and include Emails → your own address. Use the One-time PIN login method. Save it, then open the application's Overview and copy the Application Audience (AUD) tag. The team domain is under Settings → Custom Pages (`<team>.cloudflareaccess.com`). Put both in `~/docker/plate/docker/.env`:
 
    ```sh
    CF_ACCESS_TEAM_DOMAIN=<team>.cloudflareaccess.com
@@ -367,3 +369,12 @@ Open `https://plate.peychev.uk` in Safari, sign in, then Share → Add to Home S
 Settings → Export all data downloads a ZIP of CSV files readable in Excel or Numbers. It includes private foods, saved meals with their ingredients, recipes with theirs, exercise notes and bar settings, and profile preferences. Saved meal and food IDs link the files.
 
 Food forms carry a new request ID each time they are rendered. Resending the same form after a lost response returns its first successful result without adding food twice. Check the log after an uncertain-save warning; open a new form to add another entry. Food-request receipts are included in the export and removed with the account.
+
+## Licences
+
+The code, the documentation and the data compiled for this project are under the MIT licence (`LICENSE`), except for the following, which keep their own terms:
+
+- `src/Plate.Web/Data/Seed/usda-foods.csv`: from USDA FoodData Central, public domain. The Bulgarian names added to it are covered by `LICENSE`.
+- The `product` rows of `src/Plate.Web/Data/Seed/bg-foods.csv`: from [Open Food Facts](https://world.openfoodfacts.org), © Open Food Facts contributors, under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/). A database made from them stays under the ODbL.
+- The `generic` rows of `bg-foods.csv` compiled from public Bulgarian calorie tables and dish pages: each row's `source` column names the pages its values came from. They are included for the app to work and are not offered under `LICENSE`. The rows from `tools/foods/lidl-bakery.csv` and `tools/foods/mixed-drinks.csv` are this project's own compilation and are covered by `LICENSE`.
+- Libraries in `src/Plate.Web/wwwroot/lib`, each with its licence file next to it: htmx (Zero-Clause BSD), Chart.js (MIT), barcode-detector and zxing-wasm (MIT), and the Fira Sans font (SIL Open Font License 1.1).

@@ -8,7 +8,7 @@ A read-only query against wizard's running production database confirmed every m
 
 ### Cited Findings
 
-- Active settings at 19:21 Europe/Sofia on 2026-11-24, from a read-only query of the allowlisted OpenRouter model and effort keys in production `AppSettings`. No credentials were queried. [Setting names](~/Projects/homeserver-gym/src/Plate.Web/Integrations/AiTasks.cs:98) [Stored effort behavior](~/Projects/homeserver-gym/src/Plate.Web/Integrations/OpenRouterSettings.cs:76)
+- Active settings at 19:21 Europe/Sofia on 2026-11-24, from a read-only query of the allowlisted OpenRouter model and effort keys in production `AppSettings`. No credentials were queried. [Setting names](../../src/Plate.Web/Integrations/AiTasks.cs:98) [Stored effort behavior](../../src/Plate.Web/Integrations/OpenRouterSettings.cs:76)
 
 | Task | Configured ID | Effort (production setting and screenshot) | Model last saved, Sofia |
 |---|---|---|---|
@@ -19,7 +19,7 @@ A read-only query against wizard's running production database confirmed every m
 | Label reader | `google/gemini-3.8-flash` | Lowest = low | Nov 24 19:14 |
 | Food estimator | `google/gemini-4-carbon` | Medium | Nov 23 21:21 |
 
-- Gemini Decision 1 returned `google/gemini-decision-1-20261111` in recorded OpenRouter responses, while Plate sends the configured unversioned ID. The parser model and effort also power the food namer. [Usage model resolution](~/Projects/homeserver-gym/src/Plate.Web/Integrations/AiUsageRecorder.cs:60) [Food namer settings](~/Projects/homeserver-gym/src/Plate.Web/Integrations/OpenRouterSettings.cs:210)
+- Gemini Decision 1 returned `google/gemini-decision-1-20261111` in recorded OpenRouter responses, while Plate sends the configured unversioned ID. The parser model and effort also power the food namer. [Usage model resolution](../../src/Plate.Web/Integrations/AiUsageRecorder.cs:60) [Food namer settings](../../src/Plate.Web/Integrations/OpenRouterSettings.cs:210)
 
 ### Inferences
 
@@ -37,7 +37,7 @@ The app recorded $0.06904064 across 35 calls in its first approximately 23 hours
 
 ### Cited Findings
 
-- Production aggregate from `AiCalls`, queried at 2026-11-24 19:20:59 Sofia with first row at Nov 23 20:22:25 and last row at Nov 24 19:16:17. All 35 had an OpenRouter usage cost, none had its transport-level failure flag set. No input text, responses, user identifiers, names or credentials were retrieved. [Live telemetry fields and semantics](~/Projects/homeserver-gym/src/Plate.Web/Integrations/AiUsageRecorder.cs:20)
+- Production aggregate from `AiCalls`, queried at 2026-11-24 19:20:59 Sofia with first row at Nov 23 20:22:25 and last row at Nov 24 19:16:17. All 35 had an OpenRouter usage cost, none had its transport-level failure flag set. No input text, responses, user identifiers, names or credentials were retrieved. [Live telemetry fields and semantics](../../src/Plate.Web/Integrations/AiUsageRecorder.cs:20)
 
 | Task | Response model | Calls | Total USD | Average USD/call | Median HTTP seconds | p95 HTTP seconds |
 |---|---|---:|---:|---:|---:|---:|
@@ -51,8 +51,8 @@ The app recorded $0.06904064 across 35 calls in its first approximately 23 hours
 | Label reader | Gemini 4 Carbon (other model) | 1 | 0.00483200 | 0.00483200 | 19.248 | 19.248 |
 | Setup chat | Muse Spark 1.3 Contributor (other model) | 1 | 0.00024630 | 0.00024630 | 3.488 | 3.488 |
 
-- Above percentiles use PostgreSQL discrete percentiles, so at these sample sizes p95 is the maximum and median of 2 is the lower one. Parser/matcher/namer/estimator HTTP duration does not equal end-to-end Food latency. Signed-in model/effort changes invoke synthetic task-specific checks, and the recorder captures these through the same clients. A read-only aggregate association of a same-task/same-account admin `key-test` event in the one second after the recorded response identified four likely checks costing $0.00667930. These were the sole Flash label, sole Spark weekly, sole Spark setup and one Carbon setup. The remaining 31 calls cost $0.06236134, with eight Carbon setup calls costing $0.044172 (70.8% of the remaining recorded spend, 0.00552 USD per call). No account identifiers were returned by the query. [Web model checks](~/Projects/homeserver-gym/src/Plate.Web/Controllers/AdminAiController.cs:90) [Test auditing](~/Projects/homeserver-gym/src/Plate.Web/Features/Admin/AiAdmin.cs:84)
-- One call apiece to parser, matcher and namer at the sample averages is about $0.000661, about $0.66 for 1,000 inputs that take all three steps. Using the observed mix of those calls costs $0.00463534 across nine parser calls, roughly $0.52 per 1,000 parser calls for those three tasks. At the observed two estimator calls per nine parser calls, total food-pipeline modeled cost is $0.01335734, roughly $1.48 per 1,000 parser calls. The normalized figures are illustrations conditional on the sample's mix, not monthly forecasts. Historical setup Spark vs Carbon synthetic probes are one-off and don't match production turn payloads. [Recorded costs and task separation](~/Projects/homeserver-gym/src/Plate.Web/Integrations/AiUsageRecorder.cs:60)
+- Above percentiles use PostgreSQL discrete percentiles, so at these sample sizes p95 is the maximum and median of 2 is the lower one. Parser/matcher/namer/estimator HTTP duration does not equal end-to-end Food latency. Signed-in model/effort changes invoke synthetic task-specific checks, and the recorder captures these through the same clients. A read-only aggregate association of a same-task/same-account admin `key-test` event in the one second after the recorded response identified four likely checks costing $0.00667930. These were the sole Flash label, sole Spark weekly, sole Spark setup and one Carbon setup. The remaining 31 calls cost $0.06236134, with eight Carbon setup calls costing $0.044172 (70.8% of the remaining recorded spend, 0.00552 USD per call). No account identifiers were returned by the query. [Web model checks](../../src/Plate.Web/Controllers/AdminAiController.cs:90) [Test auditing](../../src/Plate.Web/Features/Admin/AiAdmin.cs:84)
+- One call apiece to parser, matcher and namer at the sample averages is about $0.000661, about $0.66 for 1,000 inputs that take all three steps. Using the observed mix of those calls costs $0.00463534 across nine parser calls, roughly $0.52 per 1,000 parser calls for those three tasks. At the observed two estimator calls per nine parser calls, total food-pipeline modeled cost is $0.01335734, roughly $1.48 per 1,000 parser calls. The normalized figures are illustrations conditional on the sample's mix, not monthly forecasts. Historical setup Spark vs Carbon synthetic probes are one-off and don't match production turn payloads. [Recorded costs and task separation](../../src/Plate.Web/Integrations/AiUsageRecorder.cs:60)
 
 ### Inferences
 
@@ -62,7 +62,7 @@ The app recorded $0.06904064 across 35 calls in its first approximately 23 hours
 
 ### Gaps
 
-- App usage does not cover earlier days, CLI tests/evals, other workloads with the same OpenRouter key, or any call the recorder was unable to persist. Transport flags can't identify a successful HTTP answer with invalid content, unsupported response or inaccurate nutrition. No monthly bill or comprehensive app reliability rates can be inferred. [Recorder scope and failure check](~/Projects/homeserver-gym/src/Plate.Web/Integrations/AiUsageRecorder.cs:14)
+- App usage does not cover earlier days, CLI tests/evals, other workloads with the same OpenRouter key, or any call the recorder was unable to persist. Transport flags can't identify a successful HTTP answer with invalid content, unsupported response or inaccurate nutrition. No monthly bill or comprehensive app reliability rates can be inferred. [Recorder scope and failure check](../../src/Plate.Web/Integrations/AiUsageRecorder.cs:14)
 
 ## Does live quality data support a swap?
 
@@ -72,9 +72,9 @@ The active parser/matcher and label model have too few production outcomes to es
 
 ### Cited Findings
 
-- Production 90-day aggregate from `ParseRuns` through the review: Muse Ember + Gemini Decision 1 versioned matcher had 13 parse runs, zero parser errors, 6 confirmed, one of those corrected, 3.860 seconds median end-to-end. Muse Ember without a recorded matcher had 3 runs, zero parser errors, all 3 confirmed, one corrected, 5.172 seconds median. The latter may include cases that bypassed the model because no item needed a decision. The existing report's `Enough` threshold is 20 runs. No user input or individual feedback was queried. [App model outcome definitions](~/Projects/homeserver-gym/src/Plate.Web/Features/Feedback/ModelAccuracyReport.cs:36) [Minimum sample](~/Projects/homeserver-gym/src/Plate.Core/Nutrition/ModelAccuracy.cs:12)
-- Production 90-day aggregate from `LabelScans`: Gemini 3.8 Flash had 6 scans, one read error, three saves and all three saved scans edited, median 4.137 seconds. Gemini 4 Carbon had one scan at 19.459 seconds, no read error and no save. The app counts edits when those values differ from the model's normalized form, and the saved edits do not establish what was on the physical label. [Reusable label outcome definition](~/Projects/homeserver-gym/src/Plate.Web/Features/Feedback/ModelAccuracyReport.cs:26)
-- Estimator-specific counts and accuracy rates are absent from the current model accuracy UI because the chosen estimator is recorded per resolved row. [Estimator accuracy UI limitation](~/Projects/homeserver-gym/src/Plate.Web/Features/Feedback/ModelAccuracyReport.cs:20)
+- Production 90-day aggregate from `ParseRuns` through the review: Muse Ember + Gemini Decision 1 versioned matcher had 13 parse runs, zero parser errors, 6 confirmed, one of those corrected, 3.860 seconds median end-to-end. Muse Ember without a recorded matcher had 3 runs, zero parser errors, all 3 confirmed, one corrected, 5.172 seconds median. The latter may include cases that bypassed the model because no item needed a decision. The existing report's `Enough` threshold is 20 runs. No user input or individual feedback was queried. [App model outcome definitions](../../src/Plate.Web/Features/Feedback/ModelAccuracyReport.cs:36) [Minimum sample](../../src/Plate.Core/Nutrition/ModelAccuracy.cs:12)
+- Production 90-day aggregate from `LabelScans`: Gemini 3.8 Flash had 6 scans, one read error, three saves and all three saved scans edited, median 4.137 seconds. Gemini 4 Carbon had one scan at 19.459 seconds, no read error and no save. The app counts edits when those values differ from the model's normalized form, and the saved edits do not establish what was on the physical label. [Reusable label outcome definition](../../src/Plate.Web/Features/Feedback/ModelAccuracyReport.cs:26)
+- Estimator-specific counts and accuracy rates are absent from the current model accuracy UI because the chosen estimator is recorded per resolved row. [Estimator accuracy UI limitation](../../src/Plate.Web/Features/Feedback/ModelAccuracyReport.cs:20)
 
 ### Inferences
 
