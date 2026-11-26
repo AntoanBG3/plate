@@ -75,9 +75,11 @@ fi
 
 # No remote side effects until the exact checkout has passed the complete test suite.
 bash tools/check.sh
-[ "$(git branch --show-current)" = main ] && [ -z "$(git status --porcelain)" ] \
-    && [ "$(git rev-parse --short HEAD)" = "$VERSION" ] \
-    || { echo "The checkout changed during checks; run the deployment again." >&2; exit 1; }
+if [ "$(git branch --show-current)" != main ] || [ -n "$(git status --porcelain)" ] \
+    || [ "$(git rev-parse --short HEAD)" != "$VERSION" ]; then
+    echo "The checkout changed during checks; run the deployment again." >&2
+    exit 1
+fi
 if [ -n "$ci_wait" ]; then
     echo "Waiting for CI on $VERSION"
     gh run watch "$ci_wait" --exit-status --interval 30 > /dev/null \
@@ -87,6 +89,8 @@ fi
 
 DUMP="plate-pre-$VERSION-$(date +%Y%m%d-%H%M).dump"
 echo "Dumping the database to ~/$DUMP on wizard"
+# $DUMP and $VERSION are meant to expand here, on the Mac; the escaped variables expand on wizard.
+# shellcheck disable=SC2029
 ssh wizard "docker exec plate-db sh -c 'pg_dump -Fc -U \"\$POSTGRES_USER\" \"\$POSTGRES_DB\"' > ~/$DUMP \
     && docker exec -i plate-db pg_restore --list < ~/$DUMP > /dev/null"
 
@@ -94,6 +98,7 @@ echo "Copying $VERSION"
 copy
 
 echo "Building and starting $VERSION"
+# shellcheck disable=SC2029
 ssh wizard "cd ~/docker/plate && APP_VERSION=$VERSION docker compose -f docker/docker-compose.yml up -d --build \
     && docker builder prune -f > /dev/null"
 

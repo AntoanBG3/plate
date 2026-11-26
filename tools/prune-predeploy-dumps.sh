@@ -23,7 +23,7 @@ esac
 mtime() { perl -e 'print +(stat $ARGV[0])[9]' -- "$1"; }
 listing=""
 for f in "$HOME_DIR"/plate-pre-*.dump "$HOME_DIR"/gymtracker-pre-*.dump; do
-    [ -f "$f" ] && [ ! -L "$f" ] || continue
+    if [ ! -f "$f" ] || [ -L "$f" ]; then continue; fi
     listing+="$(mtime "$f")"$'\t'"$f"$'\n'
 done
 dumps=()
