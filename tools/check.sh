@@ -10,12 +10,12 @@ run_js=true
 install_browser_deps=false
 test_settings=""
 retry_failed=false
-all="tests/Plate.Core.Tests tests/Plate.Web.Tests tests/Plate.E2E.Tests"
+all=(tests/Plate.Core.Tests tests/Plate.Web.Tests tests/Plate.E2E.Tests)
 case "${1:-}" in
-    "") set -- $all ;;
+    "") set -- "${all[@]}" ;;
     --browser-deps)
         install_browser_deps=true
-        set -- $all
+        set -- "${all[@]}"
         ;;
     --ci-core-web) set -- tests/Plate.Core.Tests tests/Plate.Web.Tests ;;
     --ci-browser)

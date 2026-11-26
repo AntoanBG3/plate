@@ -68,6 +68,21 @@ jobs:
           # A failed browser run uploads about 60 MB, against 500 MB of artifact storage on the free plan.
           retention-days: 5
 
+  # deploy.sh, restore-drill.sh and the dump pruning act on production data, and nothing else exercises them before
+  # they run there. ShellCheck ships with GitHub's Ubuntu images.
+  shellcheck:
+    name: Shell scripts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: ShellCheck
+        run: |
+          shellcheck --version
+          git ls-files -z '*.sh' | xargs -0 shellcheck
+
   # The deploy builds this image on wizard; a Dockerfile that no longer builds (a project it doesn't copy, a base image
   # digest that's gone) would otherwise surface only there, after the database dump.
   docker:
