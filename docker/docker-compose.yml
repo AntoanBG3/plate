@@ -1,6 +1,6 @@
 # Production stack on wizard. The repository is checked out at ~/docker/plate and this file is
 # run from there: docker compose -f docker/docker-compose.yml up -d --build
-# State lives next to the checkout (../db, ../keys) so the nightly ~/docker snapshot covers it.
+# State lives next to the checkout (../db, ../keys, ../data) so the nightly ~/docker snapshot covers it.
 name: plate
 
 services:
@@ -56,8 +56,11 @@ services:
       Telegram__ChatId: "${TELEGRAM_CHAT_ID:-}"
       Admin__CloudflareAccess__TeamDomain: "${CF_ACCESS_TEAM_DOMAIN:-}"
       Admin__CloudflareAccess__Audience: "${CF_ACCESS_AUD:-}"
+      # The Bulgarian dishes compiled from third-party tables are kept out of the repository (README "Food data").
+      Seed__DishesPath: /data/bg-dishes.csv
     volumes:
       - ../keys:/keys
+      - ../data:/data:ro
     # No published ports: cloudflared reaches http://plate-app:8080 over the tunnel network.
     networks:
       - default

@@ -1,8 +1,10 @@
 // Merges the collected Bulgarian foods with the USDA subset and removes duplicates across them.
 //   node tools/foods/merge.mjs
 // Inputs: raw/tables.csv, raw/dishes.csv, raw/off-bg.csv and the committed USDA seed.
-// Output: src/Plate.Web/Data/Seed/bg-foods.csv (new foods) and raw/usda-bg-names.csv (Bulgarian names found
-// for USDA foods that a Bulgarian source duplicated; the USDA translation pass uses them).
+// Output: src/Plate.Web/Data/Seed/bg-foods.csv (the Open Food Facts products and the hand-curated rows, committed),
+// data/bg-dishes.csv (the generic foods and dishes from the tables and dish pages, private and never committed) and
+// raw/usda-bg-names.csv (Bulgarian names found for USDA foods that a Bulgarian source duplicated; the USDA
+// translation pass uses them).
 //
 // Duplicates are decided by an LLM through OpenRouter on candidates found locally: a Bulgarian generic food is compared with
 // the USDA foods and other Bulgarian rows sharing words with its English name. USDA wins over a duplicate (lab data),
@@ -12,7 +14,7 @@
 // re-run keeps them.
 import fs from "node:fs";
 import path from "node:path";
-import { here, raw, repo, llm, readCsv, writeCsv, pool } from "./lib.mjs";
+import { here, raw, repo, dishesFile, llm, readCsv, writeCsv, pool } from "./lib.mjs";
 
 const seedDir = path.join(repo, "src/Plate.Web/Data/Seed");
 const usda = readCsv(path.join(seedDir, "usda-foods.csv")).map((r) => ({ ...r, id: "u" + r.fdc_id }));
@@ -150,8 +152,9 @@ for (const fix of readCsv(path.join(seedDir, "reference-fixes.csv"))) {
 }
 
 // Hand-curated foods with their own sources, kept as they are.
+const curatedRows = [];
 for (const curated of ["lidl-bakery.csv", "mixed-drinks.csv"]) {
-    out.push(...readCsv(path.join(here, curated)));
+    curatedRows.push(...readCsv(path.join(here, curated)));
 }
 
 // A Latin letter that looks Cyrillic inside a Cyrillic word ("чипc"), or the reverse, takes the alphabet of the rest
@@ -164,12 +167,15 @@ const mixedScript = (text) => (text || "").replace(/\p{L}+/gu, (w) => {
     const [from, to] = c >= l ? [LATIN, CYRILLIC] : [CYRILLIC, LATIN];
     return [...w].map((ch) => (from.includes(ch) ? to[from.indexOf(ch)] : ch)).join("");
 });
-for (const row of out) {
+for (const row of [...out, ...curatedRows]) {
     row.name_bg = mixedScript(row.name_bg);
     row.name_en = mixedScript(row.name_en);
     row.brand = mixedScript(row.brand);
 }
 
-writeCsv(path.join(seedDir, "bg-foods.csv"), ["kind", "barcode", "name_bg", "name_en", "brand", "kcal", "protein", "carbs", "fat", "serving_g", "source", "fiber", "satfat", "piece_g", "basis"], out);
+const columns = ["kind", "barcode", "name_bg", "name_en", "brand", "kcal", "protein", "carbs", "fat", "serving_g", "source", "fiber", "satfat", "piece_g", "basis"];
+writeCsv(path.join(seedDir, "bg-foods.csv"), columns, [...out.filter((r) => r.kind === "product"), ...curatedRows]);
+fs.mkdirSync(path.dirname(dishesFile), { recursive: true });
+writeCsv(dishesFile, columns, out.filter((r) => r.kind !== "product"));
 writeCsv(path.join(raw, "usda-bg-names.csv"), ["fdc_id", "name_bg"], [...usdaNames].map(([fdc_id, name_bg]) => ({ fdc_id, name_bg })));
 console.log(`kept ${keptGeneric.length} generic (${generic.length - keptGeneric.length} duplicates removed, ${usdaNames.size} of them matched USDA), ${off.length} products`);

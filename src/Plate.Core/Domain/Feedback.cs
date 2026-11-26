@@ -126,7 +126,7 @@ public class ParseRun
     public DateTimeOffset? ConfirmedAt { get; set; }
 }
 
-/// <summary>A report, idea or rating from a user, and the agent's status and reply to it.</summary>
+/// <summary>A report, idea or rating from a user, and the developer's status and reply to it.</summary>
 public class Feedback
 {
     public const int MaxMessageLength = 2000;
