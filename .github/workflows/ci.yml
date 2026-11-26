@@ -88,7 +88,7 @@ jobs:
   docker:
     name: Docker image
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
         with:
@@ -97,3 +97,9 @@ jobs:
         env:
           APP_VERSION: ${{ github.sha }}
         run: docker build --file docker/Dockerfile --build-arg APP_VERSION="${APP_VERSION::7}" --tag plate:ci .
+      # Migrations and seeds run at startup against an empty database, under the same limits as on wizard, so a
+      # startup crash or a missing static file shows up here rather than after the pre-deploy dump.
+      - name: Start the image and check it serves
+        env:
+          APP_VERSION: ${{ github.sha }}
+        run: bash tools/smoke-image.sh plate:ci "${APP_VERSION::7}"
