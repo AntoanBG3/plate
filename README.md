@@ -276,7 +276,7 @@ Match host wizard exec "! /usr/bin/nc -z -G 2 <wizard's LAN address> 22 >/dev/nu
     ProxyCommand /opt/homebrew/bin/cloudflared access ssh --hostname %h
 ```
 
-It needs `brew install cloudflared`, and in the Zero Trust dashboard a public hostname on the "wizard" tunnel, `<ssh hostname on the tunnel>` → `ssh://172.30.0.1:22` (sshd on the `tunnel` network's gateway; ufw allows it), with a self-hosted Access application on that hostname allowing only Antoan's email. The first connection, and the first after the Access session ends, opens a browser to sign in. Login is still by SSH key.
+It needs `brew install cloudflared`, and in the Zero Trust dashboard a public hostname on the "wizard" tunnel that points at sshd on the `tunnel` Docker network's gateway (the firewall allows it), with a self-hosted Access application on that hostname allowing only your own email. The first connection, and the first after the Access session ends, opens a browser to sign in. Login is still by SSH key.
 
 Migrations run automatically when the app starts.
 
@@ -313,7 +313,7 @@ The developer's account has an admin area at `/admin` (Settings → Admin): repo
 
    It shows up in a signed-in session within 5 minutes, or at the next sign-in. `role revoke dev --email ...` closes the area at once.
 
-2. Cloudflare Access in front of `/admin`. In the Zero Trust dashboard: Access → Applications → Add an application → Self-hosted. Name it "Plate admin", with the public hostname `plate.peychev.uk` and the path `admin`. Set the session duration to 24 hours. Add a policy "Developer" with the action Allow, and include Emails → `<your account email>`. Use the One-time PIN login method. Save it, then open the application's Overview and copy the Application Audience (AUD) tag. The team domain is under Settings → Custom Pages (`<team>.cloudflareaccess.com`). Put both in `~/docker/plate/docker/.env`:
+2. Cloudflare Access in front of `/admin`. In the Zero Trust dashboard: Access → Applications → Add an application → Self-hosted. Name it "Plate admin", with the public hostname `plate.peychev.uk` and the path `admin`. Set the session duration to 24 hours. Add a policy "Developer" with the action Allow, and include Emails → your own address. Use the One-time PIN login method. Save it, then open the application's Overview and copy the Application Audience (AUD) tag. The team domain is under Settings → Custom Pages (`<team>.cloudflareaccess.com`). Put both in `~/docker/plate/docker/.env`:
 
    ```sh
    CF_ACCESS_TEAM_DOMAIN=<team>.cloudflareaccess.com
